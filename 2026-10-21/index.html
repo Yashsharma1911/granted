@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>QuoteForge — RFQ Inbox to Quote</title>
+<style>
+:root{
+  --bg:#f6f7f9; --panel:#ffffff; --ink:#111827; --muted:#6b7280; --line:#e5e7eb;
+  --accent:#1f5eff; --accent-ink:#ffffff; --green:#0f7a43; --green-bg:#e4f5ea;
+  --gray-bg:#eceef1; --orange:#9a5700; --orange-bg:#fdf0dc; --shadow:0 1px 2px rgba(16,24,40,.06),0 8px 24px rgba(16,24,40,.06);
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#0e1116; --panel:#161a21; --ink:#e8ebf0; --muted:#9aa4b2; --line:#262c36;
+    --accent:#5b8cff; --accent-ink:#0b0e13; --green:#6ee7a8; --green-bg:#11301f;
+    --gray-bg:#232935; --orange:#ffc078; --orange-bg:#3a2a12; --shadow:0 1px 2px rgba(0,0,0,.5);
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--ink);
+  font:16px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  -webkit-text-size-adjust:100%;
+}
+header.top{
+  position:sticky; top:0; z-index:20; background:var(--panel);
+  border-bottom:1px solid var(--line); padding:12px 16px;
+  display:flex; align-items:center; gap:12px; flex-wrap:wrap;
+}
+.logo{display:flex;align-items:center;gap:9px;font-weight:700;font-size:18px;letter-spacing:-.01em}
+.logo svg{display:block}
+.tagline{font-size:13px;color:var(--muted)}
+.metric{margin-left:auto;font-size:12.5px;color:var(--muted);background:var(--gray-bg);padding:6px 10px;border-radius:999px;white-space:nowrap}
+.metric b{color:var(--ink)}
+.demo-flag{font-size:11px;color:var(--muted);border:1px dashed var(--line);padding:3px 7px;border-radius:999px}
+
+.wrap{max-width:1240px;margin:0 auto;padding:14px;display:grid;grid-template-columns:minmax(280px,32%) 1fr;gap:14px;align-items:start}
+@media (max-width:860px){ .wrap{grid-template-columns:1fr} }
+
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow)}
+.panel-head{padding:12px 14px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:8px}
+.panel-head h2{margin:0;font-size:14px;letter-spacing:.02em;text-transform:uppercase;color:var(--muted)}
+.count{margin-left:auto;font-size:12px;color:var(--muted)}
+
+ul.inbox{list-style:none;margin:0;padding:6px}
+ul.inbox li{margin:0}
+.row{
+  width:100%;text-align:left;background:none;border:0;color:inherit;font:inherit;
+  display:block;padding:12px;border-radius:10px;cursor:pointer;min-height:64px;
+}
+.row:hover{background:var(--gray-bg)}
+.row:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.row.active{background:var(--gray-bg);box-shadow:inset 3px 0 0 var(--accent)}
+.row .line1{display:flex;gap:8px;align-items:baseline}
+.row .co{font-weight:650;font-size:14.5px}
+.row .time{margin-left:auto;font-size:11.5px;color:var(--muted);white-space:nowrap}
+.row .subj{font-size:13.5px;color:var(--ink);opacity:.92;margin-top:2px}
+.row .from{font-size:12px;color:var(--muted);margin-top:3px;word-break:break-all}
+.badge{display:inline-block;font-size:11px;font-weight:600;padding:3px 8px;border-radius:999px;margin-top:7px;letter-spacing:.02em}
+.badge.unparsed{background:var(--gray-bg);color:var(--muted)}
+.badge.quoted{background:var(--green-bg);color:var(--green)}
+
+.empty{padding:48px 24px;text-align:center;color:var(--muted)}
+.empty svg{opacity:.5;margin-bottom:10px}
+.empty h3{margin:0 0 6px;color:var(--ink);font-size:16px}
+.empty p{margin:0;font-size:14px}
+
+.split{display:grid;grid-template-columns:1fr 1fr;gap:0}
+@media (max-width:1040px){ .split{grid-template-columns:1fr} }
+.sub{padding:14px}
+.sub.raw{border-right:1px solid var(--line)}
+@media (max-width:1040px){ .sub.raw{border-right:0;border-bottom:1px solid var(--line)} }
+.sub h3{margin:0 0 10px;font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.mail-meta{font-size:12.5px;color:var(--muted);margin-bottom:10px;line-height:1.7}
+.mail-meta b{color:var(--ink);font-weight:600}
+pre.body{
+  white-space:pre-wrap;word-wrap:break-word;margin:0;
+  font:13.5px/1.65 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:12px;
+}
+.chip{
+  display:inline-flex;align-items:center;gap:7px;margin-top:10px;padding:8px 11px;
+  border:1px solid var(--line);border-radius:10px;background:var(--bg);font-size:13px;color:var(--ink)
+}
+.chip .sz{color:var(--muted);font-size:11.5px}
+
+.conf{display:flex;align-items:center;gap:7px;background:var(--orange-bg);color:var(--orange);font-size:12.5px;font-weight:600;padding:7px 10px;border-radius:9px;margin-bottom:12px}
+dl.fields{margin:0;display:grid;grid-template-columns:auto 1fr;gap:0}
+dl.fields dt,dl.fields dd{padding:8px 2px;border-bottom:1px dashed var(--line);margin:0;font-size:13.5px}
+dl.fields dt{color:var(--muted);padding-right:14px;white-space:nowrap}
+dl.fields dd{text-align:right;font-weight:600}
+.money dd{font-variant-numeric:tabular-nums}
+.total{display:flex;align-items:baseline;gap:10px;margin-top:14px;padding:12px;border-radius:12px;background:var(--bg);border:1px solid var(--line)}
+.total span{font-size:13px;color:var(--muted)}
+.total strong{margin-left:auto;font-size:26px;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.unit{font-size:12px;color:var(--muted);text-align:right;margin-top:6px}
+button.cta{
+  margin-top:14px;width:100%;min-height:52px;border:0;border-radius:12px;cursor:pointer;
+  background:var(--accent);color:var(--accent-ink);font:650 16px/1 inherit;display:flex;align-items:center;justify-content:center;gap:9px;
+}
+button.cta:hover{filter:brightness(1.07)}
+button.cta:disabled{opacity:.7;cursor:progress}
+.sent{margin-top:10px;display:flex;align-items:center;gap:8px;background:var(--green-bg);color:var(--green);font-size:13px;font-weight:600;padding:10px;border-radius:10px}
+.hidden{display:none}
+.skel{height:13px;border-radius:6px;background:var(--gray-bg);margin:11px 0;animation:pulse 1.1s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:.55}50%{opacity:1}}
+.parsing{font-size:12.5px;color:var(--muted);display:flex;align-items:center;gap:8px}
+.spin{width:13px;height:13px;border:2px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:sp .7s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+footer{text-align:center;color:var(--muted);font-size:12px;padding:18px 14px 28px}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <rect x="2.5" y="4" width="19" height="16" rx="3" stroke="currentColor" stroke-width="1.8"/>
+      <path d="M3 8.5l9 5.5 9-5.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+    </svg>
+    QuoteForge
+  </div>
+  <div class="tagline">Turns messy RFQ emails into priced quotes</div>
+  <div class="metric">Average quote time: <b>4 minutes</b> (vs 3–5 days manually)</div>
+  <div class="demo-flag">Demo data</div>
+</header>
+
+<main class="wrap">
+  <section class="card" aria-label="RFQ inbox">
+    <div class="panel-head">
+      <h2>RFQ Inbox</h2>
+      <span class="count" id="count">8 new</span>
+    </div>
+    <ul class="inbox" id="inbox"></ul>
+  </section>
+
+  <section class="card" aria-label="Quote workspace" id="right">
+    <div class="empty" id="empty">
+      <svg width="44" height="44" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <rect x="3" y="5" width="18" height="14" rx="3" stroke="currentColor" stroke-width="1.6"/>
+        <path d="M3.5 9l8.5 5 8.5-5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+      </svg>
+      <h3>Pick an RFQ to quote</h3>
+      <p>Select any email on the left. QuoteForge reads the thread and attachment, then drafts a priced quote.</p>
+    </div>
+    <div id="view" class="hidden"></div>
+  </section>
+</main>
+
+<footer>Prototype by Granted, inspired by your bookmarks</footer>
+
+<script>
+(function(){
+"use strict";
+
+var RFQS = [
+ {id:"acme",co:"Acme Fixtures",from:"mike@acmefix.com",subj:"Need 50x bracket, 6061 aluminum",time:"8:12 AM",
+  body:"Hi,\n\nWe need 50 units of the attached bracket. Material should be 6061-T6 aluminum, tolerance +/-0.005in, anodized finish. Need by Nov 15. Let us know pricing.\n\n- Mike",
+  file:"bracket_rev3.pdf",size:"412 KB",
+  f:{part:"Mounting bracket, rev 3",mat:"6061-T6 aluminum",qty:50,tol:"±0.005 in",fin:"Clear anodize (Type II)",hrs:6.5,matCost:412,labCost:845,margin:32},
+  conf:92,note:"review tolerance field"},
+
+ {id:"bolt",co:"Bolt Supply Co",from:"parts@boltsupply.com",subj:"Sheet metal enclosure x200",time:"7:48 AM",
+  body:"Morning —\n\nRepeat order, 200 enclosures same as last run (see dwg). 16ga cold rolled steel, bend tolerance standard, powder coat RAL 7016 matte. Ship to Dock 4 by Dec 2. Need pricing today if possible, we have another shop bidding.\n\nThanks,\nJanelle",
+  file:"enclosure_dwg_B.pdf",size:"1.2 MB",
+  f:{part:"Sheet metal enclosure, 2U",mat:"16ga cold rolled steel",qty:200,tol:"±0.015 in (bend)",fin:"Powder coat RAL 7016 matte",hrs:28,matCost:2360,labCost:3640,margin:24},
+  conf:88,note:"review finish spec — RAL not in price list"},
+
+ {id:"precision",co:"Precision Jigs",from:"dana@precisionjigs.com",subj:"Titanium spacer, qty 12",time:"Yesterday 4:31 PM",
+  body:"Hello,\n\nSmall job: 12x spacer, Ti-6Al-4V, OD 1.250 +0/-0.0005, length 0.375 ±0.001. No coating, as-machined, deburred. Cert required (mill cert + CoC). Quote lead time please.\n\nDana",
+  file:"spacer_TI.step",size:"88 KB",
+  f:{part:"Precision spacer, Ti",mat:"Ti-6Al-4V (certified)",qty:12,tol:"+0 / −0.0005 in",fin:"As-machined, deburred",hrs:9,matCost:684,labCost:1395,margin:38},
+  conf:76,note:"review tolerance field — tightest callout near machine limit"},
+
+ {id:"metro",co:"Metro Fabrication",from:"rfq@metrofab.com",subj:"Stainless bracket rev B, qty 75",time:"Yesterday 1:05 PM",
+  body:"RFQ #MF-2214\n\nQty 75, stainless 304, bracket rev B (rev A quoted last March — part changed, hole pattern now 5x Ø0.257). Tolerance ±0.010. Bead blast finish. Delivery 4 weeks ARO. Please include tooling if any.\n\nPurchasing, Metro Fabrication",
+  file:"MF-2214_revB.pdf",size:"640 KB",
+  f:{part:"Bracket rev B, 5-hole",mat:"304 stainless steel",qty:75,tol:"±0.010 in",fin:"Bead blast",hrs:11,matCost:938,labCost:1485,margin:28},
+  conf:94,note:"review quantity — rev A history found at qty 60"},
+
+ {id:"coastal",co:"Coastal Robotics",from:"eng@coastalrobotics.com",subj:"Custom gearbox housing, qty 30",time:"Yesterday 10:22 AM",
+  body:"Hi team,\n\nPrototype-to-pilot run: 30x gearbox housing. 6061 billet, bore 2.0000 H7, flatness 0.002 on mating face, hard anodize black. We'd like first article on 5 pieces before the balance. Target under $300/unit if possible.\n\nPriya, Mech Eng",
+  file:"housing_v7.step",size:"3.4 MB",
+  f:{part:"Gearbox housing v7",mat:"6061 billet aluminum",qty:30,tol:"H7 bore / 0.002 flatness",fin:"Hard anodize, black",hrs:34,matCost:1740,labCost:4420,margin:30},
+  conf:81,note:"review finish — hard anodize is outsourced, lead time +5 days"},
+
+ {id:"delta",co:"Delta Tooling",from:"buyer@deltatooling.com",subj:"Injection mold insert, qty 4",time:"Mon 3:58 PM",
+  body:"Need 4 mold inserts, P20 steel pre-hard, EDM detail on cavity side, surface finish SPI A-2 polish. Drawings attached, tolerances on critical dims ±0.0002. This is a rush — mold is down.\n\nRegards,\nTom, Delta Tooling",
+  file:"insert_cavity_A2.pdf",size:"2.1 MB",
+  f:{part:"Mold insert, cavity side",mat:"P20 pre-hardened steel",qty:4,tol:"±0.0002 in (critical)",fin:"SPI A-2 polish",hrs:46,matCost:1120,labCost:7820,margin:35},
+  conf:69,note:"review tolerance + EDM hours — low confidence, quote manually"},
+
+ {id:"summit",co:"Summit CNC",from:"orders@summitcnc.com",subj:"Aluminum plate, qty 150",time:"Mon 11:14 AM",
+  body:"Standard blanket release. 150x plate, 5052-H32, 0.250 thk, waterjet profile + 8 tapped holes 1/4-20. Mill finish OK, no coating. Same price as last PO? PO to follow on acceptance.\n\nSummit CNC Purchasing",
+  file:"plate_profile.dxf",size:"156 KB",
+  f:{part:"Waterjet plate, 8x tapped",mat:"5052-H32 aluminum, 0.250\"",qty:150,tol:"±0.020 in",fin:"Mill finish",hrs:17,matCost:1875,labCost:2210,margin:22},
+  conf:96,note:"review price — matched to PO #4417 from Aug"},
+
+ {id:"vertex",co:"Vertex Parts",from:"procurement@vertexparts.com",subj:"Steel shaft, qty 60",time:"Mon 9:03 AM",
+  body:"Good morning,\n\nQuote request: 60 pcs turned shaft, 1045 steel, Ø0.750 ±0.001, length 14.000 ±0.010, keyway per print, black oxide. Annual usage approx 240 pcs — price breaks appreciated.\n\nProcurement, Vertex Parts",
+  file:"shaft_1045_print.pdf",size:"520 KB",
+  f:{part:"Turned shaft w/ keyway",mat:"1045 carbon steel",qty:60,tol:"±0.001 in",fin:"Black oxide",hrs:14,matCost:726,labCost:1820,margin:26},
+  conf:90,note:"review quantity — buyer hints at 240/yr volume"}
+];
+
+var state = {}; // id -> "quoted"
+var current = null;
+
+var inboxEl = document.getElementById("inbox");
+var countEl = document.getElementById("count");
+var emptyEl = document.getElementById("empty");
+var viewEl  = document.getElementById("view");
+
+function esc(s){
+  return String(s).replace(/[&<>"']/g, function(c){
+    return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];
+  });
+}
+function money(n){
+  if(typeof n !== "number" || !isFinite(n)) return "—";
+  return "$" + n.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+function totals(f){
+  var sub = (f.matCost||0) + (f.labCost||0);
+  var marg = sub * ((f.margin||0)/100);
+  var total = sub + marg;
+  var unit = (f.qty>0) ? total/f.qty : 0;
+  return {sub:sub, marg:marg, total:total, unit:unit};
+}
+
+function renderInbox(){
+  inboxEl.innerHTML = "";
+  var open = 0;
+  RFQS.forEach(function(r){
+    var quoted = state[r.id] === "quoted";
+    if(!quoted) open++;
+    var li = document.createElement("li");
+    var b = document.createElement("button");
+    b.className = "row" + (current === r.id ? " active" : "");
+    b.type = "button";
+    b.setAttribute("aria-pressed", current === r.id ? "true" : "false");
+    b.innerHTML =
+      '<div class="line1"><span class="co">'+esc(r.co)+'</span><span class="time">'+esc(r.time)+'</span></div>'+
+      '<div class="subj">'+esc(r.subj)+'</div>'+
+      '<div class="from">'+esc(r.from)+'</div>'+
+      '<span class="badge '+(quoted?"quoted":"unparsed")+'">'+(quoted?"quoted":"unparsed")+'</span>';
+    b.addEventListener("click", function(){ openRFQ(r.id); });
+    li.appendChild(b);
+    inboxEl.appendChild(li);
+  });
+  countEl.textContent = open === 0 ? "all quoted" : open + " unquoted";
+}
+
+function skeleton(r){
+  return ''+
+  '<div class="split">'+
+    '<div class="sub raw">'+
+      '<h3>Incoming message</h3>'+
+      '<div class="mail-meta"><b>'+esc(r.co)+'</b><br>'+esc(r.from)+' · '+esc(r.time)+'<br>Subject: '+esc(r.subj)+'</div>'+
+      '<pre class="body">'+esc(r.body)+'</pre>'+
+      '<div class="chip">'+
+        '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M8 7v9a4 4 0 008 0V6.5a2.5 2.5 0 10-5 0V15a1 1 0 002 0V7" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>'+
+        esc(r.file)+' <span class="sz">'+esc(r.size)+'</span>'+
+      '</div>'+
+    '</div>'+
+    '<div class="sub">'+
+      '<h3>Extracted quote</h3>'+
+      '<div class="parsing"><span class="spin"></span> Reading email and '+esc(r.file)+'…</div>'+
+      '<div class="skel" style="width:85%"></div><div class="skel" style="width:70%"></div>'+
+      '<div class="skel" style="width:90%"></div><div class="skel" style="width:60%"></div>'+
+      '<div class="skel" style="width:78%"></div><div class="skel" style="width:45%"></div>'+
+    '</div>'+
+  '</div>';
+}
+
+function quoteHTML(r){
+  var f = r.f, t = totals(f);
+  var rows = [
+    ["Part description", esc(f.part)],
+    ["Material", esc(f.mat)],
+    ["Quantity", f.qty + " pcs"],
+    ["Tolerance", esc(f.tol)],
+    ["Finish", esc(f.fin)],
+    ["Est. machine time", f.hrs + " hrs"]
+  ].map(function(p){ return "<dt>"+p[0]+"</dt><dd>"+p[1]+"</dd>"; }).join("");
+
+  var costs = [
+    ["Material cost", money(f.matCost)],
+    ["Labor cost", money(f.labCost)],
+    ["Subtotal", money(t.sub)],
+    ["Margin ("+f.margin+"%)", money(t.marg)]
+  ].map(function(p){ return "<dt>"+p[0]+"</dt><dd>"+p[1]+"</dd>"; }).join("");
+
+  return ''+
+  '<div class="split">'+
+    '<div class="sub raw">'+
+      '<h3>Incoming message</h3>'+
+      '<div class="mail-meta"><b>'+esc(r.co)+'</b><br>'+esc(r.from)+' · '+esc(r.time)+'<br>Subject: '+esc(r.subj)+'</div>'+
+      '<pre class="body">'+esc(r.body)+'</pre>'+
+      '<div class="chip">'+
+        '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M8 7v9a4 4 0 008 0V6.5a2.5 2.5 0 10-5 0V15a1 1 0 002 0V7" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>'+
+        esc(r.file)+' <span class="sz">'+esc(r.size)+'</span>'+
+      '</div>'+
+    '</div>'+
+    '<div class="sub">'+
+      '<h3>Extracted quote <span class="demo-flag">read-only</span></h3>'+
+      '<div class="conf">'+
+        '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 4l9 16H3l9-16z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M12 10v4M12 17h.01" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>'+
+        esc(r.conf)+'% confidence — '+esc(r.note)+
+      '</div>'+
+      '<dl class="fields">'+rows+'</dl>'+
+      '<dl class="fields money" style="margin-top:12px">'+costs+'</dl>'+
+      '<div class="total"><span>Total quote price</span><strong>'+money(t.total)+'</strong></div>'+
+      '<div class="unit">'+money(t.unit)+' per unit × '+f.qty+' pcs</div>'+
+      '<button class="cta" type="button" id="gen">'+
+        '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 3h8l4 4v14H6z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M9 13h6M9 16.5h4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>'+
+        'Generate Quote PDF'+
+      '</button>'+
+      '<div class="sent hidden" id="sent">'+
+        '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 12.5l5 5L20 6.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>'+
+        '<span id="sentTxt"></span>'+
+      '</div>'+
+    '</div>'+
+  '</div>';
+}
+
+function openRFQ(id){
+  var r = null;
+  for(var i=0;i<RFQS.length;i++){ if(RFQS[i].id === id){ r = RFQS[i]; break; } }
+  if(!r){
+    emptyEl.classList.add("hidden");
+    viewEl.classList.remove("hidden");
+    viewEl.innerHTML = '<div class="empty"><h3>That RFQ could not be loaded</h3><p>Pick another message from the inbox.</p></div>';
+    return;
+  }
+  current = id;
+  emptyEl.classList.add("hidden");
+  viewEl.classList.remove("hidden");
+  viewEl.innerHTML = skeleton(r);
+  renderInbox();
+
+  window.setTimeout(function(){
+    if(current !== id) return;
+    viewEl.innerHTML = quoteHTML(r);
+    state[id] = "quoted";
+    renderInbox();
+    var btn = document.getElementById("gen");
+    if(btn){
+      btn.addEventListener("click", function(){
+        btn.disabled = true;
+        btn.lastChild.nodeValue = "Sending…";
+        window.setTimeout(function(){
+          var sent = document.getElementById("sent");
+          var txt = document.getElementById("sentTxt");
+          if(sent && txt){
+            txt.textContent = "Quote sent to " + r.from;
+            sent.classList.remove("hidden");
+          }
+          btn.disabled = false;
+          btn.lastChild.nodeValue = "Resend Quote PDF";
+        }, 700);
+      });
+    }
+    if(window.innerWidth < 861){
+      viewEl.scrollIntoView({behavior:"smooth", block:"start"});
+    }
+  }, 850);
+}
+
+renderInbox();
+})();
+</script>
+</html>
