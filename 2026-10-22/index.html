@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>QuoteDesk — Precision Machining Co.</title>
+<style>
+:root{
+  --bg:#eceef0; --panel:#ffffff; --panel2:#f6f7f8; --line:#c9ced4; --line2:#dfe3e7;
+  --txt:#15191e; --muted:#5d6670; --accent:#0b5fa5; --accent2:#083d6b;
+  --hot:#b3261e; --warm:#a85b00; --low:#5d6670; --info:#7a5200; --ok:#1c6b3c;
+  --amber:#fff4d6; --amberline:#e0b24a; --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#101317; --panel:#171b20; --panel2:#1d2228; --line:#2d343c; --line2:#262c33;
+    --txt:#e6e9ec; --muted:#98a2ad; --accent:#3d9bdf; --accent2:#2b7ab5;
+    --hot:#ff6b5e; --warm:#e09138; --low:#98a2ad; --info:#d8b24a; --ok:#53c285;
+    --amber:#3a2f12; --amberline:#8a6d21;
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--txt);
+  font:13px/1.45 ui-sans-serif,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  -webkit-text-size-adjust:100%;
+}
+header{
+  background:var(--panel); border-bottom:2px solid var(--line);
+  padding:10px 14px; position:sticky; top:0; z-index:40;
+}
+.brand{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.logo{width:22px;height:22px;flex:none}
+h1{font-size:15px;margin:0;letter-spacing:.2px;font-weight:700}
+h1 span{font-weight:400;color:var(--muted)}
+.tagline{font-size:11.5px;color:var(--muted);margin-top:2px}
+.stats{display:flex;gap:0;flex-wrap:wrap;margin-top:8px;border:1px solid var(--line);border-radius:3px;overflow:hidden}
+.stat{padding:5px 11px;border-right:1px solid var(--line);background:var(--panel2);flex:1 1 auto;min-width:118px}
+.stat:last-child{border-right:0}
+.stat b{display:block;font-size:13px;font-family:var(--mono)}
+.stat i{font-style:normal;font-size:10px;text-transform:uppercase;letter-spacing:.7px;color:var(--muted)}
+.stat.tgt b{color:var(--ok)}
+.app{display:grid;grid-template-columns:320px minmax(0,1fr) 400px;gap:1px;background:var(--line);min-height:calc(100vh - 118px)}
+.pane{background:var(--panel);min-width:0;display:flex;flex-direction:column}
+.paneHd{
+  padding:7px 11px;border-bottom:1px solid var(--line);background:var(--panel2);
+  display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;
+  position:sticky;top:0;z-index:5;
+}
+.paneHd h2{margin:0;font-size:10.5px;letter-spacing:1.1px;text-transform:uppercase;color:var(--muted);font-weight:700}
+.sortwrap{display:flex;align-items:center;gap:5px}
+.sortlbl{font-size:10.5px;color:var(--muted)}
+.seg{display:flex;border:1px solid var(--line);border-radius:3px;overflow:hidden}
+.seg button{
+  background:var(--panel);color:var(--muted);border:0;border-right:1px solid var(--line);
+  padding:7px 9px;font-size:11px;cursor:pointer;min-height:32px;font-family:inherit;
+}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed="true"]{background:var(--accent);color:#fff;font-weight:600}
+.list{overflow:auto;flex:1}
+.row{
+  display:block;width:100%;text-align:left;background:transparent;border:0;border-bottom:1px solid var(--line2);
+  padding:9px 11px;cursor:pointer;color:inherit;font:inherit;position:relative;min-height:64px;
+}
+.row:hover{background:var(--panel2)}
+.row.sel{background:var(--panel2);box-shadow:inset 3px 0 0 var(--accent)}
+.row.read .subj{font-weight:500;color:var(--muted)}
+.r1{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.from{font-weight:700;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.co{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.when{font-size:10.5px;color:var(--muted);font-family:var(--mono);white-space:nowrap;flex:none}
+.subj{font-size:12.5px;margin:3px 0 5px;font-weight:600}
+.chips{display:flex;gap:4px;flex-wrap:wrap;align-items:center}
+.chip{
+  font-size:10px;font-family:var(--mono);background:var(--panel2);border:1px solid var(--line);
+  border-radius:2px;padding:1px 5px;color:var(--muted);display:inline-flex;align-items:center;gap:3px;
+}
+.chip svg{width:9px;height:9px;flex:none}
+.chip.none{border-style:dashed}
+.badge{
+  font-size:9.5px;font-weight:800;letter-spacing:.8px;padding:2px 6px;border-radius:2px;
+  border:1px solid currentColor;text-transform:uppercase;
+}
+.b-HOT{color:var(--hot)} .b-WARM{color:var(--warm)} .b-LOW{color:var(--low)}
+.b-NEEDS{color:var(--info)}
+.val{font-family:var(--mono);font-size:11px;color:var(--muted);margin-left:auto}
+.val b{color:var(--txt)}
+.body{padding:14px;overflow:auto;flex:1}
+.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;height:100%;color:var(--muted);text-align:center;padding:40px 22px}
+.empty svg{width:40px;height:40px;opacity:.45}
+.empty p{margin:0;max-width:260px;font-size:12px}
+.mailhd{border:1px solid var(--line);border-radius:3px;overflow:hidden;margin-bottom:12px}
+.mailhd .t{background:var(--panel2);padding:8px 11px;border-bottom:1px solid var(--line);font-weight:700;font-size:14px}
+.mailhd dl{margin:0;padding:8px 11px;display:grid;grid-template-columns:72px 1fr;gap:3px 8px;font-size:12px}
+.mailhd dt{color:var(--muted);font-size:10.5px;text-transform:uppercase;letter-spacing:.6px;padding-top:2px}
+.mailhd dd{margin:0;font-family:var(--mono);font-size:11.5px;word-break:break-word}
+.rawbody{
+  background:var(--panel2);border:1px solid var(--line);border-left:3px solid var(--line);
+  padding:11px;white-space:pre-wrap;font-family:var(--mono);font-size:11.5px;line-height:1.6;border-radius:3px;
+}
+.sechd{font-size:10.5px;letter-spacing:1.1px;text-transform:uppercase;color:var(--muted);font-weight:700;margin:16px 0 7px}
+.atts{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px}
+.att{border:1px solid var(--line);border-radius:3px;background:var(--panel);overflow:hidden}
+.att .ah{padding:6px 9px;background:var(--panel2);border-bottom:1px solid var(--line);font-family:var(--mono);font-size:11px;display:flex;gap:6px;align-items:center}
+.att .ah svg{width:12px;height:12px;flex:none;opacity:.7}
+.dwg{width:100%;height:auto;display:block;background:#fdfdfb}
+@media (prefers-color-scheme: dark){.dwg{background:#0c0e11}}
+table.ss{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:10.5px}
+table.ss th,table.ss td{border:1px solid var(--line2);padding:4px 5px;text-align:left;white-space:nowrap}
+table.ss th{background:var(--panel2);color:var(--muted);font-weight:600;font-size:9.5px;text-transform:uppercase;letter-spacing:.5px}
+td.bad{background:var(--amber);color:var(--txt)}
+td.blank:after{content:"(blank)";color:var(--muted);opacity:.7}
+.ssWrap{overflow:auto}
+.actionbar{margin-top:16px;display:flex;gap:9px;flex-wrap:wrap;align-items:center}
+button.btn{
+  font:inherit;font-weight:700;border-radius:3px;cursor:pointer;min-height:42px;padding:0 16px;
+  border:1px solid var(--accent2);background:var(--accent);color:#fff;
+}
+button.btn:hover{background:var(--accent2)}
+button.btn.ghost{background:transparent;color:var(--txt);border-color:var(--line)}
+button.btn.ghost:hover{background:var(--panel2)}
+button.btn.big{font-size:14px;min-height:48px;padding:0 20px;display:inline-flex;align-items:center;gap:8px}
+button.btn.big svg{width:16px;height:16px}
+button.btn[disabled]{opacity:.55;cursor:not-allowed}
+.hint{font-size:11px;color:var(--muted)}
+/* progress */
+.prog{border:1px solid var(--line);border-radius:3px;padding:12px;background:var(--panel2)}
+.prog .bar{height:5px;background:var(--line);border-radius:3px;overflow:hidden;margin-bottom:10px}
+.prog .bar i{display:block;height:100%;width:0;background:var(--accent);transition:width .25s linear}
+.steps{list-style:none;margin:0;padding:0;font-family:var(--mono);font-size:11.5px}
+.steps li{padding:3px 0;color:var(--muted);display:flex;gap:7px;align-items:center}
+.steps li.done{color:var(--txt)}
+.steps li .dot{width:11px;height:11px;flex:none;border:1px solid var(--line);border-radius:50%}
+.steps li.done .dot{background:var(--ok);border-color:var(--ok)}
+.steps li.act .dot{border-color:var(--accent);background:var(--accent);animation:pulse 1s infinite}
+@keyframes pulse{50%{opacity:.35}}
+/* quote */
+.qsec{border-bottom:1px solid var(--line2);padding:11px 12px}
+.fields{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.f{min-width:0}
+.f label{display:block;font-size:9.5px;text-transform:uppercase;letter-spacing:.7px;color:var(--muted)}
+.f .v{font-family:var(--mono);font-size:12px;font-weight:600;word-break:break-word}
+.prov{display:inline-block;margin-top:2px;font-size:9px;color:var(--muted);border:1px dashed var(--line);border-radius:2px;padding:0 4px;line-height:14px}
+.f.wide{grid-column:1/-1}
+table.cost{width:100%;border-collapse:collapse;font-size:11.5px;font-family:var(--mono)}
+table.cost td{padding:4px 0;border-bottom:1px solid var(--line2)}
+table.cost td.n{text-align:right;white-space:nowrap}
+table.cost tr.sub td{border-top:1px solid var(--line);border-bottom:0;padding-top:7px;font-weight:700}
+.detail{color:var(--muted);font-size:10px}
+.marginbox{margin-top:9px;background:var(--panel2);border:1px solid var(--line);border-radius:3px;padding:9px}
+.mrow{display:flex;justify-content:space-between;align-items:center;font-size:11px;color:var(--muted)}
+.mrow b{font-family:var(--mono);font-size:14px;color:var(--txt)}
+input[type=range]{width:100%;margin:8px 0 0;height:32px;accent-color:var(--accent)}
+.total{display:flex;justify-content:space-between;align-items:flex-end;margin-top:10px;padding-top:9px;border-top:2px solid var(--line)}
+.total .lbl{font-size:10px;text-transform:uppercase;letter-spacing:.8px;color:var(--muted)}
+.total .big{font-family:var(--mono);font-size:25px;font-weight:800;line-height:1.05}
+.total .unit{font-family:var(--mono);font-size:11px;color:var(--muted);text-align:right}
+.flag{
+  background:var(--amber);border:1px solid var(--amberline);border-left:4px solid var(--amberline);
+  border-radius:3px;padding:8px 9px;margin-bottom:8px;
+}
+.flag .ft{font-size:9.5px;font-weight:800;letter-spacing:.8px;color:var(--warm);text-transform:uppercase;display:flex;align-items:center;gap:5px}
+.flag .ft svg{width:11px;height:11px}
+.flag p{margin:4px 0 7px;font-size:11.5px}
+.flag button{font:inherit;font-size:11px;font-weight:700;min-height:34px;padding:0 10px;border:1px solid var(--amberline);background:transparent;color:var(--txt);border-radius:3px;cursor:pointer}
+.flag button:hover{background:rgba(0,0,0,.05)}
+.flag.resolved{background:transparent;border-color:var(--line);border-left-color:var(--ok);opacity:.85}
+.flag.resolved .ft{color:var(--ok)}
+.jobs{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:10.5px}
+.jobs th,.jobs td{padding:4px 4px;border-bottom:1px solid var(--line2);text-align:left}
+.jobs th{color:var(--muted);font-size:9px;text-transform:uppercase;letter-spacing:.6px}
+.out{font-weight:800;font-size:9.5px;letter-spacing:.6px}
+.out.won{color:var(--ok)} .out.lost{color:var(--hot)}
+.qfoot{padding:12px;display:flex;gap:8px;position:sticky;bottom:0;background:var(--panel);border-top:1px solid var(--line)}
+.qfoot .btn{flex:1}
+.ribbon{background:var(--accent);color:#fff;padding:6px 12px;font-size:10.5px;letter-spacing:.8px;text-transform:uppercase;font-weight:700;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.ribbon .demo{background:rgba(255,255,255,.2);border-radius:2px;padding:1px 5px;letter-spacing:.4px;text-transform:none;font-weight:600}
+.toast{
+  position:fixed;left:50%;transform:translate(-50%,24px);bottom:18px;z-index:80;opacity:0;pointer-events:none;
+  transition:.28s;max-width:min(560px,94vw);width:max-content;
+  background:var(--panel);border:2px solid var(--ok);border-radius:5px;box-shadow:0 12px 34px rgba(0,0,0,.3);
+  padding:13px 16px;
+}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+.toast .th{display:flex;align-items:center;gap:8px;font-weight:800;font-size:13px}
+.toast .th svg{width:17px;height:17px;color:var(--ok)}
+.payoff{display:flex;gap:10px;align-items:center;margin-top:9px;flex-wrap:wrap}
+.pbox{border:1px solid var(--line);border-radius:3px;padding:6px 10px;min-width:104px}
+.pbox i{font-style:normal;display:block;font-size:9px;text-transform:uppercase;letter-spacing:.7px;color:var(--muted)}
+.pbox b{font-family:var(--mono);font-size:20px;display:block;line-height:1.15}
+.pbox.new{border-color:var(--ok);background:rgba(28,107,60,.10)}
+.pbox.new b{color:var(--ok)}
+.pbox.old b{color:var(--muted);text-decoration:line-through}
+.arrow{font-size:19px;color:var(--muted)}
+footer{padding:12px 14px;color:var(--muted);font-size:11px;text-align:center;border-top:1px solid var(--line);background:var(--panel)}
+.demoTag{font-size:10px;color:var(--muted);border:1px dashed var(--line);border-radius:2px;padding:1px 5px;margin-left:6px;white-space:nowrap}
+.note{font-size:11px;color:var(--muted);margin-top:10px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+@media (max-width:1100px){
+  .app{grid-template-columns:1fr;min-height:0}
+  .pane{max-height:none}
+  .list{max-height:62vh}
+  .pane.q.hidden,.pane.c.hidden{display:none}
+  .backbtn{display:inline-flex!important}
+}
+.backbtn{display:none;align-items:center;gap:5px;font:inherit;font-size:11px;background:transparent;border:1px solid var(--line);border-radius:3px;min-height:32px;padding:0 9px;color:var(--txt);cursor:pointer}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">
+    <svg class="logo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+      <rect x="2.5" y="3.5" width="19" height="17" rx="2"/><path d="M2.5 8.5h19M7 12.5h7M7 16h10"/>
+    </svg>
+    <h1>QuoteDesk <span>— Precision Machining Co.</span></h1>
+  </div>
+  <div class="tagline">Turns a messy RFQ email into a priced, reviewable quote in one click.<span class="demoTag">Demo data</span></div>
+  <div class="stats">
+    <div class="stat"><i>Open RFQs</i><b id="statOpen">9</b></div>
+    <div class="stat"><i>Avg response time</i><b>3.2 days</b></div>
+    <div class="stat tgt"><i>Target</i><b>under 4 hours</b></div>
+  </div>
+</header>
+
+<main class="app">
+  <section class="pane i" aria-label="RFQ inbox">
+    <div class="paneHd">
+      <h2>RFQ Inbox</h2>
+      <div class="sortwrap">
+        <span class="sortlbl">Sort by:</span>
+        <div class="seg" role="group" aria-label="Sort RFQs">
+          <button id="sortScore" aria-pressed="true">Value × Win prob.</button>
+          <button id="sortNew" aria-pressed="false">Newest</button>
+        </div>
+      </div>
+    </div>
+    <div class="list" id="list"></div>
+  </section>
+
+  <section class="pane c hidden" id="centerPane" aria-label="Message detail">
+    <div class="paneHd">
+      <h2 id="centerTitle">Message</h2>
+      <button class="backbtn" id="backToInbox">◀ Inbox</button>
+    </div>
+    <div class="body" id="center"></div>
+  </section>
+
+  <section class="pane q hidden" id="quotePane" aria-label="Quote builder">
+    <div class="paneHd"><h2>Quote Builder</h2><span class="demoTag">Simulated extraction</span></div>
+    <div class="body" id="quote" style="padding:0"></div>
+  </section>
+</main>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<footer>Prototype by Granted, inspired by your bookmarks</footer>
+
+<script>
+(function(){
+"use strict";
+var $=function(s){return document.querySelector(s);};
+var money=function(n){return "$"+Math.round(n).toLocaleString("en-US");};
+
+var RFQ=[
+ {id:1,from:"Dana Whitfield",co:"Carlisle Hydraulics",subj:"RFQ 4471 — manifold block, 6 pcs",
+  att:["RFQ-4471-drawing.pdf","part-list.xlsx"],when:"2h ago",age:2,badge:"HOT",val:14200,win:.62,
+  email:"dana.whitfield@carlislehyd.com",
+  body:"Hi — attached is the drawing for the manifold block we discussed. Need 6 pieces, 6061-T6, hard anodize per MIL-A-8625 Type III. The .375 bore is critical, hold +/-.0005. Also please price 12 pieces as an alternate. Need these by 11/28 if possible. Our part number is CH-4471-02, supersedes CH-4471-01.\n\n— Dana",
+  mode:"walk"},
+ {id:2,from:"Marcus Teo",co:"Northline Aerospace",subj:"Quote needed: bracket revision C, qty 250",
+  att:["BRK-882-revC.pdf"],when:"5h ago",age:5,badge:"HOT",val:38900,win:.48,
+  email:"m.teo@northline-aero.com",
+  body:"Team — we released rev C on the mounting bracket. Qty 250, 7075-T651 plate, chem film per MIL-DTL-5541 Class 3. AS9100 cert and FAI required with first shipment. Need pricing by Friday for the PO release.\n\nMarcus Teo | Supply Chain, Northline Aerospace",
+  mode:"pre"},
+ {id:3,from:"purchasing@ridgeway-ag.com",co:"Ridgeway Agricultural",subj:"parts list attached, please advise pricing",
+  att:["scan_0042.pdf (scanned)"],when:"1d ago",age:24,badge:"NEEDS INFO",val:0,win:.2,
+  email:"purchasing@ridgeway-ag.com",
+  body:"please advise pricing on attached\n\nthanks",
+  mode:"raw",note:"Attachment is a flatbed scan with no embedded text. Quantities and material are not stated in the email."},
+ {id:4,from:"Ellen Park",co:"Vertex Medical Devices",subj:"Re: Re: follow up on housing quote",
+  att:[],when:"1d ago",age:26,badge:"HOT",val:9400,win:.71,
+  email:"epark@vertexmed.com",
+  body:"Following up again on the housing — any update?\n\n> On Tue, Dana from your team wrote:\n> > We are reviewing with the shop floor and will come back to you.\n> > > Original request: 40 pcs of the VX-118 housing, 316L stainless,\n> > > bead blast, no markings. Need by end of month.",
+  mode:"raw"},
+ {id:5,from:"Tom Brady Jr.",co:"BG Fabrication",subj:"weldment assembly, 12 off",
+  att:["weldment-asm.pdf","notes.txt"],when:"2d ago",age:48,badge:"WARM",val:6100,win:.44,
+  email:"tbradyjr@bgfab.com",
+  body:"Need 12 off of the weldment assembly, drawing attached. A36 tube and plate, full pen welds at the gussets, paint is on us. Notes file has the weld callouts we changed last month.",
+  mode:"raw"},
+ {id:6,from:"sales-inquiry (web form)",co:"Web form",subj:"Do you do anodizing?",
+  att:[],when:"2d ago",age:50,badge:"LOW",val:400,win:.1,
+  email:"noreply@quotedesk-webform",
+  body:"Name: (not provided)\nMessage: Do you do anodizing?",
+  mode:"raw"},
+ {id:7,from:"Rafael Ortiz",co:"Kestrel Robotics",subj:"shaft + collar, prototype run qty 3",
+  att:["shaft-dwg.pdf","collar-dwg.pdf"],when:"3d ago",age:72,badge:"WARM",val:2750,win:.55,
+  email:"r.ortiz@kestrelrobotics.io",
+  body:"Prototype run — 3 sets. Shaft is 303 stainless, collar is 6061. Nothing tighter than +/-.002 except the press fit. Fast beats cheap on this one.",
+  mode:"raw"},
+ {id:8,from:"Janet Olu",co:"Harbor Pump & Seal",subj:"annual blanket order re-quote",
+  att:["2025-pricing.xlsx"],when:"4d ago",age:96,badge:"HOT",val:61000,win:.66,
+  email:"j.olu@harborpump.com",
+  body:"Hi — time for the annual blanket re-quote. Last year's sheet attached, 14 line items. Volumes are roughly flat, maybe +10% on the seal carriers. Please hold pricing where you can; we'd like to keep the program with you.",
+  mode:"pre"},
+ {id:9,from:"unknown@gmail.com",co:"(unknown sender)",subj:"need 1 part made cheap",
+  att:[],when:"4d ago",age:100,badge:"LOW",val:400,win:.05,
+  email:"unknown@gmail.com",
+  body:"need 1 part made cheap how much",
+  mode:"raw"}
+];
+
+/* ---- pre-extracted quote definitions ---- */
+var QUOTES={
+ 1:{cust:"Carlisle Hydraulics",pn:"CH-4471-02",rev:"B (supersedes CH-4471-01)",mat:"6061-T6",
+    fin:"Hard anodize, MIL-A-8625 Type III",qty:"6 (alternate: 12)",due:"11/28",qn:6,
+    prov:{cust:"email body",pn:"drawing title block",rev:"email body",mat:"part-list.xlsx row 2",
+          fin:"email body",qty:"part-list.xlsx row 1 (\"6 ea\")",due:"email body"},
+    lines:[["Material","6061-T6 billet, 6 pcs + drop",410],
+           ["Setup","2.5 hrs @ $95/hr",237],
+           ["CNC machining","9.0 hrs @ $115/hr",1035],
+           ["Outside anodize","Type III hard coat, 6 pcs",480],
+           ["Inspection / CMM","1.5 hrs @ $85/hr",127]],
+    margin:32,
+    flags:[{t:"Tolerance +/-.0005 on .375 bore may require honing — not in current cost model",
+            r:"Added 0.8 hr honing allowance to CNC machining. Flag cleared."},
+           {t:"Material cell blank for line 3, assumed 6061-T6 from drawing",
+            r:"Confirmed 6061-T6 from drawing title block. Flag cleared."}],
+    jobs:[["CH-4471-01","Mar 2026","$2,310/unit","WON"],
+          ["MB-220","Aug 2025","$2,580/unit","LOST"],
+          ["CH-3980","Jan 2025","$2,145/unit","WON"]],
+    toast:"Quote sent to Dana Whitfield — 11 minutes from receipt.",min:11},
+ 2:{cust:"Northline Aerospace",pn:"BRK-882",rev:"C",mat:"7075-T651 plate",
+    fin:"Chem film, MIL-DTL-5541 Class 3",qty:"250",due:"Friday (PO release)",qn:250,
+    prov:{cust:"email body",pn:"BRK-882-revC.pdf title block",rev:"filename + title block",
+          mat:"drawing notes",fin:"drawing notes",qty:"email subject",due:"email body"},
+    lines:[["Material","7075-T651 plate, 250 pcs nested",6900],
+           ["Setup","4.0 hrs @ $95/hr",380],
+           ["CNC machining","166 hrs @ $115/hr",19090],
+           ["Outside chem film","Class 3, 250 pcs",1850],
+           ["Inspection / CMM + FAI","19.5 hrs @ $85/hr",1658]],
+    margin:30,
+    flags:[{t:"AS9100 first-article (FAI) package required — 6 hrs doc time not yet in labor line",
+            r:"FAI documentation time folded into inspection. Flag cleared."}],
+    jobs:[["BRK-882 rev B","Sep 2025","$151/unit","WON"],
+          ["BRK-640","Feb 2025","$168/unit","WON"],
+          ["NL-77 bracket","Jun 2024","$174/unit","LOST"]],
+    toast:"Quote sent to Marcus Teo — 6 hours from receipt.",min:360},
+ 8:{cust:"Harbor Pump & Seal",pn:"Blanket BO-2026 (14 lines)",rev:"Annual re-quote",mat:"Mixed: 316L, 17-4PH, bronze",
+    fin:"Per line item",qty:"14 line items, annual volumes",due:"Program start Jan 2026",qn:1,
+    prov:{cust:"email body",pn:"2025-pricing.xlsx header",rev:"email body",mat:"2025-pricing.xlsx col C",
+          fin:"2025-pricing.xlsx col E",qty:"2025-pricing.xlsx rows 2-15",due:"email body"},
+    lines:[["Material","Rolled forward, 14 lines",18400],
+           ["Setup","Amortised across releases, 22 hrs @ $95/hr",2090],
+           ["CNC machining","176 hrs @ $115/hr",20240],
+           ["Outside processing","Plating + passivation",3400],
+           ["Inspection / CMM","26 hrs @ $85/hr",2210]],
+    margin:31,
+    flags:[{t:"Seal carrier volume +10% per email — 2025 price break tier may no longer apply",
+            r:"Re-tiered seal carriers at the 1,100-pc break. Flag cleared."},
+           {t:"Bronze bar cost up 14% since the 2025 sheet — material line uses today's quote",
+            r:"Using current mill quote dated this month. Flag cleared."}],
+    jobs:[["Blanket BO-2025","Nov 2024","$57,400 total","WON"],
+          ["Blanket BO-2024","Nov 2023","$52,900 total","WON"],
+          ["HP seal carrier spot","Apr 2025","$41/unit","LOST"]],
+    toast:"Quote sent to Janet Olu — 24 minutes from receipt.",min:24}
+};
+
+var state={sort:"score",sel:null,extracted:{},margin:{},resolved:{},stage:"idle"};
+
+/* ---------- inbox ---------- */
+function sorted(){
+  var a=RFQ.slice();
+  if(state.sort==="new"){a.sort(function(x,y){return x.age-y.age;});}
+  else{a.sort(function(x,y){return (y.val*y.win)-(x.val*x.win);});}
+  return a;
+}
+function valText(r){
+  if(r.badge==="NEEDS INFO")return "value unknown";
+  if(r.val<=500)return "under $500";
+  return "est. "+money(r.val);
+}
+var clipSvg='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5 12.5 20a5 5 0 0 1-7-7l8-8a3.5 3.5 0 0 1 5 5l-8 8a2 2 0 0 1-3-3l7.5-7.5"/></svg>';
+function renderList(){
+  var l=$("#list");l.innerHTML="";
+  sorted().forEach(function(r){
+    var b=document.createElement("button");
+    b.className="row"+(state.sel===r.id?" sel":"")+(state.extracted[r.id]?" read":"");
+    b.type="button";
+    b.setAttribute("aria-label",r.subj+", "+r.from+", "+r.badge);
+    var chips=r.att.length?r.att.map(function(a){return '<span class="chip">'+clipSvg+esc(a)+'</span>';}).join("")
+                          :'<span class="chip none">no attachments</span>';
+    if(r.id===4)chips+='<span class="chip none">quoted thread</span>';
+    var bk=r.badge==="NEEDS INFO"?"NEEDS":r.badge;
+    b.innerHTML='<div class="r1"><span class="from">'+esc(r.from)+'</span><span class="when">'+r.when+'</span></div>'+
+      '<div class="co">'+esc(r.co)+'</div>'+
+      '<div class="subj">'+esc(r.subj)+'</div>'+
+      '<div class="chips">'+chips+'</div>'+
+      '<div class="chips" style="margin-top:6px"><span class="badge b-'+bk+'">'+r.badge+'</span>'+
+      '<span class="val">'+(r.badge==="NEEDS INFO"?"value unknown":(r.val<=500?"under <b>$500</b>":"est. <b>"+money(r.val)+"</b>"))+'</span></div>';
+    b.addEventListener("click",function(){select(r.id);});
+    l.appendChild(b);
+  });
+}
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"})[c];});}
+
+$("#sortScore").addEventListener("click",function(){setSort("score");});
+$("#sortNew").addEventListener("click",function(){setSort("new");});
+function setSort(s){
+  state.sort=s;
+  $("#sortScore").setAttribute("aria-pressed",s==="score"?"true":"false");
+  $("#sortNew").setAttribute("aria-pressed",s==="new"?"true":"false");
+  renderList();
+}
+$("#backToInbox").addEventListener("click",function(){
+  $("#centerPane").classList.add("hidden");$("#quotePane").classList.add("hidden");
+  window.scrollTo(0,0);
+});
+
+/* ---------- center ---------- */
+function select(id){
+  state.sel=id;state.stage="idle";
+  renderList();
+  var r=find(id);
+  $("#centerTitle").textContent="RFQ · "+r.co;
+  $("#centerPane").classList.remove("hidden");
+  renderCenter();
+  if(QUOTES[id]&&(state.extracted[id]||r.mode==="pre")){
+    state.extracted[id]=true;
+    renderQuote(id);
+  }else{
+    $("#quotePane").classList.add("hidden");
+    $("#quote").innerHTML="";
+  }
+  if(window.innerWidth<=1100)window.scrollTo(0,0);
+}
+function find(id){for(var i=0;i<RFQ.length;i++){if(RFQ[i].id===id)return RFQ[i];}return null;}
+
+function renderCenter(){
+  var r=find(state.sel),h="";
+  h+='<div class="mailhd"><div class="t">'+esc(r.subj)+'</div><dl>'+
+     '<dt>From</dt><dd>'+esc(r.from)+' &lt;'+esc(r.email)+'&gt;</dd>'+
+     '<dt>Company</dt><dd>'+esc(r.co)+'</dd>'+
+     '<dt>Received</dt><dd>'+r.when+'</dd></dl></div>';
+  h+='<div class="sechd">Raw message</div><div class="rawbody">'+esc(r.body)+'</div>';
+  if(r.note)h+='<div class="note">⚠ '+esc(r.note)+'</div>';
+
+  if(r.id===1){
+    h+='<div class="sechd">Attachments (2)</div><div class="atts">'+drawingCard()+sheetCard()+'</div>';
+  }else if(r.att.length){
+    h+='<div class="sechd">Attachments ('+r.att.length+')</div><div class="atts">';
+    r.att.forEach(function(a){
+      h+='<div class="att"><div class="ah">'+clipSvg+esc(a)+'</div><div style="padding:14px;color:var(--muted);font-size:11.5px">Preview not rendered in this prototype.</div></div>';
+    });
+    h+='</div>';
+  }
+
+  var done=state.extracted[r.id];
+  h+='<div class="actionbar" id="actions">';
+  if(QUOTES[r.id]){
+    h+='<button class="btn big" id="extractBtn"'+(done?' disabled':'')+'>'+
+       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2 4 14h7l-1 8 9-12h-7l1-8z"/></svg>'+
+       (done?"Quote ready →":"Extract &amp; Price")+'</button>';
+    h+='<span class="hint">'+(done?"Structured quote is in the right pane.":"Reads the drawing, the spreadsheet and the email body.")+'</span>';
+  }else{
+    h+='<button class="btn big" id="extractBtn">'+
+       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2 4 14h7l-1 8 9-12h-7l1-8z"/></svg>Extract &amp; Price</button>'+
+       '<span class="hint">Demo prototype: full pricing is wired for Carlisle, Northline and Harbor.</span>';
+  }
+  h+='</div><div id="progHost" style="margin-top:12px"></div>';
+  $("#center").innerHTML=h;
+  var b=$("#extractBtn");
+  if(b)b.addEventListener("click",function(){onExtract(r);});
+  $("#center").scrollTop=0;
+}
+
+function drawingCard(){
+  return '<div class="att"><div class="ah">'+clipSvg+'RFQ-4471-drawing.pdf</div>'+
+  '<svg class="dwg" viewBox="0 0 320 210" role="img" aria-label="Drawing preview of manifold block">'+
+  '<g stroke="#8a9099" fill="none" stroke-width="1">'+
+  '<rect x="4" y="4" width="312" height="202"/>'+
+  '<rect x="60" y="34" width="140" height="92" stroke="#2b7ab5" stroke-width="1.6"/>'+
+  '<circle cx="130" cy="80" r="21" stroke="#2b7ab5" stroke-width="1.6"/>'+
+  '<circle cx="130" cy="80" r="2"/>'+
+  '<path d="M130 52v56M102 80h56" stroke-dasharray="7 3 2 3"/>'+
+  '<circle cx="78" cy="48" r="5"/><circle cx="182" cy="48" r="5"/><circle cx="78" cy="112" r="5"/><circle cx="182" cy="112" r="5"/>'+
+  '<path d="M60 142h140M60 138v8M200 138v8"/>'+
+  '<path d="M214 34v92M210 34h8M210 126h8"/>'+
+  '<path d="M151 68 185 44"/>'+
+  '<rect x="4" y="160" width="312" height="46"/>'+
+  '<path d="M4 176h312M120 160v46M216 160v46M120 192h96"/>'+
+  '</g>'+
+  '<g fill="#5d6670" font-family="monospace" font-size="7.5">'+
+  '<text x="112" y="152">4.250</text>'+
+  '<text x="222" y="82">2.875</text>'+
+  '<text x="186" y="42">&#8960;.375 +/-.0005</text>'+
+  '<text x="186" y="52">CRITICAL</text>'+
+  '<text x="10" y="171">PRECISION MACHINING CO.</text>'+
+  '<text x="126" y="171">MANIFOLD BLOCK</text>'+
+  '<text x="222" y="171">CH-4471-02</text>'+
+  '<text x="10" y="188">MATL: 6061-T6</text>'+
+  '<text x="126" y="188">REV B</text>'+
+  '<text x="222" y="188">SHEET 1 OF 1</text>'+
+  '<text x="126" y="203">FINISH: HARD ANODIZE MIL-A-8625 TY III</text>'+
+  '<text x="10" y="203">SCALE 1:1</text>'+
+  '<text x="222" y="203">UNITS: IN</text>'+
+  '</g></svg></div>';
+}
+function sheetCard(){
+  return '<div class="att"><div class="ah">'+clipSvg+'part-list.xlsx</div><div class="ssWrap"><table class="ss">'+
+  '<tr><th></th><th>Part no.</th><th>Qty</th><th>Material</th><th>Finish</th><th>Note</th></tr>'+
+  '<tr><td>1</td><td>CH-4471-02</td><td class="bad">6 ea</td><td>6061-T6</td><td>HA Type III</td><td>primary</td></tr>'+
+  '<tr><td>2</td><td>CH-4471-02</td><td>12</td><td>6061 T6</td><td>hard anod.</td><td>alt qty</td></tr>'+
+  '<tr><td>3</td><td>CH-4471-02-SP</td><td>6</td><td class="bad blank"></td><td>—</td><td>spare plate</td></tr>'+
+  '<tr><td>4</td><td>O-RING KIT</td><td class="bad">6 sets</td><td>Buna-N</td><td>n/a</td><td>cust. supplied</td></tr>'+
+  '</table></div><div style="padding:7px 9px;font-size:10.5px;color:var(--muted)">Mixed units, one blank material cell, quantity typed as text.</div></div>';
+}
+
+/* ---------- extraction ---------- */
+var STEPS=["Reading drawing title block...","Parsing part list...","Matching to 3 similar past jobs...","Applying shop rates..."];
+function onExtract(r){
+  if(!QUOTES[r.id]){
+    toastSimple("No cost model loaded for this RFQ in the demo. Try Carlisle Hydraulics, Northline Aerospace or Harbor Pump &amp; Seal.");
+    return;
+  }
+  if(state.extracted[r.id]){renderQuote(r.id);return;}
+  var btn=$("#extractBtn");if(btn)btn.disabled=true;
+  var host=$("#progHost");
+  host.innerHTML='<div class="prog"><div class="bar"><i id="pbar"></i></div><ul class="steps" id="psteps">'+
+    STEPS.map(function(s,i){return '<li data-i="'+i+'"><span class="dot"></span>'+s+'</li>';}).join("")+'</ul></div>';
+  $("#quotePane").classList.remove("hidden");
+  $("#quote").innerHTML='<div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M18.4 5.6l-2.8 2.8M8.4 15.6l-2.8 2.8"/></svg><p>Building quote…</p></div>';
+  var i=0;
+  var tick=function(){
+    var lis=document.querySelectorAll("#psteps li");
+    if(!lis.length)return;
+    for(var k=0;k<lis.length;k++){
+      lis[k].className = k<i?"done":(k===i?"act":"");
+    }
+    var bar=$("#pbar");if(bar)bar.style.width=Math.round(((i+1)/STEPS.length)*100)+"%";
+    i++;
+    if(i<=STEPS.length){setTimeout(tick,375);}
+    else{
+      var l2=document.querySelectorAll("#psteps li");
+      for(var j=0;j<l2.length;j++)l2[j].className="done";
+      state.extracted[r.id]=true;
+      renderQuote(r.id);renderList();renderCenterKeepProgress(r);
+      if(window.innerWidth<=1100){$("#quotePane").scrollIntoView({behavior:"smooth",block:"start"});}
+    }
+  };
+  setTimeout(tick,120);
+}
+function renderCenterKeepProgress(r){
+  var b=$("#extractBtn");
+  if(b){b.disabled=true;b.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg>Quote ready →';}
+}
+
+/* ---------- quote pane ---------- */
+function calc(id){
+  var q=QUOTES[id];
+  var sub=0;q.lines.forEach(function(l){sub+=l[2];});
+  var extra=(state.resolved[id]&&state.resolved[id][0]&&id===1)?92:0; // honing allowance
+  sub+=extra;
+  var m=state.margin[id]==null?q.margin:state.margin[id];
+  var total=sub/(1-m/100);
+  return {sub:sub,m:m,total:total,unit:total/q.qn,extra:extra};
+}
+function renderQuote(id){
+  var q=QUOTES[id],c=calc(id);
+  state.resolved[id]=state.resolved[id]||[];
+  $("#quotePane").classList.remove("hidden");
+  var h='<div class="ribbon"><span>Extracted quote draft</span><span class="demo">Demo data</span></div>';
+
+  h+='<div class="qsec"><div class="fields">'+
+    fld("Customer",q.cust,q.prov.cust)+
+    fld("Part number",q.pn,q.prov.pn)+
+    fld("Revision",q.rev,q.prov.rev)+
+    fld("Material",q.mat,q.prov.mat)+
+    fld("Finish",q.fin,q.prov.fin,true)+
+    fld("Quantity",q.qty,q.prov.qty)+
+    fld("Requested date",q.due,q.prov.due)+
+  '</div></div>';
+
+  h+='<div class="qsec"><div class="sechd" style="margin-top:0">Cost build-up</div><table class="cost">';
+  q.lines.forEach(function(l,i){
+    var amt=l[2]+((i===2&&c.extra)?c.extra:0);
+    var det=l[1]+((i===2&&c.extra)?" + 0.8 hr honing":"");
+    h+='<tr><td>'+esc(l[0])+'<div class="detail">'+esc(det)+'</div></td><td class="n">'+money(amt)+'</td></tr>';
+  });
+  h+='<tr class="sub"><td>Subtotal (cost)</td><td class="n">'+money(c.sub)+'</td></tr></table>';
+
+  h+='<div class="marginbox"><div class="mrow"><span>Margin</span><b id="mval">'+c.m+'%</b></div>'+
+     '<input type="range" id="mslider" min="15" max="45" step="1" value="'+c.m+'" aria-label="Margin percent">'+
+     '<div class="mrow" style="font-size:10px"><span>15%</span><span>45%</span></div></div>';
+
+  h+='<div class="total"><div><div class="lbl">Quoted total</div><div class="big" id="qtotal">'+money(c.total)+'</div></div>'+
+     '<div class="unit">unit price<br><span id="qunit" style="font-size:14px;color:var(--txt);font-weight:700">'+
+     (q.qn>1?money(c.unit):"—")+'</span></div></div></div>';
+
+  h+='<div class="qsec"><div class="sechd" style="margin-top:0">Confirm before sending ('+q.flags.length+')</div><div id="flags">';
+  q.flags.forEach(function(f,i){
+    var done=!!state.resolved[id][i];
+    h+='<div class="flag'+(done?" resolved":"")+'">'+
+      '<div class="ft">'+(done?
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6 9 17l-5-5"/></svg>Resolved':
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3 1.8 20.5h20.4L12 3zM12 9.5v5M12 17.4v.2"/></svg>Confirm')+'</div>'+
+      '<p>'+esc(done?f.r:f.t)+'</p>'+
+      (done?'':'<button type="button" data-flag="'+i+'">Accept &amp; resolve</button>')+
+      '</div>';
+  });
+  h+='</div></div>';
+
+  h+='<div class="qsec"><div class="sechd" style="margin-top:0">Similar past jobs</div><table class="jobs">'+
+     '<tr><th>Part</th><th>Date</th><th>Quoted</th><th>Result</th></tr>';
+  q.jobs.forEach(function(j){
+    h+='<tr><td>'+esc(j[0])+'</td><td>'+esc(j[1])+'</td><td>'+esc(j[2])+'</td><td class="out '+(j[3]==="WON"?"won":"lost")+'">'+j[3]+'</td></tr>';
+  });
+  h+='</table></div>';
+
+  h+='<div class="qfoot"><button class="btn" id="sendBtn">Send Quote</button><button class="btn ghost" id="saveBtn">Save Draft</button></div>';
+
+  $("#quote").innerHTML=h;
+
+  var sl=$("#mslider");
+  sl.addEventListener("input",function(){
+    var v=parseInt(sl.value,10);
+    if(isNaN(v)||v<15||v>45){v=q.margin;sl.value=v;}
+    state.margin[id]=v;
+    var cc=calc(id);
+    $("#mval").textContent=v+"%";
+    $("#qtotal").textContent=money(cc.total);
+    $("#qunit").textContent=q.qn>1?money(cc.unit):"—";
+  });
+  var fb=$("#flags").querySelectorAll("button[data-flag]");
+  for(var i=0;i<fb.length;i++){
+    (function(btn){btn.addEventListener("click",function(){
+      state.resolved[id][parseInt(btn.getAttribute("data-flag"),10)]=true;
+      renderQuote(id);
+    });})(fb[i]);
+  }
+  $("#saveBtn").addEventListener("click",function(){
+    toastSimple("Draft saved to RFQ "+esc(q.pn)+". Nothing was sent.");
+  });
+  $("#sendBtn").addEventListener("click",function(){sendQuote(id);});
+}
+function fld(label,val,prov,wide){
+  return '<div class="f'+(wide?" wide":"")+'"><label>'+esc(label)+'</label><div class="v">'+esc(val)+'</div>'+
+    '<span class="prov">from '+esc(prov)+'</span></div>';
+}
+
+/* ---------- toasts ---------- */
+var tTimer=null;
+function showToast(html){
+  var t=$("#toast");t.innerHTML=html;t.classList.add("show");
+  if(tTimer)clearTimeout(tTimer);
+  tTimer=setTimeout(function(){t.classList.remove("show");},9000);
+}
+function toastSimple(msg){
+  showToast('<div class="th"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6 9 17l-5-5"/></svg><span>'+msg+'</span></div>');
+}
+function sendQuote(id){
+  var q=QUOTES[id];
+  var unresolved=q.flags.length-(state.resolved[id]||[]).filter(Boolean).length;
+  if(unresolved>0){
+    showToast('<div class="th" style="color:var(--warm)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3 1.8 20.5h20.4L12 3zM12 9.5v5M12 17.4v.2"/></svg><span>'+
+      unresolved+' item'+(unresolved>1?'s':'')+' still need confirming before you send.</span></div>');
+    $("#toast").style.borderColor="var(--amberline)";
+    return;
+  }
+  $("#toast").style.borderColor="var(--ok)";
+  var lbl=q.min<60?(q.min+" min"):(Math.round(q.min/60)+" hrs");
+  showToast('<div class="th"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6 9 17l-5-5"/></svg><span>'+esc(q.toast)+'</span></div>'+
+    '<div class="payoff"><div class="pbox new"><i>This quote</i><b>'+lbl+'</b></div>'+
+    '<span class="arrow">vs</span>'+
+    '<div class="pbox old"><i>Your average</i><b>3.2 days</b></div>'+
+    '<div class="pbox"><i>Faster by</i><b>'+Math.round((3.2*24*60)/q.min)+'×</b></div></div>');
+  var r=find(id);
+  if(r&&!r.sent){r.sent=true;var n=parseInt($("#statOpen").textContent,10);if(!isNaN(n)&&n>0)$("#statOpen").textContent=n-1;}
+}
+
+/* ---------- boot ---------- */
+renderList();
+$("#quote").innerHTML='<div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h4"/></svg><p>No quote yet. Open an RFQ and press <b>Extract &amp; Price</b>.</p></div>';
+if(window.innerWidth>1100){select(1);}
+else{$("#centerPane").classList.add("hidden");$("#quotePane").classList.add("hidden");}
+})();
+</script>
+</body>
+</html>
