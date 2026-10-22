@@ -3,685 +3,465 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>QuoteDesk — Precision Machining Co.</title>
+<title>AgentGauntlet — Agent readiness scorecard</title>
 <style>
 :root{
-  --bg:#eceef0; --panel:#ffffff; --panel2:#f6f7f8; --line:#c9ced4; --line2:#dfe3e7;
-  --txt:#15191e; --muted:#5d6670; --accent:#0b5fa5; --accent2:#083d6b;
-  --hot:#b3261e; --warm:#a85b00; --low:#5d6670; --info:#7a5200; --ok:#1c6b3c;
-  --amber:#fff4d6; --amberline:#e0b24a; --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --bg:#0b0d10; --panel:#121519; --panel2:#171b21; --line:#242a33;
+  --txt:#e6e9ee; --muted:#8c96a5; --accent:#7cf7c4; --accent-dim:#1d3b33;
+  --pass:#52d196; --warn:#f0b457; --fail:#ff6b6b;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
 }
-@media (prefers-color-scheme: dark){
+@media (prefers-color-scheme: light){
   :root{
-    --bg:#101317; --panel:#171b20; --panel2:#1d2228; --line:#2d343c; --line2:#262c33;
-    --txt:#e6e9ec; --muted:#98a2ad; --accent:#3d9bdf; --accent2:#2b7ab5;
-    --hot:#ff6b5e; --warm:#e09138; --low:#98a2ad; --info:#d8b24a; --ok:#53c285;
-    --amber:#3a2f12; --amberline:#8a6d21;
+    --bg:#f5f7fa; --panel:#ffffff; --panel2:#f0f3f7; --line:#dde3ea;
+    --txt:#11161d; --muted:#5d6878; --accent:#0c8f6a; --accent-dim:#d7f5ea;
+    --pass:#0f9d63; --warn:#9a6708; --fail:#c7382f;
   }
 }
 *{box-sizing:border-box}
 html,body{margin:0;padding:0}
-body{
-  background:var(--bg); color:var(--txt);
-  font:13px/1.45 ui-sans-serif,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-  -webkit-text-size-adjust:100%;
-}
-header{
-  background:var(--panel); border-bottom:2px solid var(--line);
-  padding:10px 14px; position:sticky; top:0; z-index:40;
-}
-.brand{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
-.logo{width:22px;height:22px;flex:none}
-h1{font-size:15px;margin:0;letter-spacing:.2px;font-weight:700}
-h1 span{font-weight:400;color:var(--muted)}
-.tagline{font-size:11.5px;color:var(--muted);margin-top:2px}
-.stats{display:flex;gap:0;flex-wrap:wrap;margin-top:8px;border:1px solid var(--line);border-radius:3px;overflow:hidden}
-.stat{padding:5px 11px;border-right:1px solid var(--line);background:var(--panel2);flex:1 1 auto;min-width:118px}
-.stat:last-child{border-right:0}
-.stat b{display:block;font-size:13px;font-family:var(--mono)}
-.stat i{font-style:normal;font-size:10px;text-transform:uppercase;letter-spacing:.7px;color:var(--muted)}
-.stat.tgt b{color:var(--ok)}
-.app{display:grid;grid-template-columns:320px minmax(0,1fr) 400px;gap:1px;background:var(--line);min-height:calc(100vh - 118px)}
-.pane{background:var(--panel);min-width:0;display:flex;flex-direction:column}
-.paneHd{
-  padding:7px 11px;border-bottom:1px solid var(--line);background:var(--panel2);
-  display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;
-  position:sticky;top:0;z-index:5;
-}
-.paneHd h2{margin:0;font-size:10.5px;letter-spacing:1.1px;text-transform:uppercase;color:var(--muted);font-weight:700}
-.sortwrap{display:flex;align-items:center;gap:5px}
-.sortlbl{font-size:10.5px;color:var(--muted)}
-.seg{display:flex;border:1px solid var(--line);border-radius:3px;overflow:hidden}
-.seg button{
-  background:var(--panel);color:var(--muted);border:0;border-right:1px solid var(--line);
-  padding:7px 9px;font-size:11px;cursor:pointer;min-height:32px;font-family:inherit;
-}
-.seg button:last-child{border-right:0}
-.seg button[aria-pressed="true"]{background:var(--accent);color:#fff;font-weight:600}
-.list{overflow:auto;flex:1}
-.row{
-  display:block;width:100%;text-align:left;background:transparent;border:0;border-bottom:1px solid var(--line2);
-  padding:9px 11px;cursor:pointer;color:inherit;font:inherit;position:relative;min-height:64px;
-}
-.row:hover{background:var(--panel2)}
-.row.sel{background:var(--panel2);box-shadow:inset 3px 0 0 var(--accent)}
-.row.read .subj{font-weight:500;color:var(--muted)}
-.r1{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
-.from{font-weight:700;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.co{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.when{font-size:10.5px;color:var(--muted);font-family:var(--mono);white-space:nowrap;flex:none}
-.subj{font-size:12.5px;margin:3px 0 5px;font-weight:600}
-.chips{display:flex;gap:4px;flex-wrap:wrap;align-items:center}
-.chip{
-  font-size:10px;font-family:var(--mono);background:var(--panel2);border:1px solid var(--line);
-  border-radius:2px;padding:1px 5px;color:var(--muted);display:inline-flex;align-items:center;gap:3px;
-}
-.chip svg{width:9px;height:9px;flex:none}
-.chip.none{border-style:dashed}
-.badge{
-  font-size:9.5px;font-weight:800;letter-spacing:.8px;padding:2px 6px;border-radius:2px;
-  border:1px solid currentColor;text-transform:uppercase;
-}
-.b-HOT{color:var(--hot)} .b-WARM{color:var(--warm)} .b-LOW{color:var(--low)}
-.b-NEEDS{color:var(--info)}
-.val{font-family:var(--mono);font-size:11px;color:var(--muted);margin-left:auto}
-.val b{color:var(--txt)}
-.body{padding:14px;overflow:auto;flex:1}
-.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;height:100%;color:var(--muted);text-align:center;padding:40px 22px}
-.empty svg{width:40px;height:40px;opacity:.45}
-.empty p{margin:0;max-width:260px;font-size:12px}
-.mailhd{border:1px solid var(--line);border-radius:3px;overflow:hidden;margin-bottom:12px}
-.mailhd .t{background:var(--panel2);padding:8px 11px;border-bottom:1px solid var(--line);font-weight:700;font-size:14px}
-.mailhd dl{margin:0;padding:8px 11px;display:grid;grid-template-columns:72px 1fr;gap:3px 8px;font-size:12px}
-.mailhd dt{color:var(--muted);font-size:10.5px;text-transform:uppercase;letter-spacing:.6px;padding-top:2px}
-.mailhd dd{margin:0;font-family:var(--mono);font-size:11.5px;word-break:break-word}
-.rawbody{
-  background:var(--panel2);border:1px solid var(--line);border-left:3px solid var(--line);
-  padding:11px;white-space:pre-wrap;font-family:var(--mono);font-size:11.5px;line-height:1.6;border-radius:3px;
-}
-.sechd{font-size:10.5px;letter-spacing:1.1px;text-transform:uppercase;color:var(--muted);font-weight:700;margin:16px 0 7px}
-.atts{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px}
-.att{border:1px solid var(--line);border-radius:3px;background:var(--panel);overflow:hidden}
-.att .ah{padding:6px 9px;background:var(--panel2);border-bottom:1px solid var(--line);font-family:var(--mono);font-size:11px;display:flex;gap:6px;align-items:center}
-.att .ah svg{width:12px;height:12px;flex:none;opacity:.7}
-.dwg{width:100%;height:auto;display:block;background:#fdfdfb}
-@media (prefers-color-scheme: dark){.dwg{background:#0c0e11}}
-table.ss{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:10.5px}
-table.ss th,table.ss td{border:1px solid var(--line2);padding:4px 5px;text-align:left;white-space:nowrap}
-table.ss th{background:var(--panel2);color:var(--muted);font-weight:600;font-size:9.5px;text-transform:uppercase;letter-spacing:.5px}
-td.bad{background:var(--amber);color:var(--txt)}
-td.blank:after{content:"(blank)";color:var(--muted);opacity:.7}
-.ssWrap{overflow:auto}
-.actionbar{margin-top:16px;display:flex;gap:9px;flex-wrap:wrap;align-items:center}
-button.btn{
-  font:inherit;font-weight:700;border-radius:3px;cursor:pointer;min-height:42px;padding:0 16px;
-  border:1px solid var(--accent2);background:var(--accent);color:#fff;
-}
-button.btn:hover{background:var(--accent2)}
-button.btn.ghost{background:transparent;color:var(--txt);border-color:var(--line)}
-button.btn.ghost:hover{background:var(--panel2)}
-button.btn.big{font-size:14px;min-height:48px;padding:0 20px;display:inline-flex;align-items:center;gap:8px}
-button.btn.big svg{width:16px;height:16px}
-button.btn[disabled]{opacity:.55;cursor:not-allowed}
-.hint{font-size:11px;color:var(--muted)}
+body{background:var(--bg);color:var(--txt);font-family:var(--sans);-webkit-text-size-adjust:100%;line-height:1.45}
+.wrap{max-width:1100px;margin:0 auto;padding:0 16px 56px}
+
+/* header */
+header{position:sticky;top:0;z-index:30;background:var(--bg);border-bottom:1px solid var(--line)}
+.hdr{max-width:1100px;margin:0 auto;padding:12px 16px;display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.brand{display:flex;align-items:center;gap:9px;font-weight:700;font-size:17px;letter-spacing:-.3px;margin-right:auto}
+.brand svg{display:block}
+.brand .tag{font-weight:500;font-size:12px;color:var(--muted);letter-spacing:0}
+.ctl{display:flex;flex-direction:column;gap:3px}
+.ctl label{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+select,button{font-family:inherit;font-size:14px;color:var(--txt);background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:10px 12px;min-height:44px}
+select{appearance:none;padding-right:30px;background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);background-position:calc(100% - 16px) 20px,calc(100% - 11px) 20px;background-size:5px 5px,5px 5px;background-repeat:no-repeat}
+button{cursor:pointer}
+button:focus-visible,select:focus-visible,tr:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.btn-primary{background:var(--accent);color:#06241b;border-color:transparent;font-weight:650;align-self:flex-end}
+@media (prefers-color-scheme: light){.btn-primary{color:#fff}}
+.btn-primary[disabled]{opacity:.55;cursor:progress}
+.subtitle{max-width:1100px;margin:0 auto;padding:0 16px 10px;font-size:12.5px;color:var(--muted);font-family:var(--mono)}
+.subtitle b{color:var(--txt);font-weight:600}
+.demo{display:inline-block;margin-left:8px;font-family:var(--sans);font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:1px 7px}
+
 /* progress */
-.prog{border:1px solid var(--line);border-radius:3px;padding:12px;background:var(--panel2)}
-.prog .bar{height:5px;background:var(--line);border-radius:3px;overflow:hidden;margin-bottom:10px}
-.prog .bar i{display:block;height:100%;width:0;background:var(--accent);transition:width .25s linear}
-.steps{list-style:none;margin:0;padding:0;font-family:var(--mono);font-size:11.5px}
-.steps li{padding:3px 0;color:var(--muted);display:flex;gap:7px;align-items:center}
-.steps li.done{color:var(--txt)}
-.steps li .dot{width:11px;height:11px;flex:none;border:1px solid var(--line);border-radius:50%}
-.steps li.done .dot{background:var(--ok);border-color:var(--ok)}
-.steps li.act .dot{border-color:var(--accent);background:var(--accent);animation:pulse 1s infinite}
-@keyframes pulse{50%{opacity:.35}}
-/* quote */
-.qsec{border-bottom:1px solid var(--line2);padding:11px 12px}
-.fields{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.f{min-width:0}
-.f label{display:block;font-size:9.5px;text-transform:uppercase;letter-spacing:.7px;color:var(--muted)}
-.f .v{font-family:var(--mono);font-size:12px;font-weight:600;word-break:break-word}
-.prov{display:inline-block;margin-top:2px;font-size:9px;color:var(--muted);border:1px dashed var(--line);border-radius:2px;padding:0 4px;line-height:14px}
-.f.wide{grid-column:1/-1}
-table.cost{width:100%;border-collapse:collapse;font-size:11.5px;font-family:var(--mono)}
-table.cost td{padding:4px 0;border-bottom:1px solid var(--line2)}
-table.cost td.n{text-align:right;white-space:nowrap}
-table.cost tr.sub td{border-top:1px solid var(--line);border-bottom:0;padding-top:7px;font-weight:700}
-.detail{color:var(--muted);font-size:10px}
-.marginbox{margin-top:9px;background:var(--panel2);border:1px solid var(--line);border-radius:3px;padding:9px}
-.mrow{display:flex;justify-content:space-between;align-items:center;font-size:11px;color:var(--muted)}
-.mrow b{font-family:var(--mono);font-size:14px;color:var(--txt)}
-input[type=range]{width:100%;margin:8px 0 0;height:32px;accent-color:var(--accent)}
-.total{display:flex;justify-content:space-between;align-items:flex-end;margin-top:10px;padding-top:9px;border-top:2px solid var(--line)}
-.total .lbl{font-size:10px;text-transform:uppercase;letter-spacing:.8px;color:var(--muted)}
-.total .big{font-family:var(--mono);font-size:25px;font-weight:800;line-height:1.05}
-.total .unit{font-family:var(--mono);font-size:11px;color:var(--muted);text-align:right}
-.flag{
-  background:var(--amber);border:1px solid var(--amberline);border-left:4px solid var(--amberline);
-  border-radius:3px;padding:8px 9px;margin-bottom:8px;
+#progress{display:none;max-width:1100px;margin:0 auto;padding:0 16px 12px}
+#progress.on{display:block}
+.bar{height:6px;background:var(--panel2);border:1px solid var(--line);border-radius:999px;overflow:hidden}
+.bar i{display:block;height:100%;width:0%;background:var(--accent);transition:width .25s linear}
+.ptxt{font-family:var(--mono);font-size:12px;color:var(--accent);margin-top:6px}
+
+/* scorecard */
+section{margin-top:22px}
+.score{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px}
+.big{font-size:46px;font-weight:750;letter-spacing:-2px;line-height:1}
+.big span{font-size:18px;color:var(--muted);font-weight:500;letter-spacing:-.2px}
+.scoreline{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.pill{font-size:11px;font-weight:650;color:var(--fail);background:color-mix(in srgb,var(--fail) 16%,transparent);border-radius:999px;padding:3px 9px}
+.sub{color:var(--muted);font-size:13.5px;margin-top:7px}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px;margin-top:16px}
+.tile{background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:12px}
+.tile .k{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
+.tile .v{font-size:21px;font-weight:700;margin-top:4px}
+.tile .v small{font-size:12px;color:var(--muted);font-weight:500}
+
+/* table */
+.hint{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--muted);margin:18px 0 8px}
+.hint svg{flex:none}
+.tbl-wrap{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--panel)}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{text-align:left;font-size:10.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600;padding:11px 12px;background:var(--panel2);border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:12px;border-bottom:1px solid var(--line);vertical-align:top}
+tbody tr{cursor:pointer}
+tbody tr:last-child td{border-bottom:0}
+tbody tr:hover td,tbody tr.sel td{background:var(--panel2)}
+tbody tr.sel td:first-child{box-shadow:inset 3px 0 0 var(--accent)}
+.jname{font-weight:550}
+.jnum{color:var(--muted);font-family:var(--mono);font-size:12px;margin-right:8px}
+.st{font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:.05em;padding:3px 8px;border-radius:6px;white-space:nowrap}
+.st.PASS{color:var(--pass);background:color-mix(in srgb,var(--pass) 15%,transparent)}
+.st.DEGRADED{color:var(--warn);background:color-mix(in srgb,var(--warn) 16%,transparent)}
+.st.FAIL{color:var(--fail);background:color-mix(in srgb,var(--fail) 15%,transparent)}
+.num{font-family:var(--mono);font-size:13px;color:var(--muted);white-space:nowrap}
+.block{color:var(--fail);font-size:12.5px}
+.block.deg{color:var(--warn)}
+.dash{color:var(--muted)}
+@media(max-width:720px){
+  th.hcol,td.hcol{display:none}
+  td{padding:11px 10px}
 }
-.flag .ft{font-size:9.5px;font-weight:800;letter-spacing:.8px;color:var(--warm);text-transform:uppercase;display:flex;align-items:center;gap:5px}
-.flag .ft svg{width:11px;height:11px}
-.flag p{margin:4px 0 7px;font-size:11.5px}
-.flag button{font:inherit;font-size:11px;font-weight:700;min-height:34px;padding:0 10px;border:1px solid var(--amberline);background:transparent;color:var(--txt);border-radius:3px;cursor:pointer}
-.flag button:hover{background:rgba(0,0,0,.05)}
-.flag.resolved{background:transparent;border-color:var(--line);border-left-color:var(--ok);opacity:.85}
-.flag.resolved .ft{color:var(--ok)}
-.jobs{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:10.5px}
-.jobs th,.jobs td{padding:4px 4px;border-bottom:1px solid var(--line2);text-align:left}
-.jobs th{color:var(--muted);font-size:9px;text-transform:uppercase;letter-spacing:.6px}
-.out{font-weight:800;font-size:9.5px;letter-spacing:.6px}
-.out.won{color:var(--ok)} .out.lost{color:var(--hot)}
-.qfoot{padding:12px;display:flex;gap:8px;position:sticky;bottom:0;background:var(--panel);border-top:1px solid var(--line)}
-.qfoot .btn{flex:1}
-.ribbon{background:var(--accent);color:#fff;padding:6px 12px;font-size:10.5px;letter-spacing:.8px;text-transform:uppercase;font-weight:700;display:flex;justify-content:space-between;align-items:center;gap:8px}
-.ribbon .demo{background:rgba(255,255,255,.2);border-radius:2px;padding:1px 5px;letter-spacing:.4px;text-transform:none;font-weight:600}
-.toast{
-  position:fixed;left:50%;transform:translate(-50%,24px);bottom:18px;z-index:80;opacity:0;pointer-events:none;
-  transition:.28s;max-width:min(560px,94vw);width:max-content;
-  background:var(--panel);border:2px solid var(--ok);border-radius:5px;box-shadow:0 12px 34px rgba(0,0,0,.3);
-  padding:13px 16px;
-}
-.toast.show{opacity:1;transform:translate(-50%,0)}
-.toast .th{display:flex;align-items:center;gap:8px;font-weight:800;font-size:13px}
-.toast .th svg{width:17px;height:17px;color:var(--ok)}
-.payoff{display:flex;gap:10px;align-items:center;margin-top:9px;flex-wrap:wrap}
-.pbox{border:1px solid var(--line);border-radius:3px;padding:6px 10px;min-width:104px}
-.pbox i{font-style:normal;display:block;font-size:9px;text-transform:uppercase;letter-spacing:.7px;color:var(--muted)}
-.pbox b{font-family:var(--mono);font-size:20px;display:block;line-height:1.15}
-.pbox.new{border-color:var(--ok);background:rgba(28,107,60,.10)}
-.pbox.new b{color:var(--ok)}
-.pbox.old b{color:var(--muted);text-decoration:line-through}
-.arrow{font-size:19px;color:var(--muted)}
-footer{padding:12px 14px;color:var(--muted);font-size:11px;text-align:center;border-top:1px solid var(--line);background:var(--panel)}
-.demoTag{font-size:10px;color:var(--muted);border:1px dashed var(--line);border-radius:2px;padding:1px 5px;margin-left:6px;white-space:nowrap}
-.note{font-size:11px;color:var(--muted);margin-top:10px}
-.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
-@media (max-width:1100px){
-  .app{grid-template-columns:1fr;min-height:0}
-  .pane{max-height:none}
-  .list{max-height:62vh}
-  .pane.q.hidden,.pane.c.hidden{display:none}
-  .backbtn{display:inline-flex!important}
-}
-.backbtn{display:none;align-items:center;gap:5px;font:inherit;font-size:11px;background:transparent;border:1px solid var(--line);border-radius:3px;min-height:32px;padding:0 9px;color:var(--txt);cursor:pointer}
+
+/* inspector */
+#inspector{display:none;margin-top:22px;border:1px solid var(--line);border-radius:14px;background:var(--panel);overflow:hidden;scroll-margin-top:90px}
+#inspector.on{display:block}
+.insp-top{display:flex;gap:12px;align-items:flex-start;padding:14px 16px;border-bottom:1px solid var(--line);background:var(--panel2)}
+.insp-top h2{margin:0;font-size:15.5px;letter-spacing:-.2px}
+.insp-top .meta{font-size:12px;color:var(--muted);font-family:var(--mono);margin-top:4px}
+.close{margin-left:auto;background:transparent;border:1px solid var(--line);border-radius:9px;min-height:40px;padding:8px 12px;font-size:13px;color:var(--muted)}
+.cols{display:grid;grid-template-columns:1.05fr 1fr;gap:0}
+@media(max-width:860px){.cols{grid-template-columns:1fr}}
+.col{padding:14px 16px}
+.col+.col{border-left:1px solid var(--line)}
+@media(max-width:860px){.col+.col{border-left:0;border-top:1px solid var(--line)}}
+.ctitle{font-size:10.5px;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);font-weight:650;margin-bottom:10px}
+.tr{max-height:430px;overflow:auto;font-family:var(--mono);font-size:12.5px;line-height:1.5;background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:6px}
+.turn{display:flex;gap:8px;padding:7px 8px;border-left:3px solid transparent;border-radius:0 7px 7px 0;white-space:pre-wrap;word-break:break-word}
+.turn .tg{flex:none;font-weight:700;font-size:11px}
+.tg.THOUGHT{color:var(--muted)}
+.tg.CALL{color:var(--accent)}
+.tg.RESPONSE{color:#8fa6c7}
+.tg.RETRY{color:var(--warn)}
+.turn.bad{background:color-mix(in srgb,var(--fail) 12%,transparent);border-left-color:var(--fail)}
+.turn.bad .tx{color:var(--fail)}
+.card{background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:13px;margin-bottom:11px}
+.card h3{margin:0 0 7px;font-size:10.5px;text-transform:uppercase;letter-spacing:.09em;color:var(--accent);font-weight:700}
+.card p{margin:0;font-size:13.5px}
+.card code{font-family:var(--mono);font-size:12.5px;background:color-mix(in srgb,var(--accent) 14%,transparent);padding:1px 5px;border-radius:5px}
+.diff{font-family:var(--mono);font-size:12px;line-height:1.55;border:1px solid var(--line);border-radius:9px;overflow:auto;margin-top:8px;background:var(--bg)}
+.diff div{padding:2px 10px;white-space:pre}
+.diff .del{color:var(--fail);background:color-mix(in srgb,var(--fail) 11%,transparent)}
+.diff .add{color:var(--pass);background:color-mix(in srgb,var(--pass) 12%,transparent)}
+.diff .ctx{color:var(--muted)}
+.diff .hunk{color:var(--muted);background:var(--panel2);font-size:11px}
+.copy{margin-top:11px;width:100%;background:var(--panel);border:1px solid var(--line);font-weight:600}
+.copy.done{color:var(--accent);border-color:var(--accent)}
+.radius{display:flex;gap:10px;align-items:center;margin-top:10px}
+.meter{flex:1;height:8px;border-radius:999px;background:var(--line);overflow:hidden}
+.meter i{display:block;height:100%;background:var(--warn)}
+.radius span{font-family:var(--mono);font-size:12px;color:var(--muted)}
+
+/* toast */
+#toast{position:fixed;left:50%;bottom:22px;transform:translate(-50%,24px);opacity:0;pointer-events:none;transition:all .25s ease;background:var(--panel);border:1px solid var(--accent);color:var(--txt);padding:11px 16px;border-radius:11px;font-size:13.5px;font-weight:550;z-index:60;box-shadow:0 10px 30px rgba(0,0,0,.4)}
+#toast.on{opacity:1;transform:translate(-50%,0)}
+footer{margin-top:34px;text-align:center;font-size:12px;color:var(--muted)}
 </style>
 </head>
 <body>
 <header>
-  <div class="brand">
-    <svg class="logo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-      <rect x="2.5" y="3.5" width="19" height="17" rx="2"/><path d="M2.5 8.5h19M7 12.5h7M7 16h10"/>
-    </svg>
-    <h1>QuoteDesk <span>— Precision Machining Co.</span></h1>
+  <div class="hdr">
+    <div class="brand">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2 3 6v6c0 5 3.8 8.6 9 10 5.2-1.4 9-5 9-10V6z"/><path d="m9 12 2 2 4-4"/></svg>
+      AgentGauntlet <span class="tag">agent-readiness scorecard</span>
+    </div>
+    <div class="ctl">
+      <label for="surface">Surface</label>
+      <select id="surface">
+        <option>api.northwind-pay.com</option>
+        <option>docs.northwind-pay.com</option>
+        <option>northwind-sdk (node)</option>
+      </select>
+    </div>
+    <div class="ctl">
+      <label for="model">Agent model</label>
+      <select id="model">
+        <option>Model A</option>
+        <option>Model B</option>
+        <option>Model C</option>
+      </select>
+    </div>
+    <button id="rerun" class="btn-primary">Re-run gauntlet</button>
   </div>
-  <div class="tagline">Turns a messy RFQ email into a priced, reviewable quote in one click.<span class="demoTag">Demo data</span></div>
-  <div class="stats">
-    <div class="stat"><i>Open RFQs</i><b id="statOpen">9</b></div>
-    <div class="stat"><i>Avg response time</i><b>3.2 days</b></div>
-    <div class="stat tgt"><i>Target</i><b>under 4 hours</b></div>
-  </div>
+  <div class="subtitle" id="subtitle"></div>
+  <div id="progress"><div class="bar"><i id="barfill"></i></div><div class="ptxt" id="ptxt">Spawning agent...</div></div>
 </header>
 
-<main class="app">
-  <section class="pane i" aria-label="RFQ inbox">
-    <div class="paneHd">
-      <h2>RFQ Inbox</h2>
-      <div class="sortwrap">
-        <span class="sortlbl">Sort by:</span>
-        <div class="seg" role="group" aria-label="Sort RFQs">
-          <button id="sortScore" aria-pressed="true">Value × Win prob.</button>
-          <button id="sortNew" aria-pressed="false">Newest</button>
+<div class="wrap">
+  <section class="score">
+    <div class="scoreline">
+      <div class="big">58 <span>/ 100 Agent Readiness</span></div>
+      <div class="pill">▼ 13 pts</div>
+    </div>
+    <div class="sub">7 of 12 jobs completed unassisted · down from 71 last week</div>
+    <div class="tiles">
+      <div class="tile"><div class="k">Median steps to complete</div><div class="v">9 <small>human baseline: 4</small></div></div>
+      <div class="tile"><div class="k">Jobs blocked by auth</div><div class="v">2</div></div>
+      <div class="tile"><div class="k">Ambiguous errors hit</div><div class="v">5</div></div>
+    </div>
+  </section>
+
+  <div class="hint">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3l7 18 2-7 7-2z"/></svg>
+    Click a row to inspect the agent transcript and diagnosis
+  </div>
+
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Job</th><th>Status</th><th>Steps</th><th>Time</th><th class="hcol">Blocking issue</th></tr></thead>
+      <tbody id="rows"></tbody>
+    </table>
+  </div>
+
+  <section id="inspector" aria-live="polite">
+    <div class="insp-top">
+      <div>
+        <h2 id="iTitle">—</h2>
+        <div class="meta" id="iMeta"></div>
+      </div>
+      <button class="close" id="iClose">Close ✕</button>
+    </div>
+    <div class="cols">
+      <div class="col">
+        <div class="ctitle">Agent transcript</div>
+        <div class="tr" id="iTranscript"></div>
+      </div>
+      <div class="col">
+        <div class="ctitle">Diagnosis</div>
+        <div class="card"><h3>Root cause</h3><p id="iRoot"></p></div>
+        <div class="card"><h3>Suggested fix</h3><p id="iFixNote" style="color:var(--muted);font-size:12.5px"></p><div class="diff" id="iDiff"></div></div>
+        <div class="card"><h3>Blast radius</h3><p id="iBlast"></p>
+          <div class="radius"><div class="meter"><i id="iMeter"></i></div><span id="iPct"></span></div>
+          <button class="copy" id="iCopy">Copy fix as PR description</button>
         </div>
       </div>
     </div>
-    <div class="list" id="list"></div>
   </section>
 
-  <section class="pane c hidden" id="centerPane" aria-label="Message detail">
-    <div class="paneHd">
-      <h2 id="centerTitle">Message</h2>
-      <button class="backbtn" id="backToInbox">◀ Inbox</button>
-    </div>
-    <div class="body" id="center"></div>
-  </section>
+  <footer>Prototype by Granted, inspired by your bookmarks</footer>
+</div>
 
-  <section class="pane q hidden" id="quotePane" aria-label="Quote builder">
-    <div class="paneHd"><h2>Quote Builder</h2><span class="demoTag">Simulated extraction</span></div>
-    <div class="body" id="quote" style="padding:0"></div>
-  </section>
-</main>
-
-<div class="toast" id="toast" role="status" aria-live="polite"></div>
-<footer>Prototype by Granted, inspired by your bookmarks</footer>
+<div id="toast" role="status"></div>
 
 <script>
 (function(){
 "use strict";
-var $=function(s){return document.querySelector(s);};
-var money=function(n){return "$"+Math.round(n).toLocaleString("en-US");};
+var clean = function(a,b,c,d){return [["THOUGHT",a],["CALL",b],["RESPONSE",c],["THOUGHT",d]];};
 
-var RFQ=[
- {id:1,from:"Dana Whitfield",co:"Carlisle Hydraulics",subj:"RFQ 4471 — manifold block, 6 pcs",
-  att:["RFQ-4471-drawing.pdf","part-list.xlsx"],when:"2h ago",age:2,badge:"HOT",val:14200,win:.62,
-  email:"dana.whitfield@carlislehyd.com",
-  body:"Hi — attached is the drawing for the manifold block we discussed. Need 6 pieces, 6061-T6, hard anodize per MIL-A-8625 Type III. The .375 bore is critical, hold +/-.0005. Also please price 12 pieces as an alternate. Need these by 11/28 if possible. Our part number is CH-4471-02, supersedes CH-4471-01.\n\n— Dana",
-  mode:"walk"},
- {id:2,from:"Marcus Teo",co:"Northline Aerospace",subj:"Quote needed: bracket revision C, qty 250",
-  att:["BRK-882-revC.pdf"],when:"5h ago",age:5,badge:"HOT",val:38900,win:.48,
-  email:"m.teo@northline-aero.com",
-  body:"Team — we released rev C on the mounting bracket. Qty 250, 7075-T651 plate, chem film per MIL-DTL-5541 Class 3. AS9100 cert and FAI required with first shipment. Need pricing by Friday for the PO release.\n\nMarcus Teo | Supply Chain, Northline Aerospace",
-  mode:"pre"},
- {id:3,from:"purchasing@ridgeway-ag.com",co:"Ridgeway Agricultural",subj:"parts list attached, please advise pricing",
-  att:["scan_0042.pdf (scanned)"],when:"1d ago",age:24,badge:"NEEDS INFO",val:0,win:.2,
-  email:"purchasing@ridgeway-ag.com",
-  body:"please advise pricing on attached\n\nthanks",
-  mode:"raw",note:"Attachment is a flatbed scan with no embedded text. Quantities and material are not stated in the email."},
- {id:4,from:"Ellen Park",co:"Vertex Medical Devices",subj:"Re: Re: follow up on housing quote",
-  att:[],when:"1d ago",age:26,badge:"HOT",val:9400,win:.71,
-  email:"epark@vertexmed.com",
-  body:"Following up again on the housing — any update?\n\n> On Tue, Dana from your team wrote:\n> > We are reviewing with the shop floor and will come back to you.\n> > > Original request: 40 pcs of the VX-118 housing, 316L stainless,\n> > > bead blast, no markings. Need by end of month.",
-  mode:"raw"},
- {id:5,from:"Tom Brady Jr.",co:"BG Fabrication",subj:"weldment assembly, 12 off",
-  att:["weldment-asm.pdf","notes.txt"],when:"2d ago",age:48,badge:"WARM",val:6100,win:.44,
-  email:"tbradyjr@bgfab.com",
-  body:"Need 12 off of the weldment assembly, drawing attached. A36 tube and plate, full pen welds at the gussets, paint is on us. Notes file has the weld callouts we changed last month.",
-  mode:"raw"},
- {id:6,from:"sales-inquiry (web form)",co:"Web form",subj:"Do you do anodizing?",
-  att:[],when:"2d ago",age:50,badge:"LOW",val:400,win:.1,
-  email:"noreply@quotedesk-webform",
-  body:"Name: (not provided)\nMessage: Do you do anodizing?",
-  mode:"raw"},
- {id:7,from:"Rafael Ortiz",co:"Kestrel Robotics",subj:"shaft + collar, prototype run qty 3",
-  att:["shaft-dwg.pdf","collar-dwg.pdf"],when:"3d ago",age:72,badge:"WARM",val:2750,win:.55,
-  email:"r.ortiz@kestrelrobotics.io",
-  body:"Prototype run — 3 sets. Shaft is 303 stainless, collar is 6061. Nothing tighter than +/-.002 except the press fit. Fast beats cheap on this one.",
-  mode:"raw"},
- {id:8,from:"Janet Olu",co:"Harbor Pump & Seal",subj:"annual blanket order re-quote",
-  att:["2025-pricing.xlsx"],when:"4d ago",age:96,badge:"HOT",val:61000,win:.66,
-  email:"j.olu@harborpump.com",
-  body:"Hi — time for the annual blanket re-quote. Last year's sheet attached, 14 line items. Volumes are roughly flat, maybe +10% on the seal carriers. Please hold pricing where you can; we'd like to keep the program with you.",
-  mode:"pre"},
- {id:9,from:"unknown@gmail.com",co:"(unknown sender)",subj:"need 1 part made cheap",
-  att:[],when:"4d ago",age:100,badge:"LOW",val:400,win:.05,
-  email:"unknown@gmail.com",
-  body:"need 1 part made cheap how much",
-  mode:"raw"}
+var JOBS = [
+{n:1,name:"Create a test API key",status:"PASS",steps:3,time:"11s",issue:"",
+ turns:clean("Need a test-mode key. Docs show a keys endpoint.","POST /v1/api_keys {mode:\"test\", name:\"gauntlet\"}","201 {\"id\":\"key_test_9f2\",\"secret\":\"sk_test_…\"}","Key created and usable. Done in 3 steps."),
+ root:"No issues. Endpoint, schema and example agree; the agent completed in 3 steps versus a human baseline of 2.",
+ fixNote:"Nothing to change — included as a healthy reference path.",
+ diff:[["ctx"," # schema, example and SDK type all match"],["ctx"," POST /v1/api_keys → 201 api_key"]],
+ blast:"1 of 12 jobs touch key creation. This path is healthy and used as the baseline for scoring.",pct:0},
+{n:2,name:"Charge a card for $20",status:"PASS",steps:4,time:"18s",issue:"",
+ turns:clean("Charge a test card for $20 = 2000 minor units.","POST /v1/charges {amount:2000, currency:\"usd\", source:\"tok_visa\"}","200 {\"id\":\"ch_1Nq8\",\"status\":\"succeeded\",\"amount\":2000}","Charge succeeded on first attempt."),
+ root:"No issues. Amount units are stated inline in the field description, so the agent avoided the classic cents-vs-dollars mistake.",
+ fixNote:"Nothing to change — this is the pattern other endpoints should copy.",
+ diff:[["ctx"," amount: integer  # minor units, e.g. 2000 = $20.00"],["ctx"," ✓ description present on every money field"]],
+ blast:"4 of 12 jobs move money through this path. No agent sessions blocked here.",pct:0},
+{n:3,name:"Create a customer and attach a payment method",status:"PASS",steps:6,time:"24s",issue:"",
+ turns:clean("Two calls: create customer, then attach the payment method.","POST /v1/customers {email:\"ada@northwind.test\"} → POST /v1/payment_methods/pm_1K/attach {customer:\"cus_8Qz\"}","200 {\"id\":\"pm_1K\",\"customer\":\"cus_8Qz\"}","Both resources linked. 6 steps, no retries."),
+ root:"No issues. The customer object example links directly to the attach endpoint, so the agent chained calls without searching.",
+ fixNote:"Nothing to change — cross-links between related resources are doing their job.",
+ diff:[["ctx"," customers.md → \"see: payment_methods/attach\""],["ctx"," ✓ related-endpoint link present"]],
+ blast:"5 of 12 jobs depend on a customer existing. Path is healthy.",pct:0},
+{n:4,name:"Create a recurring subscription with a 14-day trial",status:"FAIL",steps:14,time:"1m 52s",issue:"Required field `trial_end` not documented",
+ turns:[
+ ["THOUGHT","I need to create a subscription with a trial for customer cus_8Qz on price_pro_monthly."],
+ ["CALL","POST /v1/subscriptions {customer:\"cus_8Qz\", price:\"price_pro_monthly\", trial_days:14}"],
+ ["RESPONSE","400 {\"error\":\"unknown parameter: trial_days\"}",1],
+ ["THOUGHT","Docs mention trials in prose but never name the parameter. Trying trial_period."],
+ ["CALL","POST /v1/subscriptions {customer:\"cus_8Qz\", price:\"price_pro_monthly\", trial_period:14}"],
+ ["RESPONSE","400 {\"error\":\"unknown parameter: trial_period\"}",1],
+ ["RETRY","searching docs for \"trial\" → 4 prose hits, 0 schema hits, 0 SDK type hits"],
+ ["THOUGHT","Found a changelog entry from 2024-08 referencing trial_end as a unix timestamp."],
+ ["CALL","POST /v1/subscriptions {customer:\"cus_8Qz\", price:\"price_pro_monthly\", trial_end:14}"],
+ ["RESPONSE","400 {\"error\":\"trial_end must be a unix timestamp\"}",1],
+ ["RETRY","searching docs for \"unix timestamp\" → 0 hits on the subscriptions page"],
+ ["THOUGHT","No example shows the expected format and the SDK type is Record<string, any>."],
+ ["THOUGHT","Giving up after 14 steps."]],
+ root:"The `trial_end` parameter exists in the API but appears in no schema, example, or SDK type definition — only in an untitled changelog entry.",
+ fixNote:"openapi/subscriptions.yaml — add the field to the request schema with units and an example.",
+ diff:[["hunk","@@ components.schemas.SubscriptionCreate @@"],["ctx","   properties:"],["ctx","     customer: { type: string }"],["ctx","     price:    { type: string }"],["del","-    # trials handled internally"],["add","+    trial_end:"],["add","+      type: integer"],["add","+      format: int64"],["add","+      description: >"],["add","+        End of the trial as a Unix timestamp (seconds)."],["add","+        For a 14-day trial send now + 1209600."],["add","+      example: 1763040000"],["add","+    # alias accepted for ergonomics:"],["add","+    trial_days: { type: integer, example: 14 }"]],
+ blast:"3 of 12 jobs touch subscriptions. Estimated 24% of agent sessions on this surface hit this path.",pct:24},
+{n:5,name:"Refund a partial amount",status:"PASS",steps:5,time:"19s",issue:"",
+ turns:clean("Refund $8 of the $20 charge ch_1Nq8.","POST /v1/refunds {charge:\"ch_1Nq8\", amount:800}","200 {\"id\":\"re_4Tz\",\"amount\":800,\"status\":\"succeeded\"}","Partial refund confirmed. 5 steps."),
+ root:"No issues. The partial-refund example appears directly on the refunds page, so the agent copied the shape immediately.",
+ fixNote:"Nothing to change.",
+ diff:[["ctx"," refunds.md → partial refund example present"],["ctx"," ✓ amount optional, defaults to full charge"]],
+ blast:"2 of 12 jobs touch refunds. Path is healthy.",pct:0},
+{n:6,name:"List all failed payments in the last 30 days",status:"DEGRADED",steps:11,time:"48s",issue:"Pagination cursor only shown in an example, not the schema",
+ turns:[
+ ["THOUGHT","List charges with status=failed for the last 30 days."],
+ ["CALL","GET /v1/charges?status=failed&created[gte]=1760400000&limit=100"],
+ ["RESPONSE","200 {\"data\":[…100 items],\"has_more\":true}"],
+ ["THOUGHT","has_more is true but the response schema documents no cursor field."],
+ ["CALL","GET /v1/charges?status=failed&page=2"],
+ ["RESPONSE","200 {\"data\":[…same 100 items],\"has_more\":true}",1],
+ ["RETRY","`page` silently ignored — duplicate page returned, no warning"],
+ ["THOUGHT","Scraping the raw JSON of the example response, I see a starting_after key."],
+ ["CALL","GET /v1/charges?status=failed&starting_after=ch_1Nq8"],
+ ["RESPONSE","200 {\"data\":[…41 items],\"has_more\":false}"],
+ ["THOUGHT","Completed, but 11 steps and one silently wrong result page."]],
+ root:"`starting_after` is the real pagination cursor but it only appears inside an example payload, and the unsupported `page` param is silently ignored instead of erroring.",
+ fixNote:"openapi/charges.yaml — document the cursor and reject unknown pagination params.",
+ diff:[["hunk","@@ paths./v1/charges.get.parameters @@"],["ctx","   - name: limit"],["add","+  - name: starting_after"],["add","+    in: query"],["add","+    schema: { type: string }"],["add","+    description: Cursor; pass the last id of the previous page."],["del","-  # unknown query params are ignored"],["add","+  # unknown query params → 400 invalid_parameter"]],
+ blast:"6 of 12 jobs page through lists. Estimated 31% of agent sessions hit silent pagination truncation.",pct:31},
+{n:7,name:"Set up a webhook endpoint and verify a signature",status:"FAIL",steps:17,time:"2m 40s",issue:"Signature verification requires a snippet only present in a PDF",
+ turns:[
+ ["THOUGHT","Register the endpoint, then verify the Northwind-Signature header."],
+ ["CALL","POST /v1/webhook_endpoints {url:\"https://hook.test/np\", events:[\"charge.failed\"]}"],
+ ["RESPONSE","201 {\"id\":\"we_7Lm\",\"secret\":\"whsec_…\"}"],
+ ["THOUGHT","Endpoint created. Now I need the signing scheme for the header."],
+ ["RETRY","searching docs for \"signature\" → 2 hits, both linking to security-guide.pdf"],
+ ["CALL","GET /docs/security-guide.pdf"],
+ ["RESPONSE","200 application/pdf (1.4 MB, scanned images, no selectable text)",1],
+ ["THOUGHT","Header format t=…,v1=… is unexplained; scheme could be HMAC-SHA256 over the raw body or over t + \".\" + body."],
+ ["CALL","verify(hmac_sha256(secret, raw_body)) == v1"],
+ ["RESPONSE","false — signature mismatch",1],
+ ["RETRY","trying signed payload = t + \".\" + raw_body"],
+ ["RESPONSE","false — mismatch (SDK has no verifyWebhook helper exported)",1],
+ ["THOUGHT","Cannot determine the tolerance window or the encoding. Giving up after 17 steps."]],
+ root:"The webhook signing scheme is documented only inside a scanned PDF, and the SDK exports no verification helper, so an agent cannot discover the signed payload format.",
+ fixNote:"docs/webhooks.md + SDK — publish the scheme as text and export a helper.",
+ diff:[["hunk","@@ docs/webhooks.md @@"],["del","-See security-guide.pdf for signature verification."],["add","+Signed payload: `${timestamp}.${rawBody}`"],["add","+v1 = HMAC-SHA256(secret, signed_payload), hex encoded"],["add","+Reject if |now - timestamp| > 300 seconds."],["hunk","@@ sdk/index.ts @@"],["add","+export function verifyWebhook(rawBody, header, secret): boolean"]],
+ blast:"2 of 12 jobs require webhooks. Estimated 19% of agent sessions on this surface hit this path.",pct:19},
+{n:8,name:"Issue a credit note against an invoice",status:"FAIL",steps:9,time:"1m 06s",issue:"404 returned with empty body",
+ turns:[
+ ["THOUGHT","Issue a $15 credit note against invoice in_3Vb."],
+ ["CALL","POST /v1/credit_notes {invoice:\"in_3Vb\", amount:1500}"],
+ ["RESPONSE","404 (empty body, content-length: 0)",1],
+ ["THOUGHT","No error code or message. Is the route missing, or the invoice, or my permission?"],
+ ["RETRY","GET /v1/invoices/in_3Vb → 200, so the invoice exists"],
+ ["CALL","POST /v1/credit_notes {invoice:\"in_3Vb\", amount:1500, currency:\"usd\"}"],
+ ["RESPONSE","404 (empty body)",1],
+ ["THOUGHT","The endpoint is listed in the docs nav but absent from the OpenAPI spec."],
+ ["THOUGHT","No signal to act on. Giving up after 9 steps."]],
+ root:"Credit notes are gated behind an account capability, but the gate returns a bare 404 with no body, so the agent cannot tell a missing route from a missing permission.",
+ fixNote:"api/gateway — return a typed, actionable error instead of an empty 404.",
+ diff:[["hunk","@@ gateway/capabilities.ts @@"],["del","-return res.status(404).end();"],["add","+return res.status(403).json({"],["add","+  error: {"],["add","+    code: \"capability_not_enabled\","],["add","+    message: \"Credit notes are not enabled for this account.\","],["add","+    docs_url: \"https://docs.northwind-pay.com/credit-notes\""],["add","+  }"],["add","+});"]],
+ blast:"2 of 12 jobs touch invoicing. Empty-body 404s account for 3 of the 5 ambiguous errors measured in this run.",pct:17},
+{n:9,name:"Switch an account from test to live mode",status:"FAIL",steps:8,time:"1m 31s",issue:"Requires browser redirect and human 2FA",
+ turns:[
+ ["THOUGHT","Flip acct_12f from test to live mode via the API."],
+ ["CALL","POST /v1/accounts/acct_12f {mode:\"live\"}"],
+ ["RESPONSE","403 {\"error\":\"activation must be completed in the dashboard\"}",1],
+ ["THOUGHT","Trying the activation endpoint referenced in the error page."],
+ ["CALL","POST /v1/accounts/acct_12f/activate"],
+ ["RESPONSE","302 → https://dashboard.northwind-pay.com/activate?step=2fa",1],
+ ["THOUGHT","Redirect lands on an SMS 2FA form. No headless or API-based path exists."],
+ ["THOUGHT","Hard human-in-the-loop gate. Giving up after 8 steps."]],
+ root:"Going live is only possible through a browser flow with SMS 2FA, with no API-based or delegated path an agent can complete or hand off cleanly.",
+ fixNote:"api/accounts — add a resumable activation link an agent can hand to a human.",
+ diff:[["hunk","@@ paths./v1/accounts/{id}/activate @@"],["del","-302 → dashboard.northwind-pay.com/activate"],["add","+200:"],["add","+  activation_url: string   # one-time, 24h expiry"],["add","+  status: \"awaiting_human_2fa\""],["add","+  poll: GET /v1/accounts/{id}/activation_status"]],
+ blast:"1 of 12 jobs needs live mode, and it blocks every downstream production job. This is 1 of the 2 auth-blocked jobs in this run.",pct:12},
+{n:10,name:"Export a CSV of October transactions",status:"DEGRADED",steps:12,time:"55s",issue:"Export is async; no status endpoint documented",
+ turns:[
+ ["THOUGHT","Export October transactions as CSV."],
+ ["CALL","POST /v1/exports {type:\"transactions\", period:\"2025-10\", format:\"csv\"}"],
+ ["RESPONSE","202 {\"id\":\"exp_6Hd\",\"status\":\"pending\"}"],
+ ["THOUGHT","202 pending, but the docs show no way to fetch the finished file."],
+ ["CALL","GET /v1/exports/exp_6Hd"],
+ ["RESPONSE","200 {\"id\":\"exp_6Hd\",\"status\":\"pending\"} (undocumented route, guessed)"],
+ ["RETRY","polling every 2s with no documented interval or timeout"],
+ ["RESPONSE","200 {\"status\":\"ready\",\"url\":\"https://files.northwind-pay.com/exp_6Hd.csv\"}"],
+ ["THOUGHT","Worked, but only because the status route was guessed; the url expiry is still unknown."]],
+ root:"The export API is asynchronous but neither the status endpoint, the polling interval, nor the download-URL expiry is documented — the agent succeeded only by guessing the route.",
+ fixNote:"openapi/exports.yaml — document the async contract end to end.",
+ diff:[["hunk","@@ paths./v1/exports @@"],["ctx","   post: 202 → { id, status }"],["add","+  get /v1/exports/{id}:"],["add","+    200: { id, status, url, url_expires_at }"],["add","+    description: Poll every 2s, max 60s."],["add","+  # Location header on 202 points at the status route"]],
+ blast:"2 of 12 jobs are asynchronous. Estimated 14% of agent sessions poll an undocumented route.",pct:14},
+{n:11,name:"Update a customer's billing address",status:"PASS",steps:4,time:"15s",issue:"",
+ turns:clean("Update the billing address on cus_8Qz.","POST /v1/customers/cus_8Qz {address:{line1:\"42 Quay St\", city:\"Auckland\", country:\"NZ\"}}","200 {\"id\":\"cus_8Qz\",\"address\":{\"line1\":\"42 Quay St\",…}}","Address updated on the first attempt."),
+ root:"No issues. The nested address object is fully typed in the schema, so the agent nested the fields correctly on the first try.",
+ fixNote:"Nothing to change.",
+ diff:[["ctx"," address: $ref '#/components/schemas/Address'"],["ctx"," ✓ nested object typed, not free-form"]],
+ blast:"3 of 12 jobs update customer records. Path is healthy.",pct:0},
+{n:12,name:"Cancel a subscription at period end",status:"PASS",steps:5,time:"21s",issue:"",
+ turns:clean("Cancel sub_2Rp at period end rather than immediately.","POST /v1/subscriptions/sub_2Rp {cancel_at_period_end:true}","200 {\"id\":\"sub_2Rp\",\"cancel_at_period_end\":true,\"current_period_end\":1764547200}","Scheduled cancellation confirmed. 5 steps."),
+ root:"No issues. The boolean flag is named for its behaviour and documented beside the immediate-cancel route.",
+ fixNote:"Nothing to change — the subscriptions create path (job 4) is the broken one.",
+ diff:[["ctx"," cancel_at_period_end: boolean  # documented + example"],["ctx"," ✓ contrast with trial_end in job 4"]],
+ blast:"3 of 12 jobs touch subscriptions; cancellation is healthy while creation with a trial is not.",pct:0}
 ];
 
-/* ---- pre-extracted quote definitions ---- */
-var QUOTES={
- 1:{cust:"Carlisle Hydraulics",pn:"CH-4471-02",rev:"B (supersedes CH-4471-01)",mat:"6061-T6",
-    fin:"Hard anodize, MIL-A-8625 Type III",qty:"6 (alternate: 12)",due:"11/28",qn:6,
-    prov:{cust:"email body",pn:"drawing title block",rev:"email body",mat:"part-list.xlsx row 2",
-          fin:"email body",qty:"part-list.xlsx row 1 (\"6 ea\")",due:"email body"},
-    lines:[["Material","6061-T6 billet, 6 pcs + drop",410],
-           ["Setup","2.5 hrs @ $95/hr",237],
-           ["CNC machining","9.0 hrs @ $115/hr",1035],
-           ["Outside anodize","Type III hard coat, 6 pcs",480],
-           ["Inspection / CMM","1.5 hrs @ $85/hr",127]],
-    margin:32,
-    flags:[{t:"Tolerance +/-.0005 on .375 bore may require honing — not in current cost model",
-            r:"Added 0.8 hr honing allowance to CNC machining. Flag cleared."},
-           {t:"Material cell blank for line 3, assumed 6061-T6 from drawing",
-            r:"Confirmed 6061-T6 from drawing title block. Flag cleared."}],
-    jobs:[["CH-4471-01","Mar 2026","$2,310/unit","WON"],
-          ["MB-220","Aug 2025","$2,580/unit","LOST"],
-          ["CH-3980","Jan 2025","$2,145/unit","WON"]],
-    toast:"Quote sent to Dana Whitfield — 11 minutes from receipt.",min:11},
- 2:{cust:"Northline Aerospace",pn:"BRK-882",rev:"C",mat:"7075-T651 plate",
-    fin:"Chem film, MIL-DTL-5541 Class 3",qty:"250",due:"Friday (PO release)",qn:250,
-    prov:{cust:"email body",pn:"BRK-882-revC.pdf title block",rev:"filename + title block",
-          mat:"drawing notes",fin:"drawing notes",qty:"email subject",due:"email body"},
-    lines:[["Material","7075-T651 plate, 250 pcs nested",6900],
-           ["Setup","4.0 hrs @ $95/hr",380],
-           ["CNC machining","166 hrs @ $115/hr",19090],
-           ["Outside chem film","Class 3, 250 pcs",1850],
-           ["Inspection / CMM + FAI","19.5 hrs @ $85/hr",1658]],
-    margin:30,
-    flags:[{t:"AS9100 first-article (FAI) package required — 6 hrs doc time not yet in labor line",
-            r:"FAI documentation time folded into inspection. Flag cleared."}],
-    jobs:[["BRK-882 rev B","Sep 2025","$151/unit","WON"],
-          ["BRK-640","Feb 2025","$168/unit","WON"],
-          ["NL-77 bracket","Jun 2024","$174/unit","LOST"]],
-    toast:"Quote sent to Marcus Teo — 6 hours from receipt.",min:360},
- 8:{cust:"Harbor Pump & Seal",pn:"Blanket BO-2026 (14 lines)",rev:"Annual re-quote",mat:"Mixed: 316L, 17-4PH, bronze",
-    fin:"Per line item",qty:"14 line items, annual volumes",due:"Program start Jan 2026",qn:1,
-    prov:{cust:"email body",pn:"2025-pricing.xlsx header",rev:"email body",mat:"2025-pricing.xlsx col C",
-          fin:"2025-pricing.xlsx col E",qty:"2025-pricing.xlsx rows 2-15",due:"email body"},
-    lines:[["Material","Rolled forward, 14 lines",18400],
-           ["Setup","Amortised across releases, 22 hrs @ $95/hr",2090],
-           ["CNC machining","176 hrs @ $115/hr",20240],
-           ["Outside processing","Plating + passivation",3400],
-           ["Inspection / CMM","26 hrs @ $85/hr",2210]],
-    margin:31,
-    flags:[{t:"Seal carrier volume +10% per email — 2025 price break tier may no longer apply",
-            r:"Re-tiered seal carriers at the 1,100-pc break. Flag cleared."},
-           {t:"Bronze bar cost up 14% since the 2025 sheet — material line uses today's quote",
-            r:"Using current mill quote dated this month. Flag cleared."}],
-    jobs:[["Blanket BO-2025","Nov 2024","$57,400 total","WON"],
-          ["Blanket BO-2024","Nov 2023","$52,900 total","WON"],
-          ["HP seal carrier spot","Apr 2025","$41/unit","LOST"]],
-    toast:"Quote sent to Janet Olu — 24 minutes from receipt.",min:24}
+var $=function(id){return document.getElementById(id);};
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c];});}
+
+/* subtitle */
+var SURF={
+ "api.northwind-pay.com":"REST surface · 48 endpoints · OpenAPI 3.1",
+ "docs.northwind-pay.com":"Docs surface · 112 pages · 1 PDF-only guide",
+ "northwind-sdk (node)":"SDK surface · v4.2.1 · 61% of params typed"
 };
+function subtitle(){
+  var s=$("surface").value, m=$("model").value;
+  $("subtitle").innerHTML="Scanning <b>"+esc(s)+"</b> — "+esc(SURF[s]||"")+" · agent <b>"+esc(m)+"</b> · 12 top jobs · last run today 06:12<span class=\"demo\">Demo data</span>";
+}
+$("surface").addEventListener("change",subtitle);
+$("model").addEventListener("change",subtitle);
+subtitle();
 
-var state={sort:"score",sel:null,extracted:{},margin:{},resolved:{},stage:"idle"};
-
-/* ---------- inbox ---------- */
-function sorted(){
-  var a=RFQ.slice();
-  if(state.sort==="new"){a.sort(function(x,y){return x.age-y.age;});}
-  else{a.sort(function(x,y){return (y.val*y.win)-(x.val*x.win);});}
-  return a;
-}
-function valText(r){
-  if(r.badge==="NEEDS INFO")return "value unknown";
-  if(r.val<=500)return "under $500";
-  return "est. "+money(r.val);
-}
-var clipSvg='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5 12.5 20a5 5 0 0 1-7-7l8-8a3.5 3.5 0 0 1 5 5l-8 8a2 2 0 0 1-3-3l7.5-7.5"/></svg>';
-function renderList(){
-  var l=$("#list");l.innerHTML="";
-  sorted().forEach(function(r){
-    var b=document.createElement("button");
-    b.className="row"+(state.sel===r.id?" sel":"")+(state.extracted[r.id]?" read":"");
-    b.type="button";
-    b.setAttribute("aria-label",r.subj+", "+r.from+", "+r.badge);
-    var chips=r.att.length?r.att.map(function(a){return '<span class="chip">'+clipSvg+esc(a)+'</span>';}).join("")
-                          :'<span class="chip none">no attachments</span>';
-    if(r.id===4)chips+='<span class="chip none">quoted thread</span>';
-    var bk=r.badge==="NEEDS INFO"?"NEEDS":r.badge;
-    b.innerHTML='<div class="r1"><span class="from">'+esc(r.from)+'</span><span class="when">'+r.when+'</span></div>'+
-      '<div class="co">'+esc(r.co)+'</div>'+
-      '<div class="subj">'+esc(r.subj)+'</div>'+
-      '<div class="chips">'+chips+'</div>'+
-      '<div class="chips" style="margin-top:6px"><span class="badge b-'+bk+'">'+r.badge+'</span>'+
-      '<span class="val">'+(r.badge==="NEEDS INFO"?"value unknown":(r.val<=500?"under <b>$500</b>":"est. <b>"+money(r.val)+"</b>"))+'</span></div>';
-    b.addEventListener("click",function(){select(r.id);});
-    l.appendChild(b);
-  });
-}
-function esc(s){return String(s).replace(/[&<>"]/g,function(c){return({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"})[c];});}
-
-$("#sortScore").addEventListener("click",function(){setSort("score");});
-$("#sortNew").addEventListener("click",function(){setSort("new");});
-function setSort(s){
-  state.sort=s;
-  $("#sortScore").setAttribute("aria-pressed",s==="score"?"true":"false");
-  $("#sortNew").setAttribute("aria-pressed",s==="new"?"true":"false");
-  renderList();
-}
-$("#backToInbox").addEventListener("click",function(){
-  $("#centerPane").classList.add("hidden");$("#quotePane").classList.add("hidden");
-  window.scrollTo(0,0);
+/* table */
+var tb=$("rows");
+JOBS.forEach(function(j){
+  var tr=document.createElement("tr");
+  tr.tabIndex=0; tr.setAttribute("role","button");
+  tr.setAttribute("aria-label","Inspect job "+j.n+": "+j.name);
+  var issue=j.issue?'<span class="block'+(j.status==="DEGRADED"?" deg":"")+'">'+esc(j.issue)+'</span>':'<span class="dash">—</span>';
+  tr.innerHTML='<td><span class="jnum">'+j.n+'</span><span class="jname">'+esc(j.name)+'</span></td>'+
+    '<td><span class="st '+j.status+'">'+j.status+'</span></td>'+
+    '<td class="num">'+j.steps+'</td><td class="num">'+esc(j.time)+'</td>'+
+    '<td class="hcol">'+issue+'</td>';
+  tr.addEventListener("click",function(){open(j,tr);});
+  tr.addEventListener("keydown",function(e){if(e.key==="Enter"||e.key===" "){e.preventDefault();open(j,tr);}});
+  tb.appendChild(tr);
 });
 
-/* ---------- center ---------- */
-function select(id){
-  state.sel=id;state.stage="idle";
-  renderList();
-  var r=find(id);
-  $("#centerTitle").textContent="RFQ · "+r.co;
-  $("#centerPane").classList.remove("hidden");
-  renderCenter();
-  if(QUOTES[id]&&(state.extracted[id]||r.mode==="pre")){
-    state.extracted[id]=true;
-    renderQuote(id);
-  }else{
-    $("#quotePane").classList.add("hidden");
-    $("#quote").innerHTML="";
-  }
-  if(window.innerWidth<=1100)window.scrollTo(0,0);
+var insp=$("inspector");
+function open(j,tr){
+  Array.prototype.forEach.call(tb.children,function(r){r.classList.remove("sel");});
+  if(tr) tr.classList.add("sel");
+  $("iTitle").textContent="Job "+j.n+" — "+j.name;
+  $("iMeta").textContent=j.status+" · "+j.steps+" steps · "+j.time+" · "+(j.issue||"no blocking issue");
+  var h="";
+  j.turns.forEach(function(t){
+    h+='<div class="turn'+(t[2]?" bad":"")+'"><span class="tg '+t[0]+'">['+t[0]+']</span><span class="tx">'+esc(t[1])+'</span></div>';
+  });
+  $("iTranscript").innerHTML=h;
+  $("iTranscript").scrollTop=0;
+  $("iRoot").textContent=j.root;
+  $("iFixNote").textContent=j.fixNote;
+  $("iDiff").innerHTML=j.diff.map(function(d){return '<div class="'+d[0]+'">'+esc(d[1])+'</div>';}).join("");
+  $("iBlast").textContent=j.blast;
+  $("iMeter").style.width=Math.max(j.pct,2)+"%";
+  $("iMeter").style.background=j.pct?"var(--warn)":"var(--pass)";
+  $("iPct").textContent=j.pct?j.pct+"% of sessions":"healthy";
+  var c=$("iCopy"); c.classList.remove("done"); c.textContent="Copy fix as PR description";
+  insp.classList.add("on");
+  insp.scrollIntoView({behavior:"smooth",block:"start"});
 }
-function find(id){for(var i=0;i<RFQ.length;i++){if(RFQ[i].id===id)return RFQ[i];}return null;}
+$("iClose").addEventListener("click",function(){
+  insp.classList.remove("on");
+  Array.prototype.forEach.call(tb.children,function(r){r.classList.remove("sel");});
+});
+$("iCopy").addEventListener("click",function(){
+  this.classList.add("done"); this.textContent="Copied ✓";
+});
 
-function renderCenter(){
-  var r=find(state.sel),h="";
-  h+='<div class="mailhd"><div class="t">'+esc(r.subj)+'</div><dl>'+
-     '<dt>From</dt><dd>'+esc(r.from)+' &lt;'+esc(r.email)+'&gt;</dd>'+
-     '<dt>Company</dt><dd>'+esc(r.co)+'</dd>'+
-     '<dt>Received</dt><dd>'+r.when+'</dd></dl></div>';
-  h+='<div class="sechd">Raw message</div><div class="rawbody">'+esc(r.body)+'</div>';
-  if(r.note)h+='<div class="note">⚠ '+esc(r.note)+'</div>';
-
-  if(r.id===1){
-    h+='<div class="sechd">Attachments (2)</div><div class="atts">'+drawingCard()+sheetCard()+'</div>';
-  }else if(r.att.length){
-    h+='<div class="sechd">Attachments ('+r.att.length+')</div><div class="atts">';
-    r.att.forEach(function(a){
-      h+='<div class="att"><div class="ah">'+clipSvg+esc(a)+'</div><div style="padding:14px;color:var(--muted);font-size:11.5px">Preview not rendered in this prototype.</div></div>';
-    });
-    h+='</div>';
-  }
-
-  var done=state.extracted[r.id];
-  h+='<div class="actionbar" id="actions">';
-  if(QUOTES[r.id]){
-    h+='<button class="btn big" id="extractBtn"'+(done?' disabled':'')+'>'+
-       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2 4 14h7l-1 8 9-12h-7l1-8z"/></svg>'+
-       (done?"Quote ready →":"Extract &amp; Price")+'</button>';
-    h+='<span class="hint">'+(done?"Structured quote is in the right pane.":"Reads the drawing, the spreadsheet and the email body.")+'</span>';
-  }else{
-    h+='<button class="btn big" id="extractBtn">'+
-       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2 4 14h7l-1 8 9-12h-7l1-8z"/></svg>Extract &amp; Price</button>'+
-       '<span class="hint">Demo prototype: full pricing is wired for Carlisle, Northline and Harbor.</span>';
-  }
-  h+='</div><div id="progHost" style="margin-top:12px"></div>';
-  $("#center").innerHTML=h;
-  var b=$("#extractBtn");
-  if(b)b.addEventListener("click",function(){onExtract(r);});
-  $("#center").scrollTop=0;
+/* toast */
+var tt=null;
+function toast(msg){
+  var t=$("toast"); t.textContent=msg; t.classList.add("on");
+  if(tt) clearTimeout(tt);
+  tt=setTimeout(function(){t.classList.remove("on");},2600);
 }
 
-function drawingCard(){
-  return '<div class="att"><div class="ah">'+clipSvg+'RFQ-4471-drawing.pdf</div>'+
-  '<svg class="dwg" viewBox="0 0 320 210" role="img" aria-label="Drawing preview of manifold block">'+
-  '<g stroke="#8a9099" fill="none" stroke-width="1">'+
-  '<rect x="4" y="4" width="312" height="202"/>'+
-  '<rect x="60" y="34" width="140" height="92" stroke="#2b7ab5" stroke-width="1.6"/>'+
-  '<circle cx="130" cy="80" r="21" stroke="#2b7ab5" stroke-width="1.6"/>'+
-  '<circle cx="130" cy="80" r="2"/>'+
-  '<path d="M130 52v56M102 80h56" stroke-dasharray="7 3 2 3"/>'+
-  '<circle cx="78" cy="48" r="5"/><circle cx="182" cy="48" r="5"/><circle cx="78" cy="112" r="5"/><circle cx="182" cy="112" r="5"/>'+
-  '<path d="M60 142h140M60 138v8M200 138v8"/>'+
-  '<path d="M214 34v92M210 34h8M210 126h8"/>'+
-  '<path d="M151 68 185 44"/>'+
-  '<rect x="4" y="160" width="312" height="46"/>'+
-  '<path d="M4 176h312M120 160v46M216 160v46M120 192h96"/>'+
-  '</g>'+
-  '<g fill="#5d6670" font-family="monospace" font-size="7.5">'+
-  '<text x="112" y="152">4.250</text>'+
-  '<text x="222" y="82">2.875</text>'+
-  '<text x="186" y="42">&#8960;.375 +/-.0005</text>'+
-  '<text x="186" y="52">CRITICAL</text>'+
-  '<text x="10" y="171">PRECISION MACHINING CO.</text>'+
-  '<text x="126" y="171">MANIFOLD BLOCK</text>'+
-  '<text x="222" y="171">CH-4471-02</text>'+
-  '<text x="10" y="188">MATL: 6061-T6</text>'+
-  '<text x="126" y="188">REV B</text>'+
-  '<text x="222" y="188">SHEET 1 OF 1</text>'+
-  '<text x="126" y="203">FINISH: HARD ANODIZE MIL-A-8625 TY III</text>'+
-  '<text x="10" y="203">SCALE 1:1</text>'+
-  '<text x="222" y="203">UNITS: IN</text>'+
-  '</g></svg></div>';
-}
-function sheetCard(){
-  return '<div class="att"><div class="ah">'+clipSvg+'part-list.xlsx</div><div class="ssWrap"><table class="ss">'+
-  '<tr><th></th><th>Part no.</th><th>Qty</th><th>Material</th><th>Finish</th><th>Note</th></tr>'+
-  '<tr><td>1</td><td>CH-4471-02</td><td class="bad">6 ea</td><td>6061-T6</td><td>HA Type III</td><td>primary</td></tr>'+
-  '<tr><td>2</td><td>CH-4471-02</td><td>12</td><td>6061 T6</td><td>hard anod.</td><td>alt qty</td></tr>'+
-  '<tr><td>3</td><td>CH-4471-02-SP</td><td>6</td><td class="bad blank"></td><td>—</td><td>spare plate</td></tr>'+
-  '<tr><td>4</td><td>O-RING KIT</td><td class="bad">6 sets</td><td>Buna-N</td><td>n/a</td><td>cust. supplied</td></tr>'+
-  '</table></div><div style="padding:7px 9px;font-size:10.5px;color:var(--muted)">Mixed units, one blank material cell, quantity typed as text.</div></div>';
-}
-
-/* ---------- extraction ---------- */
-var STEPS=["Reading drawing title block...","Parsing part list...","Matching to 3 similar past jobs...","Applying shop rates..."];
-function onExtract(r){
-  if(!QUOTES[r.id]){
-    toastSimple("No cost model loaded for this RFQ in the demo. Try Carlisle Hydraulics, Northline Aerospace or Harbor Pump &amp; Seal.");
-    return;
-  }
-  if(state.extracted[r.id]){renderQuote(r.id);return;}
-  var btn=$("#extractBtn");if(btn)btn.disabled=true;
-  var host=$("#progHost");
-  host.innerHTML='<div class="prog"><div class="bar"><i id="pbar"></i></div><ul class="steps" id="psteps">'+
-    STEPS.map(function(s,i){return '<li data-i="'+i+'"><span class="dot"></span>'+s+'</li>';}).join("")+'</ul></div>';
-  $("#quotePane").classList.remove("hidden");
-  $("#quote").innerHTML='<div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M18.4 5.6l-2.8 2.8M8.4 15.6l-2.8 2.8"/></svg><p>Building quote…</p></div>';
-  var i=0;
-  var tick=function(){
-    var lis=document.querySelectorAll("#psteps li");
-    if(!lis.length)return;
-    for(var k=0;k<lis.length;k++){
-      lis[k].className = k<i?"done":(k===i?"act":"");
-    }
-    var bar=$("#pbar");if(bar)bar.style.width=Math.round(((i+1)/STEPS.length)*100)+"%";
+/* fake re-run */
+var running=false;
+$("rerun").addEventListener("click",function(){
+  if(running) return;
+  running=true;
+  var btn=this; btn.disabled=true;
+  var p=$("progress"), fill=$("barfill"), txt=$("ptxt");
+  var msgs=["Spawning agent...","Attempting job 3 of 12...","Scoring..."];
+  var i=0; txt.textContent=msgs[0];
+  p.classList.add("on"); fill.style.width="6%";
+  setTimeout(function(){fill.style.width="38%";},80);
+  var iv=setInterval(function(){
     i++;
-    if(i<=STEPS.length){setTimeout(tick,375);}
-    else{
-      var l2=document.querySelectorAll("#psteps li");
-      for(var j=0;j<l2.length;j++)l2[j].className="done";
-      state.extracted[r.id]=true;
-      renderQuote(r.id);renderList();renderCenterKeepProgress(r);
-      if(window.innerWidth<=1100){$("#quotePane").scrollIntoView({behavior:"smooth",block:"start"});}
-    }
-  };
-  setTimeout(tick,120);
-}
-function renderCenterKeepProgress(r){
-  var b=$("#extractBtn");
-  if(b){b.disabled=true;b.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg>Quote ready →';}
-}
+    if(i<msgs.length){txt.textContent=msgs[i];fill.style.width=(38+i*28)+"%";}
+  },660);
+  setTimeout(function(){
+    clearInterval(iv);
+    fill.style.width="100%";
+    setTimeout(function(){
+      p.classList.remove("on"); fill.style.width="0%";
+      btn.disabled=false; running=false;
+      toast("Run complete — 2 min 14s");
+    },220);
+  },2000);
+});
 
-/* ---------- quote pane ---------- */
-function calc(id){
-  var q=QUOTES[id];
-  var sub=0;q.lines.forEach(function(l){sub+=l[2];});
-  var extra=(state.resolved[id]&&state.resolved[id][0]&&id===1)?92:0; // honing allowance
-  sub+=extra;
-  var m=state.margin[id]==null?q.margin:state.margin[id];
-  var total=sub/(1-m/100);
-  return {sub:sub,m:m,total:total,unit:total/q.qn,extra:extra};
-}
-function renderQuote(id){
-  var q=QUOTES[id],c=calc(id);
-  state.resolved[id]=state.resolved[id]||[];
-  $("#quotePane").classList.remove("hidden");
-  var h='<div class="ribbon"><span>Extracted quote draft</span><span class="demo">Demo data</span></div>';
-
-  h+='<div class="qsec"><div class="fields">'+
-    fld("Customer",q.cust,q.prov.cust)+
-    fld("Part number",q.pn,q.prov.pn)+
-    fld("Revision",q.rev,q.prov.rev)+
-    fld("Material",q.mat,q.prov.mat)+
-    fld("Finish",q.fin,q.prov.fin,true)+
-    fld("Quantity",q.qty,q.prov.qty)+
-    fld("Requested date",q.due,q.prov.due)+
-  '</div></div>';
-
-  h+='<div class="qsec"><div class="sechd" style="margin-top:0">Cost build-up</div><table class="cost">';
-  q.lines.forEach(function(l,i){
-    var amt=l[2]+((i===2&&c.extra)?c.extra:0);
-    var det=l[1]+((i===2&&c.extra)?" + 0.8 hr honing":"");
-    h+='<tr><td>'+esc(l[0])+'<div class="detail">'+esc(det)+'</div></td><td class="n">'+money(amt)+'</td></tr>';
-  });
-  h+='<tr class="sub"><td>Subtotal (cost)</td><td class="n">'+money(c.sub)+'</td></tr></table>';
-
-  h+='<div class="marginbox"><div class="mrow"><span>Margin</span><b id="mval">'+c.m+'%</b></div>'+
-     '<input type="range" id="mslider" min="15" max="45" step="1" value="'+c.m+'" aria-label="Margin percent">'+
-     '<div class="mrow" style="font-size:10px"><span>15%</span><span>45%</span></div></div>';
-
-  h+='<div class="total"><div><div class="lbl">Quoted total</div><div class="big" id="qtotal">'+money(c.total)+'</div></div>'+
-     '<div class="unit">unit price<br><span id="qunit" style="font-size:14px;color:var(--txt);font-weight:700">'+
-     (q.qn>1?money(c.unit):"—")+'</span></div></div></div>';
-
-  h+='<div class="qsec"><div class="sechd" style="margin-top:0">Confirm before sending ('+q.flags.length+')</div><div id="flags">';
-  q.flags.forEach(function(f,i){
-    var done=!!state.resolved[id][i];
-    h+='<div class="flag'+(done?" resolved":"")+'">'+
-      '<div class="ft">'+(done?
-        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6 9 17l-5-5"/></svg>Resolved':
-        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3 1.8 20.5h20.4L12 3zM12 9.5v5M12 17.4v.2"/></svg>Confirm')+'</div>'+
-      '<p>'+esc(done?f.r:f.t)+'</p>'+
-      (done?'':'<button type="button" data-flag="'+i+'">Accept &amp; resolve</button>')+
-      '</div>';
-  });
-  h+='</div></div>';
-
-  h+='<div class="qsec"><div class="sechd" style="margin-top:0">Similar past jobs</div><table class="jobs">'+
-     '<tr><th>Part</th><th>Date</th><th>Quoted</th><th>Result</th></tr>';
-  q.jobs.forEach(function(j){
-    h+='<tr><td>'+esc(j[0])+'</td><td>'+esc(j[1])+'</td><td>'+esc(j[2])+'</td><td class="out '+(j[3]==="WON"?"won":"lost")+'">'+j[3]+'</td></tr>';
-  });
-  h+='</table></div>';
-
-  h+='<div class="qfoot"><button class="btn" id="sendBtn">Send Quote</button><button class="btn ghost" id="saveBtn">Save Draft</button></div>';
-
-  $("#quote").innerHTML=h;
-
-  var sl=$("#mslider");
-  sl.addEventListener("input",function(){
-    var v=parseInt(sl.value,10);
-    if(isNaN(v)||v<15||v>45){v=q.margin;sl.value=v;}
-    state.margin[id]=v;
-    var cc=calc(id);
-    $("#mval").textContent=v+"%";
-    $("#qtotal").textContent=money(cc.total);
-    $("#qunit").textContent=q.qn>1?money(cc.unit):"—";
-  });
-  var fb=$("#flags").querySelectorAll("button[data-flag]");
-  for(var i=0;i<fb.length;i++){
-    (function(btn){btn.addEventListener("click",function(){
-      state.resolved[id][parseInt(btn.getAttribute("data-flag"),10)]=true;
-      renderQuote(id);
-    });})(fb[i]);
-  }
-  $("#saveBtn").addEventListener("click",function(){
-    toastSimple("Draft saved to RFQ "+esc(q.pn)+". Nothing was sent.");
-  });
-  $("#sendBtn").addEventListener("click",function(){sendQuote(id);});
-}
-function fld(label,val,prov,wide){
-  return '<div class="f'+(wide?" wide":"")+'"><label>'+esc(label)+'</label><div class="v">'+esc(val)+'</div>'+
-    '<span class="prov">from '+esc(prov)+'</span></div>';
-}
-
-/* ---------- toasts ---------- */
-var tTimer=null;
-function showToast(html){
-  var t=$("#toast");t.innerHTML=html;t.classList.add("show");
-  if(tTimer)clearTimeout(tTimer);
-  tTimer=setTimeout(function(){t.classList.remove("show");},9000);
-}
-function toastSimple(msg){
-  showToast('<div class="th"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6 9 17l-5-5"/></svg><span>'+msg+'</span></div>');
-}
-function sendQuote(id){
-  var q=QUOTES[id];
-  var unresolved=q.flags.length-(state.resolved[id]||[]).filter(Boolean).length;
-  if(unresolved>0){
-    showToast('<div class="th" style="color:var(--warm)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3 1.8 20.5h20.4L12 3zM12 9.5v5M12 17.4v.2"/></svg><span>'+
-      unresolved+' item'+(unresolved>1?'s':'')+' still need confirming before you send.</span></div>');
-    $("#toast").style.borderColor="var(--amberline)";
-    return;
-  }
-  $("#toast").style.borderColor="var(--ok)";
-  var lbl=q.min<60?(q.min+" min"):(Math.round(q.min/60)+" hrs");
-  showToast('<div class="th"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6 9 17l-5-5"/></svg><span>'+esc(q.toast)+'</span></div>'+
-    '<div class="payoff"><div class="pbox new"><i>This quote</i><b>'+lbl+'</b></div>'+
-    '<span class="arrow">vs</span>'+
-    '<div class="pbox old"><i>Your average</i><b>3.2 days</b></div>'+
-    '<div class="pbox"><i>Faster by</i><b>'+Math.round((3.2*24*60)/q.min)+'×</b></div></div>');
-  var r=find(id);
-  if(r&&!r.sent){r.sent=true;var n=parseInt($("#statOpen").textContent,10);if(!isNaN(n)&&n>0)$("#statOpen").textContent=n-1;}
-}
-
-/* ---------- boot ---------- */
-renderList();
-$("#quote").innerHTML='<div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h4"/></svg><p>No quote yet. Open an RFQ and press <b>Extract &amp; Price</b>.</p></div>';
-if(window.innerWidth>1100){select(1);}
-else{$("#centerPane").classList.add("hidden");$("#quotePane").classList.add("hidden");}
+/* default: job 4 ready in one click, scorecard visible on load */
 })();
 </script>
 </body>
