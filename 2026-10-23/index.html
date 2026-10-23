@@ -3,560 +3,400 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Ledger — Agent Action Console</title>
+<title>Doublecheck — write-action reconciliation for AI agents</title>
 <style>
 :root{
-  --bg:#0c0f14; --panel:#11151c; --panel2:#151a23; --line:#232b38;
-  --txt:#e6ecf5; --dim:#8b97a8; --dimmer:#5f6b7d;
-  --green:#2ecc8f; --greenbg:#10291f; --amber:#f0b429; --amberbg:#2e2310;
-  --slate:#7f9bc0; --slatebg:#15202e; --purple:#b388ff; --purplebg:#231a33;
-  --red:#ff6b6b; --redbg:#2c1416; --accent:#5aa9ff;
+  --bg:#0b0f14; --panel:#111823; --panel2:#0e141d; --line:#1e2a38;
+  --txt:#dbe6f2; --mut:#7c8ea3; --dim:#55657a;
+  --acc:#4ea8ff; --ok:#3ddc97; --warn:#ffcc66; --bad:#ff6b6b; --vio:#b58cff;
   --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
-  --sans:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --sans:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
 }
 @media (prefers-color-scheme: light){
   :root{
-    --bg:#f3f5f9; --panel:#ffffff; --panel2:#f7f9fc; --line:#dde3ec;
-    --txt:#131a24; --dim:#5b6878; --dimmer:#8894a5;
-    --green:#0f8a5f; --greenbg:#e3f6ed; --amber:#9a6b00; --amberbg:#fdf2d8;
-    --slate:#3f6895; --slatebg:#e6eefa; --purple:#6a39c9; --purplebg:#f0e8ff;
-    --red:#c0392b; --redbg:#fdeaea; --accent:#1d6fd0;
+    --bg:#f3f6fa; --panel:#ffffff; --panel2:#f7f9fc; --line:#dde5ee;
+    --txt:#16202b; --mut:#5d6b7c; --dim:#8694a5;
+    --acc:#1668c7; --ok:#0f8b5f; --warn:#9a6b00; --bad:#c62f2f; --vio:#6b3fc4;
   }
 }
 *{box-sizing:border-box}
 html,body{margin:0;padding:0}
 body{background:var(--bg);color:var(--txt);font-family:var(--sans);font-size:15px;line-height:1.45;-webkit-text-size-adjust:100%}
-header.top{position:sticky;top:0;z-index:30;background:var(--panel);border-bottom:1px solid var(--line);padding:10px 14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-.brand{display:flex;align-items:center;gap:9px;min-width:0}
-.logo{width:26px;height:26px;flex:0 0 auto}
-.brandtxt{min-width:0}
-.brandtxt b{font-size:15px;letter-spacing:.2px}
-.brandtxt span{display:block;font-size:12px;color:var(--dim)}
-.spacer{flex:1 1 auto}
-.demo-tag{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--dimmer);border:1px solid var(--line);border-radius:999px;padding:3px 8px}
-.toggle{display:flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--panel2);border-radius:999px;padding:6px 10px;cursor:pointer;min-height:40px}
-.toggle:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-.toggle .lbl{font-size:12px;color:var(--dim)}
-.sw{width:38px;height:21px;border-radius:999px;background:var(--green);position:relative;transition:background .18s}
-.sw::after{content:"";position:absolute;top:2px;left:19px;width:17px;height:17px;border-radius:50%;background:#fff;transition:left .18s}
-.toggle.off .sw{background:#5a6474}
-.toggle.off .sw::after{left:2px}
-.toggle .state{font-size:12px;font-weight:700;color:var(--green)}
-.toggle.off .state{color:var(--red)}
-.banner{display:none;margin:0;padding:11px 14px;background:var(--redbg);border-bottom:1px solid var(--red);color:var(--red);font-size:13.5px;font-weight:600}
-.banner.show{display:block}
-main{padding:14px;max-width:1500px;margin:0 auto}
-.grid{display:grid;grid-template-columns:40fr 60fr;gap:14px;align-items:start}
-@media (max-width:900px){.grid{grid-template-columns:1fr}}
-.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden}
-.card h2{margin:0;padding:12px 14px 2px;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--txt)}
-.cap{padding:0 14px 10px;font-size:12px;color:var(--dim)}
-.trace{font-family:var(--mono);font-size:11.5px;line-height:1.75;max-height:460px;overflow:auto;padding:6px 10px 12px;border-top:1px solid var(--line);background:var(--panel2)}
-.trace div{white-space:pre-wrap;word-break:break-word;color:var(--dim);padding:1px 2px;border-radius:3px}
-.trace .t{color:var(--dimmer)}
-.trace .k{color:var(--slate)}
-.trace .ok{color:var(--green)}
-.trace .bad{color:var(--red);font-weight:700}
-.trace .warn{color:var(--amber)}
-.trace .hl{background:rgba(240,180,41,.12)}
-.summary{display:flex;flex-wrap:wrap;gap:8px;padding:12px 14px;border-top:1px solid var(--line);background:var(--panel2);font-size:12.5px}
-.chip{border:1px solid var(--line);border-radius:999px;padding:4px 10px;background:var(--panel);color:var(--dim)}
-.chip b{color:var(--txt)}
-.chip.warnc{border-color:var(--amber);color:var(--amber)}
-.chip.okc{border-color:var(--green);color:var(--green)}
-table{width:100%;border-collapse:collapse}
-thead th{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--dimmer);text-align:left;padding:9px 10px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);background:var(--panel2);font-weight:600}
-tbody td{padding:10px;border-bottom:1px solid var(--line);vertical-align:top;font-size:13px}
-tr.eff{cursor:pointer}
-tr.eff:hover td{background:rgba(127,155,192,.07)}
-tr.eff:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
-.tm{font-family:var(--mono);font-size:12px;color:var(--dim);white-space:nowrap}
-.act{font-family:var(--mono);font-size:12px;color:var(--txt);word-break:break-word}
-.tgt{font-size:12.5px;color:var(--dim);word-break:break-word}
-.val{font-family:var(--mono);font-size:12.5px;white-space:nowrap}
-.pill{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.06em;padding:3px 8px;border-radius:999px;white-space:nowrap}
-.p-CONFIRMED{background:var(--greenbg);color:var(--green);border:1px solid var(--green)}
-.p-DUPLICATE{background:var(--amberbg);color:var(--amber);border:1px solid var(--amber)}
-.p-UNCERTAIN{background:var(--slatebg);color:var(--slate);border:1px solid var(--slate)}
-.p-REVERSED{background:var(--purplebg);color:var(--purple);border:1px solid var(--purple)}
-.p-NOTEXEC{background:var(--redbg);color:var(--red);border:1px solid var(--red)}
-.conf{font-family:var(--mono);font-size:11.5px;color:var(--dim);white-space:nowrap}
-.bar{display:block;width:52px;height:5px;border-radius:3px;background:var(--line);margin-top:4px;overflow:hidden}
-.bar i{display:block;height:100%;background:var(--green)}
-.bar.mid i{background:var(--amber)}
-.bar.low i{background:var(--slate)}
-tr.dupe td{background:rgba(240,180,41,.09)}
-tr.dupe td:first-child{box-shadow:inset 3px 0 0 var(--amber)}
-tr.dupenote td{background:rgba(240,180,41,.09);padding-top:0;border-bottom:1px solid var(--line)}
-.dupebox{display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:12px;color:var(--amber);font-family:var(--mono)}
-.brk{width:12px;align-self:stretch;border:2px solid var(--amber);border-right:0;border-radius:4px 0 0 4px;min-height:26px}
-tr.detail td{background:var(--panel2);padding:0;border-bottom:1px solid var(--line)}
-.detail-in{padding:12px 12px 14px;display:grid;gap:10px}
-.dl{display:grid;grid-template-columns:150px 1fr;gap:4px 10px;font-size:12.5px}
-@media (max-width:620px){.dl{grid-template-columns:1fr}}
-.dl dt{color:var(--dimmer);font-size:11px;letter-spacing:.05em;text-transform:uppercase}
-.dl dd{margin:0;font-family:var(--mono);font-size:12px;color:var(--txt);word-break:break-word}
-pre{margin:0;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px;font-family:var(--mono);font-size:11.5px;color:var(--dim);overflow:auto;white-space:pre-wrap;word-break:break-word}
-.btn{font:inherit;font-size:13px;font-weight:650;border-radius:9px;border:1px solid var(--line);background:var(--panel);color:var(--txt);padding:9px 14px;min-height:40px;cursor:pointer}
-.btn:hover{border-color:var(--accent)}
-.btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-.btn[disabled]{opacity:.55;cursor:default}
-.btn.amber{border-color:var(--amber);color:var(--amber);background:var(--amberbg)}
-.btn.slate{border-color:var(--slate);color:var(--slate);background:var(--slatebg)}
-.btn.green{border-color:var(--green);color:var(--green);background:var(--greenbg)}
-.btn.prim{border-color:var(--accent);color:var(--accent)}
-.rowactions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px}
-.prog{font-family:var(--mono);font-size:11.5px;color:var(--dim);display:flex;align-items:center;gap:8px}
-.track{width:120px;height:5px;background:var(--line);border-radius:3px;overflow:hidden}
-.track i{display:block;height:100%;width:0%;background:var(--accent);transition:width .2s linear}
-.verdict{font-family:var(--mono);font-size:12px;padding:8px 10px;border-radius:8px;border:1px solid var(--line)}
-.verdict.good{color:var(--green);border-color:var(--green);background:var(--greenbg)}
-.verdict.bad{color:var(--red);border-color:var(--red);background:var(--redbg)}
-footer.bar{margin:14px auto 0;max-width:1500px;padding:12px 14px;border-top:1px solid var(--line);display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-.foot-note{font-size:12px;color:var(--dimmer)}
-.toast{position:fixed;left:50%;transform:translateX(-50%) translateY(20px);bottom:18px;background:var(--panel);border:1px solid var(--green);color:var(--green);padding:11px 16px;border-radius:10px;font-size:13px;font-weight:650;opacity:0;pointer-events:none;transition:.25s;z-index:60;max-width:92vw;text-align:center;box-shadow:0 10px 30px rgba(0,0,0,.35)}
-.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
-.modal{position:fixed;inset:0;background:rgba(5,8,12,.72);display:none;align-items:center;justify-content:center;padding:14px;z-index:70}
-.modal.show{display:flex}
-.sheet{background:var(--panel);border:1px solid var(--line);border-radius:12px;max-width:620px;width:100%;max-height:88vh;display:flex;flex-direction:column}
-.sheet header{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--line)}
-.sheet header b{font-size:14px}
-.sheet .body{padding:12px 14px;overflow:auto}
-.sheet footer{padding:12px 14px;border-top:1px solid var(--line);display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+.wrap{max-width:1040px;margin:0 auto;padding:14px 12px 40px}
+header.top{display:flex;gap:10px;align-items:flex-start;padding:10px 2px 16px;border-bottom:1px solid var(--line);margin-bottom:16px;flex-wrap:wrap}
+.logo{width:28px;height:28px;flex:0 0 auto;margin-top:2px}
+h1{font-size:16px;margin:0;letter-spacing:.2px}
+h1 .nm{font-family:var(--mono)}
+.sub{color:var(--mut);font-size:13px;margin:2px 0 0}
+.demo{font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;color:var(--dim);border:1px solid var(--line);border-radius:999px;padding:3px 8px;text-transform:uppercase;white-space:nowrap}
+section{margin:0 0 26px}
+.shead{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin:0 0 10px}
+h2{font-size:13px;letter-spacing:.1em;text-transform:uppercase;margin:0;color:var(--txt)}
+.scount{font-family:var(--mono);font-size:12px;color:var(--mut)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:10px;border-bottom:1px solid var(--line);background:var(--panel2)}
+button{font:inherit;cursor:pointer}
+.btn{background:transparent;color:var(--acc);border:1px solid var(--line);border-radius:8px;padding:10px 14px;font-size:13px;min-height:44px;font-family:var(--mono);letter-spacing:.02em}
+.btn:hover{border-color:var(--acc)}
+.btn:active{transform:translateY(1px)}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.btn.primary{background:var(--acc);color:#04121f;border-color:var(--acc);font-weight:700}
+@media (prefers-color-scheme: light){.btn.primary{color:#fff}}
+.btn.sm{min-height:38px;padding:7px 12px;font-size:12px}
+.row{border-bottom:1px solid var(--line)}
+.row:last-child{border-bottom:0}
+.rowhead{display:grid;grid-template-columns:62px 118px 118px 1fr 190px;gap:10px;align-items:center;padding:11px 12px;cursor:pointer}
+.rowhead:hover{background:var(--panel2)}
+.mono{font-family:var(--mono);font-size:12.5px}
+.t{color:var(--mut)}
+.agent{color:var(--vio)}
+.action{color:var(--acc)}
+.subj{color:var(--txt);font-size:13px;overflow-wrap:anywhere}
+.sys{color:var(--mut);font-size:11.5px;font-family:var(--mono)}
+.chipwrap{display:flex;flex-direction:column;align-items:flex-start;gap:3px}
+.chip{display:inline-block;font-family:var(--mono);font-size:10.5px;letter-spacing:.07em;padding:4px 8px;border-radius:999px;border:1px solid currentColor;white-space:nowrap}
+.c-unc{color:var(--warn)}
+.c-run{color:var(--acc)}
+.c-com{color:var(--ok)}
+.c-not{color:var(--mut)}
+.c-dup{color:var(--bad);background:rgba(255,107,107,.1)}
+.c-hum{color:var(--vio)}
+.why{font-size:11px;color:var(--dim);font-family:var(--mono)}
+.ev{padding:0 12px 12px 12px;font-size:12.5px;color:var(--txt)}
+.ev .line{border-left:2px solid var(--line);padding:2px 0 2px 10px;margin:0 0 6px}
+.ev.committed .line{border-color:var(--ok)}
+.ev.duplicate .line{border-color:var(--bad)}
+.ev.notcommitted .line{border-color:var(--mut)}
+.ev.human .line{border-color:var(--vio)}
+.lk{color:var(--acc);text-decoration:underline;text-underline-offset:3px;font-size:12px;opacity:.55;cursor:default}
+.steps{padding:0 12px 10px;font-family:var(--mono);font-size:12px;color:var(--mut)}
+.steps div{opacity:0;animation:fade .25s forwards}
+.steps div:nth-child(1){animation-delay:.05s}
+.steps div:nth-child(2){animation-delay:.45s}
+.steps div:nth-child(3){animation-delay:.85s}
+@keyframes fade{to{opacity:1;transform:none}}
+.steps div{transform:translateY(3px)}
+.detail{background:var(--panel2);border-top:1px dashed var(--line);padding:12px}
+.detail h4{margin:0 0 6px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
+pre{margin:0 0 10px;font-family:var(--mono);font-size:11.5px;color:var(--mut);white-space:pre-wrap;overflow-wrap:anywhere;background:rgba(127,127,127,.07);padding:9px;border-radius:8px;border:1px solid var(--line)}
+pre .err{color:var(--bad)}
+pre .key{color:var(--warn)}
+.banner{margin:12px 0 0;border:1px solid var(--ok);border-radius:12px;padding:12px 14px;background:rgba(61,220,151,.08);font-family:var(--mono);font-size:13px;overflow-wrap:anywhere}
+.banner b{color:var(--bad)}
+.counter{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;padding:11px 12px;border-bottom:1px solid var(--line);background:var(--panel2);font-family:var(--mono);font-size:13px}
+.counter .big{color:var(--ok);font-size:15px;font-weight:700}
+.blk{display:grid;grid-template-columns:92px 1fr;gap:10px;padding:11px 12px;border-bottom:1px solid var(--line);align-items:start}
+.blk:last-child{border-bottom:0}
+.blk .txt{font-size:13px;overflow-wrap:anywhere}
+.blk .meta{font-family:var(--mono);font-size:11px;color:var(--dim);margin-top:2px}
+input[type=text]{font:inherit;font-family:var(--mono);font-size:13px;width:100%;min-height:44px;padding:10px 12px;border-radius:8px;border:1px solid var(--line);background:var(--panel2);color:var(--txt)}
+input[type=text]:focus{outline:2px solid var(--acc);outline-offset:1px}
+.tblscroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{border-collapse:collapse;width:100%;min-width:720px}
+th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);font-family:var(--mono);font-size:12px;white-space:nowrap}
+th{color:var(--dim);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;position:sticky;top:0;background:var(--panel)}
+tbody tr.hl{background:rgba(255,107,107,.09)}
+td.ok{color:var(--ok)}
+td.no{color:var(--dim)}
+.empty{padding:22px 12px;text-align:center;color:var(--mut);font-size:13px}
+footer{color:var(--dim);font-size:12px;text-align:center;padding:18px 6px 4px;border-top:1px solid var(--line)}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+@media (max-width:760px){
+  .rowhead{grid-template-columns:1fr auto;gap:6px 10px;padding:12px}
+  .rowhead .c-time{grid-column:1;}
+  .rowhead .c-meta{grid-column:1/-1;display:flex;gap:8px;flex-wrap:wrap;align-items:baseline}
+  .rowhead .c-subj{grid-column:1/-1}
+  .rowhead .c-chip{grid-column:1/-1}
+  .blk{grid-template-columns:1fr}
+}
 </style>
 </head>
 <body>
+<div class="wrap">
 <header class="top">
-  <div class="brand">
-    <svg class="logo" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <rect x="2.5" y="2.5" width="19" height="19" rx="5" stroke="currentColor" stroke-width="1.6" opacity=".45"/>
-      <path d="M7 12.5l3.2 3.2L17 9" stroke="#2ecc8f" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/>
-      <path d="M7 8h4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" opacity=".5"/>
-    </svg>
-    <div class="brandtxt">
-      <b>Ledger — Agent Action Console</b>
-      <span>Every real-world side effect your AI agent caused, reconciled and reversible.</span>
-    </div>
+  <svg class="logo" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="color:var(--acc)">
+    <path d="M3 7.5l4 4 6.5-7"/><path d="M8.5 15.5l3.5 3.5L21 9"/>
+  </svg>
+  <div style="flex:1 1 260px">
+    <h1><span class="nm">Doublecheck</span> — did the agent's write action actually happen?</h1>
+    <p class="sub">Reconciliation layer for agent tool calls: resolve uncertain effects, block duplicate replays.</p>
   </div>
-  <div class="spacer"></div>
-  <span class="demo-tag">Demo data</span>
-  <button class="toggle" id="replayToggle" aria-pressed="true">
-    <span class="lbl">Replay protection</span><span class="sw"></span><span class="state" id="replayState">ON</span>
-  </button>
+  <span class="demo">Demo data</span>
 </header>
-<div class="banner" id="replayBanner">⚠ Without Ledger, replay would have re-issued 1 refund and re-sent 1 SMS.</div>
 
-<main>
-<div class="grid">
-
-  <section class="card" aria-labelledby="h-trace">
-    <h2 id="h-trace">Raw agent trace</h2>
-    <div class="cap">What your tracing tool shows. Run <span style="font-family:var(--mono)">run_7c21</span> · Northwind Home Services · 14:02–14:06</div>
-    <div class="trace" id="trace"></div>
-  </section>
-
-  <section class="card" aria-labelledby="h-ledger">
-    <h2 id="h-ledger">Effect ledger</h2>
-    <div class="cap">What actually happened in the world. Tap a row for provenance.</div>
-    <div class="summary" id="summary"></div>
-    <div style="overflow-x:auto">
-    <table>
-      <thead><tr><th>Time</th><th>Action</th><th>Target</th><th>Value</th><th>Status</th><th>Confidence</th></tr></thead>
-      <tbody id="tbody"></tbody>
-    </table>
-    </div>
-  </section>
-
-</div>
-</main>
-
-<footer class="bar">
-  <button class="btn prim" id="exportBtn">Export incident report</button>
-  <span class="foot-note">Prototype by Granted, inspired by your bookmarks</span>
-</footer>
-
-<div class="toast" id="toast" role="status" aria-live="polite"></div>
-
-<div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-  <div class="sheet">
-    <header><b id="modalTitle">Incident report — run_7c21</b><span class="spacer"></span><button class="btn" id="closeModal">Close</button></header>
-    <div class="body"><pre id="reportText"></pre></div>
-    <footer><button class="btn green" id="copyBtn">Copy</button></footer>
+<!-- SECTION 1 -->
+<section>
+  <div class="shead">
+    <h2>Uncertain outcomes</h2>
+    <span class="scount" id="qcount">6 pending</span>
   </div>
+  <div class="panel">
+    <div class="toolbar">
+      <button class="btn primary" id="runall">Reconcile all</button>
+      <button class="btn sm" id="reset">Reset queue</button>
+      <span class="scount" style="margin-left:auto">tap a row for request / response</span>
+    </div>
+    <div id="queue"></div>
+  </div>
+  <div id="banner"></div>
+</section>
+
+<!-- SECTION 2 -->
+<section>
+  <div class="shead"><h2>Blocked replays today</h2><span class="demo">Sample data</span></div>
+  <div class="panel">
+    <div class="counter">
+      <span>Duplicate effects prevented this month: <span class="big">23</span></span>
+      <span class="t" style="color:var(--mut)">· estimated value protected: <span class="big">$4,180</span></span>
+    </div>
+    <div id="blocked"></div>
+  </div>
+</section>
+
+<!-- SECTION 3 -->
+<section>
+  <div class="shead"><h2>Effect ledger</h2><span class="scount" id="lcount"></span></div>
+  <div class="panel">
+    <div class="toolbar">
+      <label class="sr" for="filter">Filter ledger</label>
+      <input type="text" id="filter" placeholder="filter: cus_Qp3r9, stripe, agent, run_…" autocomplete="off" spellcheck="false">
+    </div>
+    <div class="tblscroll">
+      <table>
+        <thead><tr><th>Time</th><th>Agent</th><th>Action</th><th>External record</th><th>Idempotency key</th><th>Verified</th><th>Run</th></tr></thead>
+        <tbody id="ledger"></tbody>
+      </table>
+    </div>
+    <div class="empty" id="lempty" hidden>No ledger rows match that filter.</div>
+  </div>
+</section>
+
+<footer>Prototype by Granted, inspired by your bookmarks</footer>
 </div>
 
 <script>
 (function(){
 "use strict";
+var QUEUE = [
+ {id:"act_8812",time:"09:41:02",agent:"billing-agent",action:"refund.create",sys:"Stripe",
+  subj:'$412.00 · cus_Nf8k2 "Ava Reyes"',why:"gateway timeout 28s",key:"rf_8812",
+  steps:["querying Stripe refunds, last 15 min…","matching on idempotency key rf_8812…","1 match found, created 09:41:04"],
+  verdict:"COMMITTED",vclass:"committed",chip:"c-com",
+  evidence:"Refund re_3Qa… exists in Stripe, created 09:41:04, $412.00. Do not retry.",
+  req:'POST /v1/refunds\n{ "charge": "ch_3Qa81k", "amount": 41200,\n  "currency": "usd", "reason": "requested_by_customer" }\nIdempotency-Key: rf_8812',
+  res:'<span class="err">ERR_GATEWAY_TIMEOUT</span> after 28.0s — no response body\nupstream: api.stripe.com · attempt 1/1\n<span class="key">effect_recorded: unknown</span>'},
 
-/* ---------- SECTION 1: raw trace (demo data) ---------- */
-var TRACE = [
- ["14:02:03","span.start","run_7c21 agent=northwind-ops goal=\"close ticket #4412 for Brighton HVAC\"",""],
- ["14:02:04","hubspot.contacts.search","email=dana@brightonhvac.com","ok"],
- ["14:02:11","llm.call","model=sonnet tokens=4,310 latency=6.2s",""],
- ["14:02:18","tool.call","hubspot.deals.update deal=deal_30417 stage=\"Quote Sent\"","ok"],
- ["14:02:19","tool.call","stripe.refunds.create amount=248.00 customer=cus_8812","TIMEOUT"],
- ["14:02:49","workflow.replay","step=refund attempt=2 reason=no_response",""],
- ["14:02:51","tool.call","stripe.refunds.create amount=248.00 customer=cus_8812","ok re_9f21"],
- ["14:03:04","tool.call","sendgrid.mail.send to=dana@brightonhvac.com template=quote_v3","ok"],
- ["14:03:07","tool.call","sendgrid.mail.send to=ops@northwindhome.com template=internal_cc","ok"],
- ["14:03:22","tool.call","twilio.sms.send to=+1-801-555-0142 body=\"Tech en route window 9-11\"","TIMEOUT"],
- ["14:03:52","workflow.checkpoint","step=notify state=persisted",""],
- ["14:04:01","tool.call","twilio.sms.send to=+1-801-555-0188 body=\"Quote ready\"","ok SM_7c04"],
- ["14:04:12","llm.call","model=sonnet tokens=1,942 latency=2.8s",""],
- ["14:04:20","tool.call","google_calendar.events.insert start=\"Wed 09:00\" tech=\"Marco Ruiz\"","TIMEOUT"],
- ["14:04:51","workflow.replay","step=schedule attempt=2 reason=no_event_id",""],
- ["14:04:55","tool.call","google_calendar.events.insert start=\"Thu 13:30\" tech=\"Marco Ruiz\"","ok evt_b771"],
- ["14:05:06","tool.call","quickbooks.invoices.create customer=\"Brighton HVAC\" total=1,120.00","ok inv_2290"],
- ["14:05:19","tool.call","stripe.payment_intents.capture pi_55ka amount=1,120.00","ok"],
- ["14:05:27","tool.call","hubspot.notes.create deal=deal_30417 body=\"Agent closed ticket #4412\"","ok"],
- ["14:05:33","policy.check","idempotency_keys_present=4/7 scope=write_tools","warn"],
- ["14:05:40","span.end","run_7c21 duration=3m37s tool_calls=11 errors=3",""],
- ["14:05:40","ledger.sync","effects_recorded=11 fingerprints=11 conflicts=1","warn"]
-];
-function esc(s){return String(s).replace(/[&<>]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;"}[c];});}
-var traceEl=document.getElementById("trace");
-TRACE.forEach(function(r){
-  var d=document.createElement("div");
-  var res="";
-  if(r[3]==="ok"||/^ok /.test(r[3])) res=' <span class="ok">→ '+esc(r[3])+'</span>';
-  else if(r[3]==="TIMEOUT") res=' <span class="bad">→ TIMEOUT (30s)</span>';
-  else if(r[3]==="warn") res=' <span class="warn">→ warn</span>';
-  d.innerHTML='<span class="t">'+r[0]+'</span> <span class="k">'+esc(r[1])+'</span> '+esc(r[2])+res;
-  if(r[2].indexOf("cus_8812")>-1||r[1]==="workflow.replay") d.className="hl";
-  traceEl.appendChild(d);
-});
+ {id:"act_8813",time:"09:44:17",agent:"support-agent",action:"email.send",sys:"Postmark",
+  subj:'"Sorry about your order #10482" · ava@…',why:"504 after submit",key:"em_4417",
+  steps:["querying Postmark outbound, last 15 min…","matching on idempotency key em_4417…","1 match found, delivered 09:44:19"],
+  verdict:"COMMITTED",vclass:"committed",chip:"c-com",
+  evidence:"Message 7d21-… accepted by Postmark 09:44:19, delivered to ava@…. Do not retry.",
+  req:'POST /email\n{ "To": "ava@…", "Subject": "Sorry about your order #10482",\n  "TextBody": "Hi Ava — we\'ve issued a refund…" }\nIdempotency-Key: em_4417',
+  res:'<span class="err">HTTP 504 Gateway Timeout</span> (submit acknowledged, body lost)\n<span class="key">effect_recorded: unknown</span>'},
 
-/* ---------- SECTION 2: effect ledger ---------- */
-var AUTH="on behalf of: ops@northwindhome.com, session s_4471";
-var EFFECTS=[
- {id:"e1",t:"14:02:18",act:"hubspot.deals.update",tgt:"Deal 30417 · Brighton HVAC",val:"→ Quote Sent",st:"CONFIRMED",conf:99,
-  span:"14:02:18 tool.call hubspot.deals.update deal=deal_30417 stage=\"Quote Sent\" → ok",
-  fp:"hubspot.deal_stage · deal_30417 · Quote Sent",
-  req:'{"dealId":"deal_30417","properties":{"dealstage":"quote_sent"}}',
-  res:'{"id":"deal_30417","dealstage":"quote_sent","updatedAt":"14:02:18.441Z"}'},
- {id:"e2",t:"14:02:19",act:"stripe.refunds.create",tgt:"Dana Olsen · cus_8812",val:"$248.00",st:"DUPLICATE",conf:72,dupe:"first",
-  span:"14:02:19 tool.call stripe.refunds.create amount=248.00 customer=cus_8812 → TIMEOUT (30s)",
-  fp:"stripe.refund · cus_8812 · 248.00 · 60s window",
-  req:'{"customer":"cus_8812","amount":24800,"currency":"usd","reason":"service_credit"}',
-  res:'{"error":"request_timeout","note":"reconciled later: refund re_9e08 DID settle"}'},
- {id:"e3",t:"14:02:51",act:"stripe.refunds.create",tgt:"Dana Olsen · cus_8812",val:"$248.00",st:"DUPLICATE",conf:72,dupe:"second",
-  span:"14:02:51 tool.call stripe.refunds.create amount=248.00 customer=cus_8812 → ok re_9f21",
-  fp:"stripe.refund · cus_8812 · 248.00 · 60s window",
-  req:'{"customer":"cus_8812","amount":24800,"currency":"usd","reason":"service_credit"}',
-  res:'{"id":"re_9f21","status":"succeeded","amount":24800,"created":"14:02:51Z"}'},
- {id:"e4",t:"14:03:04",act:"sendgrid.mail.send",tgt:"dana@brightonhvac.com · quote_v3",val:"1 email",st:"CONFIRMED",conf:99,
-  span:"14:03:04 tool.call sendgrid.mail.send to=dana@brightonhvac.com template=quote_v3 → ok",
-  fp:"sendgrid.mail · dana@brightonhvac.com · quote_v3 · #4412",
-  req:'{"to":"dana@brightonhvac.com","template_id":"quote_v3","ticket":"4412"}',
-  res:'{"message_id":"sg_41ba9c","status":"accepted"}'},
- {id:"e5",t:"14:03:07",act:"sendgrid.mail.send",tgt:"ops@northwindhome.com · internal_cc",val:"1 email",st:"CONFIRMED",conf:99,
-  span:"14:03:07 tool.call sendgrid.mail.send to=ops@northwindhome.com template=internal_cc → ok",
-  fp:"sendgrid.mail · ops@northwindhome.com · internal_cc · #4412",
-  req:'{"to":"ops@northwindhome.com","template_id":"internal_cc","ticket":"4412"}',
-  res:'{"message_id":"sg_41bb10","status":"accepted"}'},
- {id:"e6",t:"14:03:22",act:"twilio.sms.send",tgt:"+1-801-555-0142 · Dana Olsen",val:"1 SMS",st:"UNCERTAIN",conf:41,verify:"sms",
-  span:"14:03:22 tool.call twilio.sms.send to=+1-801-555-0142 → TIMEOUT (30s)",
-  fp:"twilio.sms · +18015550142 · body_hash 9d41e2 · 60s window",
-  req:'{"to":"+18015550142","from":"+18015559900","body":"Tech en route window 9-11"}',
-  res:'{"error":"gateway_timeout","provider_sid":null}'},
- {id:"e7",t:"14:04:01",act:"twilio.sms.send",tgt:"+1-801-555-0188 · Marco Ruiz",val:"1 SMS",st:"CONFIRMED",conf:98,
-  span:"14:04:01 tool.call twilio.sms.send to=+1-801-555-0188 → ok SM_7c04",
-  fp:"twilio.sms · +18015550188 · body_hash 2a77c1",
-  req:'{"to":"+18015550188","body":"Quote ready for Brighton HVAC"}',
-  res:'{"sid":"SM_7c04","status":"delivered"}'},
- {id:"e8",t:"14:04:20",act:"google_calendar.events.insert",tgt:"Wed 9:00 AM · tech Marco Ruiz",val:"1 booking",st:"UNCERTAIN",conf:38,verify:"cal",
-  span:"14:04:20 tool.call google_calendar.events.insert start=\"Wed 09:00\" → TIMEOUT (30s)",
-  fp:"gcal.event · cal_field_ops · Wed 09:00 · Marco Ruiz",
-  req:'{"calendarId":"cal_field_ops","start":"Wed 09:00","attendee":"marco.ruiz@northwindhome.com"}',
-  res:'{"error":"deadline_exceeded","event_id":null}'},
- {id:"e9",t:"14:04:55",act:"google_calendar.events.insert",tgt:"Thu 1:30 PM · tech Marco Ruiz",val:"1 booking",st:"CONFIRMED",conf:97,
-  span:"14:04:55 tool.call google_calendar.events.insert start=\"Thu 13:30\" → ok evt_b771",
-  fp:"gcal.event · cal_field_ops · Thu 13:30 · Marco Ruiz",
-  req:'{"calendarId":"cal_field_ops","start":"Thu 13:30","attendee":"marco.ruiz@northwindhome.com"}',
-  res:'{"id":"evt_b771","status":"confirmed","htmlLink":"cal/evt_b771"}'},
- {id:"e10",t:"14:05:06",act:"quickbooks.invoices.create",tgt:"Brighton HVAC · inv_2290",val:"$1,120.00",st:"CONFIRMED",conf:99,
-  span:"14:05:06 tool.call quickbooks.invoices.create total=1,120.00 → ok inv_2290",
-  fp:"qb.invoice · cust_bhvac · 1120.00 · #4412",
-  req:'{"customer":"Brighton HVAC","lines":[{"desc":"HVAC tune-up + parts","amount":112000}]}',
-  res:'{"id":"inv_2290","balance":112000,"status":"open"}'},
- {id:"e11",t:"14:05:19",act:"stripe.payment_intents.capture",tgt:"pi_55ka · Brighton HVAC",val:"$1,120.00",st:"CONFIRMED",conf:99,
-  span:"14:05:19 tool.call stripe.payment_intents.capture pi_55ka amount=1,120.00 → ok",
-  fp:"stripe.capture · pi_55ka · 1120.00",
-  req:'{"payment_intent":"pi_55ka","amount_to_capture":112000}',
-  res:'{"id":"pi_55ka","status":"succeeded","amount_received":112000}'},
- {id:"e12",t:"14:05:27",act:"hubspot.notes.create",tgt:"Deal 30417 · run summary",val:"1 note",st:"CONFIRMED",conf:99,
-  span:"14:05:27 tool.call hubspot.notes.create deal=deal_30417 → ok",
-  fp:"hubspot.note · deal_30417 · body_hash 51aa0b",
-  req:'{"dealId":"deal_30417","body":"Agent closed ticket #4412"}',
-  res:'{"id":"note_88301","createdAt":"14:05:27.902Z"}'}
+ {id:"act_8814",time:"09:47:55",agent:"billing-agent",action:"invoice.void",sys:"Stripe",
+  subj:"inv_9921 · $1,280.00",why:"connection reset",key:"iv_9921",
+  steps:["querying Stripe invoices, last 15 min…","matching on idempotency key iv_9921…","1 match found, status 'void' at 09:47:56"],
+  verdict:"COMMITTED",vclass:"committed",chip:"c-com",
+  evidence:"Invoice inv_9921 is in state 'void' since 09:47:56, $1,280.00. Do not retry.",
+  req:'POST /v1/invoices/inv_9921/void\nIdempotency-Key: iv_9921',
+  res:'<span class="err">ECONNRESET</span> — socket closed mid-flight at 1.4s\n<span class="key">effect_recorded: unknown</span>'},
+
+ {id:"act_8815",time:"10:02:31",agent:"ops-agent",action:"ticket.create",sys:"Zendesk",
+  subj:'"Duplicate charge dispute"',why:"no response body",key:"tk_0231",
+  steps:["querying Zendesk tickets, last 15 min…","matching on external_id tk_0231…","0 matches found"],
+  verdict:"NOT COMMITTED",vclass:"notcommitted",chip:"c-not",
+  evidence:"No matching record. Safe to retry.",
+  req:'POST /api/v2/tickets\n{ "subject": "Duplicate charge dispute",\n  "requester": "ava@…", "external_id": "tk_0231" }',
+  res:'<span class="err">HTTP 200 · empty body</span> (content-length: 0)\n<span class="key">effect_recorded: unknown</span>'},
+
+ {id:"act_8816",time:"10:08:04",agent:"collections-agent",action:"charge.create",sys:"Stripe",
+  subj:'$89.00 · cus_Qp3r9 "Dmitri Kol"',why:"timeout during retry #2",key:"ch_0804",
+  steps:["querying Stripe charges, last 15 min…","matching on customer cus_Qp3r9 + amount 8900…","2 matches found — fingerprint collision"],
+  verdict:"ALREADY DUPLICATED",vclass:"duplicate",chip:"c-dup",
+  evidence:"2 matching records found: re_3Qb… 09:41:04 and re_3Qc… 09:44:30, $412.00 each. $412.00 over-refunded. On this customer: $89.00 charged twice (ch_1Pd… 10:08:05, ch_1Pe… 10:08:41) — $89.00 at risk.",
+  req:'POST /v1/charges\n{ "customer": "cus_Qp3r9", "amount": 8900, "currency": "usd" }\nIdempotency-Key: ch_0804 <span class="err">(not forwarded on retry #2)</span>',
+  res:'<span class="err">ERR_TIMEOUT</span> 30.0s · retry #2 of 3 · replayed after fork wf_221b\n<span class="key">effect_recorded: unknown</span>'},
+
+ {id:"act_8817",time:"10:15:49",agent:"support-agent",action:"crm.update",sys:"HubSpot",
+  subj:"contact 55213 · lifecycle→customer",why:"502",key:"cr_1549",
+  steps:["querying HubSpot contact 55213 history…","matching on property write lifecyclestage…","ambiguous: property unchanged, audit lag 10 min"],
+  verdict:"NEEDS HUMAN",vclass:"human",chip:"c-hum",
+  evidence:"HubSpot audit log lags ~10 min; no idempotency support on this endpoint. Routed to human review.",
+  req:'PATCH /crm/v3/objects/contacts/55213\n{ "properties": { "lifecyclestage": "customer" } }',
+  res:'<span class="err">HTTP 502 Bad Gateway</span> at 6.2s\n<span class="key">effect_recorded: unknown · idempotency: unsupported</span>'}
 ];
 
-var state={reversed:false,smsResolved:false,calResolved:null,open:null};
-var tbody=document.getElementById("tbody");
-var summaryEl=document.getElementById("summary");
+var BLOCKED = [
+ {st:"BLOCKED",action:"email.send",agent:"support-agent",txt:'email.send to ava@… blocked — identical body+recipient sent 3m ago',meta:"fingerprint 7ac1… · window 15m"},
+ {st:"BLOCKED",action:"refund.create",agent:"billing-agent",txt:"refund.create $412.00 blocked on workflow fork wf_221b — effect already recorded",meta:"ledger hit re_3Qa… · fork depth 2"},
+ {st:"ALLOWED",action:"charge.create",agent:"collections-agent",txt:"charge.create $89.00 ALLOWED — no prior effect",meta:"idempotency key ch_0804 · first use"},
+ {st:"BLOCKED",action:"ticket.create",agent:"ops-agent",txt:"ticket.create blocked — same complaint hash within 60s window",meta:"hash 1f90… · window 60s"},
+ {st:"BLOCKED",action:"invoice.void",agent:"billing-agent",txt:"invoice.void blocked — target already in state 'void'",meta:"inv_9921 · state precondition"}
+];
 
-function barClass(c){return c>=90?"":(c>=60?"mid":"low");}
+var LEDGER = [
+ ["09:12:40","billing-agent","refund.create","Stripe re_3Pz8kq","rf_8790",1,"run_71a4"],
+ ["09:20:11","support-agent","email.send","Postmark 4b17-9c2","em_8801",1,"run_71a4"],
+ ["09:31:58","ops-agent","ticket.create","Zendesk #44120","tk_8806",1,"run_71b0"],
+ ["09:41:04","billing-agent","refund.create","Stripe re_3Qa17d · cus_Nf8k2","rf_8812",1,"run_72c1"],
+ ["09:44:30","billing-agent","refund.create","Stripe re_3Qc44e · cus_Nf8k2","rf_8812-r2",0,"run_72c1"],
+ ["09:47:56","billing-agent","invoice.void","Stripe inv_9921","iv_9921",1,"run_72c1"],
+ ["09:52:19","support-agent","crm.update","HubSpot 55102","cr_8820",1,"run_72d7"],
+ ["10:01:03","ops-agent","slack.post","Slack C024/p1729…","sl_8831",1,"run_72d7"],
+ ["10:08:05","collections-agent","charge.create","Stripe ch_1Pd62f · cus_Qp3r9","ch_0804",1,"run_73e2"],
+ ["10:08:41","collections-agent","charge.create","Stripe ch_1Pe77g · cus_Qp3r9","—","run_73e2-fork",0,"run_73e2"],
+ ["10:11:27","support-agent","email.send","Postmark 9e03-11a","em_8840",1,"run_73e2"],
+ ["10:14:02","ops-agent","ticket.create","Zendesk #44131","tk_8844",1,"run_73f5"]
+];
+// normalise the one 8-length row
+LEDGER[9]=["10:08:41","collections-agent","charge.create","Stripe ch_1Pe77g · cus_Qp3r9","(none — replay)",0,"run_73e2"];
 
-function renderSummary(){
-  var chips;
-  if(state.reversed){
-    chips=[['<b>'+countEffects()+'</b> real-world effects',''],
-           ['<b>0</b> duplicates · $248.00 recovered','okc'],
-           ['<b>'+unverified()+'</b> unverified', unverified()?'warnc':'okc'],
-           ['<b>$1,368.00</b> moved','']];
-  }else{
-    chips=[['<b>'+countEffects()+'</b> real-world effects',''],
-           ['<b>1</b> duplicate ($248.00 at risk)','warnc'],
-           ['<b>'+unverified()+'</b> unverified', unverified()?'warnc':'okc'],
-           ['<b>$1,368.00</b> moved','']];
-  }
-  summaryEl.innerHTML=chips.map(function(c){return '<span class="chip '+c[1]+'">'+c[0]+'</span>';}).join("");
-}
-function countEffects(){return EFFECTS.length-1+(state.reversed?1:0);}
-function unverified(){
-  var n=0;
-  if(!state.smsResolved)n++;
-  if(state.calResolved!=="confirmed")n++;
-  return n;
-}
+var esc=function(s){return String(s).replace(/[&<>"]/g,function(c){return({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c];});};
+var $=function(id){return document.getElementById(id);};
 
-function statusOf(e){
-  if(e.id==="e3"&&state.reversed)return "REVERSED";
-  if(e.id==="e2"&&state.reversed)return "CONFIRMED";
-  if(e.id==="e6"&&state.smsResolved)return "CONFIRMED";
-  if(e.id==="e8"){
-    if(state.calResolved==="confirmed")return "CONFIRMED";
-    if(state.calResolved==="notexec")return "NOT EXECUTED";
-  }
-  return e.st;
-}
-function confOf(e){
-  var s=statusOf(e);
-  if(e.id==="e2"&&state.reversed)return 99;
-  if(e.id==="e3"&&state.reversed)return 99;
-  if(e.id==="e6"&&state.smsResolved)return 99;
-  if(e.id==="e8"&&state.calResolved==="notexec")return 99;
-  if(e.id==="e8"&&state.calResolved==="confirmed")return 99;
-  return e.conf;
-}
-function pillHtml(s){
-  var cls=s==="NOT EXECUTED"?"p-NOTEXEC":"p-"+s;
-  return '<span class="pill '+cls+'">'+s+'</span>';
+/* ---------- Section 1 ---------- */
+var state={};
+QUEUE.forEach(function(r){state[r.id]={status:"pending",open:false,running:false};});
+
+function chipFor(r){
+  var s=state[r.id];
+  if(s.status==="running") return '<span class="chip c-run">RECONCILING…</span>';
+  if(s.status==="done") return '<span class="chip '+r.chip+'">'+esc(r.verdict)+'</span>';
+  return '<span class="chip c-unc">UNCERTAIN</span><span class="why">'+esc(r.why)+'</span>';
 }
 
-function render(){
-  tbody.innerHTML="";
-  var list=EFFECTS.slice();
-  if(state.reversed){
-    list.push({id:"e13",t:"14:09:33",act:"stripe.refunds.cancel",tgt:"re_9f21 · reversal",val:"-$248.00",st:"CONFIRMED",conf:99,
-      span:"14:09:33 tool.call stripe.refunds.cancel re_9f21 → ok (reversal)",
-      fp:"stripe.refund_cancel · re_9f21 · 248.00",
-      req:'{"refund":"re_9f21","reason":"duplicate_detected_by_ledger"}',
-      res:'{"id":"re_9f21","status":"canceled","reversed_amount":24800}'});
-  }
-  list.forEach(function(e){
-    var st=statusOf(e);
-    var conf=confOf(e);
-    var tr=document.createElement("tr");
-    tr.className="eff"+((st==="DUPLICATE")?" dupe":"");
-    tr.tabIndex=0;
-    tr.setAttribute("role","button");
-    tr.setAttribute("aria-expanded", state.open===e.id?"true":"false");
-    tr.innerHTML='<td class="tm">'+e.t+'</td>'+
-      '<td class="act">'+esc(e.act)+'</td>'+
-      '<td class="tgt">'+esc(e.tgt)+'</td>'+
-      '<td class="val">'+esc(e.val)+'</td>'+
-      '<td>'+pillHtml(st)+'</td>'+
-      '<td class="conf">'+conf+'%<span class="bar '+barClass(conf)+'"><i style="width:'+conf+'%"></i></span></td>';
-    tr.addEventListener("click",function(){toggle(e.id);});
-    tr.addEventListener("keydown",function(ev){if(ev.key==="Enter"||ev.key===" "){ev.preventDefault();toggle(e.id);}});
-    tbody.appendChild(tr);
+function renderQueue(){
+  var q=$("queue"); q.innerHTML="";
+  QUEUE.forEach(function(r){
+    var s=state[r.id];
+    var el=document.createElement("div");
+    el.className="row";
+    var head=document.createElement("div");
+    head.className="rowhead";
+    head.setAttribute("role","button");
+    head.setAttribute("tabindex","0");
+    head.setAttribute("aria-expanded",s.open?"true":"false");
+    head.innerHTML=
+      '<div class="mono t c-time">'+r.time+'</div>'+
+      '<div class="mono agent c-meta2">'+esc(r.agent)+'</div>'+
+      '<div class="mono action">'+esc(r.action)+'</div>'+
+      '<div class="c-subj"><div class="subj">'+esc(r.subj)+'</div><div class="sys">'+esc(r.sys)+' · '+esc(r.id)+'</div></div>'+
+      '<div class="chipwrap c-chip">'+chipFor(r)+'</div>';
+    head.addEventListener("click",function(e){ if(e.target.closest("button"))return; toggle(r.id); });
+    head.addEventListener("keydown",function(e){ if(e.key==="Enter"||e.key===" "){e.preventDefault();toggle(r.id);} });
+    el.appendChild(head);
 
-    if(state.open===e.id) tbody.appendChild(detailRow(e,st));
-
-    if(e.id==="e3"&&!state.reversed){
-      var n=document.createElement("tr");
-      n.className="dupenote";
-      n.innerHTML='<td colspan="6"><div class="dupebox"><span class="brk"></span>'+
-        '<span>⟂ same fingerprint: stripe.refund · cus_8812 · 248.00 · within 60s window</span>'+
-        '<button class="btn amber" id="revBtn" type="button">Reverse duplicate</button>'+
-        '<span class="prog" id="revProg" hidden><span class="track"><i id="revFill"></i></span><span id="revMsg"></span></span>'+
-        '</div></td>';
-      tbody.appendChild(n);
-      n.querySelector("#revBtn").addEventListener("click",function(ev){ev.stopPropagation();reverseDuplicate(this);});
+    var act=document.createElement("div");
+    act.style.padding="0 12px 12px";
+    if(s.status==="pending"&&!s.running){
+      var b=document.createElement("button");
+      b.className="btn sm"; b.textContent="Reconcile";
+      b.addEventListener("click",function(ev){ev.stopPropagation();reconcile(r.id);});
+      act.appendChild(b);
     }
-  });
-  renderSummary();
-}
+    if(s.status==="running"){
+      var st=document.createElement("div");
+      st.className="steps";
+      st.innerHTML=r.steps.map(function(x){return "<div>› "+esc(x)+"</div>";}).join("");
+      el.appendChild(st);
+    }
+    if(s.status==="done"){
+      var ev=document.createElement("div");
+      ev.className="ev "+r.vclass;
+      ev.innerHTML='<div class="line">'+esc(r.evidence)+'</div><span class="lk">view evidence →</span>';
+      el.appendChild(ev);
+    }
+    if(act.childNodes.length) el.appendChild(act);
 
-function detailRow(e,st){
-  var tr=document.createElement("tr");
-  tr.className="detail";
-  var actions="";
-  if(e.id==="e6"&&!state.smsResolved){
-    actions='<div class="rowactions"><button class="btn slate" data-verify="sms" type="button">Verify now</button>'+
-      '<span class="prog" hidden data-prog="sms"><span class="track"><i></i></span><span data-msg="sms"></span></span></div>';
-  }else if(e.id==="e6"&&state.smsResolved){
-    actions='<div class="verdict good">✓ provider record found: SM_3b11 — do not resend. Message delivered 14:03:24.</div>';
-  }else if(e.id==="e8"&&state.calResolved===null){
-    actions='<div class="rowactions"><button class="btn slate" data-verify="cal" type="button">Verify now</button>'+
-      '<span class="prog" hidden data-prog="cal"><span class="track"><i></i></span><span data-msg="cal"></span></span></div>';
-  }else if(e.id==="e8"&&state.calResolved==="notexec"){
-    actions='<div class="verdict bad">✕ no event found on cal_field_ops for Wed 09:00 — safe to retry. The world did not change.</div>'+
-      '<div class="rowactions"><button class="btn green" data-retry="cal" type="button">Safe retry</button>'+
-      '<span class="prog" hidden data-prog="retry"><span class="track"><i></i></span><span data-msg="retry"></span></span></div>';
-  }else if(e.id==="e8"&&state.calResolved==="confirmed"){
-    actions='<div class="verdict good">✓ retried once with idempotency key — event evt_c902 created, Wed 9:00 AM with Marco Ruiz.</div>';
-  }
-  tr.innerHTML='<td colspan="6"><div class="detail-in">'+
-    '<dl class="dl">'+
-      '<dt>Originating span</dt><dd>'+esc(e.span)+'</dd>'+
-      '<dt>Idempotency fingerprint</dt><dd>'+esc(e.fp)+'</dd>'+
-      '<dt>Authority</dt><dd>'+AUTH+'</dd>'+
-      '<dt>Current status</dt><dd>'+st+' · confidence '+confOf(e)+'%</dd>'+
-    '</dl>'+
-    '<pre>request  '+esc(e.req)+'\nresponse '+esc(e.res)+'</pre>'+
-    actions+'</div></td>';
-  var vb=tr.querySelector("[data-verify]");
-  if(vb) vb.addEventListener("click",function(ev){ev.stopPropagation();verify(this.getAttribute("data-verify"),tr,this);});
-  var rb=tr.querySelector("[data-retry]");
-  if(rb) rb.addEventListener("click",function(ev){ev.stopPropagation();safeRetry(tr,this);});
-  return tr;
-}
-
-function toggle(id){ state.open = (state.open===id)?null:id; render(); }
-
-/* progress helper */
-function runProgress(fill,msgEl,steps,duration,done){
-  var i=0,total=steps.length;
-  fill.style.width="0%";
-  msgEl.textContent=steps[0];
-  var tick=setInterval(function(){
-    i++;
-    var pct=Math.min(100,Math.round(i/total*100));
-    fill.style.width=pct+"%";
-    msgEl.textContent=steps[Math.min(i,total-1)];
-    if(i>=total){clearInterval(tick);setTimeout(done,180);}
-  },duration/total);
-}
-
-function reverseDuplicate(btn){
-  btn.disabled=true;
-  var prog=document.getElementById("revProg");
-  prog.hidden=false;
-  runProgress(document.getElementById("revFill"),document.getElementById("revMsg"),
-    ["matching fingerprints…","reading stripe refund re_9f21…","issuing cancel…","writing audit entry…"],2000,
-    function(){
-      state.reversed=true;
-      state.open=null;
-      TRACE.push(["14:09:33","tool.call","stripe.refunds.cancel re_9f21","ok (reversal)"]);
+    if(s.open){
       var d=document.createElement("div");
-      d.className="hl";
-      d.innerHTML='<span class="t">14:09:33</span> <span class="k">tool.call</span> stripe.refunds.cancel re_9f21 <span class="ok">→ ok (reversal)</span>';
-      traceEl.appendChild(d);
-      render();
-      toast("Recovered $248.00. Audit entry written.");
-    });
-}
-
-function verify(kind,tr,btn){
-  btn.disabled=true;
-  var prog=tr.querySelector('[data-prog="'+kind+'"]');
-  var fill=prog.querySelector("i");
-  var msg=prog.querySelector('[data-msg="'+kind+'"]');
-  prog.hidden=false;
-  var steps = kind==="sms"
-    ? ["querying Twilio message log…","matching body hash 9d41e2…","reading back provider record…"]
-    : ["querying cal_field_ops…","scanning Wed 09:00 ±15m…","matching attendee Marco Ruiz…"];
-  runProgress(fill,msg,steps,1600,function(){
-    if(kind==="sms"){ state.smsResolved=true; toast("Verified: SM_3b11 already delivered — resend suppressed."); }
-    else { state.calResolved="notexec"; toast("Verified: no calendar event exists — safe to retry."); }
-    render();
+      d.className="detail";
+      d.innerHTML='<h4>Request</h4><pre>'+r.req+'</pre><h4>Response</h4><pre>'+r.res+'</pre>'+
+        '<h4>Idempotency key</h4><pre>'+esc(r.key)+'</pre>';
+      el.appendChild(d);
+    }
+    q.appendChild(el);
   });
+  var pending=QUEUE.filter(function(r){return state[r.id].status!=="done";}).length;
+  $("qcount").textContent = pending ? pending+" pending" : "all resolved";
+  $("runall").disabled = pending===0 || busy;
 }
 
-function safeRetry(tr,btn){
-  btn.disabled=true;
-  var prog=tr.querySelector('[data-prog="retry"]');
-  var fill=prog.querySelector("i");
-  var msg=prog.querySelector('[data-msg="retry"]');
-  prog.hidden=false;
-  runProgress(fill,msg,["attaching idempotency key…","inserting event…","confirming…"],1400,function(){
-    state.calResolved="confirmed";
-    render();
-    toast("Booked Wed 9:00 AM with Marco Ruiz. Effect confirmed.");
-  });
+function toggle(id){ state[id].open=!state[id].open; renderQueue(); }
+
+var busy=false;
+function reconcile(id,cb){
+  var s=state[id];
+  if(busy||s.status==="done"){ if(cb)cb(); return; }
+  busy=true; s.status="running"; renderQueue();
+  setTimeout(function(){
+    s.status="done"; busy=false; renderQueue(); checkBanner();
+    if(cb)cb();
+  },1200);
 }
 
-/* toast */
-var toastEl=document.getElementById("toast"),toastTimer=null;
-function toast(msg){
-  toastEl.textContent=msg;
-  toastEl.classList.add("show");
-  if(toastTimer)clearTimeout(toastTimer);
-  toastTimer=setTimeout(function(){toastEl.classList.remove("show");},3200);
+function runAll(){
+  if(busy) return;
+  var list=QUEUE.filter(function(r){return state[r.id].status!=="done";}).map(function(r){return r.id;});
+  (function next(i){
+    if(i>=list.length) return;
+    reconcile(list[i],function(){ setTimeout(function(){next(i+1);},120); });
+  })(0);
 }
 
-/* replay toggle */
-var tgl=document.getElementById("replayToggle"),bn=document.getElementById("replayBanner"),stt=document.getElementById("replayState");
-tgl.addEventListener("click",function(){
-  var on=!tgl.classList.contains("off");
-  on=!on;
-  tgl.classList.toggle("off",!on);
-  stt.textContent=on?"ON":"OFF";
-  tgl.setAttribute("aria-pressed",on?"true":"false");
-  bn.classList.toggle("show",!on);
+function checkBanner(){
+  var all=QUEUE.every(function(r){return state[r.id].status==="done";});
+  var b=$("banner");
+  if(!all){ b.innerHTML=""; return; }
+  b.innerHTML='<div class="banner">6 resolved · 3 committed · 1 not committed · <b>1 duplicate detected ($89.00 at risk)</b> · 1 needs human</div>';
+}
+
+$("runall").addEventListener("click",runAll);
+$("reset").addEventListener("click",function(){
+  if(busy) return;
+  QUEUE.forEach(function(r){state[r.id]={status:"pending",open:false,running:false};});
+  $("banner").innerHTML=""; renderQueue();
 });
 
-/* export modal */
-var modal=document.getElementById("modal");
-function reportText(){
-  var lines=[];
-  lines.push("NORTHWIND HOME SERVICES — AGENT INCIDENT REPORT");
-  lines.push("run_7c21 · agent=northwind-ops · 14:02:03–14:05:40 (3m37s)");
-  lines.push("authorised by: ops@northwindhome.com · session s_4471");
-  lines.push("");
-  lines.push("EFFECTS RECORDED: "+countEffects()+"   VALUE MOVED: $1,368.00");
-  lines.push("");
-  var list=EFFECTS.slice();
-  if(state.reversed)list.push({t:"14:09:33",act:"stripe.refunds.cancel",tgt:"re_9f21 · reversal",val:"-$248.00",id:"e13"});
-  list.forEach(function(e){
-    var st=e.id==="e13"?"CONFIRMED":statusOf(e);
-    lines.push("  "+e.t+"  "+pad(st,12)+" "+pad(e.act,32)+" "+e.tgt+"  "+e.val);
+/* ---------- Section 2 ---------- */
+(function(){
+  var c=$("blocked");
+  BLOCKED.forEach(function(b){
+    var d=document.createElement("div");
+    d.className="blk";
+    d.innerHTML='<div><span class="chip '+(b.st==="ALLOWED"?"c-com":"c-dup")+'">'+b.st+'</span></div>'+
+      '<div><div class="txt">'+esc(b.txt)+'</div><div class="meta">'+esc(b.agent)+' · '+esc(b.meta)+'</div></div>';
+    c.appendChild(d);
   });
-  lines.push("");
-  lines.push("DUPLICATES FOUND: 1");
-  lines.push("  stripe.refund · cus_8812 · $248.00 · two writes within 60s (timeout + replay)");
-  lines.push("  fingerprint: stripe.refund · cus_8812 · 248.00 · 60s window");
-  lines.push("REVERSALS: "+(state.reversed?"1 — stripe.refunds.cancel re_9f21 at 14:09:33 ($248.00 recovered)":"0 — $248.00 still at risk"));
-  lines.push("");
-  lines.push("UNCERTAIN OUTCOMES: 2");
-  lines.push("  twilio.sms.send +1-801-555-0142 — "+(state.smsResolved?"RESOLVED: provider record SM_3b11 found, no resend":"UNRESOLVED"));
-  lines.push("  google_calendar.events.insert Wed 09:00 Marco Ruiz — "+(state.calResolved==="confirmed"?"RESOLVED: not executed, safe retry succeeded (evt_c902)":state.calResolved==="notexec"?"RESOLVED: not executed, retry pending":"UNRESOLVED"));
-  lines.push("");
-  lines.push("REPLAY PROTECTION: "+(document.getElementById("replayToggle").classList.contains("off")?"OFF":"ON")+" · would-be duplicate writes blocked: 1 refund, 1 SMS");
-  lines.push("Generated by Ledger · demo data");
-  return lines.join("\n");
+})();
+
+/* ---------- Section 3 ---------- */
+function renderLedger(q){
+  q=(q||"").trim().toLowerCase();
+  var body=$("ledger"); body.innerHTML="";
+  var n=0;
+  LEDGER.forEach(function(r){
+    var hay=r.join(" ").toLowerCase();
+    if(q && hay.indexOf(q)===-1) return;
+    n++;
+    var tr=document.createElement("tr");
+    if(String(r[3]).indexOf("cus_Qp3r9")>-1) tr.className="hl";
+    tr.innerHTML='<td class="t">'+esc(r[0])+'</td><td class="agent">'+esc(r[1])+'</td><td class="action">'+esc(r[2])+'</td>'+
+      '<td>'+esc(r[3])+'</td><td class="t">'+esc(r[4])+'</td>'+
+      '<td class="'+(r[5]?"ok":"no")+'">'+(r[5]?"✓":"—")+'</td><td class="t">'+esc(r[6])+'</td>';
+    body.appendChild(tr);
+  });
+  $("lempty").hidden = n>0;
+  $("lcount").textContent = n+" of "+LEDGER.length+" effects";
 }
-function pad(s,n){s=String(s);while(s.length<n)s+=" ";return s;}
-document.getElementById("exportBtn").addEventListener("click",function(){
-  document.getElementById("reportText").textContent=reportText();
-  modal.classList.add("show");
-  document.getElementById("closeModal").focus();
-});
-document.getElementById("closeModal").addEventListener("click",function(){modal.classList.remove("show");});
-modal.addEventListener("click",function(e){if(e.target===modal)modal.classList.remove("show");});
-document.addEventListener("keydown",function(e){if(e.key==="Escape")modal.classList.remove("show");});
-var copyBtn=document.getElementById("copyBtn");
-copyBtn.addEventListener("click",function(){
-  copyBtn.textContent="Copied";
-  setTimeout(function(){copyBtn.textContent="Copy";},1600);
+$("filter").addEventListener("input",function(e){
+  try{ renderLedger(e.target.value); }
+  catch(err){ $("lempty").hidden=false; $("lempty").textContent="Could not apply that filter — try plain text."; }
 });
 
-render();
-traceEl.scrollTop=0;
+renderQueue();
+renderLedger("");
 })();
 </script>
 </body>
