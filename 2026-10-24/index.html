@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Driftwatch — upstream change impact for AI agents</title>
+<style>
+:root{
+  --bg:#0c0f14; --panel:#11161e; --panel2:#151c26; --line:#222c3a;
+  --txt:#e6edf6; --mut:#8595ab; --dim:#5d6b80;
+  --red:#ff5f6b; --redbg:rgba(255,95,107,.10); --redln:rgba(255,95,107,.35);
+  --amb:#ffb020; --ambbg:rgba(255,176,32,.10); --ambln:rgba(255,176,32,.32);
+  --gry:#7c8aa0; --acc:#55e0b0; --accbg:rgba(85,224,176,.12);
+  --add:#3fb950; --del:#f85149;
+}
+@media (prefers-color-scheme: light){
+  :root{
+    --bg:#f5f7fa; --panel:#ffffff; --panel2:#f0f3f7; --line:#dde3ec;
+    --txt:#141a22; --mut:#5a6879; --dim:#7d8a9b;
+    --red:#c8303c; --redbg:rgba(200,48,60,.07); --redln:rgba(200,48,60,.28);
+    --amb:#9a6500; --ambbg:rgba(190,130,0,.09); --ambln:rgba(190,130,0,.28);
+    --gry:#64748b; --acc:#0a7f5c; --accbg:rgba(10,127,92,.10);
+    --add:#1a7f37; --del:#b62324;
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--txt);
+  font:15px/1.5 ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  -webkit-text-size-adjust:100%;
+}
+code,.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace}
+.wrap{max-width:1080px;margin:0 auto;padding:0 14px 48px}
+header.top{
+  position:sticky;top:0;z-index:20;background:var(--bg);
+  border-bottom:1px solid var(--line);padding:12px 14px;
+}
+.top-in{max-width:1080px;margin:0 auto;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.logo{width:26px;height:26px;flex:0 0 auto}
+h1{font-size:15px;margin:0;font-weight:650;letter-spacing:.2px}
+h1 span{color:var(--mut);font-weight:420}
+.badge{
+  margin-left:auto;font-size:11px;color:var(--dim);border:1px solid var(--line);
+  padding:3px 8px;border-radius:999px;white-space:nowrap
+}
+h2{font-size:12px;letter-spacing:.09em;text-transform:uppercase;color:var(--mut);margin:26px 0 10px;font-weight:600}
+.cols{display:grid;grid-template-columns:1fr;gap:18px}
+@media(min-width:860px){.cols{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.feed{max-height:430px;overflow:auto}
+.feed.collapsed{max-height:96px;overflow:hidden;position:relative;opacity:.55}
+.feed-wrap{position:relative}
+.fade{display:none}
+.feed.collapsed + .fade{
+  display:block;position:absolute;left:0;right:0;bottom:0;height:70px;pointer-events:none;
+  background:linear-gradient(to bottom,rgba(0,0,0,0),var(--bg))
+}
+.item{display:flex;gap:10px;padding:9px 12px;border-bottom:1px solid var(--line);align-items:flex-start}
+.item:last-child{border-bottom:0}
+.chip{
+  width:24px;height:24px;border-radius:6px;flex:0 0 auto;display:grid;place-items:center;
+  font-size:11px;font-weight:700;color:#07100d;background:var(--acc)
+}
+.i-body{min-width:0;flex:1}
+.i-meta{display:flex;gap:7px;align-items:center;flex-wrap:wrap;font-size:11px;color:var(--dim);margin-bottom:2px}
+.src{border:1px solid var(--line);border-radius:4px;padding:1px 5px;color:var(--mut)}
+.i-txt{font-size:12.5px;color:var(--mut);line-height:1.45;word-break:break-word}
+.i-txt code{color:var(--txt);background:var(--panel2);padding:0 3px;border-radius:3px;font-size:11.5px}
+.agent-row{padding:10px 12px;border-bottom:1px solid var(--line)}
+.agent-row:last-child{border-bottom:0}
+.agent-name{font-size:13.5px;font-weight:600;display:flex;align-items:center;gap:8px}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--dim);flex:0 0 auto}
+.dot.red{background:var(--red)} .dot.amb{background:var(--amb)} .dot.ok{background:var(--acc)}
+.tools{margin-top:5px;display:flex;flex-wrap:wrap;gap:5px}
+.tool{font-size:11px;padding:2px 6px;border-radius:5px;background:var(--panel2);border:1px solid var(--line);color:var(--mut)}
+.tool.hit{border-color:var(--redln);color:var(--red);background:var(--redbg)}
+.tool.warn{border-color:var(--ambln);color:var(--amb);background:var(--ambbg)}
+.cta{margin:28px 0 8px;text-align:center}
+button{font:inherit;cursor:pointer}
+.btn-primary{
+  width:100%;max-width:420px;min-height:54px;border-radius:12px;border:0;
+  background:linear-gradient(180deg,#3ad59f,#1fae80);color:#04120d;font-weight:700;font-size:16px;
+  letter-spacing:.2px;box-shadow:0 6px 20px rgba(31,174,128,.25)
+}
+.btn-primary[disabled]{opacity:.65;cursor:default;box-shadow:none}
+.hint{font-size:12px;color:var(--dim);margin-top:8px}
+.status{display:none;margin:14px auto 0;max-width:420px;text-align:left}
+.status.on{display:block}
+.bar{height:5px;border-radius:99px;background:var(--panel2);overflow:hidden;border:1px solid var(--line)}
+.bar i{display:block;height:100%;width:0%;background:var(--acc);transition:width .25s linear}
+.status p{margin:8px 0 0;font-size:12.5px;color:var(--mut)}
+.results{display:none}
+.results.on{display:block}
+.toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:6px 0 12px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden;background:var(--panel)}
+.seg button{background:transparent;border:0;color:var(--mut);padding:9px 13px;font-size:12.5px;min-height:40px}
+.seg button[aria-pressed="true"]{background:var(--accbg);color:var(--acc);font-weight:600}
+.summary{font-size:12.5px;color:var(--dim);margin-left:auto}
+.bucket{margin-bottom:18px}
+.bhead{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.pill{font-size:10.5px;letter-spacing:.09em;font-weight:700;padding:4px 9px;border-radius:999px;text-transform:uppercase}
+.pill.red{color:var(--red);background:var(--redbg);border:1px solid var(--redln)}
+.pill.amb{color:var(--amb);background:var(--ambbg);border:1px solid var(--ambln)}
+.pill.gry{color:var(--gry);background:var(--panel2);border:1px solid var(--line)}
+.cnt{font-size:12px;color:var(--dim)}
+.grp{font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--dim);margin:12px 0 6px}
+.card{
+  border:1px solid var(--line);background:var(--panel);border-radius:11px;margin-bottom:9px;overflow:hidden
+}
+.card.red{border-left:3px solid var(--red)}
+.card.amb{border-left:3px solid var(--amb)}
+.card-head{
+  width:100%;text-align:left;background:transparent;border:0;color:inherit;
+  padding:12px 13px;display:flex;gap:10px;align-items:flex-start;min-height:52px
+}
+.card-head:hover{background:var(--panel2)}
+.ch-body{flex:1;min-width:0}
+.ch-top{display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin-bottom:3px}
+.who{font-size:13.5px;font-weight:650}
+.vend{font-size:10.5px;color:var(--dim);border:1px solid var(--line);border-radius:4px;padding:1px 5px}
+.msg{font-size:13px;color:var(--mut);line-height:1.5}
+.msg b{color:var(--txt);font-weight:600}
+.msg code{font-family:ui-monospace,monospace;font-size:11.5px;background:var(--panel2);padding:0 3px;border-radius:3px;color:var(--txt)}
+.fixline{margin-top:7px;font-size:12.5px;color:var(--acc)}
+.caret{flex:0 0 auto;color:var(--dim);transition:transform .18s;margin-top:3px}
+.card.open .caret{transform:rotate(90deg)}
+.body{display:none;padding:0 13px 13px;border-top:1px solid var(--line)}
+.card.open .body{display:block}
+.loc{font-size:11.5px;color:var(--dim);margin:11px 0 8px}
+.loc code{color:var(--txt)}
+.difftitle{font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--dim);margin:10px 0 5px}
+pre{
+  margin:0;background:var(--panel2);border:1px solid var(--line);border-radius:8px;
+  padding:10px;overflow-x:auto;font-size:11.5px;line-height:1.55
+}
+pre .a{color:var(--add)} pre .d{color:var(--del)} pre .c{color:var(--dim)} pre .h{color:var(--mut)}
+.btn-ghost{
+  margin-top:11px;background:transparent;border:1px solid var(--line);color:var(--txt);
+  padding:9px 13px;border-radius:9px;font-size:13px;min-height:42px
+}
+.btn-ghost:hover{border-color:var(--acc);color:var(--acc)}
+.pr{display:none;margin-top:10px}
+.pr.on{display:block}
+.prnote{font-size:11.5px;color:var(--acc);margin:7px 0 0}
+.ign{padding:13px}
+.ign-row{display:flex;justify-content:space-between;gap:10px;font-size:13px;color:var(--mut);padding:5px 0}
+.ign-list{display:none;margin-top:9px;border-top:1px solid var(--line);padding-top:9px}
+.ign-list.on{display:block}
+.ign-item{font-size:12px;color:var(--dim);padding:4px 0;display:flex;gap:7px}
+footer{margin-top:30px;padding-top:14px;border-top:1px solid var(--line);font-size:11.5px;color:var(--dim);text-align:center}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="top-in">
+    <svg class="logo" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <rect x="1" y="1" width="22" height="22" rx="6" fill="#1fae80" opacity=".18"/>
+      <path d="M4 15c3 0 3-6 6-6s3 6 6 6 3-4 4-4" stroke="#3ad59f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="17" cy="8" r="2.4" stroke="#ff5f6b" stroke-width="1.8"/>
+    </svg>
+    <h1>Driftwatch <span>— upstream change impact for AI agents</span></h1>
+    <span class="badge">Demo data · 24 Oct 2026</span>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="cols">
+    <section>
+      <h2>Raw feed (last 7 days) · <span id="feedCount">14</span> entries</h2>
+      <div class="feed-wrap">
+        <div class="panel feed" id="feed"></div>
+        <div class="fade"></div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Your agents · 6 flows</h2>
+      <div class="panel" id="agents"></div>
+    </section>
+  </div>
+
+  <div class="cta">
+    <button class="btn-primary" id="run">Analyse impact</button>
+    <div class="hint" id="hint">Matches 14 upstream changes against 17 declared tool references.</div>
+    <div class="status" id="status" aria-live="polite">
+      <div class="bar"><i id="barFill"></i></div>
+      <p id="statusTxt">Matching 14 changes against 6 agents…</p>
+    </div>
+  </div>
+
+  <section class="results" id="results">
+    <h2>Impact board</h2>
+    <div class="toolbar">
+      <div class="seg" role="group" aria-label="Grouping">
+        <button id="byVendor" aria-pressed="false">Group by vendor</button>
+        <button id="byAgent" aria-pressed="true">Group by agent</button>
+      </div>
+      <span class="summary" id="summary"></span>
+    </div>
+    <div id="board"></div>
+  </section>
+
+  <footer>Prototype by Granted, inspired by your bookmarks</footer>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var esc = function(s){ return String(s).replace(/[&<>]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c];}); };
+  var mono = function(s){ return esc(s).replace(/`([^`]+)`/g,'<code>$1</code>'); };
+
+  /* ---------- SECTION 1: raw feed ---------- */
+  var FEED = [
+    {v:"Stripe",c:"#635bff",src:"MCP schema",t:"2h ago",txt:"Stripe MCP v2.4.1 — tool `create_refund`: parameter `reason` changed from free string to enum [duplicate, fraudulent, requested_by_customer]."},
+    {v:"Slack",c:"#e01e5a",src:"Changelog",t:"5h ago",txt:"Changed: `conversations.history` now caps `limit` at 200 (was 1000)."},
+    {v:"OpenAI",c:"#10a37f",src:"Model registry",t:"9h ago",txt:"`gpt-4o-2024-08-06` marked deprecated, retirement 2027-01-15."},
+    {v:"Jira",c:"#2684ff",src:"MCP schema",t:"14h ago",txt:"Jira Cloud MCP v1.9 — tool `search_issues`: new REQUIRED parameter `projectKey`."},
+    {v:"Notion",c:"#b1b1b1",src:"Docs page",t:"1d ago",txt:"Pagination cursor field renamed `next_cursor` → `cursor`."},
+    {v:"Stripe",c:"#635bff",src:"Changelog",t:"1d ago",txt:"Improved error messages for declined cards."},
+    {v:"Salesforce",c:"#00a1e0",src:"MCP schema",t:"2d ago",txt:"Salesforce MCP v3.0 — tool `update_opportunity` renamed to `opportunity_update`."},
+    {v:"Anthropic",c:"#d97757",src:"Docs page",t:"2d ago",txt:"`tool_use` block now may include `cache_control`."},
+    {v:"Twilio",c:"#f22f46",src:"Changelog",t:"3d ago",txt:"Blog post: 2026 messaging trends."},
+    {v:"GitHub",c:"#8b949e",src:"MCP schema",t:"4d ago",txt:"GitHub MCP v0.8 — `list_pull_requests` response: `mergeable` can now be null."},
+    {v:"SendGrid",c:"#1a82e2",src:"Docs page",t:"5d ago",txt:"Pricing page changed."},
+    {v:"Google Calendar",c:"#4285f4",src:"Changelog",t:"5d ago",txt:"`events.list` adds `eventTypes` filter."},
+    {v:"Plaid",c:"#111111",src:"Changelog",t:"6d ago",txt:"Sandbox endpoint host change."},
+    {v:"Linear",c:"#5e6ad2",src:"MCP schema",t:"7d ago",txt:"Linear MCP v2.1 — `create_issue`: `teamId` now accepts slug as well as UUID."}
+  ];
+
+  var feedEl = document.getElementById('feed');
+  feedEl.innerHTML = FEED.map(function(f){
+    return '<div class="item">'+
+      '<div class="chip" style="background:'+f.c+';color:#fff">'+esc(f.v.charAt(0))+'</div>'+
+      '<div class="i-body"><div class="i-meta"><strong style="color:var(--mut);font-weight:600">'+esc(f.v)+'</strong>'+
+      '<span class="src">'+esc(f.src)+'</span><span>'+esc(f.t)+'</span></div>'+
+      '<div class="i-txt">'+mono(f.txt)+'</div></div></div>';
+  }).join('');
+  document.getElementById('feedCount').textContent = FEED.length;
+
+  /* ---------- SECTION 2: agents ---------- */
+  var AGENTS = [
+    {n:"Refund Resolver", tools:[{t:"stripe.create_refund",s:"hit"},{t:"slack.post_message",s:""}]},
+    {n:"Support Triage", tools:[{t:"jira.search_issues",s:"hit"},{t:"slack.conversations_history",s:"warn"},{t:"openai:gpt-4o-2024-08-06",s:"warn"}]},
+    {n:"Deal Updater", tools:[{t:"salesforce.update_opportunity",s:"hit"},{t:"notion.query_database",s:""}]},
+    {n:"PR Reviewer", tools:[{t:"github.list_pull_requests",s:""}]},
+    {n:"Meeting Booker", tools:[{t:"google_calendar.events_list",s:""}]},
+    {n:"Invoice Chaser", tools:[{t:"stripe.list_invoices",s:""},{t:"sendgrid.send",s:""}]}
+  ];
+  var agentsEl = document.getElementById('agents');
+  function renderAgents(showState){
+    agentsEl.innerHTML = AGENTS.map(function(a){
+      var worst = 'ok';
+      a.tools.forEach(function(t){ if(t.s==='hit') worst='red'; else if(t.s==='warn' && worst!=='red') worst='amb'; });
+      var dot = showState ? worst : '';
+      return '<div class="agent-row"><div class="agent-name"><span class="dot '+dot+'"></span>'+esc(a.n)+'</div>'+
+        '<div class="tools">'+a.tools.map(function(t){
+          return '<span class="tool'+(showState&&t.s?' '+t.s:'')+'">'+esc(t.t)+'</span>';
+        }).join('')+'</div></div>';
+    }).join('');
+  }
+  renderAgents(false);
+
+  /* ---------- SECTION 3: findings ---------- */
+  var FINDINGS = [
+    {
+      id:'f1', sev:'red', agent:'Deal Updater', vendor:'Salesforce',
+      title:'will fail on every run',
+      msg:'<b>salesforce.update_opportunity no longer exists</b> — renamed <code>opportunity_update</code> in MCP v3.0. 1 call site.',
+      fix:'Suggested fix: rename the tool reference.',
+      loc:'agents/deal_updater/tools.ts:42',
+      diff:[['h','  tool "salesforce.update_opportunity" {'],['d','-   "name": "update_opportunity",'],['a','+   "name": "opportunity_update",'],['h','    "params": {'],['h','      "opportunityId": "string",'],['d','-     "stage": "string"'],['a','+     "stage": "string",'],['a','+     "lastModifiedBy": "string | null"'],['h','    }'],['h','  }']],
+      pr:[['c','diff --git a/agents/deal_updater/tools.ts b/agents/deal_updater/tools.ts'],['h','@@ -40,7 +40,7 @@ export const dealTools = ['],['h','   {'],['d','-    name: "salesforce.update_opportunity",'],['a','+    name: "salesforce.opportunity_update",'],['h','     description: "Move an opportunity to a new stage",'],['h','   },']]
+    },
+    {
+      id:'f2', sev:'red', agent:'Support Triage', vendor:'Jira',
+      title:'missing new required parameter',
+      msg:'<b>jira.search_issues now requires <code>projectKey</code></b>; agent currently omits it. Est. 100% of triage calls error after upgrade.',
+      fix:'Suggested fix: pass projectKey from the ticket context.',
+      loc:'agents/support_triage/jira_tool.ts:17',
+      diff:[['h','  "search_issues": {'],['h','    "required": ['],['a','+     "projectKey",'],['h','      "jql"'],['h','    ],'],['h','    "properties": {'],['a','+     "projectKey": { "type": "string", "pattern": "^[A-Z][A-Z0-9]+$" },'],['h','      "jql": { "type": "string" },'],['d','-     "maxResults": { "type": "integer", "default": 50 }'],['a','+     "maxResults": { "type": "integer", "default": 50, "maximum": 100 }'],['h','    }'],['h','  }']],
+      pr:[['c','diff --git a/agents/support_triage/jira_tool.ts b/agents/support_triage/jira_tool.ts'],['h','@@ -15,6 +15,7 @@ export async function searchIssues(ctx) {'],['h','   return mcp.call("jira.search_issues", {'],['a','+    projectKey: ctx.ticket.projectKey ?? "SUP",'],['h','     jql: `status = Open ORDER BY created DESC`,'],['h','     maxResults: 50,'],['h','   });']]
+    },
+    {
+      id:'f3', sev:'red', agent:'Refund Resolver', vendor:'Stripe',
+      title:'free-text value no longer accepted',
+      msg:'<b>stripe.create_refund <code>reason</code> is now an enum</b>; your prompt tells the model to write a free-text reason. Expect silent 400s.',
+      fix:'Suggested fix: constrain the prompt + map to the 3 allowed values.',
+      loc:'agents/refund_resolver/prompt.md:31',
+      diff:[['h','  "create_refund": {'],['h','    "properties": {'],['h','      "charge": { "type": "string" },'],['d','-     "reason": { "type": "string" }'],['a','+     "reason": {'],['a','+       "type": "string",'],['a','+       "enum": ["duplicate", "fraudulent", "requested_by_customer"]'],['a','+     }'],['h','    }'],['h','  }']],
+      pr:[['c','diff --git a/agents/refund_resolver/prompt.md b/agents/refund_resolver/prompt.md'],['h','@@ -29,3 +29,4 @@'],['d','- Write a short reason explaining the refund in your own words.'],['a','+ Set `reason` to exactly one of: duplicate | fraudulent | requested_by_customer.'],['a','+ Put any free-text explanation in `metadata.note` instead.']]
+    },
+    {
+      id:'f4', sev:'amb', agent:'Support Triage', vendor:'Slack',
+      title:'quietly losing context',
+      msg:'<b>slack.conversations_history <code>limit</code> capped at 200</b>; your agent requests 1000 and will quietly see less context.',
+      fix:'Suggested fix: paginate with cursor, 200 per page.',
+      loc:'agents/support_triage/slack_tool.ts:24'
+    },
+    {
+      id:'f5', sev:'amb', agent:'Support Triage', vendor:'OpenAI',
+      title:'pinned model retiring',
+      msg:'<b>Pinned model <code>gpt-4o-2024-08-06</code> retires in 83 days</b> (2027-01-15).',
+      fix:'Suggested fix: pin a successor and re-run eval set before 15 Jan.',
+      loc:'agents/support_triage/model.config.ts:6'
+    }
+  ];
+
+  var IGNORED = [
+    'Notion — `next_cursor` → `cursor`: you use notion.query_database, first page only.',
+    'Anthropic — optional `cache_control` on tool_use blocks (additive).',
+    'GitHub — `mergeable` may be null: PR Reviewer already null-checks.',
+    'Google Calendar — new `eventTypes` filter (additive, opt-in).',
+    'Linear — `teamId` now accepts slug (additive). No Linear agent declared.',
+    'Plaid — sandbox host change. No Plaid tool declared.',
+    'Stripe — improved decline error copy (cosmetic).'
+  ];
+  var FILTERED = [
+    'Twilio — "2026 messaging trends" blog post.',
+    'SendGrid — pricing page change.'
+  ];
+
+  /* ---------- analysis run ---------- */
+  var runBtn = document.getElementById('run');
+  var statusEl = document.getElementById('status');
+  var statusTxt = document.getElementById('statusTxt');
+  var barFill = document.getElementById('barFill');
+  var resultsEl = document.getElementById('results');
+  var hintEl = document.getElementById('hint');
+  var timers = [];
+
+  runBtn.addEventListener('click', function(){
+    if(runBtn.disabled) return;
+    runBtn.disabled = true;
+    statusEl.classList.add('on');
+    resultsEl.classList.remove('on');
+    hintEl.style.display = 'none';
+    var steps = [
+      [0,   'Matching 14 changes against 6 agents…', 12],
+      [320, 'Resolving 17 declared tool references…', 42],
+      [640, 'Diffing MCP schemas v2.4.1 / v1.9 / v3.0…', 72],
+      [920, 'Scoring blast radius…', 92],
+      [1200,'Done — 3 breaking, 2 degrading, 9 ignored.', 100]
+    ];
+    timers.forEach(clearTimeout); timers = [];
+    steps.forEach(function(s){
+      timers.push(setTimeout(function(){
+        statusTxt.textContent = s[1];
+        barFill.style.width = s[2] + '%';
+        if(s[2] === 100) finish();
+      }, s[0]));
+    });
+  });
+
+  function finish(){
+    document.getElementById('feed').classList.add('collapsed');
+    renderAgents(true);
+    runBtn.textContent = 'Re-analyse';
+    runBtn.disabled = false;
+    resultsEl.classList.add('on');
+    render();
+    document.getElementById('summary').textContent = '14 changes · 3 breaking · 2 degrading · 9 ignored';
+    resultsEl.scrollIntoView({behavior:'smooth', block:'start'});
+  }
+
+  /* ---------- board rendering ---------- */
+  var groupMode = 'agent';
+  var openSet = {};
+  var prSet = {};
+
+  function diffHTML(rows){
+    return rows.map(function(r){
+      var cls = r[0];
+      return '<span class="'+cls+'">'+esc(r[1])+'</span>';
+    }).join('\n');
+  }
+
+  function cardHTML(f){
+    var open = openSet[f.id] ? ' open' : '';
+    var h = '<div class="card '+f.sev+open+'" data-id="'+f.id+'">';
+    h += '<button class="card-head" type="button" data-toggle="'+f.id+'" aria-expanded="'+(openSet[f.id]?'true':'false')+'">';
+    h += '<svg class="caret" width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M4 2l5 4-5 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    h += '<div class="ch-body"><div class="ch-top"><span class="who">'+esc(f.agent)+'</span><span class="vend">'+esc(f.vendor)+'</span><span class="cnt">'+esc(f.title)+'</span></div>';
+    h += '<div class="msg">'+f.msg+'</div>';
+    h += '<div class="fixline">'+esc(f.fix)+'</div></div></button>';
+    h += '<div class="body">';
+    h += '<div class="loc">Call site: <code class="mono">'+esc(f.loc)+'</code></div>';
+    if(f.diff){
+      h += '<div class="difftitle">Schema diff</div><pre class="mono">'+diffHTML(f.diff)+'</pre>';
+      h += '<button class="btn-ghost" type="button" data-pr="'+f.id+'">'+(prSet[f.id]?'Hide draft PR':'Draft fix PR')+'</button>';
+      h += '<div class="pr'+(prSet[f.id]?' on':'')+'"><pre class="mono">'+diffHTML(f.pr)+'</pre><p class="prnote">Draft PR #'+(400+parseInt(f.id.slice(1),10))+' ready — 1 file changed. Demo data, nothing is pushed.</p></div>';
+    } else {
+      h += '<div class="difftitle">Note</div><pre class="mono"><span class="h">No breaking schema change — behaviour drift only.</span>\n<span class="c">Driftwatch will re-check this entry daily.</span></pre>';
+    }
+    h += '</div></div>';
+    return h;
+  }
+
+  function bucketHTML(sev, label, pill, items){
+    if(!items.length) return '';
+    var h = '<div class="bucket"><div class="bhead"><span class="pill '+pill+'">'+label+'</span><span class="cnt">'+items.length+' '+(items.length===1?'card':'cards')+'</span></div>';
+    if(groupMode === 'vendor'){
+      var order = [], map = {};
+      items.forEach(function(f){ if(!map[f.vendor]){map[f.vendor]=[];order.push(f.vendor);} map[f.vendor].push(f); });
+      order.sort();
+      h += order.map(function(v){
+        return '<div class="grp">'+esc(v)+'</div>' + map[v].map(cardHTML).join('');
+      }).join('');
+    } else {
+      var order2 = [], map2 = {};
+      items.forEach(function(f){ if(!map2[f.agent]){map2[f.agent]=[];order2.push(f.agent);} map2[f.agent].push(f); });
+      h += order2.map(function(a){
+        return '<div class="grp">'+esc(a)+'</div>' + map2[a].map(cardHTML).join('');
+      }).join('');
+    }
+    return h + '</div>';
+  }
+
+  function render(){
+    var board = document.getElementById('board');
+    var red = FINDINGS.filter(function(f){return f.sev==='red';});
+    var amb = FINDINGS.filter(function(f){return f.sev==='amb';});
+    var h = '';
+    h += bucketHTML('red','Breaking','red',red);
+    h += bucketHTML('amb','Silent degradation','amb',amb);
+    h += '<div class="bucket"><div class="bhead"><span class="pill gry">Ignored</span><span class="cnt">9 changes</span></div>'+
+      '<div class="panel ign"><button class="card-head" type="button" id="ignToggle" style="padding:0;min-height:0">'+
+      '<svg class="caret" width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M4 2l5 4-5 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>'+
+      '<div class="ch-body"><div class="ign-row"><span>7 changes affect nothing you use</span></div>'+
+      '<div class="ign-row"><span>2 marketing/pricing items filtered</span></div></div></button>'+
+      '<div class="ign-list" id="ignList">'+
+        IGNORED.map(function(s){return '<div class="ign-item"><span style="color:var(--gry)">•</span><span>'+mono(s)+'</span></div>';}).join('')+
+        FILTERED.map(function(s){return '<div class="ign-item"><span style="color:var(--gry)">✕</span><span>'+mono(s)+'</span></div>';}).join('')+
+      '</div></div></div>';
+    board.innerHTML = h;
+  }
+
+  document.getElementById('board') && document.addEventListener('click', function(e){
+    var t = e.target;
+    if(!(t instanceof Element)) return;
+    var pr = t.closest('[data-pr]');
+    if(pr){
+      var pid = pr.getAttribute('data-pr');
+      prSet[pid] = !prSet[pid];
+      var panel = pr.parentNode.querySelector('.pr');
+      if(panel){
+        panel.classList.toggle('on', !!prSet[pid]);
+        pr.textContent = prSet[pid] ? 'Hide draft PR' : 'Draft fix PR';
+      }
+      e.stopPropagation();
+      return;
+    }
+    var ign = t.closest('#ignToggle');
+    if(ign){
+      var list = document.getElementById('ignList');
+      var card = ign.closest('.panel');
+      if(list){ list.classList.toggle('on'); }
+      if(card){ card.classList.toggle('open'); }
+      ign.classList.toggle('open');
+      var c = ign.querySelector('.caret');
+      if(c){ c.style.transform = list && list.classList.contains('on') ? 'rotate(90deg)' : 'rotate(0deg)'; }
+      return;
+    }
+    var head = t.closest('[data-toggle]');
+    if(head){
+      var id = head.getAttribute('data-toggle');
+      openSet[id] = !openSet[id];
+      var cardEl = head.closest('.card');
+      if(cardEl){
+        cardEl.classList.toggle('open', !!openSet[id]);
+        head.setAttribute('aria-expanded', openSet[id] ? 'true' : 'false');
+      }
+    }
+  });
+
+  var bv = document.getElementById('byVendor');
+  var ba = document.getElementById('byAgent');
+  function setMode(m){
+    groupMode = m;
+    bv.setAttribute('aria-pressed', m==='vendor' ? 'true':'false');
+    ba.setAttribute('aria-pressed', m==='agent' ? 'true':'false');
+    render();
+  }
+  bv.addEventListener('click', function(){ setMode('vendor'); });
+  ba.addEventListener('click', function(){ setMode('agent'); });
+})();
+</script>
+</body>
+</html>
