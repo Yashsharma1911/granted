@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HoldLine — your AI caller for the hold queue</title>
+<style>
+:root{
+  --bg:#f6f7f9; --panel:#ffffff; --ink:#15181d; --muted:#5d6672; --line:#e2e6ec;
+  --accent:#1f5fd8; --accent-ink:#ffffff; --good:#0d7a4a; --goodbg:#e4f6ec;
+  --warn:#8a5a00; --warnbg:#fdf2dc; --bad:#9a2020; --badbg:#fbe6e6;
+  --chip:#eef1f6; --shadow:0 1px 2px rgba(16,24,40,.06),0 6px 18px rgba(16,24,40,.06);
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#0e1116; --panel:#161b22; --ink:#e8ecf2; --muted:#9aa5b4; --line:#262d38;
+    --accent:#5a8dff; --accent-ink:#06101f; --good:#5fd39a; --goodbg:#10robust;
+    --good:#62d39b; --goodbg:#10291f; --warn:#f0c168; --warnbg:#2b2312;
+    --bad:#ff8f8f; --badbg:#2e1616; --chip:#20262f;
+    --shadow:0 1px 2px rgba(0,0,0,.5),0 6px 18px rgba(0,0,0,.35);
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  font-size:15px; line-height:1.45; -webkit-text-size-adjust:100%;
+}
+.wrap{max-width:1040px;margin:0 auto;padding:0 14px 90px}
+header.top{
+  position:sticky;top:0;z-index:20;background:var(--panel);
+  border-bottom:1px solid var(--line);padding:12px 14px;
+}
+header.top .inner{max-width:1040px;margin:0 auto;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.logo{width:26px;height:26px;border-radius:7px;background:var(--accent);position:relative;flex:none}
+.logo:before{content:"";position:absolute;inset:7px 8px;border:2px solid var(--accent-ink);border-top:none;border-right:none;border-radius:0 0 0 4px}
+h1{font-size:15px;margin:0;font-weight:700;letter-spacing:-.2px}
+h1 span{font-weight:400;color:var(--muted)}
+.demo-tag{margin-left:auto;font-size:11px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:3px 9px}
+h2{font-size:13px;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);margin:26px 0 10px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow)}
+.strip{padding:14px;display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.strip .sum{flex:1 1 240px;min-width:200px}
+.strip .sum b{display:block;font-size:17px;letter-spacing:-.3px}
+.strip .sum small{color:var(--muted)}
+button{font:inherit;cursor:pointer;border-radius:10px;border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:10px 14px;min-height:44px}
+button:active{transform:translateY(1px)}
+button:disabled{opacity:.5;cursor:default}
+.btn-primary{background:var(--accent);color:var(--accent-ink);border-color:transparent;font-weight:650}
+.btn-sm{min-height:36px;padding:6px 12px;font-size:13px;border-radius:9px}
+.tablewrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{border-collapse:collapse;width:100%;min-width:720px;font-size:13.5px}
+th{text-align:left;font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);font-weight:600;padding:10px 12px;border-bottom:1px solid var(--line)}
+td{padding:11px 12px;border-bottom:1px solid var(--line);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr.active{background:color-mix(in srgb,var(--accent) 8%,transparent)}
+.ref{font-weight:650;white-space:nowrap}
+.ph{color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
+.age{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;padding:4px 9px;border-radius:999px;background:var(--chip);color:var(--muted);white-space:nowrap}
+.pill.run{background:color-mix(in srgb,var(--accent) 16%,transparent);color:var(--accent)}
+.pill.ok{background:var(--goodbg);color:var(--good)}
+.pill.warn{background:var(--warnbg);color:var(--warn)}
+.pill.bad{background:var(--badbg);color:var(--bad)}
+.dot{width:7px;height:7px;border-radius:50%;background:currentColor;flex:none}
+.pill.run .dot{animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
+/* live panel */
+.live{padding:14px}
+.live .idle{color:var(--muted);font-size:14px;display:flex;gap:10px;align-items:center}
+.live-head{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;margin-bottom:10px}
+.live-head b{font-size:15px}
+.live-head .mono{font-variant-numeric:tabular-nums;color:var(--muted);font-size:12.5px}
+.bars{display:flex;gap:3px;align-items:flex-end;height:22px}
+.bars i{display:block;width:3px;background:var(--accent);border-radius:2px;height:6px;animation:eq .9s infinite ease-in-out}
+@keyframes eq{0%,100%{height:5px}50%{height:20px}}
+.transcript{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px;font-size:13px;min-height:132px;max-height:210px;overflow:auto}
+.tline{display:flex;gap:8px;padding:3px 0}
+.who{flex:none;font-weight:650;font-size:11px;letter-spacing:.04em;text-transform:uppercase;width:72px;color:var(--muted);padding-top:2px}
+.who.hl{color:var(--accent)}
+.prog{height:5px;border-radius:4px;background:var(--line);overflow:hidden;margin-top:12px}
+.prog i{display:block;height:100%;background:var(--accent);width:0;transition:width .3s linear}
+/* cards */
+.grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(300px,1fr))}
+.ac{padding:13px;display:flex;flex-direction:column;gap:9px}
+.ac.flip{border-color:var(--good);background:var(--goodbg)}
+.ac-head{display:flex;gap:8px;align-items:flex-start}
+.ac-head .t{flex:1;min-width:0}
+.ac-head .t b{display:block;font-size:14px}
+.ac-head .t small{color:var(--muted);display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fields{display:grid;grid-template-columns:auto 1fr;gap:4px 10px;font-size:13px}
+.fields dt{color:var(--muted);white-space:nowrap}
+.fields dd{margin:0;font-weight:550;word-break:break-word}
+.quote{font-size:13px;font-style:italic;color:var(--muted);border-left:3px solid var(--line);padding:2px 0 2px 9px}
+.wave{display:none;gap:2px;align-items:center;height:26px;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:0 8px}
+.wave.on{display:flex}
+.wave i{display:block;flex:1;background:var(--accent);border-radius:1px;opacity:.75}
+.wave.play i{animation:wv .8s infinite ease-in-out}
+@keyframes wv{0%,100%{transform:scaleY(.4)}50%{transform:scaleY(1)}}
+.tx{display:none;background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:9px;font-size:12.5px;max-height:190px;overflow:auto}
+.tx.on{display:block}
+.row-btns{display:flex;gap:7px;flex-wrap:wrap;margin-top:2px}
+.written{display:flex;gap:8px;align-items:center;color:var(--good);font-size:13.5px;font-weight:600}
+.check{width:18px;height:18px;border-radius:50%;background:var(--good);position:relative;flex:none}
+.check:after{content:"";position:absolute;left:6px;top:3px;width:4px;height:9px;border:2px solid var(--goodbg);border-top:none;border-left:none;transform:rotate(42deg)}
+.empty{padding:26px 14px;text-align:center;color:var(--muted);font-size:14px}
+footer.bar{position:fixed;left:0;right:0;bottom:0;background:var(--panel);border-top:1px solid var(--line);padding:9px 14px;z-index:20}
+footer.bar .inner{max-width:1040px;margin:0 auto;display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:13px}
+footer.bar .credit{margin-left:auto;color:var(--muted);font-size:11px}
+.msg{font-size:13px;color:var(--warn);background:var(--warnbg);border-radius:9px;padding:8px 10px;display:none}
+.msg.on{display:block}
+@media (max-width:560px){
+  .strip .btn-primary{width:100%}
+  .fields{grid-template-columns:1fr;gap:1px}
+  .fields dt{font-size:11px;text-transform:uppercase;letter-spacing:.05em;margin-top:5px}
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="inner">
+    <div class="logo" aria-hidden="true"></div>
+    <h1>HoldLine <span>— your AI caller for the hold queue</span></h1>
+    <span class="demo-tag">Demo data</span>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <h2>Open items</h2>
+  <div class="card">
+    <div class="strip">
+      <div class="sum">
+        <b id="sumLine">10 open items · 158 days of combined ageing</b>
+        <small id="sumSub">est. 3h 20m of hold time if called by hand</small>
+      </div>
+      <button class="btn-primary" id="runAll">Run HoldLine on all 10</button>
+    </div>
+    <div class="msg" id="msg"></div>
+    <div class="tablewrap">
+      <table id="tbl">
+        <thead>
+          <tr><th>Ref</th><th>Supplier</th><th>Phone</th><th>What we need</th><th class="age">Days</th><th>Status</th><th></th></tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <h2>Live call</h2>
+  <div class="card live" id="live">
+    <div class="idle" id="liveIdle">
+      <span class="pill"><span class="dot"></span>Idle</span>
+      <span>No call in progress. Start a call to watch the live transcript.</span>
+    </div>
+    <div id="liveActive" style="display:none">
+      <div class="live-head">
+        <div class="bars" id="bars" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+        <b id="liveRef">—</b>
+        <span class="pill run" id="liveState"><span class="dot"></span>Dialing</span>
+        <span class="mono" id="liveClock">call 00:00 · hold 00:00</span>
+      </div>
+      <div class="transcript" id="transcript" aria-live="polite"></div>
+      <div class="prog"><i id="progBar"></i></div>
+    </div>
+  </div>
+
+  <h2>Answer cards</h2>
+  <div id="cardsEmpty" class="card empty">Nothing captured yet. Completed calls land here as structured, evidence-backed answers.</div>
+  <div class="grid" id="cards"></div>
+
+</div>
+
+<footer class="bar">
+  <div class="inner">
+    <span id="footStat">0 of 10 resolved · 0m of hold time avoided · 0 flagged for human review.</span>
+    <span class="credit">Prototype by Granted, inspired by your bookmarks</span>
+  </div>
+</footer>
+
+<script>
+(function(){
+"use strict";
+
+var DATA = [
+ {ref:"PO-44921",sup:"Westbrook Electrical Supply",phone:"(414) 555-0148",need:"Confirmed ship date for 400x conduit fittings",days:14,
+  ivr:"pressed 2, then 4", holdS:680, callS:822, conf:"High",
+  script:[["IVR","\u201cFor order status press two.\u201d"],["HoldLine","pressed 2"],["IVR","\u201cFor open purchase orders press four.\u201d"],["HoldLine","pressed 4"],["Rep","\u201cWestbrook, this is Dana.\u201d"],["HoldLine","\u201cCalling about PO 44921, 400 conduit fittings.\u201d"],["Rep","\u201cThat\u2019s shipping Thursday the 29th, tracking 1Z9941X, Ward freight.\u201d"]],
+  fields:[["Ship date","Thu 29 Oct"],["Carrier","Ward"],["Tracking","1Z9941X"],["Rep","Dana M."],["Call length","13m 42s"],["Hold time","11m 20s"]],
+  erp:"Written to PO-44921 \u00b7 field: PromisedDate"},
+
+ {ref:"PO-44877",sup:"Delta Pump & Valve",phone:"(713) 555-0192",need:"Is backordered item 8832-B released?",days:21,
+  ivr:"pressed 1, then 3", holdS:437, callS:590, conf:"High",
+  script:[["IVR","\u201cSales press one, service press two.\u201d"],["HoldLine","pressed 1"],["IVR","\u201cBackorders press three.\u201d"],["HoldLine","pressed 3"],["Rep","\u201cDelta Pump, Marcus speaking.\u201d"],["HoldLine","\u201cChecking if backordered item 8832-B on PO 44877 is released.\u201d"],["Rep","\u201cReleased this morning \u2014 3 of 3 units, leaves Houston tomorrow.\u201d"]],
+  fields:[["Backorder","Released 25 Oct"],["Qty released","3 of 3"],["Ships","Mon 27 Oct, ex-Houston"],["Rep","Marcus T."],["Call length","9m 50s"],["Hold time","7m 17s"]],
+  erp:"Written to PO-44877 \u00b7 field: BackorderStatus"},
+
+ {ref:"INV-20114",sup:"Harborline Freight",phone:"(312) 555-0177",need:"Why was fuel surcharge $412 added?",days:9,
+  ivr:"pressed 3", holdS:905, callS:1104, conf:"High",
+  script:[["IVR","\u201cBilling enquiries, press three.\u201d"],["HoldLine","pressed 3"],["IVR","\u201cYour estimated wait is fourteen minutes.\u201d"],["Rep","\u201cHarborline billing, Priya.\u201d"],["HoldLine","\u201cInvoice 20114 shows a $412 fuel surcharge \u2014 what\u2019s the basis?\u201d"],["Rep","\u201cIndexed FSC at 28.4% on the linehaul. It\u2019s correct, but your contract caps it at 22% \u2014 I\u2019ll issue a $94 credit.\u201d"]],
+  fields:[["Charge basis","Indexed FSC 28.4% of linehaul"],["Contract cap","22%"],["Outcome","Credit memo $94.00"],["Credit ref","CM-55218"],["Rep","Priya N."],["Call length","18m 24s"],["Hold time","15m 05s"]],
+  erp:"Written to INV-20114 \u00b7 field: DisputeResolution"},
+
+ {ref:"PO-45002",sup:"Nordstead Fasteners",phone:"(216) 555-0133",need:"Partial shipment ETA, remaining 1,200 units",days:6,
+  ivr:"pressed 2", holdS:252, callS:404, conf:"Medium",
+  script:[["IVR","\u201cFor an existing order press two.\u201d"],["HoldLine","pressed 2"],["Rep","\u201cNordstead, Greg here.\u201d"],["HoldLine","\u201cPO 45002 \u2014 when do the remaining 1,200 units ship?\u201d"],["Rep","\u201cUh, probably end of next week? Depends on the plating line.\u201d"],["HoldLine","\u201cCan you confirm a date or a tracking reference?\u201d"],["Rep","\u201cNot today, no.\u201d"]],
+  fields:[["Remaining qty","1,200 units"],["ETA given","Vague \u2014 no committed date"],["Blocker","Plating line capacity"],["Rep","Greg (last name not given)"],["Call length","6m 44s"],["Hold time","4m 12s"]],
+  quote:"\u201cUh, probably end of next week? Depends on the plating line.\u201d",
+  flag:"Rep would not commit to a date. Not written as a promise date \u2014 logged as a note.",
+  erp:"Written to PO-45002 \u00b7 field: SupplierNote (unconfirmed)"},
+
+ {ref:"COI-7781",sup:"Apex Mechanical (sub)",phone:"(602) 555-0119",need:"Updated certificate of insurance on file?",days:31,
+  ivr:"pressed 0 for operator", holdS:196, callS:289, conf:"Escalation",
+  script:[["IVR","\u201cPress zero for an operator.\u201d"],["HoldLine","pressed 0"],["Rep","\u201cApex Mechanical, this is Lorena.\u201d"],["HoldLine","\u201cCalling on behalf of Brightwater Construction about COI 7781 \u2014\u201d"],["Rep","\u201cIs this an automated system? We don\u2019t give insurance details to bots. Have a person call me.\u201d"],["HoldLine","\u201cUnderstood. Noting a human callback request.\u201d"]],
+  fields:[["Outcome","Human callback required"],["Reason","Rep declined to speak with an automated caller"],["Contact","Lorena, front desk"],["Best time","Weekdays before 11am MST"],["Call length","4m 49s"],["Hold time","3m 16s"]],
+  erp:"Written to COI-7781 \u00b7 field: CallbackRequired"},
+
+ {ref:"PO-44690",sup:"Granite City Steel",phone:"(314) 555-0165",need:"Mill cert documents for heat lot 77213",days:18,
+  ivr:"pressed 4, then 2", holdS:521, callS:688, conf:"High",
+  script:[["IVR","\u201cQuality documents press four.\u201d"],["HoldLine","pressed 4"],["IVR","\u201cMill test reports press two.\u201d"],["HoldLine","pressed 2"],["Rep","\u201cGranite City QA, Tom.\u201d"],["HoldLine","\u201cNeed mill certs for heat lot 77213 on PO 44690.\u201d"],["Rep","\u201cEmailing the MTR now to your AP inbox, reference MTR-77213-A.\u201d"]],
+  fields:[["Document","MTR-77213-A"],["Heat lot","77213"],["Delivery","Emailed to ap@brightwater.co"],["Rep","Tom R., QA"],["Call length","11m 28s"],["Hold time","8m 41s"]],
+  erp:"Written to PO-44690 \u00b7 field: MillCertRef"},
+
+ {ref:"UTIL-3390",sup:"Metro Water Authority",phone:"(503) 555-0104",need:"Meter transfer status, 220 Pike St",days:27,
+  ivr:"pressed 5, then 1", holdS:1440, callS:1452, conf:"Needs review",
+  script:[["IVR","\u201cAccount transfers press five.\u201d"],["HoldLine","pressed 5"],["IVR","\u201cCommercial accounts press one.\u201d"],["HoldLine","pressed 1"],["IVR","\u201cAll agents are busy. Estimated wait: thirty-one minutes.\u201d"],["Rep","\u201cMetro Water, case number for this is 4-4-8-1-9-0 \u2014\u201d"],["System","Call disconnected at 24m 12s."]],
+  fields:[["Captured","Case number 448190 only"],["Transfer status","Unknown \u2014 call dropped mid-sentence"],["Hold time","24m 00s"],["Call length","24m 12s"],["Dropped at","24m 12s"]],
+  flag:"Line dropped before the agent confirmed the meter transfer. Do not treat the case number as a resolution.",
+  retry:true,
+  erp:"Written to UTIL-3390 \u00b7 field: CaseRef (unresolved)"},
+
+ {ref:"PO-45118",sup:"Sunfield Controls",phone:"(480) 555-0171",need:"Price confirmation on revised quote Q-9912",days:4,
+  ivr:"pressed 1", holdS:168, callS:362, conf:"High",
+  script:[["IVR","\u201cFor quotes and pricing press one.\u201d"],["HoldLine","pressed 1"],["Rep","\u201cSunfield Controls, Aisha.\u201d"],["HoldLine","\u201cConfirming pricing on revised quote Q-9912 for PO 45118.\u201d"],["Rep","\u201cQ-9912 is $18,420 net, firm through 30 November, freight prepaid.\u201d"]],
+  fields:[["Quote","Q-9912"],["Price","$18,420.00 net"],["Firm until","30 Nov 2025"],["Freight","Prepaid & added: no"],["Rep","Aisha K."],["Call length","6m 02s"],["Hold time","2m 48s"]],
+  erp:"Written to PO-45118 \u00b7 field: ConfirmedPrice"},
+
+ {ref:"INV-19988",sup:"Beaumont Logistics",phone:"(504) 555-0186",need:"Has invoice been released for payment?",days:12,
+  ivr:"pressed 3, then 2", holdS:394, callS:551, conf:"Medium",
+  script:[["IVR","\u201cAccounts receivable press three.\u201d"],["HoldLine","pressed 3"],["IVR","\u201cInvoice status press two.\u201d"],["HoldLine","pressed 2"],["Rep","\u201cBeaumont AR, Chantelle.\u201d"],["HoldLine","\u201cIs invoice 19988 released for payment?\u201d"],["Rep","\u201cIt shows approved on our side but the batch hasn\u2019t run \u2014 should be in the next cycle, I think.\u201d"]],
+  fields:[["Approval","Approved on supplier side"],["Payment run","Not yet batched"],["Expected","\u201cNext cycle\u201d \u2014 no date given"],["Rep","Chantelle B."],["Call length","9m 11s"],["Hold time","6m 34s"]],
+  quote:"\u201cIt shows approved on our side but the batch hasn\u2019t run \u2014 should be in the next cycle, I think.\u201d",
+  flag:"Rep hedged on timing. Approval is confirmed; payment date is not.",
+  erp:"Written to INV-19988 \u00b7 field: ApprovalStatus"},
+
+ {ref:"PO-44755",sup:"Kessler Industrial",phone:"(414) 555-0150",need:"Replacement for damaged pallet, RMA number",days:16,
+  ivr:"pressed 2, then 1", holdS:605, callS:769, conf:"High",
+  script:[["IVR","\u201cReturns and damages press two.\u201d"],["HoldLine","pressed 2"],["IVR","\u201cTo open a new RMA press one.\u201d"],["HoldLine","pressed 1"],["Rep","\u201cKessler returns, this is Victor.\u201d"],["HoldLine","\u201cPO 44755, one pallet arrived crushed \u2014 need an RMA and a replacement.\u201d"],["Rep","\u201cRMA-30417. Replacement pallet ships Tuesday, no restocking fee.\u201d"]],
+  fields:[["RMA","RMA-30417"],["Replacement","Ships Tue 28 Oct"],["Restocking fee","Waived"],["Rep","Victor D."],["Call length","12m 49s"],["Hold time","10m 05s"]],
+  erp:"Written to PO-44755 \u00b7 field: RMANumber"}
+];
+
+var STATES = ["Dialing","IVR","On hold","Speaking with rep","Answer captured"];
+
+function $(id){return document.getElementById(id);}
+function el(tag,cls,txt){var e=document.createElement(tag);if(cls)e.className=cls;if(txt!=null)e.textContent=txt;return e;}
+function mmss(s){var m=Math.floor(s/60),x=s%60;return (m<10?"0":"")+m+":"+(x<10?"0":"")+x;}
+function hm(s){var h=Math.floor(s/3600),m=Math.round((s%3600)/60);return (h>0?h+"h ":"")+m+"m";}
+
+var rows=[],done={},running=false,queue=[],timers=[];
+var tbody=$("tbody"),cardsBox=$("cards");
+
+function buildTable(){
+  DATA.forEach(function(d,i){
+    var tr=el("tr");
+    tr.appendChild(el("td","ref",d.ref));
+    tr.appendChild(el("td",null,d.sup));
+    tr.appendChild(el("td","ph",d.phone));
+    tr.appendChild(el("td",null,d.need));
+    tr.appendChild(el("td","age",String(d.days)));
+    var st=el("td"); var p=el("span","pill"); p.appendChild(el("span","dot")); p.appendChild(el("span",null,"Queued")); st.appendChild(p);
+    tr.appendChild(st);
+    var act=el("td");
+    var b=el("button","btn-sm","Call");
+    b.setAttribute("aria-label","Call "+d.sup+" about "+d.ref);
+    b.onclick=function(){ startOne(i); };
+    act.appendChild(b); tr.appendChild(act);
+    tbody.appendChild(tr);
+    rows.push({tr:tr,pill:p,label:p.lastChild,btn:b});
+  });
+}
+
+function setState(i,state,extra){
+  var r=rows[i]; if(!r) return;
+  r.label.textContent = extra? state+" "+extra : state;
+  r.pill.className = "pill " + (state==="Answer captured" ? "ok" : "run");
+  if(state==="Queued"){r.pill.className="pill";}
+}
+
+function msg(t){
+  var m=$("msg");
+  if(!t){m.className="msg";m.textContent="";return;}
+  m.textContent=t;m.className="msg on";
+}
+
+function clearTimers(){ timers.forEach(clearTimeout); timers=[]; }
+function later(fn,ms){ var t=setTimeout(fn,ms); timers.push(t); return t; }
+
+function startOne(i){
+  if(running){ msg("A call is already in progress — HoldLine dials one line at a time in this demo."); later(function(){msg("");},2600); return; }
+  if(done[i]){ msg("This item is already resolved. Its answer card is below."); later(function(){msg("");},2600); return; }
+  msg("");
+  queue=[i]; runQueue();
+}
+
+function runAll(){
+  if(running) return;
+  var q=[]; for(var i=0;i<DATA.length;i++){ if(!done[i]) q.push(i); }
+  if(!q.length){ msg("All 10 items are already resolved. Scroll down for the answer cards."); later(function(){msg("");},2800); return; }
+  msg(""); queue=q; runQueue();
+}
+
+function runQueue(){
+  if(!queue.length){ running=false; $("runAll").disabled=false; $("runAll").textContent = allDone()? "All 10 complete" : "Run HoldLine on remaining"; showIdle(); return; }
+  running=true; $("runAll").disabled=true; $("runAll").textContent="Calling…";
+  var i=queue.shift();
+  runCall(i,function(){ runQueue(); });
+}
+
+function allDone(){ return Object.keys(done).length===DATA.length; }
+
+function showIdle(){
+  $("liveActive").style.display="none";
+  $("liveIdle").style.display="flex";
+  rows.forEach(function(r){r.tr.classList.remove("active");});
+}
+
+function runCall(i,cb){
+  var d=DATA[i], r=rows[i];
+  rows.forEach(function(x){x.tr.classList.remove("active");});
+  r.tr.classList.add("active");
+  r.btn.disabled=true;
+  $("liveIdle").style.display="none";
+  $("liveActive").style.display="block";
+  $("liveRef").textContent=d.ref+" · "+d.sup;
+  var tbox=$("transcript"); tbox.innerHTML="";
+  var bars=$("bars"); bars.style.visibility="visible";
+
+  var STEP=330; // accelerated clock
+  var lines=d.script;
+  var total=lines.length;
+  var step=0;
+
+  // state timeline
+  var stateAt=[];
+  stateAt.push({at:0,s:"Dialing"});
+  stateAt.push({at:1,s:"IVR: "+d.ivr});
+  stateAt.push({at:Math.max(2,Math.floor(total*0.45)),s:"On hold "+Math.floor(d.holdS/60)+"m "+(d.holdS%60<10?"0":"")+(d.holdS%60)+"s"});
+  stateAt.push({at:Math.max(3,total-2),s:"Speaking with rep"});
+
+  function setLive(s,cls){
+    var e=$("liveState"); e.className="pill "+(cls||"run");
+    e.innerHTML=""; e.appendChild(el("span","dot")); e.appendChild(el("span",null,s));
+    setState(i,s.indexOf("IVR")===0?"IVR":s.split(" ")[0]==="On"?"On hold":s, "");
+    r.label.textContent=s;
+  }
+
+  function tick(){
+    if(step<total){
+      stateAt.forEach(function(sa){ if(sa.at===step) setLive(sa.s); });
+      var ln=lines[step];
+      var line=el("div","tline");
+      var who=el("span","who"+(ln[0]==="HoldLine"?" hl":""),"["+ln[0]+"]");
+      line.appendChild(who); line.appendChild(el("span",null,ln[1]));
+      tbox.appendChild(line); tbox.scrollTop=tbox.scrollHeight;
+      var frac=(step+1)/total;
+      $("progBar").style.width=Math.round(frac*100)+"%";
+      $("liveClock").textContent="call "+mmss(Math.round(d.callS*frac))+" · hold "+mmss(Math.round(d.holdS*Math.min(1,frac*1.25)));
+      step++;
+      later(tick,STEP);
+    } else {
+      $("liveClock").textContent="call "+mmss(d.callS)+" · hold "+mmss(d.holdS);
+      bars.style.visibility="hidden";
+      var cls = d.conf==="High"?"ok":(d.conf==="Needs review"||d.conf==="Escalation")?"bad":"warn";
+      setLive(d.conf==="Needs review"?"Call dropped":d.conf==="Escalation"?"Escalated":"Answer captured",cls);
+      r.pill.className="pill "+cls;
+      r.label.textContent = d.conf==="Needs review"?"Needs review":d.conf==="Escalation"?"Human callback":"Answer captured";
+      r.btn.textContent="Done"; r.btn.disabled=true;
+      done[i]=true;
+      addCard(i);
+      updateFooter();
+      later(function(){ $("progBar").style.width="0%"; cb(); },420);
+    }
+  }
+  $("progBar").style.width="0%";
+  setLive("Dialing");
+  later(tick,260);
+}
+
+function confClass(c){ return c==="High"?"ok":c==="Medium"?"warn":"bad"; }
+function confLabel(c){ return c==="High"?"High confidence":c==="Medium"?"Medium confidence":c==="Escalation"?"ESCALATION":"NEEDS REVIEW"; }
+
+function addCard(i){
+  var d=DATA[i];
+  $("cardsEmpty").style.display="none";
+  var c=el("div","card ac");
+  c.id="card-"+i;
+
+  var head=el("div","ac-head");
+  var t=el("div","t");
+  t.appendChild(el("b",null,d.ref));
+  t.appendChild(el("small",null,d.sup));
+  head.appendChild(t);
+  var chip=el("span","pill "+confClass(d.conf),confLabel(d.conf));
+  head.appendChild(chip);
+  c.appendChild(head);
+
+  var dl=el("dl","fields");
+  d.fields.forEach(function(f){ dl.appendChild(el("dt",null,f[0])); dl.appendChild(el("dd",null,f[1])); });
+  c.appendChild(dl);
+
+  if(d.quote) c.appendChild(el("div","quote",d.quote));
+  if(d.flag){
+    var fl=el("div","quote",d.flag);
+    fl.style.borderLeftColor = d.conf==="High"?"var(--good)":"var(--warn)";
+    fl.style.fontStyle="normal";
+    c.appendChild(fl);
+  }
+
+  // waveform
+  var wave=el("div","wave");
+  for(var k=0;k<34;k++){
+    var b=el("i");
+    var h=6+Math.abs(Math.sin((k+i)*1.7))*18;
+    b.style.height=Math.round(h)+"px";
+    b.style.animationDelay=(k*0.04)+"s";
+    wave.appendChild(b);
+  }
+  c.appendChild(wave);
+
+  var tx=el("div","tx");
+  d.script.forEach(function(ln){
+    var line=el("div","tline");
+    line.appendChild(el("span","who"+(ln[0]==="HoldLine"?" hl":""),"["+ln[0]+"]"));
+    line.appendChild(el("span",null,ln[1]));
+    tx.appendChild(line);
+  });
+  c.appendChild(tx);
+
+  var btns=el("div","row-btns");
+
+  var play=el("button","btn-sm","\u25B6 Replay recording");
+  play.onclick=function(){
+    if(!wave.classList.contains("on")){ wave.classList.add("on","play"); play.textContent="\u25A0 Stop playback"; }
+    else { wave.classList.remove("on","play"); play.textContent="\u25B6 Replay recording"; }
+  };
+  btns.appendChild(play);
+
+  var tbtn=el("button","btn-sm","Transcript");
+  tbtn.onclick=function(){ tx.classList.toggle("on"); tbtn.textContent = tx.classList.contains("on")?"Hide transcript":"Transcript"; };
+  btns.appendChild(tbtn);
+
+  if(d.retry){
+    var rt=el("button","btn-sm","Retry tomorrow 9am");
+    rt.onclick=function(){ rt.disabled=true; rt.textContent="\u2713 Requeued for 9:00am"; };
+    btns.appendChild(rt);
+  }
+
+  var push=el("button","btn-sm btn-primary","Push to ERP");
+  push.onclick=function(){
+    c.classList.add("flip");
+    c.innerHTML="";
+    var w=el("div","written");
+    w.appendChild(el("span","check"));
+    w.appendChild(el("span",null,d.erp));
+    c.appendChild(w);
+    var u=el("button","btn-sm","Undo");
+    u.style.alignSelf="flex-start";
+    u.onclick=function(){ c.remove(); addCard(i); };
+    c.appendChild(u);
+  };
+  btns.appendChild(push);
+
+  c.appendChild(btns);
+  cardsBox.appendChild(c);
+}
+
+function updateFooter(){
+  var resolved=0,flagged=0,hold=0,open=0,age=0;
+  DATA.forEach(function(d,i){
+    if(done[i]){
+      hold+=d.holdS;
+      if(d.conf==="Needs review") flagged++; else resolved++;
+    } else { open++; age+=d.days; }
+  });
+  $("footStat").textContent = resolved+" of "+DATA.length+" resolved · "+hm(hold)+" of hold time avoided · "+flagged+" flagged for human review.";
+  if(open===0){
+    $("sumLine").textContent="0 open items · queue cleared";
+    $("sumSub").textContent="HoldLine sat on hold so nobody else had to.";
+  } else {
+    $("sumLine").textContent=open+" open item"+(open===1?"":"s")+" · "+age+" days of combined ageing";
+    $("sumSub").textContent="est. "+hm(Math.round(age*1266/158))+" of hold time if called by hand";
+  }
+}
+
+$("runAll").onclick=runAll;
+buildTable();
+updateFooter();
+
+window.addEventListener("error",function(){ clearTimers(); running=false; $("runAll").disabled=false; msg("Something went wrong in the demo. Reload the page to start over."); });
+})();
+</script>
+</body>
+</html>
