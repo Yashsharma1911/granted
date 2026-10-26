@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-26T16:08:52.963Z",
+  "updated": "2026-10-26T21:08:26.787Z",
   "ideas": [
     {
       "id": "2026-10-26-catalog-check",
@@ -245,6 +245,66 @@
       "sources_count": 4,
       "superseded_by": null,
       "sibling": "2026-10-26-partsy"
+    },
+    {
+      "id": "2026-10-26-ledgerline",
+      "number": 10,
+      "date": "2026-10-26",
+      "track": "venture",
+      "short_name": "Ledgerline",
+      "verdict": "watch",
+      "score": 7,
+      "scores": {
+        "pain": 7,
+        "market_pull": 7,
+        "timing": 7,
+        "gap": 7,
+        "wedge": 7
+      },
+      "effort": "3+ months",
+      "category": "Back-office automation",
+      "tags": [
+        "professional services",
+        "billing",
+        "agents",
+        "evidence"
+      ],
+      "pain_type": "expressed",
+      "one_liner": "For 3-30 person agencies and consultancies billing on retainers and SOWs, Ledgerline reads the client-facing email, calendar and ticket trail and produces a dated, source-linked record of what was requested, who requested it, what work followed and what fell outside scope — ready to attach to an invoice or a disputed-hours reply.",
+      "prototype_url": "https://github.com/Yashsharma1911/granted/blob/catalog-test/ideas/2026-10-26-ledgerline/index.html",
+      "sources_count": 11,
+      "superseded_by": null,
+      "sibling": "2026-10-26-flatpack"
+    },
+    {
+      "id": "2026-10-26-flatpack",
+      "number": 11,
+      "date": "2026-10-26",
+      "track": "build",
+      "short_name": "Flatpack",
+      "verdict": "watch",
+      "score": 6.8,
+      "scores": {
+        "wow": 8,
+        "shareability": 7,
+        "buildability": 7,
+        "freshness": 7,
+        "usefulness": 5
+      },
+      "effort": "a weekend",
+      "category": "Developer tools",
+      "tags": [
+        "vision",
+        "documents",
+        "consumer",
+        "gemini"
+      ],
+      "pain_type": "latent",
+      "one_liner": "For anyone sitting on the floor with a wordless assembly manual, Flatpack turns the PDF into a scrollable step card deck: each step in plain English, the exact parts and screws for that step with counts, the tool you need, and the panel from the manual blown up beside it.",
+      "prototype_url": "https://github.com/Yashsharma1911/granted/blob/catalog-test/ideas/2026-10-26-flatpack/index.html",
+      "sources_count": 7,
+      "superseded_by": null,
+      "sibling": "2026-10-26-ledgerline"
     }
   ]
 }

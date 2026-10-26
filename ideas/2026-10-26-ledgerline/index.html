@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ledgerline — billable-work evidence trail</title>
+<style>
+:root{
+  --bg:#f6f6f5; --panel:#ffffff; --ink:#1b1d1f; --muted:#6b7177; --line:#e2e3e1;
+  --accent:#1f5d57; --accent-soft:#e6efed;
+  --green:#166d4a; --green-bg:#e4f2eb; --amber:#8a5a08; --amber-bg:#faeedb;
+  --grey:#5a6066; --grey-bg:#ebecec; --red:#9b2c2c; --red-bg:#fbeaea;
+  --shadow:0 1px 2px rgba(0,0,0,.05),0 6px 18px rgba(0,0,0,.05);
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --bg:#121415; --panel:#1a1d1f; --ink:#e9eaea; --muted:#9aa1a7; --line:#2b2f32;
+    --accent:#6fb8ab; --accent-soft:#1d2b29;
+    --green:#8bd6b0; --green-bg:#17302a; --amber:#e3b974; --amber-bg:#332714;
+    --grey:#aab0b5; --grey-bg:#26292b; --red:#f0a0a0; --red-bg:#331d1d;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 6px 18px rgba(0,0,0,.35);
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  font-size:15px; line-height:1.45; -webkit-text-size-adjust:100%;
+}
+.topbar{
+  position:sticky; top:0; z-index:40; background:var(--panel);
+  border-bottom:1px solid var(--line); padding:10px 16px;
+  display:flex; gap:10px; align-items:center; flex-wrap:wrap;
+}
+.brand{font-weight:700; letter-spacing:-.01em}
+.crumb{color:var(--muted); font-size:13px}
+.crumb span{white-space:nowrap}
+.tag-demo{
+  margin-left:auto; font-size:11px; text-transform:uppercase; letter-spacing:.08em;
+  color:var(--muted); border:1px solid var(--line); border-radius:999px; padding:3px 9px;
+}
+.tagline{padding:10px 16px 0; color:var(--muted); font-size:13px; max-width:900px}
+.grid{
+  display:grid; gap:14px; padding:14px 16px 28px;
+  grid-template-columns:28fr 27fr 45fr; align-items:start;
+}
+@media (max-width:980px){ .grid{grid-template-columns:1fr} }
+.panel{
+  background:var(--panel); border:1px solid var(--line); border-radius:12px;
+  box-shadow:var(--shadow); overflow:hidden;
+}
+.panel-h{padding:12px 14px; border-bottom:1px solid var(--line)}
+.panel-h h2{margin:0; font-size:13px; text-transform:uppercase; letter-spacing:.09em; color:var(--muted)}
+.panel-h p{margin:4px 0 0; font-size:13px; color:var(--muted)}
+.chip-red{
+  display:inline-flex; align-items:center; gap:7px; margin:12px 14px 0;
+  background:var(--red-bg); color:var(--red); border-radius:8px;
+  padding:8px 10px; font-size:13px; font-weight:600;
+}
+.sow{
+  margin:10px 14px; padding:10px; border:1px dashed var(--line); border-radius:8px;
+  color:var(--muted); font-size:13px; display:flex; gap:9px; align-items:flex-start;
+}
+.sow b{color:var(--ink); font-weight:600}
+.inbox{max-height:420px; overflow:auto; border-top:1px solid var(--line)}
+@media (max-width:980px){ .inbox{max-height:300px} }
+.mail{
+  padding:11px 14px; border-bottom:1px solid var(--line); cursor:default;
+}
+.mail:last-child{border-bottom:0}
+.mail-top{display:flex; gap:8px; justify-content:space-between; font-size:12px; color:var(--muted)}
+.mail-from{overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.mail-sub{font-weight:600; font-size:13.5px; margin-top:2px}
+.mail-pre{font-size:12.5px; color:var(--muted); margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.cal .mail-sub::before{content:"▣  "; color:var(--accent)}
+
+.center-inner{padding:18px 14px 20px; text-align:center}
+.center-inner h3{margin:0 0 6px; font-size:16px}
+.center-inner p.sub{margin:0 0 16px; color:var(--muted); font-size:13px}
+button{font:inherit; cursor:pointer}
+.btn{
+  border:1px solid var(--line); background:var(--panel); color:var(--ink);
+  border-radius:9px; padding:11px 14px; min-height:44px; font-size:14px; font-weight:600;
+}
+.btn:hover{border-color:var(--accent)}
+.btn:active{transform:translateY(1px)}
+.btn-primary{
+  background:var(--accent); border-color:var(--accent); color:#fff; width:100%;
+  font-size:15.5px; padding:15px 16px;
+}
+@media (prefers-color-scheme:dark){ .btn-primary{color:#07100f} }
+.btn-primary[disabled]{opacity:.55; cursor:not-allowed}
+.steps{margin:18px 0 0; text-align:left; display:none}
+.steps.on{display:block}
+.step{display:flex; gap:9px; align-items:center; font-size:13.5px; color:var(--muted); padding:5px 0}
+.step .dot{width:16px; height:16px; flex:0 0 16px; border-radius:50%; border:2px solid var(--line)}
+.step.active{color:var(--ink)}
+.step.active .dot{border-color:var(--accent); border-right-color:transparent; animation:spin .8s linear infinite}
+.step.done{color:var(--ink)}
+.step.done .dot{border-color:var(--accent); background:var(--accent); position:relative}
+.step.done .dot::after{content:""; position:absolute; left:4px; top:1px; width:4px; height:8px; border:solid #fff; border-width:0 2px 2px 0; transform:rotate(45deg)}
+@media (prefers-color-scheme:dark){ .step.done .dot::after{border-color:#07100f} }
+@keyframes spin{to{transform:rotate(360deg)}}
+.bar{height:5px; background:var(--grey-bg); border-radius:999px; overflow:hidden; margin-top:14px; display:none}
+.bar.on{display:block}
+.bar i{display:block; height:100%; width:0%; background:var(--accent); transition:width .2s linear}
+.note-small{font-size:12px; color:var(--muted); margin-top:14px}
+
+.after{display:none}
+.after.on{display:block}
+.empty{padding:26px 16px; color:var(--muted); font-size:13.5px; text-align:center}
+.empty svg{opacity:.5; margin-bottom:8px}
+.summary{
+  padding:12px 14px; border-bottom:1px solid var(--line); background:var(--accent-soft);
+}
+.summary .nums{font-size:14px; font-weight:600}
+.summary .nums em{font-style:normal; color:var(--muted); font-weight:500}
+.sum-actions{display:flex; gap:8px; margin-top:10px; flex-wrap:wrap}
+.sum-actions .btn{flex:1 1 150px}
+.cards{padding:6px 14px 14px; max-height:none}
+.card{
+  border:1px solid var(--line); border-radius:10px; padding:12px; margin:12px 0;
+  background:var(--panel);
+}
+.card.removed{opacity:.42}
+.card.removed .quote, .card.removed .followed, .card.removed .approved{display:none}
+.card-top{display:flex; gap:9px; align-items:baseline; flex-wrap:wrap}
+.date{font-variant-numeric:tabular-nums; color:var(--muted); font-size:12.5px; min-width:46px}
+.title{font-weight:650; font-size:15px; flex:1 1 auto}
+.pill{font-size:11px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; padding:3px 8px; border-radius:999px; white-space:nowrap}
+.pill.in{background:var(--green-bg); color:var(--green)}
+.pill.out{background:var(--amber-bg); color:var(--amber)}
+.pill.none{background:var(--grey-bg); color:var(--grey)}
+.who{font-size:12.5px; color:var(--muted); margin:4px 0 0 0}
+blockquote.quote{
+  margin:9px 0 0; padding:7px 0 7px 11px; border-left:3px solid var(--accent);
+  font-size:13.5px; color:var(--ink);
+}
+.src{display:block; margin-top:4px; font-size:11.5px; color:var(--muted)}
+.src a{color:var(--accent); text-decoration:none; border-bottom:1px dotted var(--accent)}
+.followed,.approved{font-size:13px; margin-top:9px}
+.followed b,.approved b{font-weight:650}
+.noevidence{color:var(--amber); font-weight:600}
+.ctrls{display:flex; gap:7px; margin-top:11px; flex-wrap:wrap}
+.ctrls button{
+  border:1px solid var(--line); background:transparent; color:var(--muted);
+  border-radius:7px; padding:8px 11px; min-height:40px; font-size:12.5px; font-weight:600;
+}
+.ctrls button:hover{color:var(--ink); border-color:var(--accent)}
+.ctrls button.acc{color:var(--green)}
+.editbox{display:none; margin-top:9px}
+.editbox.on{display:block}
+.editbox textarea{
+  width:100%; min-height:70px; font:inherit; font-size:13.5px; padding:9px;
+  border:1px solid var(--line); border-radius:8px; background:var(--bg); color:var(--ink); resize:vertical;
+}
+.editbox .row{display:flex; gap:7px; margin-top:7px}
+.flash{font-size:12px; color:var(--green); margin-top:6px; display:none}
+.flash.on{display:block}
+.warn{font-size:12px; color:var(--red); margin-top:6px; display:none}
+.warn.on{display:block}
+
+.modal-bg{
+  position:fixed; inset:0; background:rgba(12,14,15,.55); z-index:80;
+  display:none; align-items:flex-start; justify-content:center; padding:16px; overflow:auto;
+}
+.modal-bg.on{display:flex}
+.modal{
+  background:var(--panel); border-radius:12px; width:100%; max-width:720px;
+  box-shadow:var(--shadow); border:1px solid var(--line); margin:auto;
+}
+.modal-h{display:flex; align-items:center; gap:10px; padding:12px 14px; border-bottom:1px solid var(--line)}
+.modal-h h3{margin:0; font-size:14px; text-transform:uppercase; letter-spacing:.08em; color:var(--muted)}
+.modal-h .btn{margin-left:auto; padding:8px 12px; min-height:40px; font-size:13px}
+.doc{
+  padding:22px 20px; font-family:Georgia,"Iowan Old Style","Times New Roman",serif;
+  max-height:70vh; overflow:auto;
+}
+.doc h1{font-size:19px; margin:0 0 3px}
+.doc .docsub{font-size:13px; color:var(--muted); margin:0 0 16px; font-family:inherit}
+.doc hr{border:0; border-top:1px solid var(--line); margin:14px 0}
+.doc .entry{margin:0 0 15px; page-break-inside:avoid}
+.doc .entry .eh{font-weight:700; font-size:14.5px}
+.doc .entry .em{font-size:12.5px; color:var(--muted); font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+.doc .entry blockquote{margin:6px 0 0; padding-left:12px; border-left:2px solid var(--line); font-style:italic; font-size:13.5px}
+.doc .entry .ea{font-size:13px; margin-top:5px}
+.doc .foot{font-size:12px; color:var(--muted); margin-top:18px; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+.narr{padding:20px; font-family:Georgia,serif; font-size:14.5px; line-height:1.6}
+.narr p{margin:0 0 10px}
+.toast{
+  position:fixed; left:50%; transform:translateX(-50%); bottom:22px; z-index:120;
+  background:var(--ink); color:var(--bg); padding:11px 16px; border-radius:999px;
+  font-size:13.5px; font-weight:600; opacity:0; pointer-events:none; transition:opacity .2s;
+}
+.toast.on{opacity:1}
+footer{padding:10px 16px 28px; text-align:center; color:var(--muted); font-size:12px}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">Ledgerline</div>
+  <div class="crumb"><span>Northwind Studio</span> › <span>Client: Vantage Health</span> › <span>October 2026</span></div>
+  <div class="tag-demo">Demo data</div>
+</header>
+<p class="tagline">Ledgerline turns a month of client email and calendar into a dated, quoted, scope-checked record of what you were actually asked to do.</p>
+
+<main class="grid">
+
+  <!-- PANEL 1 -->
+  <section class="panel" aria-label="What you have today">
+    <div class="panel-h">
+      <h2>Before — what you have today</h2>
+      <p>Vantage Health · 148 messages, 11 calendar events</p>
+    </div>
+    <div class="chip-red">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+      4.5 hrs spent rebuilding this last month
+    </div>
+    <div class="sow">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></svg>
+      <div><b>SOW_Vantage_Q4.pdf</b><br>6 deliverables · 2 logo rounds · no translation scope</div>
+    </div>
+    <div class="inbox" id="inbox"></div>
+  </section>
+
+  <!-- CENTER -->
+  <section class="panel" aria-label="Build evidence pack">
+    <div class="panel-h"><h2>Step 2 — reconstruct</h2><p>Reads the thread history, clusters it into requests and checks each one against the SOW.</p></div>
+    <div class="center-inner">
+      <button class="btn btn-primary" id="buildBtn">Build evidence pack</button>
+      <div class="bar" id="bar"><i></i></div>
+      <div class="steps" id="steps"></div>
+      <p class="note-small">Nothing leaves this page. All processing simulated on demo data.</p>
+    </div>
+  </section>
+
+  <!-- PANEL 3 -->
+  <section class="panel" aria-label="Evidence pack">
+    <div class="panel-h">
+      <h2>After — evidence pack, October 2026</h2>
+      <p id="afterSub">Not built yet</p>
+    </div>
+    <div class="empty" id="emptyState">
+      <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>
+      <div>Your evidence pack will appear here —<br>one dated, quoted entry per client request.</div>
+    </div>
+    <div class="after" id="after">
+      <div class="summary">
+        <div class="nums" id="summary">—</div>
+        <div class="sum-actions">
+          <button class="btn" id="exportBtn">Export PDF pack</button>
+          <button class="btn" id="copyBtn">Copy invoice narrative</button>
+        </div>
+      </div>
+      <div class="cards" id="cards"></div>
+    </div>
+  </section>
+</main>
+
+<footer>Prototype by Granted, inspired by your bookmarks</footer>
+
+<div class="modal-bg" id="modalBg" role="dialog" aria-modal="true" aria-label="Artifact preview">
+  <div class="modal">
+    <div class="modal-h">
+      <h3 id="modalTitle">Preview</h3>
+      <button class="btn" id="closeModal">Close</button>
+    </div>
+    <div id="modalBody"></div>
+  </div>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function(){
+"use strict";
+
+var INBOX = [
+ {f:"priya@vantagehealth.com", d:"Oct 3", s:"RE: RE: homepage tweaks (14 messages)", p:"…ok but can the hero line say \"care that keeps up\" instead?"},
+ {f:"dan.okafor@vantagehealth.com", d:"Oct 6", s:"quick call?", p:"got 10 min today? legal thing, won't take long"},
+ {f:"calendar", d:"Oct 7", s:"Calendar: Vantage weekly sync, 45 min", p:"Recurring · Priya Raman, Dan Okafor, M. Hale"},
+ {f:"dan.okafor@vantagehealth.com", d:"Oct 9", s:"Fwd: legal wants the cookie banner too", p:"forwarding — see Marta's note at the bottom, needs to be live before the 20th"},
+ {f:"priya@vantagehealth.com", d:"Oct 9", s:"logo — can we see a few more?", p:"the team is split, maybe 3 more directions? sorry!"},
+ {f:"calendar", d:"Oct 14", s:"Calendar: Vantage weekly sync, 45 min", p:"Recurring · Priya Raman, Dan Okafor"},
+ {f:"priya@vantagehealth.com", d:"Oct 14", s:"one more thing — can we add Spanish?", p:"6 pages, nothing fancy, just the main nav + body copy"},
+ {f:"m.hale@vantagehealth.com", d:"Oct 17", s:"slide deck for the board?? 🙏", p:"board is the 29th and our deck looks terrible, any chance you could…"},
+ {f:"priya@vantagehealth.com", d:"Oct 21", s:"RE: checkout bug on screen readers", p:"our auditor flagged the checkout flow, this is in the SOW right?"},
+ {f:"calendar", d:"Oct 23", s:"Calendar: Vantage weekly sync, 45 min", p:"Recurring · 4th occurrence this month"},
+ {f:"dan.okafor@vantagehealth.com", d:"Oct 27", s:"need the brand assets today if possible", p:"printer deadline moved up, can you zip everything by 5?"},
+ {f:"priya@vantagehealth.com", d:"Oct 28", s:"re: invoice #1042 — this looks high", p:"can you walk me through what the extra work was? I don't remember approving…"}
+];
+
+var RECORDS = [
+ {id:1, date:"Oct 3", title:"Homepage hero copy revision", who:"Priya Raman", email:"priya@vantagehealth.com",
+  status:"in", quote:"ok but can the hero line say \"care that keeps up\" instead?", src:"Gmail · Oct 3, 16:41",
+  work:"Hero copy revised and staged; two variants shared for review.", worksrc:"Gmail · Oct 4, 11:02",
+  appr:"Priya Raman — \"yes, variant B, ship it\"", apprsrc:"Gmail · Oct 4, 13:20", note:""},
+ {id:2, date:"Oct 6", title:"Add cookie-consent banner (legal)", who:"Dan Okafor", email:"dan.okafor@vantagehealth.com",
+  status:"out", quote:"legal wants this live before the 20th, go ahead", src:"Gmail · Oct 9, 09:12",
+  work:"Consent banner built, region rules configured, deployed Oct 16.", worksrc:"Gmail · Oct 16, 17:48",
+  appr:"Dan Okafor — \"go ahead\" (written, Oct 9)", apprsrc:"Gmail · Oct 9, 09:12",
+  note:"Not listed in SOW_Vantage_Q4.pdf deliverables."},
+ {id:3, date:"Oct 9", title:"Third round of logo variations", who:"Priya Raman", email:"priya@vantagehealth.com",
+  status:"out", quote:"the team is split, maybe 3 more directions? sorry!", src:"Gmail · Oct 9, 15:07",
+  work:"Three additional logo directions produced and presented Oct 13.", worksrc:"Gmail · Oct 13, 10:30",
+  appr:null, apprsrc:"", note:"SOW specifies two rounds of logo exploration."},
+ {id:4, date:"Oct 14", title:"Spanish translation of 6 pages", who:"Priya Raman", email:"priya@vantagehealth.com",
+  status:"out", quote:"6 pages, nothing fancy, just the main nav + body copy", src:"Gmail · Oct 14, 09:12",
+  work:"Six pages localised, language switcher added to nav.", worksrc:"Gmail · Oct 20, 14:15",
+  appr:"Priya Raman — \"confirmed, please proceed with the six\"", apprsrc:"Gmail · Oct 14, 10:05",
+  note:"Localisation is out of SOW scope."},
+ {id:5, date:"Oct 17", title:"Board deck design", who:"M. Hale", email:"m.hale@vantagehealth.com",
+  status:"out", quote:"board is the 29th and our deck looks terrible, any chance you could…", src:"Gmail · Oct 17, 20:33",
+  work:"18-slide deck designed and delivered Oct 26.", worksrc:"Gmail · Oct 26, 08:55",
+  appr:null, apprsrc:"", note:"No SOW line item; requester is not a named approver."},
+ {id:6, date:"Oct 21", title:"Accessibility fixes on checkout", who:"Priya Raman", email:"priya@vantagehealth.com",
+  status:"in", quote:"our auditor flagged the checkout flow, this is in the SOW right?", src:"Gmail · Oct 21, 11:26",
+  work:"Screen-reader labels, focus order and contrast fixes shipped Oct 24.", worksrc:"Gmail · Oct 24, 16:09",
+  appr:"Priya Raman — \"yes please, go ahead\"", apprsrc:"Gmail · Oct 21, 11:58",
+  note:"Covered by SOW deliverable 4 (accessibility remediation)."},
+ {id:7, date:"Oct 23", title:"Weekly sync × 4", who:"Priya Raman", email:"priya@vantagehealth.com",
+  status:"in", quote:"Recurring invite: Vantage weekly sync, 45 min", src:"Calendar · Oct 7, 14, 21, 23",
+  work:"Four 45-minute sessions attended; notes circulated after each.", worksrc:"Gmail · Oct 23, 15:40",
+  appr:"Standing invite accepted by Priya Raman", apprsrc:"Calendar · Sep 29, 09:00",
+  note:"Covered by SOW deliverable 1 (ongoing collaboration)."},
+ {id:8, date:"Oct 27", title:"Rush export of brand assets", who:"Dan Okafor", email:"dan.okafor@vantagehealth.com",
+  status:"none", quote:"printer deadline moved up, can you zip everything by 5?", src:"Gmail · Oct 27, 10:44",
+  work:"Full asset pack exported in 5 formats and delivered 16:52 same day.", worksrc:"Gmail · Oct 27, 16:52",
+  appr:null, apprsrc:"", note:"Approved verbally on the Oct 27 call — NO WRITTEN EVIDENCE."}
+];
+
+var state = RECORDS.map(function(r){ return {id:r.id, removed:false, accepted:false, work:r.work}; });
+function st(id){ for(var i=0;i<state.length;i++){ if(state[i].id===id) return state[i]; } return null; }
+function rec(id){ for(var i=0;i<RECORDS.length;i++){ if(RECORDS[i].id===id) return RECORDS[i]; } return null; }
+function esc(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+
+/* inbox */
+var inbox = document.getElementById("inbox");
+INBOX.forEach(function(m){
+  var d = document.createElement("div");
+  d.className = "mail" + (m.f==="calendar" ? " cal" : "");
+  d.innerHTML = '<div class="mail-top"><span class="mail-from">'+esc(m.f==="calendar"?"Google Calendar":m.f)+'</span><span>'+esc(m.d)+'</span></div>'+
+                '<div class="mail-sub">'+esc(m.s)+'</div><div class="mail-pre">'+esc(m.p)+'</div>';
+  inbox.appendChild(d);
+});
+
+/* build sequence */
+var STEPS = ["Reading 148 messages…","Clustering into 9 requests…","Matching against SOW…","Finding approvals…"];
+var stepsEl = document.getElementById("steps"), bar = document.getElementById("bar"),
+    barFill = bar.firstElementChild, buildBtn = document.getElementById("buildBtn");
+STEPS.forEach(function(s,i){
+  var e=document.createElement("div"); e.className="step"; e.id="step"+i;
+  e.innerHTML='<span class="dot"></span><span>'+esc(s)+'</span>'; stepsEl.appendChild(e);
+});
+var built=false, running=false;
+buildBtn.addEventListener("click", function(){
+  if(running) return;
+  running=true; buildBtn.disabled=true;
+  buildBtn.textContent = built ? "Rebuilding…" : "Building…";
+  stepsEl.classList.add("on"); bar.classList.add("on");
+  for(var i=0;i<STEPS.length;i++){ document.getElementById("step"+i).className="step"; }
+  barFill.style.width="0%";
+  var t0=Date.now(), total=2500;
+  var tick=setInterval(function(){
+    var p=Math.min(1,(Date.now()-t0)/total);
+    barFill.style.width=(p*100).toFixed(1)+"%";
+    var cur=Math.min(STEPS.length-1, Math.floor(p*STEPS.length));
+    for(var i=0;i<STEPS.length;i++){
+      var el=document.getElementById("step"+i);
+      el.className = i<cur ? "step done" : (i===cur ? "step active" : "step");
+    }
+    if(p>=1){
+      clearInterval(tick);
+      for(var j=0;j<STEPS.length;j++){ document.getElementById("step"+j).className="step done"; }
+      running=false; buildBtn.disabled=false; built=true;
+      buildBtn.textContent="Rebuild evidence pack";
+      document.getElementById("emptyState").style.display="none";
+      document.getElementById("after").classList.add("on");
+      document.getElementById("afterSub").textContent="Built from 148 messages and 11 calendar events · demo data";
+      render();
+    }
+  },60);
+});
+
+/* cards */
+var cardsEl=document.getElementById("cards");
+function pillText(s){ return s==="in"?"In scope":(s==="out"?"Out of scope":"No approval found"); }
+function pillClass(s){ return s==="in"?"in":(s==="out"?"out":"none"); }
+
+function render(){
+  cardsEl.innerHTML="";
+  RECORDS.forEach(function(r){
+    var s=st(r.id);
+    var c=document.createElement("article");
+    c.className="card"+(s.removed?" removed":"");
+    var noAppr = !r.appr;
+    var apprHtml = noAppr
+      ? '<div class="approved"><b>Approved by:</b> <span class="noevidence">No written approval found</span>'+(r.note.indexOf("NO WRITTEN")>-1?' — approved verbally, <span class="noevidence">no written evidence</span>':'')+'</div>'
+      : '<div class="approved"><b>Approved by:</b> '+esc(r.appr)+' <span class="src">'+esc(r.apprsrc)+' — <a href="#" data-src="1">open</a></span></div>';
+    c.innerHTML =
+      '<div class="card-top"><span class="date">'+esc(r.date)+'</span><span class="title">'+esc(r.title)+'</span>'+
+      '<span class="pill '+pillClass(r.status)+'">'+esc(pillText(r.status))+'</span></div>'+
+      '<p class="who">Requested by '+esc(r.who)+' · '+esc(r.email)+(r.note?' · '+esc(r.note):'')+'</p>'+
+      '<blockquote class="quote">“'+esc(r.quote)+'”<span class="src">'+esc(r.src)+' — <a href="#" data-src="1">open</a></span></blockquote>'+
+      '<div class="followed"><b>Work that followed:</b> <span class="worktext">'+esc(s.work)+'</span> <span class="src">'+esc(r.worksrc)+' — <a href="#" data-src="1">open</a></span></div>'+
+      apprHtml+
+      '<div class="ctrls">'+
+        '<button class="acc" data-act="accept" data-id="'+r.id+'">'+(s.accepted?"Accepted ✓":"Accept")+'</button>'+
+        '<button data-act="edit" data-id="'+r.id+'">Edit</button>'+
+        '<button data-act="remove" data-id="'+r.id+'">'+(s.removed?"Restore":"Remove")+'</button>'+
+      '</div>'+
+      '<div class="editbox" id="edit'+r.id+'">'+
+        '<textarea aria-label="Edit work description">'+esc(s.work)+'</textarea>'+
+        '<div class="warn" id="warn'+r.id+'">Description can\'t be empty — it has to stand up to a client.</div>'+
+        '<div class="row"><button class="btn" data-act="save" data-id="'+r.id+'">Save</button>'+
+        '<button class="btn" data-act="cancel" data-id="'+r.id+'">Cancel</button></div>'+
+      '</div>'+
+      '<div class="flash" id="flash'+r.id+'">Saved.</div>';
+    cardsEl.appendChild(c);
+  });
+  updateSummary();
+}
+
+function updateSummary(){
+  var active=RECORDS.filter(function(r){ return !st(r.id).removed; });
+  var inS=active.filter(function(r){ return r.status==="in"; }).length;
+  var outS=active.filter(function(r){ return r.status!=="in"; }).length;
+  var noA=active.filter(function(r){ return !r.appr; }).length;
+  var el=document.getElementById("summary");
+  if(active.length===0){
+    el.innerHTML='No requests left in the pack. <em>Restore one to export.</em>';
+  } else {
+    el.innerHTML=active.length+' request'+(active.length===1?'':'s')+' <em>·</em> '+inS+' in scope <em>·</em> '+outS+' out of scope <em>·</em> '+noA+' with no written approval';
+  }
+}
+
+cardsEl.addEventListener("click", function(e){
+  var a=e.target.closest("a[data-src]");
+  if(a){ e.preventDefault(); showToast("Source link — demo only, no mailbox connected"); return; }
+  var b=e.target.closest("button[data-act]");
+  if(!b) return;
+  var id=parseInt(b.getAttribute("data-id"),10), act=b.getAttribute("data-act"), s=st(id);
+  if(!s) return;
+  if(act==="remove"){ s.removed=!s.removed; render(); showToast(s.removed?"Removed from pack":"Restored to pack"); }
+  else if(act==="accept"){ s.accepted=true; b.textContent="Accepted ✓"; showToast("Entry accepted"); }
+  else if(act==="edit"){ document.getElementById("edit"+id).classList.toggle("on"); }
+  else if(act==="cancel"){
+    var box=document.getElementById("edit"+id);
+    box.querySelector("textarea").value=s.work;
+    document.getElementById("warn"+id).classList.remove("on");
+    box.classList.remove("on");
+  }
+  else if(act==="save"){
+    var box2=document.getElementById("edit"+id), ta=box2.querySelector("textarea"), v=ta.value.trim();
+    if(!v){ document.getElementById("warn"+id).classList.add("on"); return; }
+    if(v.length>400){ v=v.slice(0,400); }
+    s.work=v; document.getElementById("warn"+id).classList.remove("on"); box2.classList.remove("on");
+    render();
+    var fl=document.getElementById("flash"+id);
+    if(fl){ fl.classList.add("on"); setTimeout(function(){ fl.classList.remove("on"); },1600); }
+  }
+});
+
+/* modal */
+var modalBg=document.getElementById("modalBg"), modalBody=document.getElementById("modalBody"), modalTitle=document.getElementById("modalTitle");
+function openModal(title, html){ modalTitle.textContent=title; modalBody.innerHTML=html; modalBg.classList.add("on"); modalBg.scrollTop=0; }
+function closeModal(){ modalBg.classList.remove("on"); }
+document.getElementById("closeModal").addEventListener("click", closeModal);
+modalBg.addEventListener("click", function(e){ if(e.target===modalBg) closeModal(); });
+document.addEventListener("keydown", function(e){ if(e.key==="Escape") closeModal(); });
+
+function activeRecords(){ return RECORDS.filter(function(r){ return !st(r.id).removed; }); }
+
+document.getElementById("exportBtn").addEventListener("click", function(){
+  var act=activeRecords();
+  if(act.length===0){ showToast("Nothing to export — restore at least one entry"); return; }
+  var inS=act.filter(function(r){return r.status==="in";}).length;
+  var h='<div class="doc"><h1>Record of Requested Work — October 2026</h1>'+
+    '<p class="docsub">Northwind Studio for Vantage Health · prepared 1 Nov 2026 · reference SOW_Vantage_Q4.pdf</p><hr>';
+  act.forEach(function(r){
+    var s=st(r.id);
+    h+='<div class="entry"><div class="eh">'+esc(r.date)+' — '+esc(r.title)+'</div>'+
+       '<div class="em">'+esc(pillText(r.status).toUpperCase())+' · requested by '+esc(r.who)+' ('+esc(r.email)+') · source '+esc(r.src)+'</div>'+
+       '<blockquote>“'+esc(r.quote)+'”</blockquote>'+
+       '<div class="ea">Work delivered: '+esc(s.work)+'</div>'+
+       '<div class="ea">Approval: '+(r.appr?esc(r.appr)+' ('+esc(r.apprsrc)+')':'<em>No written approval on file</em>')+'</div></div>';
+  });
+  h+='<hr><p class="foot">'+act.length+' requests · '+inS+' within SOW scope · '+(act.length-inS)+' outside SOW scope. '+
+     'Every line above is traceable to a dated message or calendar entry. Preview only — nothing downloads in this prototype.</p></div>';
+  openModal("Evidence pack — print preview", h);
+});
+
+document.getElementById("copyBtn").addEventListener("click", function(){
+  var act=activeRecords();
+  if(act.length===0){ showToast("Nothing to summarise — restore at least one entry"); return; }
+  var inS=act.filter(function(r){return r.status==="in";});
+  var outS=act.filter(function(r){return r.status!=="in";});
+  var noA=act.filter(function(r){return !r.appr;});
+  var names=outS.map(function(r){return r.title.toLowerCase();});
+  var lines=[
+    "During October 2026 Northwind Studio handled "+act.length+" distinct requests from Vantage Health, each originating in a dated email or calendar invitation.",
+    (inS.length?inS.length+" of these fell within the agreed scope of SOW_Vantage_Q4.pdf: "+inS.map(function(r){return r.title.toLowerCase();}).join("; ")+".":"None of these fell within the agreed scope of SOW_Vantage_Q4.pdf."),
+    (outS.length?outS.length+" requests fell outside that scope: "+names.join("; ")+".":"No requests fell outside that scope."),
+    "Where written approval exists it is quoted verbatim in the attached chronology, including Dan Okafor's instruction of 9 October to proceed with the cookie-consent banner ahead of the 20th.",
+    (noA.length?noA.length+" item"+(noA.length===1?" was":"s were")+" carried out without written approval on file and "+(noA.length===1?"is":"are")+" flagged accordingly for your review.":"All items carry written approval on file."),
+    "The attached one-page record lists each request with its date, requester and source message so the invoice can be reconciled line by line."
+  ];
+  var html='<div class="narr">'+lines.map(function(l){return '<p>'+esc(l)+'</p>';}).join("")+
+    '<p style="font-size:12.5px;color:var(--muted);font-family:-apple-system,sans-serif">Demo data · text is generated from the entries currently in your pack.</p></div>';
+  openModal("Invoice narrative", html);
+  showToast("Copied ✓");
+});
+
+var toastEl=document.getElementById("toast"), toastT=null;
+function showToast(msg){
+  toastEl.textContent=msg; toastEl.classList.add("on");
+  if(toastT) clearTimeout(toastT);
+  toastT=setTimeout(function(){ toastEl.classList.remove("on"); }, 1900);
+}
+})();
+</script>
+</body>
+</html>
