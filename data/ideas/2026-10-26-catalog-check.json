@@ -1,0 +1,42 @@
+{
+  "id": "2026-10-26-catalog-check",
+  "number": 1,
+  "date": "2026-10-26",
+  "short_name": "Catalog Check",
+  "name": "Catalog Check (publish test)",
+  "verdict": "watch",
+  "score": 6.4,
+  "scores": {
+    "pain": 6,
+    "market_pull": 6,
+    "timing": 7,
+    "gap": 6,
+    "wedge": 7
+  },
+  "category": "agent reliability",
+  "tags": [
+    "test"
+  ],
+  "pain_type": "latent",
+  "one_liner": "A test entry written by a direct publish job.",
+  "problem": "",
+  "target_customer": "",
+  "why_now": "",
+  "comparables": "",
+  "market_note": "",
+  "risks": "",
+  "riskiest_assumptions": "",
+  "first_customers": "",
+  "validation_test": "",
+  "reasoning": "",
+  "candidates_considered": "",
+  "research_notes": "",
+  "sources": [
+    "https://example.com"
+  ],
+  "inspiration": [
+    "https://x.com/test/status/1"
+  ],
+  "prototype_url": "https://github.com/Yashsharma1911/granted/blob/catalog-test/ideas/2026-10-26-catalog-check/index.html",
+  "prototype_summary": ""
+}
