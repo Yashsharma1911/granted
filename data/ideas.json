@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-26T10:15:54.563Z",
+  "updated": "2026-10-26T10:53:50.043Z",
   "ideas": [
     {
       "id": "2026-10-26-catalog-check",
@@ -98,6 +98,33 @@
       "one_liner": "A test entry written by a direct publish job.",
       "prototype_url": "https://github.com/Yashsharma1911/granted/blob/catalog-test/ideas/2026-10-26-catalog-refactor/index.html",
       "sources_count": 1,
+      "superseded_by": null
+    },
+    {
+      "id": "2026-10-26-holdroom",
+      "number": 5,
+      "date": "2026-10-26",
+      "short_name": "Holdroom",
+      "verdict": "dig_deeper",
+      "score": 7.5,
+      "scores": {
+        "pain": 8,
+        "market_pull": 7.5,
+        "timing": 8,
+        "gap": 6.5,
+        "wedge": 7.5
+      },
+      "category": "agent reliability",
+      "tags": [
+        "voice-agents",
+        "compliance",
+        "operations",
+        "qa"
+      ],
+      "pain_type": "expressed",
+      "one_liner": "For operations teams deploying AI phone agents, Holdroom monitors live calls to vendors, insurers and service lines, flags risky moments, routes approvals to humans, and turns each call into an auditable outcome record.",
+      "prototype_url": "https://github.com/Yashsharma1911/granted/blob/catalog-test/ideas/2026-10-26-holdroom/index.html",
+      "sources_count": 6,
       "superseded_by": null
     }
   ]

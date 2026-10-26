@@ -1,0 +1,53 @@
+{
+  "id": "2026-10-26-holdroom",
+  "number": 5,
+  "date": "2026-10-26",
+  "short_name": "Holdroom",
+  "name": "Holdroom — supervision for AI phone agents",
+  "verdict": "dig_deeper",
+  "score": 7.5,
+  "scores": {
+    "pain": 8,
+    "market_pull": 7.5,
+    "timing": 8,
+    "gap": 6.5,
+    "wedge": 7.5
+  },
+  "category": "agent reliability",
+  "tags": [
+    "voice-agents",
+    "compliance",
+    "operations",
+    "qa"
+  ],
+  "pain_type": "expressed",
+  "one_liner": "For operations teams deploying AI phone agents, Holdroom monitors live calls to vendors, insurers and service lines, flags risky moments, routes approvals to humans, and turns each call into an auditable outcome record.",
+  "problem": "Companies are starting to let AI agents make real phone calls: sit on hold, press IVR keys, transfer, read account details, and eventually connect payments or private-network tools. That is powerful but operationally scary. Back-office teams in healthcare, insurance, logistics, property management and finance already spend hours on calls for prior authorizations, account changes, collections, vendor follow-ups and support escalations. Today, if they automate, they either use a voice-agent platform and manually review transcripts afterward, keep a human shadowing the call, or avoid automation for regulated/high-risk calls. That fails because the risky moment happens during the call: the agent may disclose the wrong information, accept a bad term, press the wrong menu path, agree to a payment, or get transferred to a human who asks for authorization.",
+  "target_customer": "Initial buyer: Head of Operations, RevOps, CX Ops, or automation lead at 50–500 person companies with repetitive outbound administrative calls. Best first verticals: healthcare revenue-cycle teams doing insurance calls, insurance brokerages doing carrier calls, logistics brokers doing appointment/status calls, and property-management companies calling utilities/vendors. They already pay for call-center software, BPO labor, QA reviewers, or voice-agent pilots.",
+  "why_now": "The bookmarks point to consumer-grade agents gaining phone, payment, app-connector and private-network capabilities: Grok Bot prerelease notes mention calls that can sit on hold, press keys and show live transcripts, plus payments and Tailscale. Once agents can dial into real-world institutions, the bottleneck shifts from 'can it make the call?' to 'can an ops leader trust, supervise and audit what happened?' Voice-agent builders are also maturing, making a separate reliability/supervision layer possible without building the voice stack from scratch.",
+  "comparables": "Retell AI provides AI voice agents for real phone calls and advertises workflow accuracy, HIPAA and SOC 2; it is primarily the agent execution layer, not a neutral supervision/audit console for multiple agent vendors. Aircall and Webex Contact Center provide customer communications/contact-center platforms with AI features, but are broader phone systems rather than a back-office agent-risk layer. Bluejay positions itself around testing, monitoring and simulation for conversational AI agents, and search results mention alternatives such as Evalion, Vocera and Plurai; this is the closest comparable and raises the competition risk. The possible gap is to focus narrowly on outbound administrative calls where an AI agent is calling third parties on behalf of a business, with live human approvals, policy gates, IVR path memory and outcome packets for regulated ops teams.",
+  "market_note": "This is not a clean standalone category yet. The budget likely comes from three existing pools: BPO/call-center labor, QA/compliance review, and voice-agent pilots. A small team could charge per monitored call minute plus seat fees, e.g. $500–$2,000/month for an ops team piloting 1,000–5,000 calls/month, rising with compliance/audit needs. Willingness to pay should be strongest where a wrong call causes delayed revenue, compliance exposure, or direct financial loss rather than simple customer support deflection.",
+  "risks": "1. Voice-agent platforms may bundle this quickly; Retell/Bland/Parloa-style platforms have the call context and could add review queues. 2. The wedge may be too narrow unless a specific vertical has urgent compliance/audit requirements. 3. Live intervention is operationally hard: latency, telephony integrations, consent/recording laws, and false-positive alerts could make supervisors distrust it.",
+  "riskiest_assumptions": "1. Ops leaders will buy a separate supervision layer instead of relying on their voice-agent vendor's built-in QA. 2. There is a narrow vertical, likely healthcare revenue-cycle or insurance operations, where live approvals reduce enough risk to justify a new workflow. 3. Voice-agent platforms expose enough transcript/event hooks to let Holdroom monitor and intervene without owning the whole telephony stack.",
+  "first_customers": "First 10 targets: 3 healthcare revenue-cycle service companies running prior-auth or benefits-verification calls; 2 specialty clinics with internal billing teams; 2 insurance brokerages with carrier-service teams; 2 logistics brokers doing appointment/status calls; 1 property-management group with high vendor/utility call volume. Find them via RevCycle Intelligence communities, HFMA local chapters, LinkedIn searches for 'Director Revenue Cycle automation', insurance ops Slack/LinkedIn groups, and founders building on Retell/Bland/Twilio who need compliance review for pilots.",
+  "validation_test": "This week: interview 12 ops/automation leaders who have either piloted voice agents or manage repetitive outbound calls. Show a Figma/clickable mock of the live approval + audit packet. Ask for one real call script/transcript and whether they would pay $1,000 for a 30-day pilot monitoring 500 calls. Pass signal: at least 3 agree to share call samples and 2 agree to a paid or design-partner pilot with a named workflow. Fail signal: they say their voice-agent vendor already covers this or they only want fully autonomous calls with no supervision layer.",
+  "reasoning": "This beat the other candidates because it is tied to an imminent, concrete workflow shift in the bookmarks: agents that can make calls, wait on hold, press keys, connect payment accounts and join private networks. The pain is already expressed by ops teams that pay humans or BPOs to do repetitive phone work, and the safety gap becomes more obvious as calls move from demos to production. It is adjacent to the past idea Driftwatch because both are agent-reliability products, but it is not a repeat: Driftwatch watches vendor changelogs and turns integration drift into engineering tickets; Holdroom supervises live telephone actions and creates auditable operations records for non-engineering ops teams.",
+  "candidates_considered": "Holdroom — live supervision and audit for AI phone agents; won because the workflow is concrete, paid, and newly urgent as agents gain calling/payment/private-network capabilities.\nEvidenceBench — proof/evidence workflow for coding agents inspired by Thorsten Ball's article; lost because it is close to existing LLM observability/evals tools and overlaps the agent-reliability library theme, though not identical to Driftwatch.\nContext Shuttle — drag/carry screen context between apps for an AI assistant; lost because Glean, Gemini, Simular/OpenClaw-style assistants and OS vendors are converging on this, and the buyer is less clear.\nDiligence Room Copilot — AI reviewer for fundraising/M&A data rooms inspired by Papermark; lost because VDRs already compete on analytics, permissions and AI-adjacent due diligence features, with a narrow gap.\nTikTok Salesperson QA — brand/compliance layer for AI-generated founder TikToks; lost because the pain is noisier, SMB willingness to pay is uncertain, and the core generation/posting workflow is already being attacked by many social-AI tools.\nWhat's New / changelog impact bot — dropped as a repeat of Driftwatch: same buyer and core workflow of watching vendor changes and turning them into actionable engineering updates.",
+  "research_notes": "Used Web Summary once to inspect the thin Thorsten Ball article; it was about 'How I work with Agents' and emphasized giving coding agents tools, production access and proof requirements. Ran searches on AI voice-agent monitoring, phone-call automation, coding-agent evidence/observability, and cross-app context assistants. Search results showed Retell AI, Aircall and Webex as voice/contact-center platforms; Bluejay as a close monitoring/testing comparable; LangSmith/Datadog/Pydantic/Arize-style tools around broader LLM observability; and Glean/Gemini/Simular-like products around cross-app context. This pushed the winner away from building another voice agent and toward a narrow supervision/audit layer for high-risk outbound administrative calls.",
+  "sources": [
+    "https://www.retellai.com/",
+    "https://aircall.io/",
+    "https://www.webex.com/content/dam/www/us/en/documents/pdf/CM-1440_Webex_Contact_Center_Data_Sheet.pdf",
+    "https://getbluejay.ai/post/what-are-the-best-tools-for-monitoring-voice-ai-agents-live-in-production",
+    "https://www.langchain.com/resources/llm-observability-tools",
+    "https://www.glean.com/blog/glean-desktop-nov-drop-2025"
+  ],
+  "inspiration": [
+    "https://x.com/alexmichaelio/status/2114056103373758724",
+    "https://x.com/Texas_Twins_Dad/status/2114217410823688573",
+    "https://x.com/thorstenball/status/2114386050638336082",
+    "https://x.com/alexmichaelio/status/2113742426917454079"
+  ],
+  "prototype_url": "https://github.com/Yashsharma1911/granted/blob/catalog-test/ideas/2026-10-26-holdroom/index.html",
+  "prototype_summary": "Holdroom is a live supervision console where an operator reviews a risky AI phone agent call, approves a gated PHI disclosure, and converts it into a complete, copyable audit packet in seconds."
+}
