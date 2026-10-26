@@ -139,16 +139,14 @@ function controls() {
 }
 
 function card(i) {
-  const stats = i.scores
-    ? criteria(i).map(([k, label]) => { const v = Number(i.scores[k] ?? 0); return `<div class="stat"><span>${label}</span><span class="bar"><span style="width:${Math.max(0, Math.min(10, v)) * 10}%"></span></span><b>${v}</b></div>`; }).join("")
-    : `<div class="stat" style="grid-template-columns:1fr auto"><span>${trackOf(i) === "build" ? "Overall project score" : "Overall opportunity"}</span><span class="score-big">${i.score ?? "–"}<small>/10</small></span></div>`;
+  const stats = `<div class="card-score"><span>${trackOf(i) === "build" ? "Project score" : "Opportunity score"}</span><span class="score-big">${i.score ?? "–"}<small>/10</small></span></div>`;
   return `
     <a class="card ${trackOf(i)} ${i.verdict === "dig_deeper" ? "dig" : ""} ${i.superseded_by ? "superseded" : ""}" data-key="${esc(i.id)}" href="#/idea/${esc(i.id)}" style="${catVars(i.category)}" data-tilt>
       <div class="card-top"><span class="cat"><i></i>${esc(i.category || "Uncategorised")}</span><span>No. ${num(i.number)}</span></div>
       <div class="plate">${plate(i.id, i.category)}</div>
       <h3>${esc(i.short_name)}</h3>
       <p>${esc(i.one_liner)}</p>
-      <div class="stats-block">${stats}</div>
+      ${stats}
       <div class="card-foot"><span class="stamp ${esc(i.verdict)}">${esc(verdictLabel(i))}</span><span><b class="track-tag">${trackLabel(i)}</b> · ${i.superseded_by ? "earlier take" : !i.prototype_url && i.sibling ? "brief only" : fmtDate(i.date)}</span></div>
     </a>`;
 }
@@ -421,14 +419,14 @@ async function ideaPage(id) {
   catch { app.innerHTML = `<div class="page"><a class="back" href="#/">← Library</a><p class="empty">That idea could not be found.</p></div>`; return revealGuide(); }
   const sec = (title, sub, body) => body ? `<section class="section"><h2>${esc(title)}${sub ? ` <small>${esc(sub)}</small>` : ""}</h2>${body}</section>` : "";
   const isBuild = trackOf(idea) === "build";
-  const scoreStrip = idea.scores ? `<div class="score-strip">${criteria(idea).map(([k, l]) => `<span>${l} <b>${idea.scores[k] ?? "–"}</b></span>`).join("")}</div>` : "";
+  const scoreCard = idea.scores ? `<div class="score-card"><p class="plate-no">Scores</p>${criteria(idea).map(([k, label]) => { const v = Number(idea.scores[k] ?? 0); return `<div class="stat"><span>${label}</span><span class="bar"><span style="width:${Math.max(0, Math.min(10, v)) * 10}%"></span></span><b>${v}</b></div>`; }).join("")}</div>` : "";
   const related = [...(idea.sibling ? [["Same night", idea.sibling]] : []), ...(idea.earlier || []).map((r) => ["Earlier take", r]), ...(idea.superseded_by ? [["Replaced by", idea.superseded_by]] : [])];
   const siblingName = idea.sibling ? state.ideas.find((x) => x.id === idea.sibling)?.short_name || "tonight's other idea" : "";
   app.innerHTML = `<div class="page">
     <a class="back" href="#/">← Library</a>
     <article class="guide" style="${catVars(idea.category)}">
       <aside class="specimen">
-        <div class="plate">${plate(idea.id, idea.category, 320, 400)}</div>
+        <div class="plate">${plate(idea.id, idea.category, 320, 256)}</div>
         <div class="label-card">
           <p class="plate-no">Plate No. ${num(idea.number)}</p>
           <p class="genus">${esc(idea.short_name)}</p>
@@ -442,6 +440,7 @@ async function ideaPage(id) {
             <dt>Sources</dt><dd>${(idea.sources || []).length}</dd>
           </dl>
         </div>
+        ${scoreCard}
         <div class="actions">
           ${idea.prototype_url ? `<a class="btn primary" href="${esc(idea.prototype_url)}" target="_blank" rel="noopener">Open the prototype ↗</a>` : `<a class="btn primary" aria-disabled="true">No prototype for this one</a>`}
           ${related.map(([l, r]) => `<a class="btn" href="#/idea/${esc(r)}">${esc(l)}: ${esc(state.ideas.find((x) => x.id === r)?.short_name || r)}</a>`).join("")}
@@ -451,7 +450,7 @@ async function ideaPage(id) {
         <p class="kicker">Field guide entry · ${esc(isBuild ? "Project" : "Venture")}</p>
         <h1>${esc(idea.short_name)}</h1>
         <p class="lede">${esc(idea.one_liner)}</p>
-        <div class="verdict-row"><span class="stamp ${esc(idea.verdict)}">${esc(verdictLabel(idea))}</span><span class="score-big">${idea.score ?? "–"}<small>/10</small></span>${scoreStrip}</div>
+        <div class="verdict-row"><span class="stamp ${esc(idea.verdict)}">${esc(verdictLabel(idea))}</span><span class="score-big">${idea.score ?? "–"}<small>/10</small></span></div>
         ${idea.partial ? `<p class="notice">This early entry was recovered from a run that has since been cleaned up, so only part of its brief survives.</p>` : ""}
         ${!idea.prototype_url ? (idea.sibling
           ? `<p class="notice">A brief without a prototype: that night's prototype went to <a href="#/idea/${esc(idea.sibling)}">${esc(siblingName)}</a>.</p>`
@@ -483,7 +482,20 @@ async function ideaPage(id) {
     </article></div>`;
   window.scrollTo(0, 0);
   revealGuide();
+  fitSpecimen();
+  document.fonts?.ready.then(fitSpecimen);
 }
+
+// A pinned column taller than the window would hide its bottom until the page ends. A negative top lets it
+// scroll with the page until its bottom edge is in view, then stay there.
+function fitSpecimen() {
+  const sp = app.querySelector(".specimen");
+  if (!sp) return;
+  sp.style.top = "";
+  if (getComputedStyle(sp).position !== "sticky") return;
+  sp.style.top = `${Math.min(18, innerHeight - sp.offsetHeight - 18)}px`;
+}
+addEventListener("resize", fitSpecimen);
 
 function aboutPage() {
   return `<div class="page" style="max-width:760px">
@@ -576,7 +588,7 @@ function revealGuide() {
     { duration: 620, delay: (t += 70), easing: "cubic-bezier(.2,.8,.2,1)", fill: "backwards" }));
   const specimen = app.querySelector(".specimen");
   if (specimen) rise(specimen, t + 60, 28);
-  const later = [...app.querySelectorAll(".entry > .lede, .entry > .verdict-row, .entry > .notice, .entry > .section, .specimen .label-card, .specimen .actions")];
+  const later = [...app.querySelectorAll(".entry > .lede, .entry > .verdict-row, .entry > .notice, .entry > .section")];
   const fold = innerHeight - 40;
   const below = [];
   for (const el of later) {
