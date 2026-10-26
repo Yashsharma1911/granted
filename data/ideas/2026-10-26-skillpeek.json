@@ -1,0 +1,63 @@
+{
+  "id": "2026-10-26-skillpeek",
+  "number": 6,
+  "date": "2026-10-26",
+  "track": "build",
+  "short_name": "SkillPeek",
+  "name": "SkillPeek — read any agent skill before you install it",
+  "verdict": "dig_deeper",
+  "score": 7.8,
+  "scores": {
+    "wow": 8,
+    "shareability": 7,
+    "buildability": 9,
+    "freshness": 8,
+    "usefulness": 7
+  },
+  "effort": "a weekend",
+  "category": "Developer tools",
+  "tags": [
+    "agents",
+    "skills",
+    "security",
+    "open source"
+  ],
+  "pain_type": "expressed",
+  "one_liner": "Paste a GitHub skill repo or an `npx skills add owner/repo` command and get a one-screen, plain-English card per skill: what it tells your agent to do, which files/commands/network calls it touches, and the exact lines that look like prompt injection — before you install it.",
+  "problem": "For anyone installing agent skills (Claude Code, Codex, Copilot, OpenClaw) from X posts like `npx skills add jakubkrehel/skills`, the decision to run that command is made blind. A skill is a folder of SKILL.md instructions plus optional scripts and hooks that your agent will read and execute with your repo, your shell and your credentials in scope. Today you either (a) install and hope, or (b) open the repo, read 400 lines of markdown across 8 skill folders and eyeball the scripts. Nobody does (b) for a tweet-sourced install. SkillPeek makes (b) take 10 seconds: one URL in, a stacked set of skill cards out, each with a 3-bullet \"what it actually does\", a capability strip (reads files / writes files / runs shell / network fetch / installs deps), the trigger phrase that activates it, and highlighted suspicious lines (\"ignore previous instructions\", base64 blobs, curl to raw domains, reading ~/.ssh or .env). Shareable permalink per repo so people can post \"here's what that skill actually does.\"",
+  "target_customer": "Developers on X and in r/ClaudeAI / r/cybersecurity who install agent skills from tweets and registries; the same crowd that boosted the teardown skill post to 4.7k likes. They hang out on X, Hacker News, and skill directory sites.",
+  "why_now": "Agent skills went from a curiosity to an ecosystem in under a year — Vercel reports skills.sh reached ~1M skills and ~280M installs in seven months (vercel.com/blog/state-of-agent-skills), and security teams keep publishing scary numbers (Snyk's ToxicSkills audit: prompt-injection patterns in ~36.8% of 3,984 skills scanned). Meanwhile the install UX is still a single copy-pasted command from a tweet. The enterprise tooling that exists (NVIDIA SkillSpector, Snyk agent-scan, Cisco skill-scanner) is all CLI/security-team shaped; there is no 10-second web \"read it for me\" for the individual who just saw a cool skill on the timeline.",
+  "comparables": "NVIDIA SkillSpector (github.com/nvidia/skillspector) — CLI security scanner for agent skills, findings-oriented, for security engineers; you must clone and run it. Snyk agent-scan (github.com/snyk/agent-scan) — same shape, CLI, vulnerability report framing. Cisco AI Defense skill-scanner (github.com/cisco-ai-defense/skill-scanner) — CLI, enterprise. Backslash / StepSecurity — endpoint inventory and allowlisting for orgs, not for an individual deciding on one tweet. skills.sh and SkillsMP list and rank skills but present the author's own description, not an independent \"what this does to your machine\" read. The gap: a zero-install web page, URL in / shareable card out, written for the curious developer rather than the AppSec team, and framed as comprehension first (\"what does this skill actually tell my agent?\") with safety as a side effect — which is also why it's shareable in a way a CVE report is not.",
+  "market_note": "",
+  "risks": "One-and-done usage: a scanner is something you try once on a famous repo and never return to, so retention depends entirely on it becoming a reflex before `npx skills add`. False confidence: a lightweight regex-plus-one-model-call read will miss a cleverly obfuscated skill, and a green badge that turns out wrong is reputationally worse than no tool — the copy must say \"read it for yourself, faster\", not \"verified safe\". Platform squeeze: skills.sh, GitHub or Snyk could ship an inline \"what this skill does\" preview and make the standalone page redundant within months.",
+  "riskiest_assumptions": "",
+  "first_customers": "",
+  "validation_test": "Ship the static prototype page with three pre-scanned real public skill repos and post it on X with the launch post plus a 15-second screen recording of the \"deploy-helper wants your AWS creds\" card. Pass signal: 300+ scans (or 150+ permalink opens) and at least 10 people pasting their own repo within 72 hours. Fail: under 50 scans, meaning people don't feel the risk enough to check.",
+  "build_plan": "Stack: single Next.js route on Vercel (or a static page + serverless function), TypeScript, no DB. 1) Input box accepts a GitHub repo URL, `owner/repo`, or a pasted `npx skills add ...` command; parse to owner/repo. 2) Fetch the repo tree via the public GitHub API (unauthenticated is fine for demo traffic, add a token for rate limit), pull every `*/SKILL.md`, plus file names and contents of bundled scripts under a size cap. 3) Deterministic pass first — regex/AST-lite detectors for: shell invocations, `curl|wget|fetch`, paths like `~/.ssh`, `.env`, `~/.aws`, base64 blobs, hook registration, `npm install`/`pip install`, and injection phrases (\"ignore previous\", \"do not tell the user\", \"you must always\"). These produce the capability strip and the highlighted lines with no model call, so the page works even if the API key dies. 4) One cheap model call per skill (DeepSeek-V4-Flash-class or Haiku) that returns strict JSON: three plain-English bullets, the trigger phrase, and a one-line \"worst thing this could do\". 5) Render stacked skill cards with a green/amber/red capability strip, an expandable raw SKILL.md with highlighted lines, and a permalink `/r/owner/repo` plus \"copy card as image\". 6) Cache results per commit SHA in Vercel KV or just in-memory; open-source the repo with the detector list in one readable file. Cut: accounts, org dashboards, CI integration, MCP servers, scoring claims that sound like a real security product, any attempt to actually execute the skill.",
+  "launch_post": "You see \"npx skills add someone/skills\" on the timeline and just... run it?\n\nSkillPeek: paste the repo, get a card per skill in 10 seconds — what it tells your agent to do, what it touches (shell, files, network), and the lines that look like prompt injection.\n\nFree, open source.",
+  "could_grow": true,
+  "reasoning": "The bookmarks have two strong currents: agent skills as a new install-from-a-tweet distribution channel (jakubkrehel's `npx skills add`, 4.7k likes), and nutlope-style \"one input, one striking output\" builds the taste file admires. SkillPeek sits exactly where those cross — it is a one-input-box tool whose output is surprising in the right way (you paste a repo you were about to install and it tells you one of the nine skills wants your AWS keys), and it rides something that genuinely just appeared at scale: skills.sh passing ~1M skills / ~280M installs in seven months, with Snyk and NVIDIA publishing audit findings this year. Prior art is all CLI and security-team shaped (SkillSpector, Snyk agent-scan, Cisco skill-scanner); nothing is a zero-install web page framed as comprehension rather than a vulnerability report, and nothing is shareable. The strongest failure reason is one-and-done usage — people scan a repo once and leave — which is why the narrow first version leans on a permalink per repo and a share card, so each scan becomes a post rather than a private check. It fits the builder exactly: TypeScript, a public API, one model call, a weekend. It could grow (team allowlist, CI check) which is why could_grow is true. It is not a repeat: the library's agent-reliability entries (Driftwatch, Doublecheck, Ledger, AgentGauntlet) all serve platform teams running production agents at runtime; SkillPeek serves an individual developer at install time, pre-execution, with a free public page. Runner-up SkillProof is the venture expression of the same trend but aimed at a different buyer (the AppSec/platform owner who must approve skills org-wide) with a different workflow (policy and allowlisting, not a one-off peek) — it scored lower mainly because Backslash, StepSecurity and Snyk are already selling into that exact buyer, which narrows the gap, and because it is a 3+ month enterprise sale that doesn't match this builder's evenings-and-weekends time.",
+  "candidates_considered": "1. SkillPeek (build, WON) — paste a skill repo, get plain-English + capability cards before installing. Fresh, one-input/one-output, fits the builder's stack.\n2. SkillProof (venture, runner-up) — org-level approval and allowlisting for agent skills. Real pain and a real buyer, but Backslash, StepSecurity, Snyk and Cisco are already there and it's a 3+ month enterprise motion.\n3. Teardown-as-a-website (build) — upload a photo, get an exploded annotated SVG. Dropped: it is a thin clone of the bookmarked teardown skill, and DeepKolor already ships a product exploded-view generator (deepkolor.ai/mini-apps/product-exploded-view).\n4. \"Never read IKEA instructions again\" assembly helper (build) — photo of parts → step-by-step visual guide. Dropped: directly clones nutlope's bookmarked demo, and BILT and ManualFig already occupy it commercially.\n5. Bookmarks-to-library (build) — dropped as a direct clone of nutlope's announced open-source project, which ships in days.\n6. Data-room diligence agent (venture) — Papermark itself already ships AI agents for data rooms, plus Peony, DocSend and a crowded VDR field; gap closed for a solo builder.\n7. \"Hey Grok\"-style wake-word shortcut packs (build) — clever but it's a tutorial, not a shippable artifact, and depends on iOS behaviour outside the builder's control.",
+  "research_notes": "7 tool calls. Web Summary on the teardown skill confirmed what it does and, usefully, surfaced the repo's own warning that community skills can include executable scripts and should be checked before installing — that line is what turned a \"clone the teardown\" idea into SkillPeek. Web Summary on Thorsten Ball's article confirmed it is an agent-workflow playbook with no product gap, so it was dropped. Searches on skill supply-chain security surfaced the real prior art (NVIDIA SkillSpector, Snyk agent-scan, Cisco skill-scanner, Backslash, StepSecurity) and the numbers (Snyk ToxicSkills: 1,467 flawed of 3,984 scanned, ~36.8%; SkillSpector: 26.1% with vulnerabilities, 5.2% likely malicious in a 31,132-skill subset) — this closed the venture gap enough to demote SkillProof to runner-up and reshaped the build toward comprehension-plus-shareability rather than \"another scanner\". A search on registry scale found Vercel's State of Agent Skills (~1M skills, ~280M installs in seven months), which is the why-now. Searches for exploded-view generators (DeepKolor) and assembly-instruction tools (BILT, ManualFig) killed candidates 3 and 4. A search for data-room AI showed Papermark already ships AI agents, killing candidate 6. A final search for an existing web-based \"skill preview\" page returned nothing, supporting the gap.",
+  "sources": [
+    "https://vercel.com/blog/state-of-agent-skills",
+    "https://snyk.io/blog/toxicskills-malicious-ai-agent-skills-clawhub/",
+    "https://github.com/nvidia/skillspector",
+    "https://github.com/snyk/agent-scan",
+    "https://github.com/cisco-ai-defense/skill-scanner",
+    "https://www.backslash.security/learning/how-to-approve-ai-skills-without-slowing-developers-down",
+    "https://www.stepsecurity.io/blog/dev-machine-guard-now-inventories-ai-agent-skills-on-developer-machines",
+    "https://labs.cloudsecurityalliance.org/research/csa-research-note-skill-md-agent-context-poisoning-20260506/",
+    "https://deepkolor.ai/mini-apps/product-exploded-view",
+    "https://www.papermark.com/ai-agents",
+    "https://jakub.kr/skills"
+  ],
+  "inspiration": [
+    "https://x.com/jakubkrehel/status/2114379959263502712",
+    "https://x.com/katelyn_lesse/status/2114542280535318557",
+    "https://x.com/wang_johnny/status/2113593171360068025"
+  ],
+  "prototype_url": "https://yashsharma1911.github.io/granted/ideas/2026-10-26-skillpeek/",
+  "prototype_summary": "SkillPeek is a security-scanner prototype that lets you read and audit every SKILL.md in an agent-skills repo — with capability pills, plain-English risk summaries and highlighted suspicious lines — before you run `npx skills add`.",
+  "sibling": "2026-10-26-skillproof"
+}

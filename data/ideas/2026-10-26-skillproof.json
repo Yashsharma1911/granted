@@ -1,0 +1,57 @@
+{
+  "id": "2026-10-26-skillproof",
+  "number": 7,
+  "date": "2026-10-26",
+  "track": "venture",
+  "short_name": "SkillProof",
+  "name": "SkillProof — approval and allowlisting for agent skills",
+  "verdict": "watch",
+  "score": 6.4,
+  "scores": {
+    "pain": 7,
+    "market_pull": 6,
+    "timing": 8,
+    "gap": 5,
+    "wedge": 6
+  },
+  "effort": "3+ months",
+  "category": "Agent reliability",
+  "tags": [
+    "agents",
+    "security",
+    "governance",
+    "devtools"
+  ],
+  "pain_type": "expressed",
+  "one_liner": "For the platform or AppSec owner at a 200-2,000 person engineering org, SkillProof is the approval layer for agent skills: it discovers every SKILL.md installed across developer machines and repos, diffs each new version, and gives one person a 30-second approve/deny with the capability changes spelled out.",
+  "problem": "Engineering orgs that adopted Claude Code, Codex and Copilot now have an uncontrolled package manager inside every developer's agent. Skills arrive from tweets and registries, are plain markdown so they skip code review, and can instruct the agent to read .env files, run shell commands or fetch remote content. Today the platform team either bans skills outright (and gets routed around) or files a ticket per skill (and becomes the bottleneck). Snyk's audit found prompt-injection patterns in ~36.8% of 3,984 scanned skills; NVIDIA's SkillSpector reports 5.2% likely malicious in a 31,132-skill subset. The first version is narrow: a GitHub App plus a lightweight agent that inventories installed skills, pins approved versions to a commit SHA, and posts a diff card to Slack whenever an approved skill changes its capabilities.",
+  "target_customer": "Head of platform engineering or AppSec at a 200-2,000 engineer company already running coding agents; the buyer owns developer tooling budget and is already answering 'are these skills safe?' from security review.",
+  "why_now": "skills.sh grew to roughly 1M skills and 280M installs in seven months (Vercel). Enterprise agent frameworks (Microsoft Agent Framework, GitHub Enterprise governance docs) shipped skill support in late 2026, so skills are now in the compliance scope of orgs that must answer an auditor.",
+  "comparables": "Backslash Security (backslash.security) — publishes on approving agent skills via endpoint discovery and allowlisting; closest direct competitor. StepSecurity Dev Machine Guard (stepsecurity.io) — already inventories agent skills on developer machines and flags executable code and hooks. Snyk agent-scan and NVIDIA SkillSpector — strong scanning engines, free/open, but engine not workflow. GitHub Enterprise governance docs cover agent and SKILL.md policy, meaning the platform may absorb this. Gap: all of the above are detection; none owns the lightweight human approval loop with version pinning and a capability diff at change time, and none is positioned for the mid-size org without a dedicated AppSec team. That gap is real but narrow, which is why this is the runner-up.",
+  "market_note": "Estimate, not a measured figure: if 20,000 companies worldwide have 200+ engineers running coding agents, and a governance add-on lands at $15-40k/year, that is a few hundred million in theoretical ceiling — but most of it will be absorbed into existing AppSec platforms. The realistic standalone wedge is the first 50 design-partner logos before Snyk or GitHub bundle it.",
+  "risks": "The buyer may not exist yet as a distinct owner, leaving it unsold between AppSec and platform. Incumbents with existing AppSec contracts (Snyk, Backslash, StepSecurity) can bundle this as a feature and win on procurement alone. Agent vendors may make skills safe-by-default with sandboxing, shrinking the problem.",
+  "riskiest_assumptions": "1) Someone owns this problem today and has budget, rather than it sitting unowned between AppSec and platform engineering — most fragile. 2) Teams will tolerate an approval gate on skills instead of just allowlisting one vendor registry and calling it done. 3) A startup can win against Snyk, Backslash and StepSecurity, who already ship skill inventory and allowlisting to the same buyer.",
+  "first_customers": "Platform leads at Series B-D dev-tool-heavy companies already vocal about agent rollouts on X and in the Claude Code / Cursor community Slacks; security engineers who shared the Snyk ToxicSkills and CSA SKILL.md posts; attendees of agent-security talks (the Black Hat 2026 agent-security track crowd). Ten warm intros are reachable through those threads.",
+  "validation_test": "Message 15 platform or AppSec leads at companies known to run coding agents with one question: 'Do you know which agent skills are installed across your engineers' machines right now, and who approves a new one?' Pass: 8+ say they don't know and 3+ agree to a 30-minute call. Fail: most say their EDR/Backslash/Snyk already covers it.",
+  "build_plan": "Narrowest first version: a GitHub App that watches a company's repos for `skills/*/SKILL.md` plus a one-command local agent that reports installed skills, backed by a deterministic capability extractor (shell, file paths, network, hooks, injection phrases). Output is a single Slack message per new or changed skill with an approve/deny button and a pinned commit SHA. No dashboard, no policy DSL, no MCP coverage, no SOC2 story until after five design partners.",
+  "launch_post": "",
+  "could_grow": null,
+  "reasoning": "It wins the venture track because it is the only bookmark-rooted candidate with a clear B2B buyer and a why-now backed by hard numbers. It loses to SkillPeek because four funded or well-resourced players already sell skill discovery and allowlisting to exactly this buyer, and because a 3+ month enterprise motion does not fit a builder working evenings and weekends.",
+  "candidates_considered": "1. SkillPeek (build, WON) — paste a skill repo, get plain-English + capability cards before installing. Fresh, one-input/one-output, fits the builder's stack.\n2. SkillProof (venture, runner-up) — org-level approval and allowlisting for agent skills. Real pain and a real buyer, but Backslash, StepSecurity, Snyk and Cisco are already there and it's a 3+ month enterprise motion.\n3. Teardown-as-a-website (build) — upload a photo, get an exploded annotated SVG. Dropped: it is a thin clone of the bookmarked teardown skill, and DeepKolor already ships a product exploded-view generator (deepkolor.ai/mini-apps/product-exploded-view).\n4. \"Never read IKEA instructions again\" assembly helper (build) — photo of parts → step-by-step visual guide. Dropped: directly clones nutlope's bookmarked demo, and BILT and ManualFig already occupy it commercially.\n5. Bookmarks-to-library (build) — dropped as a direct clone of nutlope's announced open-source project, which ships in days.\n6. Data-room diligence agent (venture) — Papermark itself already ships AI agents for data rooms, plus Peony, DocSend and a crowded VDR field; gap closed for a solo builder.\n7. \"Hey Grok\"-style wake-word shortcut packs (build) — clever but it's a tutorial, not a shippable artifact, and depends on iOS behaviour outside the builder's control.",
+  "research_notes": "7 tool calls. Web Summary on the teardown skill confirmed what it does and, usefully, surfaced the repo's own warning that community skills can include executable scripts and should be checked before installing — that line is what turned a \"clone the teardown\" idea into SkillPeek. Web Summary on Thorsten Ball's article confirmed it is an agent-workflow playbook with no product gap, so it was dropped. Searches on skill supply-chain security surfaced the real prior art (NVIDIA SkillSpector, Snyk agent-scan, Cisco skill-scanner, Backslash, StepSecurity) and the numbers (Snyk ToxicSkills: 1,467 flawed of 3,984 scanned, ~36.8%; SkillSpector: 26.1% with vulnerabilities, 5.2% likely malicious in a 31,132-skill subset) — this closed the venture gap enough to demote SkillProof to runner-up and reshaped the build toward comprehension-plus-shareability rather than \"another scanner\". A search on registry scale found Vercel's State of Agent Skills (~1M skills, ~280M installs in seven months), which is the why-now. Searches for exploded-view generators (DeepKolor) and assembly-instruction tools (BILT, ManualFig) killed candidates 3 and 4. A search for data-room AI showed Papermark already ships AI agents, killing candidate 6. A final search for an existing web-based \"skill preview\" page returned nothing, supporting the gap.",
+  "sources": [
+    "https://vercel.com/blog/state-of-agent-skills",
+    "https://snyk.io/blog/toxicskills-malicious-ai-agent-skills-clawhub/",
+    "https://www.backslash.security/learning/how-to-approve-ai-skills-without-slowing-developers-down",
+    "https://www.stepsecurity.io/blog/dev-machine-guard-now-inventories-ai-agent-skills-on-developer-machines",
+    "https://github.com/nvidia/skillspector",
+    "https://learn.github.com/well-architected/library/governance/recommendations/governing-agents/"
+  ],
+  "inspiration": [
+    "https://x.com/jakubkrehel/status/2114379959263502712",
+    "https://x.com/wang_johnny/status/2113593171360068025"
+  ],
+  "prototype_url": "https://yashsharma1911.github.io/granted/ideas/2026-10-26-skillproof/",
+  "prototype_summary": "SkillProof approval inbox prototype: a platform lead triages 10 pending agent-skill changes with capability diffs, risky markdown highlighting, blast radius, and a one-click \"Approve all low-risk\" bulk action that leaves only the 5 items needing human judgment.",
+  "sibling": "2026-10-26-skillpeek"
+}

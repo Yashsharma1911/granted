@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-26T08:46:55.635Z",
+  "updated": "2026-10-26T17:08:42.940Z",
   "ideas": [
     {
       "id": "2026-10-22-agentgauntlet",
@@ -100,6 +100,66 @@
       "prototype_url": "https://yashsharma1911.github.io/granted/2026-10-25/",
       "sources_count": 14,
       "superseded_by": null
+    },
+    {
+      "id": "2026-10-26-skillpeek",
+      "number": 6,
+      "date": "2026-10-26",
+      "track": "build",
+      "short_name": "SkillPeek",
+      "verdict": "dig_deeper",
+      "score": 7.8,
+      "scores": {
+        "wow": 8,
+        "shareability": 7,
+        "buildability": 9,
+        "freshness": 8,
+        "usefulness": 7
+      },
+      "effort": "a weekend",
+      "category": "Developer tools",
+      "tags": [
+        "agents",
+        "skills",
+        "security",
+        "open source"
+      ],
+      "pain_type": "expressed",
+      "one_liner": "Paste a GitHub skill repo or an `npx skills add owner/repo` command and get a one-screen, plain-English card per skill: what it tells your agent to do, which files/commands/network calls it touches, and the exact lines that look like prompt injection — before you install it.",
+      "prototype_url": "https://yashsharma1911.github.io/granted/ideas/2026-10-26-skillpeek/",
+      "sources_count": 11,
+      "superseded_by": null,
+      "sibling": "2026-10-26-skillproof"
+    },
+    {
+      "id": "2026-10-26-skillproof",
+      "number": 7,
+      "date": "2026-10-26",
+      "track": "venture",
+      "short_name": "SkillProof",
+      "verdict": "watch",
+      "score": 6.4,
+      "scores": {
+        "pain": 7,
+        "market_pull": 6,
+        "timing": 8,
+        "gap": 5,
+        "wedge": 6
+      },
+      "effort": "3+ months",
+      "category": "Agent reliability",
+      "tags": [
+        "agents",
+        "security",
+        "governance",
+        "devtools"
+      ],
+      "pain_type": "expressed",
+      "one_liner": "For the platform or AppSec owner at a 200-2,000 person engineering org, SkillProof is the approval layer for agent skills: it discovers every SKILL.md installed across developer machines and repos, diffs each new version, and gives one person a 30-second approve/deny with the capability changes spelled out.",
+      "prototype_url": "https://yashsharma1911.github.io/granted/ideas/2026-10-26-skillproof/",
+      "sources_count": 6,
+      "superseded_by": null,
+      "sibling": "2026-10-26-skillpeek"
     }
   ]
 }
