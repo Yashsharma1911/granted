@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-26T10:03:37.025Z",
+  "updated": "2026-10-26T10:04:26.574Z",
   "ideas": [
     {
       "id": "2026-10-26-catalog-check",
@@ -22,6 +22,30 @@
       "pain_type": "latent",
       "one_liner": "A test entry written by a direct publish job.",
       "prototype_url": "https://github.com/Yashsharma1911/granted/blob/catalog-test/ideas/2026-10-26-catalog-check/index.html",
+      "sources_count": 1,
+      "superseded_by": null
+    },
+    {
+      "id": "2026-10-26-catalog-guard",
+      "number": 2,
+      "date": "2026-10-26",
+      "short_name": "Catalog Guard",
+      "verdict": "watch",
+      "score": 6.4,
+      "scores": {
+        "pain": 6,
+        "market_pull": 6,
+        "timing": 7,
+        "gap": 6,
+        "wedge": 7
+      },
+      "category": "agent reliability",
+      "tags": [
+        "test"
+      ],
+      "pain_type": "latent",
+      "one_liner": "A test entry written by a direct publish job.",
+      "prototype_url": "https://github.com/Yashsharma1911/granted/blob/catalog-test/ideas/2026-10-26-catalog-guard/index.html",
       "sources_count": 1,
       "superseded_by": null
     }
