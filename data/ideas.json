@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-26T10:11:30.623Z",
+  "updated": "2026-10-26T10:15:54.563Z",
   "ideas": [
     {
       "id": "2026-10-26-catalog-check",
@@ -74,6 +74,30 @@
       "one_liner": "For the engineer who owns a product's AI-agent and SaaS integrations, Driftwatch watches the vendors' changelogs, model versions and live tool/API schemas, and turns every change into a ranked \"this affects these 3 call sites, here's the fix\" ticket instead of a feed to read.",
       "prototype_url": "https://github.com/Yashsharma1911/granted/blob/catalog-test/ideas/2026-10-26-driftwatch/index.html",
       "sources_count": 13,
+      "superseded_by": null
+    },
+    {
+      "id": "2026-10-26-catalog-refactor",
+      "number": 4,
+      "date": "2026-10-26",
+      "short_name": "Catalog Refactor",
+      "verdict": "watch",
+      "score": 6.4,
+      "scores": {
+        "pain": 6,
+        "market_pull": 6,
+        "timing": 7,
+        "gap": 6,
+        "wedge": 7
+      },
+      "category": "agent reliability",
+      "tags": [
+        "test"
+      ],
+      "pain_type": "latent",
+      "one_liner": "A test entry written by a direct publish job.",
+      "prototype_url": "https://github.com/Yashsharma1911/granted/blob/catalog-test/ideas/2026-10-26-catalog-refactor/index.html",
+      "sources_count": 1,
       "superseded_by": null
     }
   ]
