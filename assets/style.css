@@ -113,7 +113,7 @@ main { outline: none; }
 .tab { border: 0; background: transparent; padding: 7px 14px; border-radius: 999px; display: inline-flex; gap: 7px; align-items: center; color: var(--muted); cursor: pointer; font-size: 14px; }
 .tab svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.6; }
 .tab[aria-selected="true"] { background: var(--card); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.08); }
-.search { flex: 1 1 260px; max-width: 420px; display: flex; align-items: center; gap: 8px; padding: 0 12px; height: 38px; border-radius: 999px; background: var(--card); border: 1px solid var(--line); }
+.search { flex: 1 1 260px; max-width: 420px; display: flex; align-items: center; gap: 8px; padding: 0 14px; min-height: 44px; align-self: stretch; border-radius: 999px; background: var(--card); border: 1px solid var(--line); }
 .search svg { width: 15px; height: 15px; stroke: var(--muted); fill: none; stroke-width: 1.8; flex: none; }
 .search input { flex: 1; border: 0; outline: none; background: transparent; font: inherit; color: var(--ink); min-width: 0; }
 .search kbd { font: 12px var(--sans); color: var(--muted); border: 1px solid var(--line-2); border-radius: 5px; padding: 0 5px; }
@@ -412,3 +412,17 @@ main { outline: none; }
   :root:not([data-theme="light"]) .ec { border-color: color-mix(in srgb, var(--ink) 24%, transparent); }
   :root:not([data-theme="light"]) .ec .ph { border-color: color-mix(in srgb, var(--ink) 30%, transparent); }
 }
+
+/* two tracks: ventures and builds */
+.filter-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin: 0 0 26px; }
+/* Same height and type size as the chips beside it */
+.track-switch { padding: 2px; }
+.track-switch .tab { padding: 6.5px 12px; font-size: 13.5px; line-height: 1.2; }
+.filter-row .chips { margin: 0; flex: 1 1 320px; }
+.track-switch .count { margin-left: 6px; font-size: 11.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.track-switch .tab[aria-checked="true"] .count { color: inherit; opacity: .7; }
+.card-foot .track-tag { font-weight: 600; color: var(--ink-2); }
+.card.build .card-foot .track-tag { color: var(--accent); }
+.spine.build .spine-band { width: 54%; border-top-style: dashed; border-bottom-style: dashed; }
+.launch-post { margin: 4px 0 12px; padding: 14px 16px; border: 1px solid var(--line-2); border-left: 3px solid var(--accent); border-radius: 10px; background: var(--card); font: 400 18px/1.45 var(--serif); color: var(--ink); white-space: pre-wrap; }
+.btn.small { padding: 7px 12px; font-size: 13px; }

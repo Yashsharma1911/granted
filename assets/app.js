@@ -1,7 +1,7 @@
 // Granted idea library: a static catalog that renders data/ideas.json.
 const app = document.getElementById("app");
 const STYLES = [["cards", "Cards"], ["books", "Books"]];
-const state = { ideas: [], q: "", chip: "all", sort: "newest", view: "shelf", style: "cards" };
+const state = { ideas: [], q: "", chip: "all", track: "all", sort: "newest", view: "shelf", style: "cards" };
 
 const PALETTES = [
   ["#6b5a8e", "#ece5f4"], // plum
@@ -11,8 +11,21 @@ const PALETTES = [
   ["#34507a", "#e0e7f1"], // navy
   ["#a9772b", "#f5ead3"], // ochre
 ];
-const VERDICT = { dig_deeper: "Dig deeper", watch: "Watch", pass: "Pass" };
-const CRITERIA = [["pain", "Pain"], ["market_pull", "Market pull"], ["timing", "Timing"], ["gap", "Gap"], ["wedge", "Wedge"]];
+// Two tracks: ventures (startup opportunities) and projects (weekend projects to post), stored as track "build".
+// Ideas from before the split are ventures.
+const TRACKS = [["all", "All"], ["venture", "Ventures"], ["build", "Projects"]];
+const trackOf = (i) => (i.track === "build" ? "build" : "venture");
+const VERDICTS = {
+  venture: { dig_deeper: "Dig deeper", watch: "Watch", pass: "Pass" },
+  build: { dig_deeper: "Ship it", watch: "Worth a try", pass: "Pass" },
+};
+const verdictLabel = (i) => VERDICTS[trackOf(i)][i.verdict] || "Unrated";
+const CRITERIA = {
+  venture: [["pain", "Pain"], ["market_pull", "Market pull"], ["timing", "Timing"], ["gap", "Gap"], ["wedge", "Wedge"]],
+  build: [["wow", "Wow"], ["shareability", "Shareability"], ["buildability", "Buildability"], ["freshness", "Freshness"], ["usefulness", "Usefulness"]],
+};
+const criteria = (i) => CRITERIA[trackOf(i)];
+const trackLabel = (i) => (trackOf(i) === "build" ? "Project" : "Venture");
 
 const esc = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 const slugify = (s) => String(s).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
@@ -66,10 +79,11 @@ const icons = {
 };
 
 const current = () => state.ideas.filter((i) => !i.superseded_by);
+const inTrack = () => current().filter((i) => state.track === "all" || trackOf(i) === state.track);
 
 function visibleIdeas() {
   const q = state.q.trim().toLowerCase();
-  let list = current().filter((i) => {
+  let list = inTrack().filter((i) => {
     if (state.chip === "dig_deeper" || state.chip === "watch") { if (i.verdict !== state.chip) return false; }
     else if (state.chip !== "all" && i.category !== state.chip) return false;
     if (!q) return true;
@@ -82,22 +96,36 @@ function visibleIdeas() {
 function header() {
   const ideas = current();
   const cats = new Set(ideas.map((i) => i.category).filter(Boolean));
-  const dig = ideas.filter((i) => i.verdict === "dig_deeper").length;
+  const builds = ideas.filter((i) => trackOf(i) === "build").length;
   const protos = ideas.filter((i) => i.prototype_url).length;
   const lastSeen = store.get("granted:lastSeen");
   const fresh = lastSeen ? state.ideas.filter((i) => i.date > lastSeen).length : 0;
   return `
     <span class="eyebrow">${icons.lib} Scouted every night from my bookmarks</span>
     <h1 class="title">Idea library</h1>
-    ${!ideas.length ? "" : `<p class="stats"><span><b>${ideas.length}</b> ideas</span><span>·</span><span><b>${cats.size}</b> topics</span><span>·</span><span><b>${dig}</b> dig deeper</span><span>·</span><span><b>${protos}</b> prototypes</span></p>`}
+    ${!ideas.length ? "" : `<p class="stats">${[[ideas.length, "idea"], [ideas.length - builds, "venture"], [builds, "project"], [cats.size, "topic"], [protos, "prototype"]].map(([n, w]) => `<span><b>${n}</b> ${w}${n === 1 ? "" : "s"}</span>`).join("<span>·</span>")}</p>`}
     ${fresh ? `<button class="new-pill" data-act="newest"><span class="dot">${fresh}</span>${fresh === 1 ? "new idea" : "new ideas"} since you last looked</button>` : ""}`;
 }
 
-function controls() {
+function chips() {
+  const pool = inTrack();
   const counts = {};
-  for (const i of current()) if (i.category) counts[i.category] = (counts[i.category] || 0) + 1;
-  const verdictCount = (v) => current().filter((i) => i.verdict === v).length;
+  for (const i of pool) if (i.category) counts[i.category] = (counts[i.category] || 0) + 1;
+  const verdictCount = (v) => pool.filter((i) => i.verdict === v).length;
   const chip = (key, label, count, sw = "") => `<button class="chip" data-chip="${esc(key)}" aria-pressed="${state.chip === key}">${sw}${esc(label)}<span class="count">${count}</span></button>`;
+  const names = state.track === "build" ? ["Ship it", "Worth a try"] : state.track === "venture" ? ["Dig deeper", "Watch"] : ["Top picks", "Watch list"];
+  return `${chip("all", "All", pool.length)}
+      ${chip("dig_deeper", names[0], verdictCount("dig_deeper"))}
+      ${chip("watch", names[1], verdictCount("watch"))}
+      ${Object.entries(counts).sort((a, b) => b[1] - a[1]).map(([c, n]) => chip(c, c, n, `<span class="sw" style="background:${palette(c)[0]}"></span>`)).join("")}`;
+}
+
+function trackSwitch() {
+  const n = (t) => (t === "all" ? current().length : current().filter((i) => trackOf(i) === t).length);
+  return `<div class="tabs track-switch" role="radiogroup" aria-label="Track">${TRACKS.map(([k, l]) => `<button class="tab" role="radio" data-track="${k}" aria-checked="${state.track === k}" aria-selected="${state.track === k}">${l}<span class="count">${n(k)}</span></button>`).join("")}</div>`;
+}
+
+function controls() {
   const any = current().length > 0;
   const tab = (v, label) => `<button class="tab" role="tab" data-view="${v}" aria-selected="${state.view === v}">${icons[v]}${label}</button>`;
   return `
@@ -107,26 +135,21 @@ function controls() {
       ${state.view === "shelf" ? `<div class="tabs style-switch" role="radiogroup" aria-label="Shelf style">${STYLES.map(([k, l]) => `<button class="tab" role="radio" data-style="${k}" aria-checked="${state.style === k}" aria-selected="${state.style === k}">${l}</button>`).join("")}</div>` : ""}
       ${state.view === "shelf" && any ? `<label class="sort">Arrange by <select id="sort"><option value="newest"${state.sort === "newest" ? " selected" : ""}>Newest</option><option value="score"${state.sort === "score" ? " selected" : ""}>Score</option></select></label>` : ""}
     </div>
-    ${state.view === "shelf" && any ? `<div class="chips" role="group" aria-label="Filter">
-      ${chip("all", "All", current().length)}
-      ${chip("dig_deeper", "Dig deeper", verdictCount("dig_deeper"))}
-      ${chip("watch", "Watch", verdictCount("watch"))}
-      ${Object.entries(counts).sort((a, b) => b[1] - a[1]).map(([c, n]) => chip(c, c, n, `<span class="sw" style="background:${palette(c)[0]}"></span>`)).join("")}
-    </div>` : ""}`;
+    ${state.view === "shelf" && any ? `<div class="filter-row">${trackSwitch()}<div class="chips" id="chips" role="group" aria-label="Filter">${chips()}</div></div>` : ""}`;
 }
 
 function card(i) {
   const stats = i.scores
-    ? CRITERIA.map(([k, label]) => { const v = Number(i.scores[k] ?? 0); return `<div class="stat"><span>${label}</span><span class="bar"><span style="width:${Math.max(0, Math.min(10, v)) * 10}%"></span></span><b>${v}</b></div>`; }).join("")
-    : `<div class="stat" style="grid-template-columns:1fr auto"><span>Overall opportunity</span><span class="score-big">${i.score ?? "–"}<small>/10</small></span></div>`;
+    ? criteria(i).map(([k, label]) => { const v = Number(i.scores[k] ?? 0); return `<div class="stat"><span>${label}</span><span class="bar"><span style="width:${Math.max(0, Math.min(10, v)) * 10}%"></span></span><b>${v}</b></div>`; }).join("")
+    : `<div class="stat" style="grid-template-columns:1fr auto"><span>${trackOf(i) === "build" ? "Overall project score" : "Overall opportunity"}</span><span class="score-big">${i.score ?? "–"}<small>/10</small></span></div>`;
   return `
-    <a class="card ${i.verdict === "dig_deeper" ? "dig" : ""} ${i.superseded_by ? "superseded" : ""}" data-key="${esc(i.id)}" href="#/idea/${esc(i.id)}" style="${catVars(i.category)}" data-tilt>
+    <a class="card ${trackOf(i)} ${i.verdict === "dig_deeper" ? "dig" : ""} ${i.superseded_by ? "superseded" : ""}" data-key="${esc(i.id)}" href="#/idea/${esc(i.id)}" style="${catVars(i.category)}" data-tilt>
       <div class="card-top"><span class="cat"><i></i>${esc(i.category || "Uncategorised")}</span><span>No. ${num(i.number)}</span></div>
       <div class="plate">${plate(i.id, i.category)}</div>
       <h3>${esc(i.short_name)}</h3>
       <p>${esc(i.one_liner)}</p>
       <div class="stats-block">${stats}</div>
-      <div class="card-foot"><span class="stamp ${esc(i.verdict)}">${esc(VERDICT[i.verdict] || "Unrated")}</span><span>${i.superseded_by ? "Earlier take" : fmtDate(i.date)}</span></div>
+      <div class="card-foot"><span class="stamp ${esc(i.verdict)}">${esc(verdictLabel(i))}</span><span><b class="track-tag">${trackLabel(i)}</b> · ${i.superseded_by ? "earlier take" : !i.prototype_url && i.sibling ? "brief only" : fmtDate(i.date)}</span></div>
     </a>`;
 }
 
@@ -176,10 +199,10 @@ function booksView(list) {
   const spine = (i) => {
     const h = 200 + Math.max(0, Math.min(10, i.score ?? 6) - 5) * 26;
     const w = 46 + (hash(i.id) % 18);
-    return `<button class="spine ${i.verdict === "dig_deeper" ? "gilt" : ""}" data-book="${esc(i.id)}" data-key="${esc(i.id)}" data-tip="${esc(i.short_name)}" data-tip-meta="${esc(`${i.category || ""} · ${fmtDate(i.date)}`)}" style="${catVars(i.category)};height:${h}px;width:${w}px" aria-label="${esc(`${i.short_name}, ${i.category}, ${VERDICT[i.verdict] || "unrated"} ${i.score ?? ""}`)}">
+    return `<button class="spine ${trackOf(i)} ${i.verdict === "dig_deeper" ? "gilt" : ""}" data-book="${esc(i.id)}" data-key="${esc(i.id)}" data-tip="${esc(i.short_name)}" data-tip-meta="${esc(`${trackLabel(i)} · ${i.category || ""} · ${fmtDate(i.date)}`)}" style="${catVars(i.category)};height:${h}px;width:${w}px" aria-label="${esc(`${i.short_name}, ${trackLabel(i)}, ${i.category}, ${verdictLabel(i)} ${i.score ?? ""}`)}">
       <span class="spine-band"></span>
       <span class="spine-title">${esc(i.short_name)}</span>
-      <span class="spine-label">${esc(VERDICT[i.verdict] || "")}</span>
+      <span class="spine-label">${esc(i.verdict ? verdictLabel(i) : "")}</span>
       <span class="spine-no">${num(i.number)}</span>
     </button>`;
   };
@@ -205,10 +228,10 @@ function bookSpread(i) {
       </div>
     </div>
     <div class="spread-page right">
-      <p class="kicker">${esc(i.category || "Uncategorised")}</p>
+      <p class="kicker">${esc(trackLabel(i))} · ${esc(i.category || "Uncategorised")}</p>
       <h2>${esc(i.short_name)}</h2>
       <p class="lede">${esc(i.one_liner)}</p>
-      <div class="verdict-row"><span class="stamp ${esc(i.verdict)}">${esc(VERDICT[i.verdict] || "Unrated")}</span><span class="score-big">${i.score ?? "–"}<small>/10</small></span></div>
+      <div class="verdict-row"><span class="stamp ${esc(i.verdict)}">${esc(verdictLabel(i))}</span><span class="score-big">${i.score ?? "–"}<small>/10</small></span></div>
       <div class="spread-actions">
         <a class="btn primary" href="#/idea/${esc(i.id)}">Read the field guide</a>
         ${i.prototype_url ? `<a class="btn" href="${esc(i.prototype_url)}" target="_blank" rel="noopener">Open the prototype ↗</a>` : ""}
@@ -397,8 +420,10 @@ async function ideaPage(id) {
   try { idea = await loadIdea(id); }
   catch { app.innerHTML = `<div class="page"><a class="back" href="#/">← Library</a><p class="empty">That idea could not be found.</p></div>`; return revealGuide(); }
   const sec = (title, sub, body) => body ? `<section class="section"><h2>${esc(title)}${sub ? ` <small>${esc(sub)}</small>` : ""}</h2>${body}</section>` : "";
-  const scoreStrip = idea.scores ? `<div class="score-strip">${CRITERIA.map(([k, l]) => `<span>${l} <b>${idea.scores[k] ?? "–"}</b></span>`).join("")}</div>` : "";
-  const related = [...(idea.earlier || []).map((r) => ["Earlier take", r]), ...(idea.superseded_by ? [["Replaced by", idea.superseded_by]] : [])];
+  const isBuild = trackOf(idea) === "build";
+  const scoreStrip = idea.scores ? `<div class="score-strip">${criteria(idea).map(([k, l]) => `<span>${l} <b>${idea.scores[k] ?? "–"}</b></span>`).join("")}</div>` : "";
+  const related = [...(idea.sibling ? [["Same night", idea.sibling]] : []), ...(idea.earlier || []).map((r) => ["Earlier take", r]), ...(idea.superseded_by ? [["Replaced by", idea.superseded_by]] : [])];
+  const siblingName = idea.sibling ? state.ideas.find((x) => x.id === idea.sibling)?.short_name || "tonight's other idea" : "";
   app.innerHTML = `<div class="page">
     <a class="back" href="#/">← Library</a>
     <article class="guide" style="${catVars(idea.category)}">
@@ -408,7 +433,9 @@ async function ideaPage(id) {
           <p class="plate-no">Plate No. ${num(idea.number)}</p>
           <p class="genus">${esc(idea.short_name)}</p>
           <dl>
+            <dt>Track</dt><dd>${esc(isBuild ? "Project: a weekend project to ship and post" : "Venture: a startup opportunity")}</dd>
             <dt>Classification</dt><dd>${esc(idea.category || "Uncategorised")}</dd>
+            ${idea.effort ? `<dt>Effort</dt><dd>${esc(idea.effort)}</dd>` : ""}
             ${idea.pain_type ? `<dt>Pain</dt><dd>${esc(idea.pain_type)}</dd>` : ""}
             <dt>Collected</dt><dd>${esc(fmtDate(idea.date))}</dd>
             <dt>Collected from</dt><dd>${(idea.inspiration || []).map((u) => `<a href="${esc(u)}" rel="noopener" target="_blank">${esc(handle(u))}</a>`).join(", ") || "—"}</dd>
@@ -416,17 +443,28 @@ async function ideaPage(id) {
           </dl>
         </div>
         <div class="actions">
-          <a class="btn primary" href="${esc(idea.prototype_url || "#")}" ${idea.prototype_url ? 'target="_blank" rel="noopener"' : 'aria-disabled="true"'}>Open the prototype ↗</a>
+          ${idea.prototype_url ? `<a class="btn primary" href="${esc(idea.prototype_url)}" target="_blank" rel="noopener">Open the prototype ↗</a>` : `<a class="btn primary" aria-disabled="true">No prototype for this one</a>`}
           ${related.map(([l, r]) => `<a class="btn" href="#/idea/${esc(r)}">${esc(l)}: ${esc(state.ideas.find((x) => x.id === r)?.short_name || r)}</a>`).join("")}
         </div>
       </aside>
       <div class="entry">
-        <p class="kicker">Field guide entry</p>
+        <p class="kicker">Field guide entry · ${esc(isBuild ? "Project" : "Venture")}</p>
         <h1>${esc(idea.short_name)}</h1>
         <p class="lede">${esc(idea.one_liner)}</p>
-        <div class="verdict-row"><span class="stamp ${esc(idea.verdict)}">${esc(VERDICT[idea.verdict] || "Unrated")}</span><span class="score-big">${idea.score ?? "–"}<small>/10</small></span>${scoreStrip}</div>
+        <div class="verdict-row"><span class="stamp ${esc(idea.verdict)}">${esc(verdictLabel(idea))}</span><span class="score-big">${idea.score ?? "–"}<small>/10</small></span>${scoreStrip}</div>
         ${idea.partial ? `<p class="notice">This early entry was recovered from a run that has since been cleaned up, so only part of its brief survives.</p>` : ""}
-        ${!idea.prototype_url ? `<p class="notice">This take's prototype was replaced by a later run on the same night.</p>` : ""}
+        ${!idea.prototype_url ? (idea.sibling
+          ? `<p class="notice">A brief without a prototype: that night's prototype went to <a href="#/idea/${esc(idea.sibling)}">${esc(siblingName)}</a>.</p>`
+          : `<p class="notice">This take's prototype was replaced by a later run on the same night.</p>`) : ""}
+        ${isBuild ? `
+        ${idea.launch_post ? `<section class="section launch"><h2>The launch post <small>a draft for X</small></h2><blockquote class="launch-post">${esc(idea.launch_post)}</blockquote><button class="btn small" data-act="copy" data-text="${esc(idea.launch_post)}">Copy the post</button></section>` : ""}
+        ${sec("Observed behaviour", "who it's for", rich(idea.problem))}
+        ${sec("Habitat", "the audience and where they hang out", rich(idea.target_customer))}
+        ${sec("Why now", "what just became possible", rich(idea.why_now))}
+        ${sec("Field notes", "how to build it", rich(idea.build_plan))}
+        ${sec("Related species", "prior art and how this differs", rich(idea.comparables))}
+        ${sec("Hazards", "risks", rich(idea.risks))}
+        ${idea.could_grow ? sec("Could it grow?", "", "<p>The scout thinks this project could turn into a venture. Its reasoning is in the scout's notes below.</p>") : ""}` : `
         ${sec("Observed behaviour", "the problem", rich(idea.problem))}
         ${sec("Habitat", "who has it and who pays", rich(idea.target_customer))}
         ${sec("Why now", "", rich(idea.why_now))}
@@ -436,6 +474,7 @@ async function ideaPage(id) {
         ${sec("Riskiest assumptions", "", rich(idea.riskiest_assumptions))}
         ${sec("First sightings", "the first ten customers", rich(idea.first_customers))}
         ${sec("Field test this week", "", rich(idea.validation_test))}
+        ${sec("First version", "the narrowest thing to ship", rich(idea.build_plan))}`}
         ${sec("Scout's notes", "why this one won", rich(idea.reasoning))}
         ${sec("Other specimens considered", "", rich(idea.candidates_considered))}
         ${sec("Research log", "", rich(idea.research_notes))}
@@ -450,8 +489,9 @@ function aboutPage() {
   return `<div class="page" style="max-width:760px">
     <a class="back" href="#/">← Library</a>
     <h1 class="title" style="font-size:clamp(40px,6vw,64px)">How it works</h1>
-    <section class="section"><h2>Every night at 2 AM</h2><p>A UiPath Maestro workflow reads my newest X bookmarks, an agent researches the strongest opportunity on the web, red-teams five candidates and writes a brief. A second agent builds a one-file clickable prototype, which is checked and published to GitHub Pages. The brief lands in my inbox and on this shelf.</p></section>
-    <section class="section"><h2>Reading a card</h2><p>The stamp is the verdict: <b>Dig deeper</b> ideas averaged 7.5 or more across pain, market pull, timing, gap and wedge, and wear a foil edge; <b>Watch</b> ideas scored 6 to 7.4. Open a card to read its field guide entry and the prototype.</p></section>
+    <section class="section"><h2>Every night at 2 AM</h2><p>A UiPath Maestro workflow reads my newest X bookmarks, an agent checks them against every idea already on this shelf, researches the strongest candidates on the web, red-teams them and writes a brief. A second agent builds a one-file clickable prototype, which is checked and published to GitHub Pages. The brief lands in my inbox and on this shelf.</p></section>
+    <section class="section"><h2>Two kinds of idea</h2><p><b>Ventures</b> are startup opportunities: someone would pay, and a company could grow. They are scored on pain, market pull, timing, gap and wedge. <b>Projects</b> are weekend projects one person can ship in a day or two and post: they are scored on wow, shareability, buildability, freshness and usefulness, and come with a build plan and a draft launch post. Each night the scout picks the best of each, and both get a clickable prototype.</p></section>
+    <section class="section"><h2>Reading a card</h2><p>The stamp is the verdict. A venture marked <b>Dig deeper</b>, or a project marked <b>Ship it</b>, averaged 7.5 or more and wears a foil edge; <b>Watch</b> and <b>Worth a try</b> scored 6 to 7.4. Open a card to read its field guide entry and the prototype.</p></section>
     <section class="section"><h2>Run your own</h2><p>A step-by-step guide to running Granted on your own UiPath account, with your own sources and your own library, is coming soon. Follow along in the <a href="https://github.com/Yashsharma1911/granted#run-your-own" rel="noopener">README</a>.</p></section>
   </div>`;
 }
@@ -587,7 +627,12 @@ async function returnToCard() {
 }
 
 document.addEventListener("click", (e) => {
-  if (e.target.closest?.("[data-act=clear]")) { state.q = ""; state.chip = "all"; render(); document.getElementById("q")?.focus(); return; }
+  if (e.target.closest?.("[data-act=clear]")) { state.q = ""; state.chip = "all"; state.track = "all"; render(); document.getElementById("q")?.focus(); return; }
+  const copy = e.target.closest?.("[data-act=copy]");
+  if (copy) {
+    navigator.clipboard?.writeText(copy.dataset.text || "").then(() => { copy.textContent = "Copied"; setTimeout(() => (copy.textContent = "Copy the post"), 1600); }, () => {});
+    return;
+  }
   if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || reduceMotion()) return;
   const cardEl = e.target.closest?.("a.card[data-key]");
   if (cardEl && app.contains(cardEl)) {
@@ -662,9 +707,21 @@ async function rerenderBody(fresh = false) {
   document.querySelectorAll("[data-chip]").forEach((c) => c.setAttribute("aria-pressed", String(c.dataset.chip === state.chip)));
 }
 
+function bindChips() {
+  document.querySelectorAll("[data-chip]").forEach((b) => b.addEventListener("click", () => { state.chip = b.dataset.chip; rerenderBody(); }));
+}
+
 function bindControls() {
   document.querySelectorAll("[data-view]").forEach((b) => b.addEventListener("click", () => { location.hash = b.dataset.view === "shelf" ? "#/" : `#/${b.dataset.view}`; }));
-  document.querySelectorAll("[data-chip]").forEach((b) => b.addEventListener("click", () => { state.chip = b.dataset.chip; rerenderBody(); }));
+  bindChips();
+  document.querySelectorAll("[data-track]").forEach((b) => b.addEventListener("click", () => {
+    state.track = b.dataset.track;
+    state.chip = "all";
+    document.querySelectorAll("[data-track]").forEach((x) => { const on = x.dataset.track === state.track; x.setAttribute("aria-checked", String(on)); x.setAttribute("aria-selected", String(on)); });
+    const box = document.getElementById("chips");
+    if (box) { box.innerHTML = chips(); bindChips(); }
+    rerenderBody();
+  }));
   const q = document.getElementById("q");
   q?.addEventListener("input", () => { state.q = q.value; if (state.view !== "shelf") { location.hash = "#/"; } else rerenderBody(); });
   document.getElementById("sort")?.addEventListener("change", (e) => { state.sort = e.target.value; rerenderBody(); });
