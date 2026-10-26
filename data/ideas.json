@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-26T10:04:26.574Z",
+  "updated": "2026-10-26T10:11:30.623Z",
   "ideas": [
     {
       "id": "2026-10-26-catalog-check",
@@ -47,6 +47,33 @@
       "one_liner": "A test entry written by a direct publish job.",
       "prototype_url": "https://github.com/Yashsharma1911/granted/blob/catalog-test/ideas/2026-10-26-catalog-guard/index.html",
       "sources_count": 1,
+      "superseded_by": null
+    },
+    {
+      "id": "2026-10-26-driftwatch",
+      "number": 3,
+      "date": "2026-10-26",
+      "short_name": "Driftwatch",
+      "verdict": "watch",
+      "score": 7,
+      "scores": {
+        "pain": 7,
+        "market_pull": 6,
+        "timing": 8,
+        "gap": 6,
+        "wedge": 8
+      },
+      "category": "agent reliability",
+      "tags": [
+        "agents",
+        "integrations",
+        "monitoring",
+        "devtools"
+      ],
+      "pain_type": "expressed",
+      "one_liner": "For the engineer who owns a product's AI-agent and SaaS integrations, Driftwatch watches the vendors' changelogs, model versions and live tool/API schemas, and turns every change into a ranked \"this affects these 3 call sites, here's the fix\" ticket instead of a feed to read.",
+      "prototype_url": "https://github.com/Yashsharma1911/granted/blob/catalog-test/ideas/2026-10-26-driftwatch/index.html",
+      "sources_count": 13,
       "superseded_by": null
     }
   ]
