@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-26T10:53:50.043Z",
+  "updated": "2026-10-26T15:36:24.640Z",
   "ideas": [
     {
       "id": "2026-10-26-catalog-check",
@@ -126,6 +126,65 @@
       "prototype_url": "https://github.com/Yashsharma1911/granted/blob/catalog-test/ideas/2026-10-26-holdroom/index.html",
       "sources_count": 6,
       "superseded_by": null
+    },
+    {
+      "id": "2026-10-26-skillscope",
+      "number": 6,
+      "date": "2026-10-26",
+      "track": "build",
+      "short_name": "Skillscope",
+      "verdict": "dig_deeper",
+      "score": 8,
+      "scores": {
+        "wow": 8,
+        "shareability": 8,
+        "buildability": 8,
+        "freshness": 9,
+        "usefulness": 7
+      },
+      "effort": "a weekend",
+      "category": "Developer tools",
+      "tags": [
+        "agents",
+        "security",
+        "developer tools",
+        "open source"
+      ],
+      "pain_type": "expressed",
+      "one_liner": "For anyone about to run `npx skills add <repo>`, Skillscope takes the repo or a pasted SKILL.md and returns a one-screen X-ray: what the skill tells your agent to do in plain English, every file/network/shell capability it requests, and the suspicious lines highlighted.",
+      "prototype_url": "https://github.com/Yashsharma1911/granted/blob/catalog-test/ideas/2026-10-26-skillscope/index.html",
+      "sources_count": 7,
+      "superseded_by": null,
+      "sibling": "2026-10-26-dossier"
+    },
+    {
+      "id": "2026-10-26-dossier",
+      "number": 7,
+      "date": "2026-10-26",
+      "track": "venture",
+      "short_name": "Dossier",
+      "verdict": "watch",
+      "score": 6.4,
+      "scores": {
+        "pain": 7,
+        "market_pull": 6,
+        "timing": 7,
+        "gap": 5,
+        "wedge": 7
+      },
+      "effort": "3+ months",
+      "category": "Back-office automation",
+      "tags": [
+        "fundraising",
+        "document ai",
+        "agents"
+      ],
+      "pain_type": "expressed",
+      "one_liner": "For seed and Series A founders mid-raise, Dossier turns an investor's diligence request list into drafted, source-cited answers pulled from the founder's own files, with every claim traceable to a page before it is sent.",
+      "prototype_url": null,
+      "sources_count": 4,
+      "superseded_by": null,
+      "sibling": "2026-10-26-skillscope"
     }
   ]
 }

@@ -1,0 +1,53 @@
+{
+  "id": "2026-10-26-dossier",
+  "number": 7,
+  "date": "2026-10-26",
+  "track": "venture",
+  "short_name": "Dossier",
+  "name": "Dossier — diligence answers from your own documents",
+  "verdict": "watch",
+  "score": 6.4,
+  "scores": {
+    "pain": 7,
+    "market_pull": 6,
+    "timing": 7,
+    "gap": 5,
+    "wedge": 7
+  },
+  "effort": "3+ months",
+  "category": "Back-office automation",
+  "tags": [
+    "fundraising",
+    "document ai",
+    "agents"
+  ],
+  "pain_type": "expressed",
+  "one_liner": "For seed and Series A founders mid-raise, Dossier turns an investor's diligence request list into drafted, source-cited answers pulled from the founder's own files, with every claim traceable to a page before it is sent.",
+  "problem": "A founder running a raise answers the same 40-80 diligence questions across 10-15 investors — cap table mechanics, churn definition, revenue recognition, customer concentration, IP assignment, key-person risk. Today it is a founder and a lawyer rebuilding answers in a shared doc from scattered files, with inconsistencies between investors that become real problems in the final round. Data rooms store the documents; they do not produce the answers.",
+  "target_customer": "The founder or chief of staff at a 10-60 person startup actively raising, and the boutique fund-formation or corporate lawyer who shepherds them. Buyer is the founder; the lawyer is the referral channel.",
+  "why_now": "Long-context models can now read a full data room cheaply and cite page-level sources, and page-cited answers are the minimum bar for anything a founder would actually send to an investor.",
+  "comparables": "Papermark (papermark.com, €99-999/mo) — data rooms with analytics, permissions, redaction, and an AI data rooms push. Peony (peony.ink) — explicitly markets AI document Q&A with cited pages and answering investor questions in the room, from $30. Ideals / Intralinks / Datasite — enterprise VDRs with AI agents answering investor questions. AutoRFP.ai — DDQ automation but sold to asset managers and PE, not founders. Gap: all of them answer questions asked inside their room; none sit on the founder's side preparing consistent, approved answers across every investor regardless of where documents live. That gap is narrow and shrinking.",
+  "market_note": "Estimate only: data rooms are the adjacent priced comparable — Papermark lists €99/mo annual to €999/mo, Peony has a $30 tier with AI document Q&A. A founder mid-raise plausibly pays $200-500/mo for 2-4 months, which means a short, bursty contract — the real question is whether that supports a company or only a feature.",
+  "risks": "The gap is the weak point: well-funded VDRs are adding exactly this, and the usage is bursty. Also legal exposure — a wrong cited answer in diligence is not a cosmetic error.",
+  "riskiest_assumptions": "1) Founders will trust a drafted answer enough to send it, rather than rewriting it anyway — if they rewrite, the time saved is near zero. 2) The pain is bursty (2-4 months per raise, every 18-24 months), so retention may be structurally bad unless it extends into investor updates and board reporting. 3) Data rooms ship this as a feature; Papermark and Peony already partly have.",
+  "first_customers": "10 founders currently raising, found through two or three boutique startup law firms and the fundraising-advisor corner of X; offer to do the first list by hand for free in exchange for the real request list and the final answers.",
+  "validation_test": "Collect 5 real diligence request lists this week from founders mid-raise, hand-answer one with an off-the-shelf long-context model over their actual files, and send it back. Pass if 3 of 5 say they would have sent the draft with only light edits and would pay for it next raise; fail if they rewrite more than half.",
+  "build_plan": "Narrowest first version: no data room of our own. Upload a folder plus paste the investor's request list; return a table of question → drafted answer → the exact source page, each needing a one-click founder approval before export to a doc. Serve exactly one raise type (seed/A SaaS) and one question taxonomy first.",
+  "launch_post": "",
+  "could_grow": null,
+  "reasoning": "Best of the venture candidates: a real, costly, repeated workflow with an identifiable buyer and a lawyer referral channel. It loses to Skillscope on gap — research showed Papermark, Peony and Ideals all already ship cited AI Q&A over fundraising documents — and on fit, since the builder's bar for a venture is 'clearly bigger than a side project' and this may be a feature of a data room rather than a company.",
+  "candidates_considered": "1. Skillscope (build) — WON. Paste a skill repo, get a plain-English capability X-ray. Fresh, shareable, a weekend.\n2. Manualess, photo/PDF → illustrated step guide (build), from nutlope's IKEA post — dropped: the inspiring post IS this, and building it is a thin clone; BILT (bilt.ai) owns the commercial side and the hard part is generating accurate part illustrations, which is weeks not a weekend.\n3. Teardown-as-a-web-app, upload object photo → annotated exploded SVG (build) — dropped: direct clone of @jakubkrehel's /teardown, and Layer already ships a hosted Technical Diagram Generator (layer.ai/tools/layer--technical-diagram-generator).\n4. Dossier (venture) — diligence request list → drafted, cited answers for founders mid-raise. Survived research but gap is closing: Papermark (€99-149/mo), Peony ($30 tier with AI document Q&A), Ideals all do in-room AI Q&A. Kept as runner_up at 6.4.\n5. Mia-for-B2B, AI short-form sales video agent (venture) — dropped: crowded, undifferentiated vs every UGC-ad generator, no clear owner with budget, and search surfaced multiple \"AI salesperson\" startups already.\n6. Vocal-shortcut pack for agent voice triggers (build), from the \"Hey Grok\" post — dropped: it is a settings tutorial, not software; nothing to ship and nothing to open source.",
+  "research_notes": "10 tool calls. Web Summary on the skills ecosystem confirmed `npx skills add` installs third-party SKILL.md packages that agents read and obey — which turned the /teardown bookmark from \"nice illustration demo\" into \"people install arbitrary agent instructions in one command\". Web Summary on Papermark gave real pricing (€99/mo annual, €149 monthly, tiers to €999) and named competitors, which sized the runner-up and showed in-room AI Q&A is already shipping. Searches for IKEA-manual AI tools surfaced BILT (bilt.ai) and the AssemblyLens paper, killing candidate 2; a search for technical-illustration generators surfaced Layer's hosted Technical Diagram Generator, killing candidate 3. The decisive search was on agent-skill supply-chain security: Snyk's ToxicSkills (3,984 skills scanned, 36.8% flawed, 13.4% critical), NVIDIA SkillSpector (26.1% of 31k subset), ClawVet, and the CSA research note — all CLIs and reports, none a shareable web reader. A follow-up search for skill directories (localskills.sh, awesome-agent-skills, skills.sh) and for enterprise skill-approval products (Backslash, Speakeasy MCP Gateway) confirmed the listing and governance ends are taken but the public one-click reader is open, and suggested the venture path for could_grow. I could not view any of the videos in these bookmarks and did not guess at their contents.",
+  "sources": [
+    "https://www.papermark.com/pricing",
+    "https://www.peony.ink/use-cases/ai-document-qa",
+    "https://investordatarooms.com/ideals/",
+    "https://autorfp.ai/blog/best-ddq-automation-software-for-private-equity-firms"
+  ],
+  "inspiration": [
+    "https://x.com/mfts0/status/2114282345037533311"
+  ],
+  "prototype_url": null,
+  "prototype_summary": "",
+  "sibling": "2026-10-26-skillscope"
+}
