@@ -412,3 +412,14 @@ main { outline: none; }
   :root:not([data-theme="light"]) .ec { border-color: color-mix(in srgb, var(--ink) 24%, transparent); }
   :root:not([data-theme="light"]) .ec .ph { border-color: color-mix(in srgb, var(--ink) 30%, transparent); }
 }
+
+/* two tracks: ventures and builds */
+.filter-row { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 10px 14px; margin: 0 0 26px; }
+.filter-row .chips { margin: 0; flex: 1 1 320px; }
+.track-switch .count { margin-left: 6px; font-size: 11.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.track-switch .tab[aria-checked="true"] .count { color: inherit; opacity: .7; }
+.card-foot .track-tag { font-weight: 600; color: var(--ink-2); }
+.card.build .card-foot .track-tag { color: var(--accent); }
+.spine.build .spine-band { width: 54%; border-top-style: dashed; border-bottom-style: dashed; }
+.launch-post { margin: 4px 0 12px; padding: 14px 16px; border: 1px solid var(--line-2); border-left: 3px solid var(--accent); border-radius: 10px; background: var(--card); font: 400 18px/1.45 var(--serif); color: var(--ink); white-space: pre-wrap; }
+.btn.small { padding: 7px 12px; font-size: 13px; }
