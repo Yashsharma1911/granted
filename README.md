@@ -9,8 +9,8 @@ Every night an agent reads my newest X bookmarks, scouts one startup idea worth 
 A [UiPath Maestro](https://www.uipath.com/product/maestro) workflow runs at 2 AM IST:
 
 1. **Read** the 10 newest X bookmarks, with the pages and quoted posts they link to.
-2. **Scout**: an agent checks the bookmarks against every idea already in the library, then judges candidates on two tracks: **ventures** (startup opportunities) and **builds** (projects one person can ship in a weekend and post). It researches the best of each on the web, red-teams them and writes a brief for both.
-3. **Build**: a second agent turns the stronger of the two into a one-file HTML prototype, which is checked before it ships. The other is filed as a brief.
+2. **Scout**: an agent checks the bookmarks against every idea already in the library, then judges candidates on two tracks: **ventures** (startup opportunities) and **builds** (projects one person can ship in a weekend and post). It researches the best of each on the web, red-teams them and writes a brief for each.
+3. **Build**: a second agent turns each of the two into a one-file HTML prototype, which is checked before it ships. If the second one fails, it is filed as a brief only.
 4. **Publish**: the prototype, the brief and the library index land in this repo in a single commit, and GitHub Pages serves them.
 5. **Report**: the brief arrives in my inbox the next morning.
 
