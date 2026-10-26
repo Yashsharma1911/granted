@@ -1,0 +1,58 @@
+{
+  "id": "2026-10-26-evalseed",
+  "number": 9,
+  "date": "2026-10-26",
+  "track": "venture",
+  "short_name": "EvalSeed",
+  "name": "EvalSeed — eval cases generated from your agent's own code",
+  "verdict": "watch",
+  "score": 6.6,
+  "scores": {
+    "pain": 7,
+    "market_pull": 7,
+    "timing": 8,
+    "gap": 5,
+    "wedge": 6
+  },
+  "effort": "3+ months",
+  "category": "Agent testing",
+  "tags": [
+    "agents",
+    "evals",
+    "testing",
+    "devtools"
+  ],
+  "pain_type": "expressed",
+  "one_liner": "For the 2-10 person team shipping a production agent on the Cursor Agent SDK (or a similar Markdown-prompt + TypeScript-tools setup), EvalSeed reads the agent's repo and generates the first 50 eval cases — inputs, expected tool calls and graders — so the eval suite exists before the first incident instead of after.",
+  "problem": "Every eval platform — Braintrust, Langfuse, Confident AI, Promptfoo — assumes you arrive with a golden dataset. In practice the dataset is the bottleneck: someone has to sit down and imagine 50 realistic user inputs, decide what the right tool sequence is, and write graders. Braintrust's own writing concedes golden datasets only cover what someone thought to write down and go stale; Hamel Husain's eval FAQ and the Pragmatic Engineer guide both describe teams hand-assembling cases. So most teams ship with 5 cases copied from a demo, or none, and discover failures from users. Cursor's Agent SDK just made this acute by putting evals in the box and leaving the cases to you.",
+  "target_customer": "The engineer who owns a customer-facing or internal agent at a 20-500 person software company — typically a founding engineer or an AI/platform engineer. Buyer is an eng lead with a tooling budget; price point an estimate of $200-500/month per agent, well inside a card-swipe budget.",
+  "why_now": "Cursor shipped the Agent SDK on 26 Oct 2026 with agents defined as code — prompts in Markdown, tools as typed TypeScript, evals built in. That is a machine-readable spec of what the agent is supposed to do, which is exactly the input a generator needs; a year ago agent behaviour lived in opaque prompt strings. Microsoft Foundry's `azd ai agent eval generate` shows the direction of travel, which is both validation and a clock.",
+  "comparables": "Braintrust (https://www.braintrust.dev) — eval-first platform with CI gates; assumes you bring cases, and explicitly writes about golden datasets going stale. Langfuse (https://langfuse.com/blog/2025-11-12-evals) — open-source observability, builds test sets from production traces, so it needs traffic you may not have yet. Confident AI / DeepEval (https://www.confident-ai.com) — simulation and regression testing, strong on running evals. Evidently AI (https://www.evidentlyai.com/llm-guide/llm-test-dataset-synthetic-data) — synthetic test-data generation, but generic LLM I/O rather than agent tool-call sequences. Microsoft Foundry `azd ai agent eval generate` (https://learn.microsoft.com/en-us/azure/foundry/observability/how-to/azure-developer-cli-evaluation) — closest, but Azure-bound. Gap: nobody generates cases from the agent's own repo (prompt + tool signatures) and asserts expected tool sequences, pre-traffic, framework-native.",
+  "market_note": "Estimate, not a measured figure: eval/observability tooling is a crowded but clearly funded category (Braintrust, Langfuse, Confident AI, Freeplay all selling today), which means budget exists and the buyer is identified. The wedge is a slice of that spend, not a new budget line. Assume a seed-stage ceiling of a few thousand teams running agents serious enough to pay, so this must become a broader agent-quality product to be venture-scale; the generation step is the way in, not the whole company.",
+  "risks": "The eval incumbents ship generation as a free feature and the wedge evaporates. Generated cases feel plausible but miss the real failure modes, so teams keep them and get false confidence — worse than nothing, and a reputation killer. Buyers may decide that production traces (Langfuse's approach) are strictly better once they have traffic, making this a tool you use once at the start rather than a subscription.",
+  "riskiest_assumptions": "1) Generated cases are good enough that engineers keep more than half of them — if the edit rate is near 100% the tool is worse than a blank file. 2) Teams will accept cases authored before any production traffic exists, rather than insisting on trace-derived ones. 3) Case generation is defensible for more than two quarters and not swallowed as a free feature by Cursor, Braintrust or Foundry — the hedge is owning the regenerate-on-prompt-change loop inside CI, which is a workflow, not a feature.",
+  "first_customers": "Teams visibly adopting the Cursor Agent SDK: the ~120 repliers on the 26 Oct Cursor announcement, plus GitHub's public repos that import the SDK, plus Langfuse/Braintrust Discord and Slack members asking 'how do I get started with evals'. Ten design partners is a realistic target from a week of DMs.",
+  "validation_test": "Pick 5 public open-source agent repos with Markdown prompts and TypeScript tools. Generate 50 cases for each by hand-running the prompt, then send the maintainer the file and ask one question: how many of these would you keep? Pass: median 25+ kept and at least 2 maintainers ask for it as a tool. Fail: median under 10 kept, or the response is 'these don't match what our users actually ask'.",
+  "build_plan": "Narrowest first version: a CLI, `npx evalseed`, pointed at a Cursor Agent SDK project. It parses the Markdown prompts and TypeScript tool signatures, and emits 50 eval cases as files in the SDK's own eval format — realistic user inputs across happy path, ambiguous input, missing-parameter, wrong-tool-temptation and refusal categories, each with an expected tool sequence and a grader. No dashboard, no hosting, no runs stored. Charge nothing; measure how many generated cases survive the first human edit. Only after that, add the hosted service that regenerates cases when the prompt file changes in a PR.",
+  "launch_post": "",
+  "could_grow": null,
+  "reasoning": "Best of the venture candidates because it has a named buyer with existing budget, a crisp why-now in the Cursor SDK bookmark, and a first version a small team can ship as a CLI. It builds on the library's AgentGauntlet but differs clearly: AgentGauntlet tests whether outside agents can use your product and sells to the product owner; EvalSeed authors test cases for your own agent and sells to the engineer who wrote it.",
+  "candidates_considered": "1) Exploded (build, WON) — photo to editable labelled exploded SVG; differs from the /teardown skill by being installable-free and editable. 2) EvalSeed (venture, RUNNER-UP) — generates eval cases from an agent's Markdown prompt + TS tools; attacks the authorship bottleneck the eval vendors assume away. 3) Agent attribution ledger for personal agents (from sriramk) — dropped: same core workflow as Doublecheck and Ledger in the library (record every agent write, resolve who did what), and the consumer version has no buyer with budget. 4) Messenger-broadcast compliance checker (from the Blueberry post) — dropped: the underlying practice looks like it rides Meta policy edges; not something to build a business on, and I could find no corroborating sources. 5) Cross-assistant memory wallet built on supermemory/learner-1 — dropped: Mem0 ($24M Series A per rywalker.com), Zep, Letta, Cognee and supermemory itself are all funded and shipping exactly this; the gap is closed for a solo builder. 6) \"IKEA manual to talk-you-through-it steps\" app (from nutlope's post) — dropped as too close to a thin re-do of the bookmark that inspired it, and the manual-PDF corpus is a licensing swamp.",
+  "research_notes": "12-call budget, 11 used. Two Web Summary calls resolved the two thinnest-but-most-promising posts: supermemory's learner-1 (it is an external memory layer with an API, not weight-level continual learning — which killed candidate 5's premise of a novel capability) and the Cursor Agent SDK (confirmed Markdown prompts, TypeScript tools, built-in evals, event replay, no published separate price — which seeded EvalSeed). Searches: prior art for agent-attribution tooling (found only enterprise-side signals — Glean release notes now tagging which assistant triggered an action, Scalekit's OAuth-for-agents writing, Cloud Security Alliance on agent audit logs — i.e. the enterprise version is already being absorbed by platforms, so I dropped the consumer version); prior art for IKEA-manual and manual-PDF apps (nothing credible, but licensing risk); prior art for exploded/technical diagram generators (only text-to-image wrappers: OpenArt, aifreeforever — no editable-SVG-from-photo tool, which is what unlocked the build); eval tooling landscape and the golden-dataset bottleneck (Braintrust, Confident AI, Langfuse, Promptfoo, Hamel Husain, Microsoft Foundry's `azd ai agent eval generate` — this last one is the clearest warning that generation is becoming a platform feature, which capped EvalSeed's gap score); memory-layer funding (Mem0 $24M Series A, supermemory $3M pre-seed — closed the memory gap). Three searches returned nothing usable (Blueberry/Messenger broadcasts, consumer multi-agent memory, UiPath Maestro governance comparables), which is itself why candidates 3 and 4 were dropped rather than reshaped: I would not assert a market I could not source.",
+  "sources": [
+    "https://cursor.com/blog/agent-sdk",
+    "https://www.braintrust.dev/articles/continuous-evaluation-ai-agents-trace-classifications-2026",
+    "https://langfuse.com/blog/2025-11-12-evals",
+    "https://www.confident-ai.com/knowledge-base/guides/llm-regression-testing",
+    "https://www.evidentlyai.com/llm-guide/llm-test-dataset-synthetic-data",
+    "https://learn.microsoft.com/en-us/azure/foundry/observability/how-to/azure-developer-cli-evaluation",
+    "https://hamel.dev/blog/posts/evals-faq/"
+  ],
+  "inspiration": [
+    "https://x.com/cursor_ai/status/2114793714531102901",
+    "https://x.com/katelyn_lesse/status/2114542280535318557"
+  ],
+  "prototype_url": "https://yashsharma1911.github.io/granted/ideas/2026-10-26-evalseed/",
+  "prototype_summary": "An interactive EvalSeed prototype that turns a sample refunds-agent repo's own prompt and tool signatures into 12 reviewable eval cases, each traceable to the exact policy line it came from, with keep/discard tracking, export, and stale-case detection when the refund threshold changes.",
+  "sibling": "2026-10-26-exploded"
+}

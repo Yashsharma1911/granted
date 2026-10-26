@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-26T17:08:42.940Z",
+  "updated": "2026-10-26T20:41:00.321Z",
   "ideas": [
     {
       "id": "2026-10-22-agentgauntlet",
@@ -160,6 +160,66 @@
       "sources_count": 6,
       "superseded_by": null,
       "sibling": "2026-10-26-skillpeek"
+    },
+    {
+      "id": "2026-10-26-exploded",
+      "number": 8,
+      "date": "2026-10-26",
+      "track": "build",
+      "short_name": "Exploded",
+      "verdict": "dig_deeper",
+      "score": 7.6,
+      "scores": {
+        "wow": 9,
+        "shareability": 9,
+        "buildability": 7,
+        "freshness": 7,
+        "usefulness": 6
+      },
+      "effort": "a weekend",
+      "category": "Developer tools",
+      "tags": [
+        "image-models",
+        "svg",
+        "explainers",
+        "open-source"
+      ],
+      "pain_type": "latent",
+      "one_liner": "Upload a photo of any object — a espresso machine, a drone, a sneaker — and get back a labelled, exploded technical diagram you can edit part-by-part and export as SVG or PNG.",
+      "prototype_url": "https://yashsharma1911.github.io/granted/ideas/2026-10-26-exploded/",
+      "sources_count": 15,
+      "superseded_by": null,
+      "sibling": "2026-10-26-evalseed"
+    },
+    {
+      "id": "2026-10-26-evalseed",
+      "number": 9,
+      "date": "2026-10-26",
+      "track": "venture",
+      "short_name": "EvalSeed",
+      "verdict": "watch",
+      "score": 6.6,
+      "scores": {
+        "pain": 7,
+        "market_pull": 7,
+        "timing": 8,
+        "gap": 5,
+        "wedge": 6
+      },
+      "effort": "3+ months",
+      "category": "Agent testing",
+      "tags": [
+        "agents",
+        "evals",
+        "testing",
+        "devtools"
+      ],
+      "pain_type": "expressed",
+      "one_liner": "For the 2-10 person team shipping a production agent on the Cursor Agent SDK (or a similar Markdown-prompt + TypeScript-tools setup), EvalSeed reads the agent's repo and generates the first 50 eval cases — inputs, expected tool calls and graders — so the eval suite exists before the first incident instead of after.",
+      "prototype_url": "https://yashsharma1911.github.io/granted/ideas/2026-10-26-evalseed/",
+      "sources_count": 7,
+      "superseded_by": null,
+      "sibling": "2026-10-26-exploded"
     }
   ]
 }
