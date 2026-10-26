@@ -1,0 +1,37 @@
+{
+  "id": "2026-10-22-agentgauntlet",
+  "date": "2026-10-22",
+  "short_name": "AgentGauntlet",
+  "name": "AgentGauntlet",
+  "verdict": "watch",
+  "score": 7,
+  "scores": null,
+  "category": "Agent testing",
+  "tags": [
+    "agents",
+    "QA",
+    "APIs"
+  ],
+  "pain_type": null,
+  "one_liner": "A continuous agent-readiness test suite for companies whose products are now used by AI agents: it runs real agents against your API, docs, SDK and checkout flows, scores whether they can finish the top jobs your customers care about, and shows exactly which step broke and what to change.",
+  "problem": "",
+  "target_customer": "",
+  "why_now": "",
+  "comparables": "",
+  "market_note": "",
+  "risks": "",
+  "riskiest_assumptions": "",
+  "first_customers": "",
+  "validation_test": "",
+  "reasoning": "Most of the night's bookmarks were announcements rather than problems. Warp Sciences (AI plus robotics for drug discovery) was out of reach for a small team, and Podium's AI revenue post was a success story rather than an opening. This candidate was the strongest remaining one.",
+  "candidates_considered": "",
+  "research_notes": "",
+  "sources": [],
+  "inspiration": [
+    "https://x.com/heymikasagi/status/2113028051399512241"
+  ],
+  "prototype_url": "https://yashsharma1911.github.io/granted/2026-10-22/",
+  "prototype_summary": "Agent readiness scorecard",
+  "partial": true,
+  "number": 1
+}

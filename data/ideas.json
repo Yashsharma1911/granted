@@ -1,0 +1,105 @@
+{
+  "updated": "2026-10-26T08:46:55.635Z",
+  "ideas": [
+    {
+      "id": "2026-10-22-agentgauntlet",
+      "number": 1,
+      "date": "2026-10-22",
+      "short_name": "AgentGauntlet",
+      "verdict": "watch",
+      "score": 7,
+      "scores": null,
+      "category": "Agent testing",
+      "tags": [
+        "agents",
+        "QA",
+        "APIs"
+      ],
+      "pain_type": null,
+      "one_liner": "A continuous agent-readiness test suite for companies whose products are now used by AI agents: it runs real agents against your API, docs, SDK and checkout flows, scores whether they can finish the top jobs your customers care about, and shows exactly which step broke and what to change.",
+      "prototype_url": "https://yashsharma1911.github.io/granted/2026-10-22/",
+      "sources_count": 0,
+      "superseded_by": null
+    },
+    {
+      "id": "2026-10-23-ledger",
+      "number": 2,
+      "date": "2026-10-23",
+      "short_name": "Ledger",
+      "verdict": "dig_deeper",
+      "score": 7.6,
+      "scores": null,
+      "category": "Agent reliability",
+      "tags": [
+        "agents",
+        "idempotency",
+        "audit"
+      ],
+      "pain_type": null,
+      "one_liner": "For platform/AI engineering teams running customer-facing agents that write to real systems (payments, CRM, email, bookings), Ledger is a thin proxy + console that records every write action with an idempotency fingerprint, detects when an action's outcome is uncertain or duplicated, and gives on-call a one-click \"verify / reverse / confirm\" workflow with a per-customer audit trail.",
+      "prototype_url": "",
+      "sources_count": 14,
+      "superseded_by": "2026-10-23-doublecheck"
+    },
+    {
+      "id": "2026-10-23-doublecheck",
+      "number": 3,
+      "date": "2026-10-23",
+      "short_name": "Doublecheck",
+      "verdict": "dig_deeper",
+      "score": 7.6,
+      "scores": null,
+      "category": "Agent reliability",
+      "tags": [
+        "agents",
+        "reconciliation",
+        "payments"
+      ],
+      "pain_type": null,
+      "one_liner": "For engineering teams running production AI agents that touch money, tickets and customer comms, Doublecheck is a thin proxy + console that records every external write an agent attempts, resolves \"did this actually commit?\" when a tool call times out, and blocks duplicate payments, emails and refunds on retry or fork.",
+      "prototype_url": "https://yashsharma1911.github.io/granted/2026-10-23/",
+      "sources_count": 18,
+      "superseded_by": null
+    },
+    {
+      "id": "2026-10-24-driftwatch",
+      "number": 4,
+      "date": "2026-10-24",
+      "short_name": "Driftwatch",
+      "verdict": "dig_deeper",
+      "score": 7.6,
+      "scores": null,
+      "category": "Agent reliability",
+      "tags": [
+        "agents",
+        "MCP",
+        "monitoring"
+      ],
+      "pain_type": null,
+      "one_liner": "For the platform/AI-engineering team that owns production agents, Driftwatch watches the vendor surfaces those agents depend on — MCP tool schemas, model IDs, API docs and changelogs — and turns each change into a ranked \"this will break these 3 agent flows, here's the diff and the fix PR\" alert instead of a wall of release notes.",
+      "prototype_url": "https://yashsharma1911.github.io/granted/2026-10-24/",
+      "sources_count": 20,
+      "superseded_by": null
+    },
+    {
+      "id": "2026-10-25-holdline",
+      "number": 5,
+      "date": "2026-10-25",
+      "short_name": "HoldLine",
+      "verdict": "watch",
+      "score": 7.2,
+      "scores": null,
+      "category": "Back-office automation",
+      "tags": [
+        "voice AI",
+        "operations",
+        "B2B"
+      ],
+      "pain_type": null,
+      "one_liner": "HoldLine is an AI caller for B2B back offices outside healthcare — the buyers, AR clerks and ops coordinators who burn hours on hold with carriers, suppliers, utilities, banks and government offices — that sits through the IVR and hold queue, asks a scripted set of questions, and returns a verified, structured answer card (plus transcript and recording) written straight back into the ERP/spreadsheet row.",
+      "prototype_url": "https://yashsharma1911.github.io/granted/2026-10-25/",
+      "sources_count": 14,
+      "superseded_by": null
+    }
+  ]
+}
