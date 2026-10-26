@@ -11,12 +11,13 @@ const PALETTES = [
   ["#34507a", "#e0e7f1"], // navy
   ["#a9772b", "#f5ead3"], // ochre
 ];
-// Two tracks: ventures (startup opportunities) and builds (weekend projects to post). Ideas from before the split are ventures.
-const TRACKS = [["all", "All"], ["venture", "Ventures"], ["build", "Builds"]];
+// Two tracks: ventures (startup opportunities) and projects (weekend projects to post), stored as track "build".
+// Ideas from before the split are ventures.
+const TRACKS = [["all", "All"], ["venture", "Ventures"], ["build", "Projects"]];
 const trackOf = (i) => (i.track === "build" ? "build" : "venture");
 const VERDICTS = {
   venture: { dig_deeper: "Dig deeper", watch: "Watch", pass: "Pass" },
-  build: { dig_deeper: "Build it", watch: "Worth a try", pass: "Pass" },
+  build: { dig_deeper: "Ship it", watch: "Worth a try", pass: "Pass" },
 };
 const verdictLabel = (i) => VERDICTS[trackOf(i)][i.verdict] || "Unrated";
 const CRITERIA = {
@@ -24,7 +25,7 @@ const CRITERIA = {
   build: [["wow", "Wow"], ["shareability", "Shareability"], ["buildability", "Buildability"], ["freshness", "Freshness"], ["usefulness", "Usefulness"]],
 };
 const criteria = (i) => CRITERIA[trackOf(i)];
-const trackLabel = (i) => (trackOf(i) === "build" ? "Build" : "Venture");
+const trackLabel = (i) => (trackOf(i) === "build" ? "Project" : "Venture");
 
 const esc = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 const slugify = (s) => String(s).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
@@ -102,7 +103,7 @@ function header() {
   return `
     <span class="eyebrow">${icons.lib} Scouted every night from my bookmarks</span>
     <h1 class="title">Idea library</h1>
-    ${!ideas.length ? "" : `<p class="stats">${[[ideas.length, "idea"], [ideas.length - builds, "venture"], [builds, "build"], [cats.size, "topic"], [protos, "prototype"]].map(([n, w]) => `<span><b>${n}</b> ${w}${n === 1 ? "" : "s"}</span>`).join("<span>·</span>")}</p>`}
+    ${!ideas.length ? "" : `<p class="stats">${[[ideas.length, "idea"], [ideas.length - builds, "venture"], [builds, "project"], [cats.size, "topic"], [protos, "prototype"]].map(([n, w]) => `<span><b>${n}</b> ${w}${n === 1 ? "" : "s"}</span>`).join("<span>·</span>")}</p>`}
     ${fresh ? `<button class="new-pill" data-act="newest"><span class="dot">${fresh}</span>${fresh === 1 ? "new idea" : "new ideas"} since you last looked</button>` : ""}`;
 }
 
@@ -112,7 +113,7 @@ function chips() {
   for (const i of pool) if (i.category) counts[i.category] = (counts[i.category] || 0) + 1;
   const verdictCount = (v) => pool.filter((i) => i.verdict === v).length;
   const chip = (key, label, count, sw = "") => `<button class="chip" data-chip="${esc(key)}" aria-pressed="${state.chip === key}">${sw}${esc(label)}<span class="count">${count}</span></button>`;
-  const names = state.track === "build" ? ["Build it", "Worth a try"] : state.track === "venture" ? ["Dig deeper", "Watch"] : ["Top picks", "Watch list"];
+  const names = state.track === "build" ? ["Ship it", "Worth a try"] : state.track === "venture" ? ["Dig deeper", "Watch"] : ["Top picks", "Watch list"];
   return `${chip("all", "All", pool.length)}
       ${chip("dig_deeper", names[0], verdictCount("dig_deeper"))}
       ${chip("watch", names[1], verdictCount("watch"))}
@@ -140,7 +141,7 @@ function controls() {
 function card(i) {
   const stats = i.scores
     ? criteria(i).map(([k, label]) => { const v = Number(i.scores[k] ?? 0); return `<div class="stat"><span>${label}</span><span class="bar"><span style="width:${Math.max(0, Math.min(10, v)) * 10}%"></span></span><b>${v}</b></div>`; }).join("")
-    : `<div class="stat" style="grid-template-columns:1fr auto"><span>${trackOf(i) === "build" ? "Overall build score" : "Overall opportunity"}</span><span class="score-big">${i.score ?? "–"}<small>/10</small></span></div>`;
+    : `<div class="stat" style="grid-template-columns:1fr auto"><span>${trackOf(i) === "build" ? "Overall project score" : "Overall opportunity"}</span><span class="score-big">${i.score ?? "–"}<small>/10</small></span></div>`;
   return `
     <a class="card ${trackOf(i)} ${i.verdict === "dig_deeper" ? "dig" : ""} ${i.superseded_by ? "superseded" : ""}" data-key="${esc(i.id)}" href="#/idea/${esc(i.id)}" style="${catVars(i.category)}" data-tilt>
       <div class="card-top"><span class="cat"><i></i>${esc(i.category || "Uncategorised")}</span><span>No. ${num(i.number)}</span></div>
@@ -432,7 +433,7 @@ async function ideaPage(id) {
           <p class="plate-no">Plate No. ${num(idea.number)}</p>
           <p class="genus">${esc(idea.short_name)}</p>
           <dl>
-            <dt>Track</dt><dd>${esc(isBuild ? "Build: a project to ship and post" : "Venture: a startup opportunity")}</dd>
+            <dt>Track</dt><dd>${esc(isBuild ? "Project: a weekend project to ship and post" : "Venture: a startup opportunity")}</dd>
             <dt>Classification</dt><dd>${esc(idea.category || "Uncategorised")}</dd>
             ${idea.effort ? `<dt>Effort</dt><dd>${esc(idea.effort)}</dd>` : ""}
             ${idea.pain_type ? `<dt>Pain</dt><dd>${esc(idea.pain_type)}</dd>` : ""}
@@ -447,7 +448,7 @@ async function ideaPage(id) {
         </div>
       </aside>
       <div class="entry">
-        <p class="kicker">Field guide entry · ${esc(isBuild ? "Build" : "Venture")}</p>
+        <p class="kicker">Field guide entry · ${esc(isBuild ? "Project" : "Venture")}</p>
         <h1>${esc(idea.short_name)}</h1>
         <p class="lede">${esc(idea.one_liner)}</p>
         <div class="verdict-row"><span class="stamp ${esc(idea.verdict)}">${esc(verdictLabel(idea))}</span><span class="score-big">${idea.score ?? "–"}<small>/10</small></span>${scoreStrip}</div>
@@ -463,7 +464,7 @@ async function ideaPage(id) {
         ${sec("Field notes", "how to build it", rich(idea.build_plan))}
         ${sec("Related species", "prior art and how this differs", rich(idea.comparables))}
         ${sec("Hazards", "risks", rich(idea.risks))}
-        ${idea.could_grow ? sec("Could it grow?", "", "<p>The scout thinks this build could turn into a venture. Its reasoning is in the scout's notes below.</p>") : ""}` : `
+        ${idea.could_grow ? sec("Could it grow?", "", "<p>The scout thinks this project could turn into a venture. Its reasoning is in the scout's notes below.</p>") : ""}` : `
         ${sec("Observed behaviour", "the problem", rich(idea.problem))}
         ${sec("Habitat", "who has it and who pays", rich(idea.target_customer))}
         ${sec("Why now", "", rich(idea.why_now))}
@@ -489,8 +490,8 @@ function aboutPage() {
     <a class="back" href="#/">← Library</a>
     <h1 class="title" style="font-size:clamp(40px,6vw,64px)">How it works</h1>
     <section class="section"><h2>Every night at 2 AM</h2><p>A UiPath Maestro workflow reads my newest X bookmarks, an agent checks them against every idea already on this shelf, researches the strongest candidates on the web, red-teams them and writes a brief. A second agent builds a one-file clickable prototype, which is checked and published to GitHub Pages. The brief lands in my inbox and on this shelf.</p></section>
-    <section class="section"><h2>Two kinds of idea</h2><p><b>Ventures</b> are startup opportunities: someone would pay, and a company could grow. They are scored on pain, market pull, timing, gap and wedge. <b>Builds</b> are projects one person can ship in a day or a weekend and post: they are scored on wow, shareability, buildability, freshness and usefulness, and come with a build plan and a draft launch post. Each night the scout picks the best of each, and both get a clickable prototype.</p></section>
-    <section class="section"><h2>Reading a card</h2><p>The stamp is the verdict. A venture marked <b>Dig deeper</b>, or a build marked <b>Build it</b>, averaged 7.5 or more and wears a foil edge; <b>Watch</b> and <b>Worth a try</b> scored 6 to 7.4. Open a card to read its field guide entry and the prototype.</p></section>
+    <section class="section"><h2>Two kinds of idea</h2><p><b>Ventures</b> are startup opportunities: someone would pay, and a company could grow. They are scored on pain, market pull, timing, gap and wedge. <b>Projects</b> are weekend projects one person can ship in a day or two and post: they are scored on wow, shareability, buildability, freshness and usefulness, and come with a build plan and a draft launch post. Each night the scout picks the best of each, and both get a clickable prototype.</p></section>
+    <section class="section"><h2>Reading a card</h2><p>The stamp is the verdict. A venture marked <b>Dig deeper</b>, or a project marked <b>Ship it</b>, averaged 7.5 or more and wears a foil edge; <b>Watch</b> and <b>Worth a try</b> scored 6 to 7.4. Open a card to read its field guide entry and the prototype.</p></section>
     <section class="section"><h2>Run your own</h2><p>A step-by-step guide to running Granted on your own UiPath account, with your own sources and your own library, is coming soon. Follow along in the <a href="https://github.com/Yashsharma1911/granted#run-your-own" rel="noopener">README</a>.</p></section>
   </div>`;
 }
