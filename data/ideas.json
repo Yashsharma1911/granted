@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-26T15:36:24.640Z",
+  "updated": "2026-10-26T16:08:52.963Z",
   "ideas": [
     {
       "id": "2026-10-26-catalog-check",
@@ -185,6 +185,66 @@
       "sources_count": 4,
       "superseded_by": null,
       "sibling": "2026-10-26-skillscope"
+    },
+    {
+      "id": "2026-10-26-partsy",
+      "number": 8,
+      "date": "2026-10-26",
+      "track": "build",
+      "short_name": "Partsy",
+      "verdict": "dig_deeper",
+      "score": 7.6,
+      "scores": {
+        "wow": 9,
+        "shareability": 8,
+        "buildability": 8,
+        "freshness": 7,
+        "usefulness": 6
+      },
+      "effort": "a weekend",
+      "category": "Developer tools",
+      "tags": [
+        "vision",
+        "svg",
+        "consumer",
+        "open-source"
+      ],
+      "pain_type": "latent",
+      "one_liner": "For anyone holding an unfamiliar object — a flat-pack bracket, a bike derailleur, a dishwasher filter — Partsy turns one photo into a labelled exploded diagram with part names, what each part does, and the right search term to buy a replacement.",
+      "prototype_url": "https://github.com/Yashsharma1911/granted/blob/catalog-test/ideas/2026-10-26-partsy/index.html",
+      "sources_count": 9,
+      "superseded_by": null,
+      "sibling": "2026-10-26-proofline"
+    },
+    {
+      "id": "2026-10-26-proofline",
+      "number": 9,
+      "date": "2026-10-26",
+      "track": "venture",
+      "short_name": "Proofline",
+      "verdict": "watch",
+      "score": 6.6,
+      "scores": {
+        "pain": 7,
+        "market_pull": 7,
+        "timing": 8,
+        "gap": 5,
+        "wedge": 6
+      },
+      "effort": "3+ months",
+      "category": "agent reliability",
+      "tags": [
+        "agents",
+        "devtools",
+        "code-review",
+        "ci"
+      ],
+      "pain_type": "expressed",
+      "one_liner": "For engineering leads whose teams merge dozens of agent-written pull requests a week, Proofline attaches a standard evidence pack to every agent PR — a recorded run of the changed path, before/after numbers, and a blast-radius score — so reviewers judge proof instead of prose.",
+      "prototype_url": "https://github.com/Yashsharma1911/granted/blob/catalog-test/ideas/2026-10-26-proofline/index.html",
+      "sources_count": 4,
+      "superseded_by": null,
+      "sibling": "2026-10-26-partsy"
     }
   ]
 }

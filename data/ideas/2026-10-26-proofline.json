@@ -1,0 +1,52 @@
+{
+  "id": "2026-10-26-proofline",
+  "number": 9,
+  "date": "2026-10-26",
+  "track": "venture",
+  "short_name": "Proofline",
+  "name": "Proofline — evidence packs for agent-written PRs",
+  "verdict": "watch",
+  "score": 6.6,
+  "scores": {
+    "pain": 7,
+    "market_pull": 7,
+    "timing": 8,
+    "gap": 5,
+    "wedge": 6
+  },
+  "effort": "3+ months",
+  "category": "agent reliability",
+  "tags": [
+    "agents",
+    "devtools",
+    "code-review",
+    "ci"
+  ],
+  "pain_type": "expressed",
+  "one_liner": "For engineering leads whose teams merge dozens of agent-written pull requests a week, Proofline attaches a standard evidence pack to every agent PR — a recorded run of the changed path, before/after numbers, and a blast-radius score — so reviewers judge proof instead of prose.",
+  "problem": "Thorsten Ball's piece names the workflow precisely: with capable agents you stop reading every diff and start demanding end-to-end demonstrations, demo videos and before/after measurements, and you focus human attention on changes with a large blast radius. Today that discipline lives in one senior engineer's head. The agent writes a confident PR description, CI goes green, and the reviewer either rubber-stamps it or spends 40 minutes rebuilding context. Teams running several background agents have no shared definition of what counts as proof, and no way to see which of this week's 60 agent PRs touch migrations or the five files everything imports.",
+  "target_customer": "Head of engineering or platform lead at a 20-200 engineer company where background coding agents already open PRs daily. Buyer is the eng leader or platform team; budget sits with existing devtools spend (CI, code review, observability).",
+  "why_now": "Agent-authored PRs went from novelty to daily volume in 2026. Cursor's own background-agent pipeline reportedly uses video evidence and risk scores internally (Arize), and standards files like AGENTS.md are now where teams encode review lessons — the behaviour exists, the shared tooling does not.",
+  "comparables": "CodeRabbit and Greptile do AI review of the diff — they read code, they do not produce runtime evidence. Momentic (momentic.ai) is an AI QA agent that bug-bashes apps and returns repro steps with evidence — adjacent, but framed as testing, not as a per-PR merge artefact. Cursor verifies its own background agents with video evidence and risk scoring (Arize write-up) — but that is inside one vendor's product, for its own agents. Devin Review works on diffs inside Devin. The gap: a vendor-neutral evidence pack that works across Claude Code, Codex, Cursor and Devin PRs in one repo, with a team-level policy for what proof each change class requires.",
+  "market_note": "Estimate, not a measured figure: a 60-engineer org merging ~200 agent PRs a month would plausibly pay $20-40 per engineer per month for this, i.e. roughly $15-30k ARR per account, comparable to what teams already pay for AI code review seats. The buying trigger is a bad merge that reached production, which is common enough to create urgency but episodic, so pipeline timing is unpredictable.",
+  "risks": "The platform vendors absorb it as a feature. Browser-driven evidence is flaky on real apps and the artefact becomes untrusted. Reviewers learn to ignore a green chip, exactly as they ignore green CI.",
+  "riskiest_assumptions": "1) Reviewers actually change their merge decision because of the evidence pack rather than skimming it like they skim CI — if it becomes noise it gets muted. 2) A browser agent can reliably drive the changed path from a PR description on a stranger's codebase; flaky or wrong recordings destroy trust faster than no recordings. 3) The coding-agent vendors (Cursor, GitHub, Anthropic) do not ship this natively as a free feature within a year — Cursor is already partway there internally.",
+  "first_customers": "Ten teams already loudly running background agents: the companies whose engineers reply to Thorsten Ball's and similar agent-workflow threads; r/ClaudeCode and AI_Agents regulars who post about managing agent swarms; Vercel/Supabase-ecosystem startups with Playwright already in CI. Reach them by DMing authors of 'how I manage N agents' posts and offering to install it free on one repo this week.",
+  "validation_test": "This week: take 10 real merged agent PRs from a friendly repo, hand-produce the evidence pack for each (screen-record the path yourself, write the blast-radius score), and send them to the engineers who reviewed those PRs. Ask one question: would you have merged faster or blocked? Pass = 6+ say it changed or would have accelerated their decision, and at least 2 ask to install it. Fail = they say the diff was enough.",
+  "build_plan": "Narrowest first version: a GitHub App for ONE stack (Node/TS web apps with a Playwright-able dev server). On any PR labelled agent-authored, it (1) spins up a preview, (2) reads the PR's stated intent and drives the changed user path with a browser agent, recording a 20-60s clip, (3) posts one comment: the clip, a before/after table for the 2-3 metrics the repo already emits, a blast-radius score from the diff (migrations, lockfiles, files with the most inbound imports), and a verdict chip — Proven / Partly proven / No evidence. Config lives in one YAML file. No dashboard, no policy engine, no multi-language support in v1.",
+  "launch_post": "",
+  "could_grow": null,
+  "reasoning": "It is the only venture candidate tonight grounded in a workflow a named practitioner describes doing by hand every day, with a clear B2B owner. It lost to Partsy because research shows Cursor and Momentic already cover parts of the territory, the gap is narrower than it first appears, and it is a 3+ month commitment rather than a weekend.",
+  "candidates_considered": "1) Partsy — photo to labelled exploded diagram (build). WON: one input, one striking output, weekend-sized, rides the teardown-SVG primitive. 2) Proofline — evidence pack for agent-written PRs (venture). Runner-up: real pain from the Thorsten Ball article, but Cursor and Momentic already occupy parts of it. 3) Skill X-ray for `npx skills add` (build). DROPPED: repeat of Skillscope in the library. 4) Diligence answer drafter off the Papermark Data Rooms 2.0 launch (venture). DROPPED: repeat of Dossier. 5) Shadow-AI detector for abliterated/uncensored model endpoints, off the DeepSeek-V4.1 abliterated post (venture). DROPPED: Harmonic Security, Vorlon and the whole AI-SASE category already sell shadow-AI discovery to CISOs; a solo builder has no wedge and no distribution to security buyers. 6) \"Hey Grok\"-style voice shortcut pack (build). DROPPED: the bookmark is already the product, it is a config recipe not code, and there is nothing to ship.",
+  "research_notes": "6 searches and 3 summaries used. Summarised the agent-skills ecosystem (confirmed `npx skills add` is an open CLI standard, ~1M published skills reported by Anthropic in Oct 2026 — that is publisher-reported, not active users), Papermark Data Rooms 2.0 (€99/mo entry, open core with enterprise licence for commercial self-hosting), and the Thorsten Ball X article (key point: demand end-to-end proof from agents, record failures in AGENTS.md). I could not see any of the videos in the bookmarks, so I judged those posts only on their text. Searches changed two things: prior-art search for photo-to-assembly-instructions surfaced BILT (enterprise 3D work instructions) and iFixit but nothing that takes a user's own photo and returns a labelled exploded diagram — that kept Partsy alive and sharpened its wedge toward \"name the part so you can buy it\". A search on agent-PR verification surfaced Arize's write-up that Cursor already uses video evidence and risk scores internally, plus Momentic's evidence-based AI QA — that knocked Proofline from lead to runner-up. A shadow-AI search surfaced Harmonic Security and Vorlon, closing the gap on the abliterated-model governance idea, which I dropped.",
+  "sources": [
+    "https://arize.com/blog/inside-cursors-agent-factory-how-it-verifies-ai-written-code/",
+    "https://momentic.ai/",
+    "https://docs.devin.ai/release-notes/overview",
+    "https://github.com/vercel-labs/agent-browser"
+  ],
+  "inspiration": [],
+  "prototype_url": "https://github.com/Yashsharma1911/granted/blob/catalog-test/ideas/2026-10-26-proofline/index.html",
+  "prototype_summary": "A clickable GitHub-style PR page prototype where Proofline's evidence-pack comment turns an agent's vague claims into a judged verdict, with a simulated evidence clip, before/after metrics, blast radius scoring, and a \"Request evidence\" flow that flips the verdict to Proven and unblocks merge.",
+  "sibling": "2026-10-26-partsy"
+}

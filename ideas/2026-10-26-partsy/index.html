@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Partsy — photo to labelled exploded diagram</title>
+<style>
+:root{
+  --bg:#f4f3ef; --panel:#fffefb; --ink:#14171a; --mut:#6b7177; --line:#c9c6bd;
+  --accent:#1b5e9c; --hl:#e4531d; --chip:#e9e7e0;
+}
+@media (prefers-color-scheme: dark){
+  :root{ --bg:#14161a; --panel:#1b1e23; --ink:#e9e8e3; --mut:#9aa1a8; --line:#3a3f46;
+    --accent:#6fb3f0; --hl:#ff8a4c; --chip:#272b31; }
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--ink);
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+  font-size:15px; line-height:1.45; -webkit-text-size-adjust:100%;
+}
+.wrap{max-width:1140px;margin:0 auto;padding:16px 14px 40px}
+header.top{border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:18px}
+.brand{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.brand h1{font-size:19px;margin:0;letter-spacing:.5px}
+.brand .tag{color:var(--mut);font-size:13px}
+.demo-chip{font-size:11px;border:1px solid var(--line);padding:2px 7px;border-radius:999px;color:var(--mut)}
+h2.sec{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--mut);margin:0 0 10px}
+.drop{
+  border:2px dashed var(--line); border-radius:10px; padding:28px 16px; text-align:center;
+  background:var(--panel); cursor:pointer; transition:border-color .15s, background .15s;
+}
+.drop:hover,.drop.over{border-color:var(--accent); background:color-mix(in srgb,var(--accent) 7%,var(--panel))}
+.drop .big{font-size:16px}
+.drop .sub{color:var(--mut);font-size:12px;margin-top:6px}
+.samples{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-top:14px}
+.samp{
+  background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px 8px;
+  cursor:pointer;text-align:center;min-height:104px;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:6px;color:var(--ink);font:inherit;
+}
+.samp:hover,.samp:focus-visible{border-color:var(--accent);outline:none}
+.samp svg{display:block}
+.samp span{font-size:11px;line-height:1.25;color:var(--mut)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px}
+section{margin-top:26px}
+#analysing{padding:18px 16px}
+.tick{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--mut);opacity:.35;margin:7px 0}
+.tick.on{opacity:1;color:var(--ink)}
+.tick .dot{width:10px;height:10px;border:1px solid var(--line);border-radius:50%;flex:none}
+.tick.on .dot{background:var(--accent);border-color:var(--accent)}
+.bar{height:3px;background:var(--chip);border-radius:3px;overflow:hidden;margin-top:12px}
+.bar i{display:block;height:100%;width:0;background:var(--accent);transition:width .2s linear}
+.resultgrid{display:grid;grid-template-columns:2fr 1fr;gap:16px;align-items:start}
+@media (max-width:860px){.resultgrid{grid-template-columns:1fr}}
+.controls{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px;align-items:center}
+button.ctl{
+  font:inherit;font-size:12px;background:var(--panel);color:var(--ink);border:1px solid var(--line);
+  border-radius:6px;padding:9px 11px;min-height:40px;cursor:pointer;
+}
+button.ctl:hover{border-color:var(--accent)}
+button.ctl[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+@media (prefers-color-scheme: dark){button.ctl[aria-pressed="true"]{color:#101317}}
+.conf{font-size:12px;color:var(--mut);border:1px solid var(--line);border-radius:999px;padding:5px 10px;display:inline-block;margin-bottom:10px}
+.diagwrap{padding:8px;overflow:hidden}
+svg.diagram{width:100%;height:auto;display:block;touch-action:manipulation}
+.part{cursor:pointer}
+.part .body{fill:#b9b6ae;stroke:#4a4d52;stroke-width:1.1;vector-effect:non-scaling-stroke}
+@media (prefers-color-scheme: dark){.part .body{fill:#6e737b;stroke:#cfd3d8}}
+.part .body.alt{fill:#d6d3cb}
+@media (prefers-color-scheme: dark){.part .body.alt{fill:#878d96}}
+.leader{stroke:var(--mut);stroke-width:1;vector-effect:non-scaling-stroke}
+.axis{stroke:var(--mut);stroke-width:1;stroke-dasharray:6 5;vector-effect:non-scaling-stroke}
+.numcirc{fill:var(--panel);stroke:var(--ink);stroke-width:1;vector-effect:non-scaling-stroke}
+text.num{font-family:inherit;font-size:11px;fill:var(--ink);text-anchor:middle;dominant-baseline:central}
+text.lbl{font-family:inherit;font-size:10.5px;fill:var(--ink)}
+svg.noanno .anno{display:none}
+.part.dim{opacity:.18}
+.part.active .body{stroke:var(--hl);stroke-width:2.2}
+.part.active text.num{fill:var(--hl)}
+.part.active .numcirc{stroke:var(--hl)}
+.exploded .part{transition:transform .7s cubic-bezier(.22,.8,.3,1)}
+.part{transform:translate(0,0)}
+.collapsed .part{transform:translate(var(--cx),var(--cy))}
+@media (prefers-reduced-motion: reduce){.exploded .part{transition:none}}
+ol.parts{list-style:none;margin:0;padding:0}
+ol.parts li{border-bottom:1px solid var(--line);padding:11px 12px;display:grid;grid-template-columns:24px 1fr;gap:10px}
+ol.parts li:last-child{border-bottom:0}
+ol.parts li.hot{background:color-mix(in srgb,var(--hl) 12%,transparent)}
+.pn{font-size:11px;color:var(--mut);border:1px solid var(--line);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center}
+.pname{font-weight:700;font-size:13.5px}
+.pfn{font-size:12px;color:var(--mut)}
+.pmat{font-size:11px;color:var(--mut);margin-top:3px}
+.pmat b{color:var(--ink);font-weight:400}
+button.copy{font:inherit;font-size:11px;margin-top:7px;background:transparent;border:1px solid var(--line);
+  border-radius:6px;padding:7px 9px;min-height:36px;cursor:pointer;color:var(--ink);text-align:left}
+button.copy:hover{border-color:var(--accent)}
+button.copy.done{border-color:var(--accent);color:var(--accent)}
+.listhead{padding:11px 12px;border-bottom:1px solid var(--line);font-size:12px;color:var(--mut);display:flex;justify-content:space-between}
+.toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(20px);
+  background:var(--ink);color:var(--bg);font-size:12px;padding:10px 14px;border-radius:8px;
+  opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:20;max-width:90vw;text-align:center}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.empty{color:var(--mut);font-size:13px;padding:22px 16px;text-align:center}
+footer{margin-top:34px;border-top:1px solid var(--line);padding-top:12px;color:var(--mut);font-size:11px;text-align:center}
+.hide{display:none !important}
+.again{margin-top:14px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="top">
+  <div class="brand">
+    <h1>Partsy</h1>
+    <span class="tag">photo → labelled exploded diagram, with part names you can search</span>
+    <span class="demo-chip">Demo data</span>
+  </div>
+</header>
+
+<section id="input">
+  <h2 class="sec">1 · Input</h2>
+  <div class="drop" id="drop" tabindex="0" role="button" aria-label="Drop a photo of any object">
+    <div class="big">Drop a photo of any object</div>
+    <div class="sub">or tap a sample below · files are not uploaded in this demo</div>
+  </div>
+  <div class="samples" id="samples"></div>
+</section>
+
+<section id="analysing" class="panel hide">
+  <h2 class="sec" style="margin-bottom:6px">2 · Analysing</h2>
+  <div class="tick" id="t0"><span class="dot"></span><span>Detecting object…</span></div>
+  <div class="tick" id="t1"><span class="dot"></span><span>Segmenting <span id="nparts">7</span> parts…</span></div>
+  <div class="tick" id="t2"><span class="dot"></span><span>Drawing exploded view…</span></div>
+  <div class="bar"><i id="barfill"></i></div>
+</section>
+
+<section id="result" class="hide">
+  <h2 class="sec">3 · Exploded view</h2>
+  <div id="conf" class="conf"></div>
+  <div class="resultgrid">
+    <div>
+      <div class="controls">
+        <button class="ctl" id="btnAnno" aria-pressed="true">Annotations</button>
+        <button class="ctl" id="btnExp" aria-pressed="true">Explode</button>
+        <button class="ctl" data-toast="SVG copied to clipboard (demo)">Download SVG</button>
+        <button class="ctl" data-toast="PNG rendered at 2400px (demo)">Download PNG</button>
+        <button class="ctl" data-toast="Share link copied (demo)">Copy share link</button>
+      </div>
+      <div class="panel diagwrap" id="diagwrap"></div>
+      <button class="ctl again" id="btnAgain">← Try another object</button>
+    </div>
+    <div class="panel">
+      <div class="listhead"><span id="listTitle">Parts</span><span id="listCount"></span></div>
+      <ol class="parts" id="list"></ol>
+    </div>
+  </div>
+</section>
+
+<footer>Prototype by Granted, inspired by your bookmarks</footer>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function(){
+"use strict";
+
+/* ---------- sample thumbnails (inline svg silhouettes) ---------- */
+var THUMB = {
+  spray:'<svg width="54" height="40" viewBox="0 0 54 40" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.4"><path d="M4 20h46"/><circle cx="27" cy="20" r="5"/><path d="M9 17v6M18 17v6M36 17v6M45 17v6"/></g></svg>',
+  cam:'<svg width="54" height="40" viewBox="0 0 54 40" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="16" cy="20" r="9"/><path d="M16 11v9h7"/><rect x="31" y="16" width="19" height="8" rx="4"/></g></svg>',
+  derail:'<svg width="54" height="40" viewBox="0 0 54 40" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="20" cy="14" r="5"/><circle cx="33" cy="30" r="5"/><path d="M20 14L33 30M14 8l6 6M38 10l-5 20"/></g></svg>',
+  brush:'<svg width="54" height="40" viewBox="0 0 54 40" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.4"><rect x="6" y="15" width="42" height="10" rx="5"/><path d="M12 15l3-5M22 25l3 5M32 15l3-5M42 25l3 5"/></g></svg>',
+  tap:'<svg width="54" height="40" viewBox="0 0 54 40" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.4"><rect x="20" y="8" width="14" height="18" rx="3"/><path d="M27 26v7M18 33h18M24 8V4h6v4"/></g></svg>'
+};
+
+/* ---------- shape helpers: each part = list of svg primitives ---------- */
+function ring(cx,cy,rx,ry){return '<ellipse class="body" cx="'+cx+'" cy="'+cy+'" rx="'+rx+'" ry="'+ry+'"/>';}
+function rect(x,y,w,h,r){return '<rect class="body" x="'+x+'" y="'+y+'" width="'+w+'" height="'+h+'" rx="'+(r||2)+'"/>';}
+function poly(p){return '<polygon class="body" points="'+p+'"/>';}
+function path(d,alt){return '<path class="body'+(alt?' alt':'')+'" d="'+d+'"/>';}
+
+/* ---------- 5 hard-coded records ---------- */
+var DATA = [
+{
+ id:'spray', name:'Dishwasher spray arm', thumb:THUMB.spray,
+ conf:'Identified: dishwasher lower spray arm · 91% confident',
+ parts:[
+  {n:'Lower spray arm', fn:'flings water up at the lower rack', mat:'Glass-filled polypropylene',
+   term:'Bosch SMS series lower spray arm',
+   x:150,y:52, lx:300,ly:40, cx:0,cy:120,
+   s:path('M70 52 h160 a9 9 0 0 1 0 18 h-160 a9 9 0 0 1 0 -18 z')+ring(150,61,15,9)},
+  {n:'Spray arm bearing ring', fn:'lets the arm spin freely on the sump hub', mat:'Acetal (POM)',
+   term:'Bosch SMS series lower spray arm bearing ring',
+   x:150,y:100, lx:300,ly:84, cx:0,cy:72,
+   s:ring(150,100,22,11)+'<ellipse class="body alt" cx="150" cy="100" rx="11" ry="5.5"/>'},
+  {n:'Retaining nut', fn:'clamps the arm onto the hub so it cannot lift off', mat:'Nylon 6/6',
+   term:'dishwasher spray arm retaining nut 00611316',
+   x:150,y:140, lx:300,ly:124, cx:0,cy:32,
+   s:poly('130,140 138,131 162,131 170,140 162,149 138,149')},
+  {n:'Filter coarse mesh', fn:'catches food debris before the pump', mat:'Stainless mesh + PP frame',
+   term:'dishwasher coarse filter mesh cylinder',
+   x:150,y:184, lx:300,ly:170, cx:0,cy:-14,
+   s:path('M112 174 h76 v20 h-76 z')+'<path class="body alt" d="M124 174 h8 v20 h-8 z M150 174 h8 v20 h-8 z M172 174 h8 v20 h-8 z"/>'},
+  {n:'Fine filter cup', fn:'final strainer under the coarse mesh', mat:'Polypropylene',
+   term:'dishwasher fine filter cup assembly',
+   x:150,y:226, lx:300,ly:214, cx:0,cy:-54,
+   s:path('M118 214 h64 l-9 24 h-46 z')},
+  {n:'Sump gasket', fn:'seals the filter housing against the tub floor', mat:'EPDM rubber',
+   term:'dishwasher sump gasket EPDM seal',
+   x:150,y:264, lx:300,ly:256, cx:0,cy:-90,
+   s:ring(150,264,30,9)+'<ellipse class="body alt" cx="150" cy="264" rx="17" ry="4.5"/>'},
+  {n:'Nozzle jets', fn:'angled orifices that create the rotating spray', mat:'Moulded PP inserts',
+   term:'dishwasher spray arm nozzle jet insert set',
+   x:150,y:300, lx:300,ly:296, cx:0,cy:-124,
+   s:'<circle class="body" cx="96" cy="300" r="7"/><circle class="body" cx="132" cy="300" r="7"/><circle class="body" cx="168" cy="300" r="7"/><circle class="body" cx="204" cy="300" r="7"/>'}
+ ]
+},
+{
+ id:'cam', name:'IKEA cam lock + dowel', thumb:THUMB.cam,
+ conf:'Identified: IKEA 110° cam lock + dowel set · 88% confident',
+ parts:[
+  {n:'Cam lock disc', fn:'rotates a half turn to pull the bolt head tight', mat:'Zinc alloy',
+   term:'IKEA cam lock disc 114494 zinc',
+   x:150,y:50, lx:300,ly:40, cx:0,cy:110,
+   s:'<circle class="body" cx="150" cy="50" r="24"/><path class="body alt" d="M150 26 a24 24 0 0 1 0 48 a13 13 0 0 0 0 -48 z"/>'},
+  {n:'Cam bolt', fn:'threads into the panel and locks into the disc', mat:'Steel, zinc plated',
+   term:'IKEA cam bolt 101350 M6 dowel screw',
+   x:150,y:104, lx:300,ly:92, cx:0,cy:60,
+   s:rect(104,100,78,9,4)+'<circle class="body alt" cx="186" cy="104" r="9"/>'},
+  {n:'Wooden dowel', fn:'aligns the two panels and takes shear load', mat:'Beech hardwood',
+   term:'IKEA wooden dowel 101341 8x35mm beech',
+   x:150,y:146, lx:300,ly:136, cx:0,cy:20,
+   s:rect(108,141,84,11,5)},
+  {n:'Metal-to-wood screw', fn:'fixes hinges and rails into chipboard', mat:'Hardened steel',
+   term:'IKEA metal to wood screw 100005 6x18',
+   x:150,y:188, lx:300,ly:180, cx:0,cy:-20,
+   s:poly('112,183 176,183 192,188 176,193 112,193')+'<circle class="body alt" cx="110" cy="188" r="8"/>'},
+  {n:'Shelf pin', fn:'carries the shelf edge in the 5mm side holes', mat:'Nickel-plated steel',
+   term:'IKEA shelf pin 118331 5mm support',
+   x:150,y:228, lx:300,ly:222, cx:0,cy:-58,
+   s:rect(124,224,44,8,4)+'<circle class="body alt" cx="124" cy="228" r="8"/>'},
+  {n:'Allen key', fn:'the 4mm hex driver that comes in the bag', mat:'Chrome vanadium steel',
+   term:'IKEA 4mm allen key hex wrench replacement',
+   x:150,y:272, lx:300,ly:266, cx:0,cy:-96,
+   s:path('M112 288 h9 v-26 h58 v9 h-49 v17 z')}
+ ]
+},
+{
+ id:'derail', name:'Bike rear derailleur', thumb:THUMB.derail,
+ conf:'Identified: Shimano-pattern rear derailleur · 93% confident',
+ parts:[
+  {n:'B-tension screw', fn:'sets the gap between guide pulley and cassette', mat:'Steel, 3mm hex',
+   term:'Shimano rear derailleur B-tension screw M4',
+   x:150,y:44, lx:300,ly:34, cx:0,cy:120,
+   s:rect(136,36,28,9,3)+poly('150,45 156,66 144,66')},
+  {n:'Upper pulley (guide)', fn:'steers the chain onto the chosen sprocket', mat:'Nylon with steel bushing',
+   term:'Shimano 11-speed guide pulley 11T jockey wheel',
+   x:150,y:92, lx:300,ly:78, cx:0,cy:78,
+   s:'<circle class="body" cx="150" cy="92" r="19"/><circle class="body alt" cx="150" cy="92" r="7"/>'},
+  {n:'Lower pulley (tension)', fn:'keeps chain tension across the gear range', mat:'Nylon with sealed bearing',
+   term:'Shimano 11-speed tension pulley 11T sealed bearing',
+   x:150,y:140, lx:300,ly:124, cx:0,cy:38,
+   s:'<circle class="body" cx="150" cy="140" r="19"/><circle class="body alt" cx="150" cy="140" r="7"/>'},
+  {n:'Cage plate', fn:'holds both pulleys at a fixed spacing', mat:'Stamped aluminium',
+   term:'Shimano GS rear derailleur outer cage plate',
+   x:150,y:188, lx:300,ly:172, cx:0,cy:-6,
+   s:path('M116 178 h68 a8 8 0 0 1 0 16 h-68 a8 8 0 0 1 0 -16 z')+'<circle class="body alt" cx="122" cy="186" r="4"/><circle class="body alt" cx="178" cy="186" r="4"/>'},
+  {n:'Parallelogram linkage', fn:'moves the cage sideways as cable pulls', mat:'Aluminium + steel pivots',
+   term:'rear derailleur parallelogram linkage pivot kit',
+   x:150,y:232, lx:300,ly:218, cx:0,cy:-48,
+   s:poly('118,222 174,216 182,242 126,248')+'<circle class="body alt" cx="122" cy="226" r="3.5"/><circle class="body alt" cx="178" cy="238" r="3.5"/>'},
+  {n:'Cable anchor bolt', fn:'pinches the shift cable at the right tension', mat:'Steel, 5mm hex',
+   term:'Shimano derailleur cable fixing bolt and washer',
+   x:150,y:274, lx:300,ly:266, cx:0,cy:-86,
+   s:'<circle class="body" cx="150" cy="274" r="11"/>'+rect(160,271,30,6,3)},
+  {n:'Limit screws H/L', fn:'stop the cage over-shifting into spokes or frame', mat:'Steel, 2mm hex',
+   term:'rear derailleur H and L limit screw set',
+   x:150,y:312, lx:300,ly:306, cx:0,cy:-122,
+   s:rect(118,306,24,9,3)+rect(160,306,24,9,3)}
+ ]
+},
+{
+ id:'brush', name:'Vacuum brush bar', thumb:THUMB.brush,
+ conf:'Identified: upright vacuum brush bar assembly · 89% confident',
+ parts:[
+  {n:'Brush bar core', fn:'the driven roller the whole assembly is built on', mat:'ABS tube',
+   term:'Dyson DC40 brush bar roller core assembly',
+   x:150,y:50, lx:300,ly:40, cx:0,cy:116,
+   s:rect(74,42,152,17,8)},
+  {n:'Bristle strip', fn:'agitates carpet pile to lift embedded grit', mat:'Nylon 6 filament',
+   term:'vacuum brush bar nylon bristle strip replacement',
+   x:150,y:94, lx:300,ly:82, cx:0,cy:74,
+   s:rect(82,90,136,9,4)+'<path class="body alt" d="M90 90 v-9 M106 90 v-9 M122 90 v-9 M138 90 v-9 M154 90 v-9 M170 90 v-9 M186 90 v-9 M202 90 v-9"/>'},
+  {n:'Drive belt', fn:'transfers motor torque to the bar', mat:'Polyurethane',
+   term:'Dyson DC40 clutch drive belt 914006-01',
+   x:150,y:140, lx:300,ly:126, cx:0,cy:34,
+   s:path('M104 140 a46 14 0 0 1 92 0 a46 14 0 0 1 -92 0 z')},
+  {n:'End cap bearing', fn:'carries the bar at the non-driven end', mat:'Sealed ball bearing',
+   term:'vacuum brush bar end cap bearing 608ZZ',
+   x:150,y:184, lx:300,ly:172, cx:0,cy:-8,
+   s:'<circle class="body" cx="150" cy="184" r="17"/><circle class="body alt" cx="150" cy="184" r="6"/>'},
+  {n:'Drive pulley boss', fn:'belt seats here and keys into the core', mat:'Glass-filled nylon',
+   term:'brush bar drive pulley boss replacement',
+   x:150,y:226, lx:300,ly:214, cx:0,cy:-48,
+   s:'<circle class="body" cx="150" cy="226" r="15"/>'+rect(141,219,18,14,2)},
+  {n:'Hair-cut guard', fn:'thin blade that stops hair wrapping the bearing', mat:'Stainless steel',
+   term:'brush bar hair cutting guard blade strip',
+   x:150,y:264, lx:300,ly:256, cx:0,cy:-84,
+   s:poly('96,268 204,260 204,268 96,272')},
+  {n:'Soleplate clip', fn:'releases the bar for cleaning without tools', mat:'POM latch',
+   term:'vacuum soleplate brush bar release clip',
+   x:150,y:302, lx:300,ly:296, cx:0,cy:-120,
+   s:path('M116 294 h68 v10 h-16 v8 h-36 v-8 h-16 z')}
+ ]
+},
+{
+ id:'tap', name:'Kitchen tap cartridge', thumb:THUMB.tap,
+ conf:'Identified: 35mm ceramic disc mixer cartridge · 92% confident',
+ parts:[
+  {n:'Lever handle screw', fn:'hidden grub screw holding the lever on', mat:'Brass, 2.5mm hex',
+   term:'kitchen mixer tap lever grub screw M4 brass',
+   x:150,y:44, lx:300,ly:34, cx:0,cy:116,
+   s:rect(138,38,24,8,3)+poly('150,46 155,62 145,62')},
+  {n:'Dome cap', fn:'covers the retaining nut and tidies the body', mat:'Chrome-plated brass',
+   term:'tap dome cap chrome shroud replacement',
+   x:150,y:88, lx:300,ly:76, cx:0,cy:76,
+   s:path('M122 96 a28 22 0 0 1 56 0 z')},
+  {n:'Retaining nut', fn:'clamps the cartridge down into the tap body', mat:'Brass',
+   term:'35mm tap cartridge retaining nut brass',
+   x:150,y:130, lx:300,ly:118, cx:0,cy:36,
+   s:poly('126,130 136,119 164,119 174,130 164,141 136,141')+'<circle class="body alt" cx="150" cy="130" r="8"/>'},
+  {n:'Ceramic disc cartridge', fn:'mixes hot and cold and sets flow rate', mat:'Alumina ceramic in POM body',
+   term:'35mm ceramic disc mixer cartridge replacement',
+   x:150,y:176, lx:300,ly:162, cx:0,cy:-6,
+   s:rect(120,160,60,32,5)+'<circle class="body alt" cx="150" cy="176" r="10"/>'},
+  {n:'Cartridge base seals', fn:'three silicone seats that stop cross-flow', mat:'Silicone rubber',
+   term:'ceramic cartridge base seal set silicone 3 pack',
+   x:150,y:218, lx:300,ly:210, cx:0,cy:-46,
+   s:'<circle class="body" cx="118" cy="218" r="10"/><circle class="body" cx="150" cy="218" r="10"/><circle class="body" cx="182" cy="218" r="10"/>'},
+  {n:'Aerator insert', fn:'mixes air into the stream to stop splashing', mat:'Brass housing, mesh screen',
+   term:'M24 tap aerator insert with mesh screen',
+   x:150,y:256, lx:300,ly:250, cx:0,cy:-82,
+   s:'<circle class="body" cx="150" cy="256" r="16"/><circle class="body alt" cx="150" cy="256" r="9"/>'},
+  {n:'Spout O-rings', fn:'seal the swivel spout against the body', mat:'NBR rubber',
+   term:'swivel spout O-ring kit NBR tap spares',
+   x:150,y:296, lx:300,ly:292, cx:0,cy:-118,
+   s:ring(128,296,16,7)+ring(172,296,16,7)}
+ ]
+}
+];
+
+/* ---------- DOM refs ---------- */
+var $=function(id){return document.getElementById(id);};
+var samplesEl=$('samples'), dropEl=$('drop'), anaEl=$('analysing'), resEl=$('result'),
+    diagwrap=$('diagwrap'), listEl=$('list'), confEl=$('conf'), toastEl=$('toast');
+var current=null, annoOn=true, expOn=true, toastTimer=null, runTimers=[];
+
+/* ---------- samples ---------- */
+DATA.forEach(function(d){
+  var b=document.createElement('button');
+  b.className='samp'; b.type='button';
+  b.innerHTML=d.thumb+'<span>'+d.name+'</span>';
+  b.addEventListener('click',function(){run(d);});
+  samplesEl.appendChild(b);
+});
+
+/* ---------- drop zone (never reads/uploads the file) ---------- */
+function randomSample(){return DATA[Math.floor(Math.random()*DATA.length)];}
+dropEl.addEventListener('click',function(){run(randomSample());});
+dropEl.addEventListener('keydown',function(e){
+  if(e.key==='Enter'||e.key===' '){e.preventDefault();run(randomSample());}
+});
+['dragenter','dragover'].forEach(function(ev){
+  dropEl.addEventListener(ev,function(e){e.preventDefault();dropEl.classList.add('over');});
+});
+['dragleave','dragend'].forEach(function(ev){
+  dropEl.addEventListener(ev,function(){dropEl.classList.remove('over');});
+});
+dropEl.addEventListener('drop',function(e){
+  e.preventDefault(); dropEl.classList.remove('over');
+  var ok=true;
+  try{
+    var dt=e.dataTransfer;
+    if(dt&&dt.files&&dt.files.length){
+      var t=dt.files[0].type||'';
+      if(t && t.indexOf('image/')!==0) ok=false;
+    }
+  }catch(err){ ok=true; }
+  if(!ok){ toast("That file isn't an image — try a photo (demo picks a sample anyway)"); }
+  run(randomSample());
+});
+
+/* ---------- run ---------- */
+function run(rec){
+  runTimers.forEach(clearTimeout); runTimers=[];
+  current=rec;
+  resEl.classList.add('hide');
+  anaEl.classList.remove('hide');
+  $('nparts').textContent=String(rec.parts.length);
+  ['t0','t1','t2'].forEach(function(id){$(id).classList.remove('on');});
+  var fill=$('barfill'); fill.style.width='0%';
+  anaEl.scrollIntoView({behavior:'smooth',block:'nearest'});
+  runTimers.push(setTimeout(function(){$('t0').classList.add('on');fill.style.width='30%';},220));
+  runTimers.push(setTimeout(function(){$('t1').classList.add('on');fill.style.width='66%';},900));
+  runTimers.push(setTimeout(function(){$('t2').classList.add('on');fill.style.width='100%';},1500));
+  runTimers.push(setTimeout(function(){
+    anaEl.classList.add('hide');
+    render(rec);
+  },2050));
+}
+
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){
+  return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+
+/* ---------- render diagram + list ---------- */
+function render(rec){
+  var H=360, last=rec.parts[rec.parts.length-1];
+  H=Math.max(340, last.y+48);
+  var svg='<svg class="diagram'+(annoOn?'':' noanno')+'" id="svgDiag" viewBox="0 0 430 '+H+'" role="img" aria-label="Exploded diagram of '+esc(rec.name)+'">';
+  svg+='<line class="axis" x1="150" y1="18" x2="150" y2="'+(H-14)+'"/>';
+  rec.parts.forEach(function(p,i){
+    var num=i+1;
+    svg+='<g class="part" id="pt'+i+'" data-i="'+i+'" style="--cx:'+(p.cx||0)+'px;--cy:'+(p.cy||0)+'px" tabindex="0" role="button" aria-label="'+num+' '+esc(p.n)+'">';
+    svg+=p.s;
+    svg+='<g class="anno">';
+    svg+='<line class="leader" x1="'+(p.x+40)+'" y1="'+p.y+'" x2="'+(p.lx-8)+'" y2="'+p.ly+'"/>';
+    svg+='<circle class="numcirc" cx="'+(p.lx+2)+'" cy="'+p.ly+'" r="9"/>';
+    svg+='<text class="num" x="'+(p.lx+2)+'" y="'+p.ly+'">'+num+'</text>';
+    svg+='<text class="lbl" x="'+(p.lx+16)+'" y="'+(p.ly+3.5)+'">'+esc(p.n)+'</text>';
+    svg+='</g></g>';
+  });
+  svg+='</svg>';
+  diagwrap.innerHTML=svg;
+  confEl.textContent=rec.conf;
+  $('listTitle').textContent=rec.name;
+  $('listCount').textContent=rec.parts.length+' parts';
+
+  listEl.innerHTML='';
+  rec.parts.forEach(function(p,i){
+    var li=document.createElement('li');
+    li.id='row'+i;
+    li.innerHTML='<div class="pn">'+(i+1)+'</div><div>'+
+      '<div class="pname">'+esc(p.n)+'</div>'+
+      '<div class="pfn">'+esc(p.fn)+'</div>'+
+      '<div class="pmat">Material: <b>'+esc(p.mat)+'</b></div>'+
+      '<button class="copy" type="button">Copy search term</button></div>';
+    var btn=li.querySelector('button');
+    btn.addEventListener('click',function(e){
+      e.stopPropagation();
+      copyText(p.term);
+      btn.textContent='Copied ✓'; btn.classList.add('done');
+      toast('Copied: '+p.term);
+      setTimeout(function(){btn.textContent='Copy search term';btn.classList.remove('done');},1800);
+    });
+    li.addEventListener('mouseenter',function(){focusPart(i,false);});
+    li.addEventListener('mouseleave',function(){clearFocus();});
+    li.addEventListener('click',function(){focusPart(i,false);});
+    listEl.appendChild(li);
+  });
+
+  var svgEl=$('svgDiag');
+  Array.prototype.forEach.call(svgEl.querySelectorAll('.part'),function(g){
+    var i=parseInt(g.getAttribute('data-i'),10);
+    g.addEventListener('mouseenter',function(){focusPart(i,false);});
+    g.addEventListener('mouseleave',function(){clearFocus();});
+    g.addEventListener('click',function(){focusPart(i,true);});
+    g.addEventListener('keydown',function(e){
+      if(e.key==='Enter'||e.key===' '){e.preventDefault();focusPart(i,true);}
+    });
+  });
+
+  resEl.classList.remove('hide');
+  expOn=true; $('btnExp').setAttribute('aria-pressed','true');
+  // one-time slide-apart animation: start stacked, then explode
+  svgEl.classList.add('collapsed');
+  requestAnimationFrame(function(){
+    requestAnimationFrame(function(){
+      svgEl.classList.add('exploded');
+      svgEl.classList.remove('collapsed');
+    });
+  });
+  resEl.scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function focusPart(i,scroll){
+  var svgEl=$('svgDiag'); if(!svgEl) return;
+  Array.prototype.forEach.call(svgEl.querySelectorAll('.part'),function(g,j){
+    g.classList.toggle('active',j===i);
+    g.classList.toggle('dim',j!==i);
+  });
+  Array.prototype.forEach.call(listEl.children,function(li,j){
+    li.classList.toggle('hot',j===i);
+  });
+  if(scroll){
+    var row=$('row'+i);
+    if(row) row.scrollIntoView({behavior:'smooth',block:'center'});
+  }
+}
+function clearFocus(){
+  var svgEl=$('svgDiag'); if(!svgEl) return;
+  Array.prototype.forEach.call(svgEl.querySelectorAll('.part'),function(g){
+    g.classList.remove('active'); g.classList.remove('dim');
+  });
+  Array.prototype.forEach.call(listEl.children,function(li){li.classList.remove('hot');});
+}
+
+/* ---------- controls ---------- */
+$('btnAnno').addEventListener('click',function(){
+  annoOn=!annoOn;
+  this.setAttribute('aria-pressed',annoOn?'true':'false');
+  var s=$('svgDiag'); if(s) s.classList.toggle('noanno',!annoOn);
+});
+$('btnExp').addEventListener('click',function(){
+  var s=$('svgDiag'); if(!s) return;
+  expOn=!expOn;
+  this.setAttribute('aria-pressed',expOn?'true':'false');
+  s.classList.add('exploded');
+  s.classList.toggle('collapsed',!expOn);
+});
+$('btnAgain').addEventListener('click',function(){
+  resEl.classList.add('hide');
+  document.getElementById('input').scrollIntoView({behavior:'smooth',block:'start'});
+});
+Array.prototype.forEach.call(document.querySelectorAll('[data-toast]'),function(b){
+  b.addEventListener('click',function(){toast(b.getAttribute('data-toast'));});
+});
+
+/* ---------- utils ---------- */
+function copyText(t){
+  try{
+    if(navigator.clipboard&&navigator.clipboard.writeText){
+      navigator.clipboard.writeText(t).catch(function(){fallbackCopy(t);});
+    }else{fallbackCopy(t);}
+  }catch(e){ /* clipboard unavailable in this context */ }
+}
+function fallbackCopy(t){
+  try{
+    var ta=document.createElement('textarea');
+    ta.value=t; ta.setAttribute('readonly','');
+    ta.style.position='fixed'; ta.style.opacity='0';
+    document.body.appendChild(ta); ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+  }catch(e){}
+}
+function toast(msg){
+  toastEl.textContent=msg;
+  toastEl.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(function(){toastEl.classList.remove('show');},1900);
+}
+})();
+</script>
+</body>
+</html>

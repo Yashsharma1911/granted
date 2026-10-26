@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Proofline — evidence packs for agent-written PRs</title>
+<style>
+:root{
+  --bg:#ffffff; --canvas:#f6f8fa; --fg:#1f2328; --muted:#59636e; --border:#d1d9e0;
+  --green:#1a7f37; --greenbg:#dafbe1; --red:#cf222e; --redbg:#ffebe9;
+  --amber:#9a6700; --amberbg:#fff8c5; --blue:#0969da; --accent:#8250df;
+  --btn:#f6f8fa; --shadow:0 1px 0 rgba(31,35,40,.04);
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#0d1117; --canvas:#010409; --fg:#e6edf3; --muted:#9198a1; --border:#3d444d;
+    --green:#3fb950; --greenbg:#132d1a; --red:#f85149; --redbg:#3d1416;
+    --amber:#d29922; --amberbg:#3a2d10; --blue:#4493f8; --accent:#ab7df8;
+    --btn:#21262d; --shadow:none;
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--canvas); color:var(--fg);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans",Helvetica,Arial,sans-serif;
+  font-size:14px; line-height:1.5; -webkit-text-size-adjust:100%;
+}
+button{font-family:inherit;font-size:14px;cursor:pointer}
+.topbar{
+  background:var(--bg); border-bottom:1px solid var(--border);
+  padding:10px 16px; display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+  position:sticky; top:0; z-index:20;
+}
+.logo{display:flex;align-items:center;gap:8px;font-weight:700}
+.logo svg{display:block}
+.tagline{color:var(--muted);font-size:13px}
+.demochip{
+  margin-left:auto; font-size:11px; color:var(--muted);
+  border:1px solid var(--border); border-radius:999px; padding:2px 8px; white-space:nowrap;
+}
+.wrap{display:flex; gap:16px; padding:16px; align-items:flex-start; max-width:1180px; margin:0 auto}
+.sidebar{
+  width:280px; flex:0 0 280px; background:var(--bg); border:1px solid var(--border);
+  border-radius:8px; overflow:hidden; box-shadow:var(--shadow);
+}
+.side-head{
+  padding:10px 12px; border-bottom:1px solid var(--border); font-weight:600;
+  display:flex; justify-content:space-between; align-items:center; background:var(--canvas);
+}
+.side-head span{font-weight:400;color:var(--muted);font-size:12px}
+.prlist{list-style:none;margin:0;padding:0;max-height:70vh;overflow:auto}
+.pritem{
+  display:block; width:100%; text-align:left; background:none; border:0;
+  border-bottom:1px solid var(--border); padding:10px 12px; color:inherit;
+  min-height:62px;
+}
+.pritem:hover{background:var(--canvas)}
+.pritem.active{background:var(--canvas); box-shadow:inset 3px 0 0 var(--accent)}
+.pritem .num{color:var(--muted); font-size:12px}
+.pritem .title{font-weight:600; display:block; margin:1px 0 5px; font-size:13.5px}
+.row{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.chip{
+  font-size:11px; padding:1px 7px; border-radius:999px; border:1px solid transparent;
+  white-space:nowrap; font-weight:600;
+}
+.chip.green{background:var(--greenbg);color:var(--green);border-color:var(--green)}
+.chip.red{background:var(--redbg);color:var(--red);border-color:var(--red)}
+.chip.amber{background:var(--amberbg);color:var(--amber);border-color:var(--amber)}
+.chip.grey{background:var(--canvas);color:var(--muted);border-color:var(--border);font-weight:500}
+.main{flex:1 1 auto; min-width:0}
+.card{background:var(--bg);border:1px solid var(--border);border-radius:8px;margin-bottom:16px;box-shadow:var(--shadow)}
+.pad{padding:14px 16px}
+h1{font-size:21px; margin:0 0 6px; line-height:1.3; font-weight:600}
+h1 .num{color:var(--muted); font-weight:400}
+h2{font-size:14px;margin:0 0 8px;font-weight:600}
+.meta{color:var(--muted);font-size:12.5px}
+.quote{
+  border-left:3px solid var(--border); margin:12px 0 0; padding:2px 0 2px 12px;
+  color:var(--muted); font-style:italic;
+}
+.comment-head{
+  display:flex;align-items:center;gap:8px;padding:10px 14px;
+  border-bottom:1px solid var(--border); background:var(--canvas);
+  border-radius:8px 8px 0 0; flex-wrap:wrap;
+}
+.avatar{
+  width:24px;height:24px;border-radius:6px;background:var(--accent);
+  display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:700;flex:0 0 auto;
+}
+.banner{
+  padding:12px 14px; display:flex; gap:10px; align-items:flex-start;
+  border-bottom:1px solid var(--border); font-weight:600;
+}
+.banner.amber{background:var(--amberbg); color:var(--amber)}
+.banner.green{background:var(--greenbg); color:var(--green)}
+.banner.red{background:var(--redbg); color:var(--red)}
+.banner small{display:block;font-weight:400;opacity:.85;margin-top:2px;font-size:12.5px}
+.sec{padding:14px 16px;border-bottom:1px solid var(--border)}
+.sec:last-child{border-bottom:0}
+.sec-label{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:8px}
+/* video */
+.player{background:#0b0d11;border-radius:8px;overflow:hidden;border:1px solid var(--border)}
+.stage{position:relative;aspect-ratio:16/8;display:flex;align-items:center;justify-content:center}
+.playbtn{
+  width:58px;height:58px;border-radius:50%;border:0;background:rgba(255,255,255,.92);
+  display:flex;align-items:center;justify-content:center;
+}
+.playbtn:hover{background:#fff}
+.frame{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:16px}
+.framebox{
+  width:100%;max-width:420px;background:#161b22;border:1px solid #30363d;border-radius:6px;
+  padding:12px;color:#c9d1d9;font-size:12px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+.framebox .bar{height:7px;border-radius:4px;background:#30363d;margin:7px 0}
+.framebox .bar.w60{width:60%} .framebox .bar.w40{width:40%} .framebox .bar.w80{width:80%}
+.framebox .url{color:#8b949e;border-bottom:1px solid #30363d;padding-bottom:6px;margin-bottom:8px;word-break:break-all}
+.controls{padding:8px 10px;background:#161b22;display:flex;align-items:center;gap:10px}
+.ctrlbtn{
+  background:#21262d;border:1px solid #30363d;color:#e6edf3;border-radius:6px;
+  min-width:40px;height:32px;display:flex;align-items:center;justify-content:center;padding:0 8px;
+}
+.scrub{flex:1;height:6px;border-radius:3px;background:#30363d;overflow:hidden;cursor:pointer}
+.scrub i{display:block;height:100%;width:0;background:var(--accent);transition:width .2s linear}
+.time{color:#8b949e;font-size:12px;font-variant-numeric:tabular-nums;font-family:ui-monospace,monospace}
+.captions{list-style:none;margin:10px 0 0;padding:0}
+.captions li{
+  display:flex;gap:8px;align-items:flex-start;padding:7px 9px;border-radius:6px;
+  color:var(--muted);border:1px solid transparent;font-size:13px;
+}
+.captions li.on{background:var(--canvas);border-color:var(--border);color:var(--fg)}
+.captions li.done{color:var(--fg)}
+.captions li.warn.on,.captions li.warn.done{background:var(--amberbg);border-color:var(--amber);color:var(--amber)}
+.tick{flex:0 0 16px;margin-top:2px}
+/* table */
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th,td{text-align:left;padding:9px 8px;border-bottom:1px solid var(--border)}
+th{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+tr:last-child td{border-bottom:0}
+td.num{font-variant-numeric:tabular-nums;white-space:nowrap}
+.delta{font-weight:600;white-space:nowrap}
+.delta.up{color:var(--green)} .delta.down{color:var(--red)} .delta.flat{color:var(--muted)}
+/* blast */
+.score{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+.dial{position:relative;width:54px;height:54px;flex:0 0 54px}
+.dial b{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:15px}
+.reasons{margin:0;padding-left:18px;color:var(--muted)}
+.reasons li{margin:3px 0}
+.bars{margin-top:12px}
+.barrow{display:flex;align-items:center;gap:8px;margin:6px 0;font-size:12.5px}
+.barrow code{flex:0 0 auto;max-width:46%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--fg)}
+.track{flex:1;height:8px;background:var(--canvas);border:1px solid var(--border);border-radius:4px;overflow:hidden}
+.track i{display:block;height:100%;background:var(--accent)}
+.barrow .n{color:var(--muted);width:48px;text-align:right;font-variant-numeric:tabular-nums}
+/* claims */
+.claim{
+  display:flex;gap:10px;align-items:flex-start;justify-content:space-between;
+  border:1px solid var(--border);border-left:3px solid var(--amber);border-radius:6px;padding:10px 12px;flex-wrap:wrap;
+}
+.claim.resolved{border-left-color:var(--green)}
+.claim .txt{flex:1 1 220px;min-width:0}
+.btn{
+  background:var(--btn);border:1px solid var(--border);border-radius:6px;padding:0 14px;
+  min-height:40px;color:var(--fg);font-weight:600;display:inline-flex;align-items:center;gap:7px;justify-content:center;
+}
+.btn:hover:not(:disabled){filter:brightness(.97)}
+.btn:disabled{opacity:.6;cursor:not-allowed}
+.btn.primary{background:var(--green);border-color:transparent;color:#fff}
+.btn.primary:disabled{background:var(--btn);color:var(--muted);border-color:var(--border)}
+.actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center;padding:14px 16px;background:var(--canvas);border-radius:0 0 8px 8px}
+.tip{position:relative}
+.tip .tiptext{
+  visibility:hidden;opacity:0;transition:opacity .15s;position:absolute;bottom:calc(100% + 7px);left:0;
+  background:#1f2328;color:#fff;font-size:12px;padding:5px 9px;border-radius:6px;white-space:nowrap;z-index:5;
+}
+.tip:hover .tiptext,.tip:focus-within .tiptext{visibility:visible;opacity:1}
+.reply{
+  margin-top:10px;border:1px solid var(--border);border-radius:6px;padding:10px 12px;display:flex;gap:9px;align-items:flex-start;
+  background:var(--canvas);
+}
+.spin{width:14px;height:14px;border-radius:50%;border:2px solid var(--border);border-top-color:var(--accent);animation:sp .7s linear infinite;flex:0 0 14px;margin-top:3px}
+@keyframes sp{to{transform:rotate(360deg)}}
+.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px}
+.empty{color:var(--muted);text-align:center;padding:28px 12px}
+footer{text-align:center;color:var(--muted);font-size:12px;padding:6px 16px 26px}
+.fade{animation:fade .35s ease}
+@keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+@media (max-width:860px){
+  .wrap{flex-direction:column;padding:10px;gap:10px}
+  .sidebar{width:100%;flex:1 1 auto}
+  .prlist{max-height:238px}
+  h1{font-size:18px}
+  .btn{flex:1 1 auto}
+}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="logo">
+    <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 1.5 3 4.3v5c0 4.2 2.9 8 7 9.2 4.1-1.2 7-5 7-9.2v-5L10 1.5Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="m6.8 9.9 2.2 2.3 4.3-4.6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    Proofline
+  </div>
+  <div class="tagline">evidence packs for agent-written PRs</div>
+  <div class="demochip">Demo data</div>
+</header>
+
+<div class="wrap">
+  <aside class="sidebar">
+    <div class="side-head">Agent PRs <span id="queueCount"></span></div>
+    <div class="prlist" id="prlist" role="list"></div>
+  </aside>
+
+  <main class="main" id="main" aria-live="polite"></main>
+</div>
+
+<footer>Prototype by Granted, inspired by your bookmarks</footer>
+
+<script>
+(function(){
+"use strict";
+
+var CLIP = [
+  {t:"Opened /login", s:0},
+  {t:"Submitted valid credentials", s:1},
+  {t:"Session cookie set, redirected to /dashboard", s:2},
+  {t:"Expired-token path NOT exercised", s:3, warn:true}
+];
+var CLIP_PROVEN = [
+  {t:"Opened /login with expired session token", s:0},
+  {t:"Middleware rejected token, no 500", s:1},
+  {t:"Redirected to /login?reason=expired", s:2},
+  {t:"Expired-token path exercised and passing", s:3, ok:true}
+];
+
+var PRS = [
+  {
+    id:4412, title:"Add rate limiting to /api/export", author:"claude-code[bot]",
+    verdict:"proven", claims:[3,3], branch:"agent/rate-limit-export", files:4, adds:132, dels:11,
+    desc:"Added a token-bucket limiter to the export endpoint. Verified under load. All tests pass.",
+    blast:{score:3, reasons:["touches src/api/export.ts (imported by 4 files)","adds redis key namespace export:rl:*","no database migration"],
+      files:[["src/api/export.ts",4],["src/lib/limiter.ts",2],["src/api/routes.ts",1]]},
+    metrics:[["p95 /api/export latency","118ms","121ms","flat","+3ms"],["429s under 50rps burst","0","1,204","up","enforced"],["export route test coverage","62%","88%","up","+26pts"]]
+  },
+  {
+    id:4409, title:"Migrate users table to uuid primary keys", author:"devin[bot]",
+    verdict:"none", claims:[0,4], branch:"agent/uuid-pk-users", files:23, adds:901, dels:644, destructive:true,
+    desc:"Migrated users to UUID primary keys for better sharding. Backfill is safe and reversible. All tests pass.",
+    blast:{score:9, reasons:["touches db/migrations/0188_users_uuid.sql (DROP COLUMN id)","rewrites 6 foreign keys across orders, sessions, invoices","no rollback migration provided","touches src/models/user.ts (imported by 112 files)"],
+      files:[["src/models/user.ts",112],["src/db/schema.ts",47],["src/api/users.ts",19],["db/migrations/0188_users_uuid.sql",0]]},
+    metrics:[["users table rows affected","0","1,842,331","down","destructive"],["model test coverage","83%","41%","down","-42pts"],["migration dry-run","—","not run","flat","missing"]],
+    unproven:[
+      "Claim: backfill is safe and reversible — no rollback migration found",
+      "Claim: all tests pass — 14 integration tests were skipped",
+      "Claim: no downtime required — no dry-run against a prod-shaped snapshot",
+      "Claim: foreign keys preserved — no evidence found"
+    ]
+  },
+  {id:4408, title:"Fix flaky checkout test", author:"codex[bot]", verdict:"proven", claims:[2,2], branch:"agent/fix-flaky-checkout", files:1, adds:18, dels:22,
+    desc:"Removed the arbitrary sleep and awaited the network idle event instead. Flake is gone. All tests pass.",
+    blast:{score:1, reasons:["touches tests/checkout.spec.ts (imported by 0 files)","no production code changed","no database migration"],
+      files:[["tests/checkout.spec.ts",0],["tests/helpers/wait.ts",6]]},
+    metrics:[["flake rate over 200 runs","6.5%","0.0%","up","-6.5pts"],["checkout suite duration","94s","71s","up","-23s"],["bundle size","412kb","412kb","flat","0"]]
+  },
+  {
+    id:4405, title:"Refactor auth middleware", author:"claude-code[bot]", verdict:"partly", claims:[2,3],
+    branch:"agent/refactor-auth-mw", files:7, adds:214, dels:188, hero:true,
+    desc:"Refactored auth middleware for clarity and performance. All tests pass.",
+    blast:{score:7, reasons:["touches src/middleware/auth.ts (imported by 38 files)","changes session cookie flags","no database migration"],
+      files:[["src/middleware/auth.ts",38],["src/lib/session.ts",17],["src/routes/login.ts",5],["src/lib/cookies.ts",3]]},
+    metrics:[["p95 login latency","340ms","287ms","up","-53ms"],["auth middleware test coverage","71%","64%","down","-7pts"],["bundle size","412kb","412kb","flat","0"]],
+    unproven:["Claim: handles expired tokens gracefully — no evidence found"]
+  },
+  {id:4401, title:"Bump stripe sdk to v18", author:"cursor[bot]", verdict:"partly", claims:[2,3], branch:"agent/stripe-v18", files:5, adds:64, dels:58,
+    desc:"Upgraded the Stripe SDK to v18 and updated the changed call signatures. Everything works. All tests pass.",
+    blast:{score:6, reasons:["touches src/payments/stripe.ts (imported by 21 files)","webhook signature API changed in v18","no database migration"],
+      files:[["src/payments/stripe.ts",21],["src/webhooks/stripe.ts",3],["package.json",0]]},
+    metrics:[["checkout sandbox success rate","100%","100%","flat","0"],["webhook replay tests","12 pass","9 pass","down","3 skipped"],["bundle size","412kb","431kb","down","+19kb"]],
+    unproven:["Claim: webhook signature verification unchanged — no evidence found"]
+  },
+  {id:4398, title:"Add dark mode toggle", author:"cursor[bot]", verdict:"proven", claims:[3,3], branch:"agent/dark-mode", files:9, adds:276, dels:30,
+    desc:"Added a dark mode toggle that respects the OS setting and persists the choice. All tests pass.",
+    blast:{score:2, reasons:["touches src/theme/provider.tsx (imported by 11 files)","no server code changed","no database migration"],
+      files:[["src/theme/provider.tsx",11],["src/components/Toggle.tsx",2],["src/styles/tokens.css",0]]},
+    metrics:[["contrast failures (WCAG AA)","0","0","flat","0"],["theme switch time","—","11ms","up","instant"],["bundle size","412kb","418kb","flat","+6kb"]]
+  },
+  {id:4395, title:"Cache pricing lookups in redis", author:"devin[bot]", verdict:"partly", claims:[2,3], branch:"agent/cache-pricing", files:6, adds:188, dels:24,
+    desc:"Pricing lookups are now cached in Redis with a 5 minute TTL. Big speedup, no staleness issues. All tests pass.",
+    blast:{score:5, reasons:["touches src/pricing/lookup.ts (imported by 14 files)","adds cache invalidation on plan update","no database migration"],
+      files:[["src/pricing/lookup.ts",14],["src/cache/redis.ts",9],["src/admin/plans.ts",2]]},
+    metrics:[["p95 pricing lookup","96ms","7ms","up","-89ms"],["cache hit rate (staging)","—","94%","up","new"],["stale price incidents","0","0","flat","untested"]],
+    unproven:["Claim: no staleness after a plan update — no invalidation test found"]
+  },
+  {id:4390, title:"Delete unused feature flags", author:"codex[bot]", verdict:"proven", claims:[2,2], branch:"agent/prune-flags", files:12, adds:9, dels:340,
+    desc:"Removed 14 feature flags that have been fully rolled out for over 90 days. Nothing references them. All tests pass.",
+    blast:{score:3, reasons:["touches src/flags/registry.ts (imported by 8 files)","all removed flags at 100% for 94+ days","no database migration"],
+      files:[["src/flags/registry.ts",8],["src/flags/defaults.ts",3],["src/checkout/view.tsx",0]]},
+    metrics:[["references to removed flags","14","0","up","-14"],["flag evaluation p95","3.1ms","1.8ms","up","-1.3ms"],["bundle size","412kb","404kb","up","-8kb"]]
+  },
+  {id:4386, title:"Rewrite CSV parser", author:"devin[bot]", verdict:"none", claims:[0,3], branch:"agent/csv-rewrite", files:4, adds:512, dels:498,
+    desc:"Rewrote the CSV parser from scratch. It is faster, simpler and handles all edge cases correctly. All tests pass.",
+    blast:{score:8, reasons:["touches src/import/csv.ts (imported by 27 files)","no fixture tests for quoted or multiline fields","no database migration"],
+      files:[["src/import/csv.ts",27],["src/import/stream.ts",6],["src/import/types.ts",4]]},
+    metrics:[["parser fixture tests","41 pass","0 run","down","suite removed"],["parse throughput","18MB/s","—","flat","unmeasured"],["import error rate","0.2%","—","flat","unmeasured"]],
+    unproven:[
+      "Claim: handles all edge cases correctly — fixture suite was deleted in this PR",
+      "Claim: faster than the old parser — no benchmark produced",
+      "Claim: all tests pass — parser suite did not run in CI"
+    ]
+  },
+  {id:4380, title:"Update copy on pricing page", author:"cursor[bot]", verdict:"proven", claims:[2,2], branch:"agent/pricing-copy", files:2, adds:21, dels:19,
+    desc:"Updated the pricing page copy per the marketing brief. Pixel-perfect and all tests pass.",
+    blast:{score:1, reasons:["touches src/pages/pricing.tsx (imported by 1 file)","copy only, no logic changed","no database migration"],
+      files:[["src/pages/pricing.tsx",1],["src/content/pricing.json",1]]},
+    metrics:[["visual diff regressions","0","0","flat","0"],["copy review checks","—","8 pass","up","approved"],["bundle size","412kb","412kb","flat","0"]]
+  }
+];
+
+var VERDICT = {
+  proven:{cls:"green", label:"Proven"},
+  partly:{cls:"amber", label:"Partly proven"},
+  none:{cls:"red", label:"No evidence"}
+};
+
+function esc(s){
+  return String(s).replace(/[&<>"']/g, function(c){
+    return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];
+  });
+}
+function $(id){return document.getElementById(id);}
+
+var state = {id:4405, resolved:false, playing:false, step:-1, timer:null, pending:false};
+
+/* ---------- sidebar ---------- */
+function verdictChip(pr){
+  var v = VERDICT[pr.verdict];
+  return '<span class="chip '+v.cls+'">'+v.label+'</span>';
+}
+function renderList(){
+  var list = $("prlist");
+  list.innerHTML = PRS.map(function(pr){
+    var blast = (pr.blast.score >= 7) ? '<span class="chip grey">blast '+pr.blast.score+'</span>' : '';
+    return '<button class="pritem'+(pr.id===state.id?' active':'')+'" data-id="'+pr.id+'" role="listitem">'
+      + '<span class="num">#'+pr.id+'</span>'
+      + '<span class="title">'+esc(pr.title)+'</span>'
+      + '<span class="row"><span class="chip grey">'+esc(pr.author)+'</span>'+verdictChip(pr)+blast+'</span>'
+      + '</button>';
+  }).join("");
+  $("queueCount").textContent = PRS.length + " open";
+}
+
+/* ---------- main ---------- */
+function dial(score){
+  var pct = score/10, r=22, c=2*Math.PI*r;
+  var col = score>=8 ? "var(--red)" : (score>=5 ? "var(--amber)" : "var(--green)");
+  return '<div class="dial"><svg width="54" height="54" viewBox="0 0 54 54" aria-hidden="true">'
+    + '<circle cx="27" cy="27" r="'+r+'" fill="none" stroke="var(--border)" stroke-width="5"/>'
+    + '<circle cx="27" cy="27" r="'+r+'" fill="none" stroke="'+col+'" stroke-width="5" stroke-linecap="round"'
+    + ' stroke-dasharray="'+(c*pct).toFixed(1)+' '+c.toFixed(1)+'" transform="rotate(-90 27 27)"/>'
+    + '</svg><b>'+score+'/10</b></div>';
+}
+function bannerFor(pr){
+  if(pr.destructive){
+    return '<div class="banner red" id="banner">'+icon("alert")+'<div>No evidence — 0 of 4 claims backed by evidence'
+      + '<small>Destructive migration — manual review required</small></div></div>';
+  }
+  if(state.resolved && pr.hero){
+    return '<div class="banner green fade" id="banner">'+icon("check")+'<div>Proven — 3 of 3 claims backed'
+      + '<small>Expired-token path exercised in re-run #2 · 0:12 clip attached</small></div></div>';
+  }
+  var v = VERDICT[pr.verdict];
+  var sub = pr.verdict==="proven" ? "Every claim in the description maps to a recorded run or a measured metric."
+    : pr.verdict==="none" ? "Proofline could not map any claim to a recorded run or measured metric."
+    : "Merge is blocked until the remaining claim is backed.";
+  return '<div class="banner '+v.cls+'" id="banner">'+icon(pr.verdict==="proven"?"check":"alert")
+    + '<div>'+v.label+' — '+pr.claims[0]+' of '+pr.claims[1]+' claims backed by evidence'
+    + '<small>'+sub+'</small></div></div>';
+}
+function icon(kind){
+  if(kind==="check") return '<svg width="18" height="18" viewBox="0 0 16 16" aria-hidden="true" style="flex:0 0 18px;margin-top:2px"><path fill="currentColor" d="M8 0a8 8 0 1 0 0 16A8 8 0 0 0 8 0Zm3.8 5.7-4.4 4.8a.8.8 0 0 1-1.2 0L4 8.3l1.1-1.1 1.7 1.7 3.9-4.3 1.1 1.1Z"/></svg>';
+  return '<svg width="18" height="18" viewBox="0 0 16 16" aria-hidden="true" style="flex:0 0 18px;margin-top:2px"><path fill="currentColor" d="M8.9 1.5a1 1 0 0 0-1.8 0L.4 13.6A1 1 0 0 0 1.3 15h13.4a1 1 0 0 0 .9-1.4L8.9 1.5ZM8 5.2c.5 0 .8.4.8.9l-.2 3.2a.6.6 0 0 1-1.2 0L7.2 6c0-.5.3-.9.8-.9Zm0 7.6a.9.9 0 1 1 0-1.8.9.9 0 0 1 0 1.8Z"/></svg>';
+}
+function metricsTable(pr){
+  var rows = pr.metrics.map(function(m){
+    return '<tr><td>'+esc(m[0])+'</td><td class="num">'+esc(m[1])+'</td><td class="num">'+esc(m[2])
+      + '</td><td class="num delta '+m[3]+'">'+esc(m[4])+'</td></tr>';
+  }).join("");
+  return '<table><thead><tr><th>Metric</th><th>Before</th><th>After</th><th>Δ</th></tr></thead><tbody>'+rows+'</tbody></table>';
+}
+function blastPanel(pr){
+  var max = 1;
+  pr.blast.files.forEach(function(f){ if(f[1]>max) max=f[1]; });
+  var bars = pr.blast.files.map(function(f){
+    var w = Math.max(3, Math.round(f[1]/max*100));
+    return '<div class="barrow"><code>'+esc(f[0])+'</code><span class="track"><i style="width:'+w+'%"></i></span>'
+      + '<span class="n">'+f[1]+'</span></div>';
+  }).join("");
+  return '<div class="score">'+dial(pr.blast.score)
+    + '<div><strong>Blast radius '+pr.blast.score+'/10</strong><div class="meta">'
+    + (pr.blast.score>=8?"High — needs a human":(pr.blast.score>=5?"Elevated — review the touched files":"Low — contained change"))
+    + '</div></div></div>'
+    + '<ul class="reasons">'+pr.blast.reasons.map(function(r){return '<li>'+esc(r)+'</li>';}).join("")+'</ul>'
+    + '<div class="bars"><div class="sec-label" style="margin-top:12px">Inbound imports per touched file</div>'+bars+'</div>';
+}
+function clipSection(pr){
+  var steps = (state.resolved && pr.hero) ? CLIP_PROVEN : CLIP;
+  var caps = steps.map(function(c,i){
+    return '<li id="cap'+i+'" class="'+(c.warn?"warn":"")+'"><span class="tick"></span><span>'+esc(c.t)+'</span></li>';
+  }).join("");
+  return '<div class="sec"><div class="sec-label">Evidence clip · recorded run</div>'
+    + '<div class="player"><div class="stage">'
+    + '<div class="frame" id="frame"></div>'
+    + '<button class="playbtn" id="playbtn" aria-label="Play evidence clip">'
+    + '<svg width="22" height="22" viewBox="0 0 16 16" aria-hidden="true"><path fill="#0b0d11" d="M4 2.5 13 8l-9 5.5z"/></svg></button>'
+    + '</div><div class="controls">'
+    + '<button class="ctrlbtn" id="ctrl" aria-label="Play or pause">'
+    + '<svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M4 2.5 13 8l-9 5.5z"/></svg></button>'
+    + '<span class="scrub" id="scrub"><i id="scrubfill"></i></span>'
+    + '<span class="time" id="time">0:00 / 0:34</span></div></div>'
+    + '<ul class="captions" id="captions">'+caps+'</ul></div>';
+}
+function unprovenSection(pr){
+  if(!pr.unproven || !pr.unproven.length) {
+    return '<div class="sec"><div class="sec-label">Unproven claims</div>'
+      + '<div class="claim resolved"><div class="txt">No unproven claims. Every statement in this description maps to evidence.</div></div></div>';
+  }
+  if(pr.hero && state.resolved){
+    return '<div class="sec"><div class="sec-label">Unproven claims</div>'
+      + '<div class="claim resolved fade"><div class="txt"><strong>Claim: handles expired tokens gracefully</strong>'
+      + '<div class="meta">Backed — expired-token run recorded at 0:12, middleware returned 401 and redirected.</div></div>'
+      + '<span class="chip green">Proven</span></div>'
+      + '<div id="replyZone"></div></div>';
+  }
+  var rows = pr.unproven.map(function(c,i){
+    var btn = (pr.hero && i===0)
+      ? '<button class="btn" id="requestBtn">Request evidence</button>'
+      : (pr.destructive ? '<span class="chip red">Manual review</span>' : '<button class="btn" data-generic="1">Request evidence</button>');
+    var parts = c.split(" — ");
+    return '<div class="claim"><div class="txt"><strong>'+esc(parts[0])+'</strong>'
+      + '<div class="meta">'+esc(parts[1]||"")+'</div></div>'+btn+'</div>';
+  }).join('<div style="height:8px"></div>');
+  return '<div class="sec"><div class="sec-label">Unproven claims ('+pr.unproven.length+')</div>'+rows
+    + '<div id="replyZone"></div></div>';
+}
+function actions(pr){
+  var unlocked = (pr.hero && state.resolved) || (pr.verdict==="proven");
+  if(pr.destructive) unlocked = false;
+  var reason = pr.destructive ? "blocked: destructive migration, manual review required" : "blocked: unproven claims";
+  var merge = unlocked
+    ? '<button class="btn primary" id="mergeBtn">Approve &amp; merge</button>'
+    : '<span class="tip"><button class="btn primary" id="mergeBtn" disabled aria-describedby="mtip">Approve &amp; merge</button>'
+      + '<span class="tiptext" id="mtip" role="tooltip">'+esc(reason)+'</span></span>';
+  return '<div class="actions">'+merge
+    + '<button class="btn" id="changesBtn">Request changes</button>'
+    + '<span class="meta" id="actionNote" style="margin-left:auto">'
+    + (unlocked ? "All claims backed by evidence" : "Proofline is holding this merge")+'</span></div>';
+}
+
+function render(){
+  var pr = PRS.filter(function(p){return p.id===state.id;})[0];
+  if(!pr){ $("main").innerHTML = '<div class="card"><div class="empty">That pull request could not be found.</div></div>'; return; }
+  stopClip();
+  state.step = -1;
+
+  var html = ''
+  + '<div class="card"><div class="pad">'
+    + '<h1>'+esc(pr.title)+' <span class="num">#'+pr.id+'</span></h1>'
+    + '<div class="row"><span class="chip '+VERDICT[pr.verdict].cls+'">'+(state.resolved&&pr.hero?"Proven":VERDICT[pr.verdict].label)+'</span>'
+    + '<span class="meta">'+esc(pr.author)+' wants to merge <span class="mono">'+esc(pr.branch)+'</span> into <span class="mono">main</span></span></div>'
+    + '<div class="meta" style="margin-top:6px">'+pr.files+' files changed · <span style="color:var(--green)">+'+pr.adds+'</span> <span style="color:var(--red)">−'+pr.dels+'</span></div>'
+    + '<blockquote class="quote">“'+esc(pr.desc)+'”<br><span style="font-style:normal;font-size:12px">— '+esc(pr.author)+', PR description</span></blockquote>'
+  + '</div></div>'
+
+  + '<div class="card">'
+    + '<div class="comment-head"><span class="avatar">P</span><strong>proofline[bot]</strong>'
+    + '<span class="meta">posted an evidence pack · 4 min ago</span>'
+    + '<span class="demochip" style="margin-left:auto">Demo data</span></div>'
+    + bannerFor(pr)
+    + clipSection(pr)
+    + '<div class="sec"><div class="sec-label">Before / after</div>'+metricsTable(pr)+'</div>'
+    + '<div class="sec"><div class="sec-label">Blast radius</div>'+blastPanel(pr)+'</div>'
+    + unprovenSection(pr)
+    + actions(pr)
+  + '</div>';
+
+  $("main").innerHTML = html;
+  paintCaptions();
+  setFrame(-1);
+  wireMain(pr);
+}
+
+/* ---------- clip ---------- */
+function captionSteps(){
+  var pr = current();
+  return (state.resolved && pr.hero) ? CLIP_PROVEN : CLIP;
+}
+function current(){ return PRS.filter(function(p){return p.id===state.id;})[0]; }
+
+function paintCaptions(){
+  var steps = captionSteps();
+  for(var i=0;i<steps.length;i++){
+    var el = $("cap"+i);
+    if(!el) continue;
+    el.className = (steps[i].warn?"warn ":"") + (i===state.step?"on":(i<state.step?"done":""));
+    var tick = el.querySelector(".tick");
+    if(i<=state.step && state.step>=0){
+      tick.innerHTML = steps[i].warn
+        ? '<svg width="14" height="14" viewBox="0 0 16 16"><path fill="currentColor" d="M8.9 1.5a1 1 0 0 0-1.8 0L.4 13.6A1 1 0 0 0 1.3 15h13.4a1 1 0 0 0 .9-1.4Z"/></svg>'
+        : '<svg width="14" height="14" viewBox="0 0 16 16"><path fill="currentColor" d="M6.3 12.3 2.5 8.5l1.1-1.1 2.7 2.7 6-6 1.1 1.1z"/></svg>';
+    } else {
+      tick.innerHTML = '<svg width="14" height="14" viewBox="0 0 16 16"><circle cx="8" cy="8" r="3" fill="currentColor" opacity=".3"/></svg>';
+    }
+  }
+}
+function setFrame(step){
+  var f = $("frame"); if(!f) return;
+  if(step < 0){ f.innerHTML=""; return; }
+  var steps = captionSteps();
+  var url = ["https://app.demo/login","https://app.demo/login","https://app.demo/dashboard","https://app.demo/login?reason=expired"][step] || "https://app.demo/";
+  var body;
+  if(step===0) body = '<div class="bar w60"></div><div class="bar w80"></div><div class="bar w40"></div>';
+  else if(step===1) body = '<div class="bar w80"></div><div class="bar w60"></div><div style="color:#3fb950">POST /session 200</div>';
+  else if(step===2) body = '<div style="color:#3fb950">Set-Cookie: sid=…; HttpOnly; Secure</div><div class="bar w80"></div><div class="bar w40"></div>';
+  else body = (steps[step] && steps[step].ok)
+      ? '<div style="color:#3fb950">401 expired → redirect ok</div><div class="bar w60"></div>'
+      : '<div style="color:#d29922">no assertion recorded for expired token</div><div class="bar w40"></div>';
+  f.innerHTML = '<div class="framebox fade"><div class="url">'+esc(url)+'</div>'+body+'</div>';
+}
+function fmt(sec){ var m=Math.floor(sec/60), s=Math.floor(sec%60); return m+":"+(s<10?"0":"")+s; }
+function stopClip(){
+  if(state.timer){ clearInterval(state.timer); state.timer=null; }
+  state.playing=false;
+}
+function toggleClip(){
+  if(state.playing){ stopClip(); showPlayBtn(true); return; }
+  var steps = captionSteps();
+  if(state.step >= steps.length-1){ state.step=-1; }
+  state.playing = true;
+  showPlayBtn(false);
+  advance();
+  state.timer = setInterval(advance, 1500);
+}
+function advance(){
+  var steps = captionSteps();
+  state.step++;
+  if(state.step >= steps.length){
+    state.step = steps.length-1;
+    stopClip(); showPlayBtn(true);
+  }
+  paintCaptions();
+  setFrame(state.step);
+  var frac = (state.step+1)/steps.length;
+  var fill = $("scrubfill"); if(fill) fill.style.width = Math.round(frac*100)+"%";
+  var t = $("time"); if(t) t.textContent = fmt(34*frac)+" / 0:34";
+}
+function showPlayBtn(show){
+  var b = $("playbtn"); if(b) b.style.display = show ? "flex" : "none";
+}
+
+/* ---------- interactions ---------- */
+function wireMain(pr){
+  var play = $("playbtn"), ctrl = $("ctrl"), scrub = $("scrub");
+  if(play) play.addEventListener("click", toggleClip);
+  if(ctrl) ctrl.addEventListener("click", toggleClip);
+  if(scrub) scrub.addEventListener("click", function(e){
+    var steps = captionSteps();
+    var rect = scrub.getBoundingClientRect();
+    var frac = Math.min(.999, Math.max(0, (e.clientX-rect.left)/rect.width));
+    stopClip(); showPlayBtn(true);
+    state.step = Math.floor(frac*steps.length);
+    paintCaptions(); setFrame(state.step);
+    $("scrubfill").style.width = Math.round((state.step+1)/steps.length*100)+"%";
+    $("time").textContent = fmt(34*(state.step+1)/steps.length)+" / 0:34";
+  });
+
+  var req = $("requestBtn");
+  if(req) req.addEventListener("click", requestEvidence);
+
+  var generic = $("main").querySelectorAll('[data-generic]');
+  Array.prototype.forEach.call(generic, function(b){
+    b.addEventListener("click", function(){
+      var zone = $("replyZone");
+      b.disabled = true; b.textContent = "Requested";
+      if(zone) zone.innerHTML = '<div class="reply fade"><span class="spin"></span><div>'
+        + '<strong>'+esc(current().author)+'</strong> <span class="meta">just now</span>'
+        + '<div class="mono">queued: re-run with evidence capture… this claim needs a human reviewer in the demo.</div></div></div>';
+    });
+  });
+
+  var merge = $("mergeBtn");
+  if(merge) merge.addEventListener("click", function(){
+    if(merge.disabled) return;
+    merge.textContent = "Merged ✓";
+    merge.disabled = true;
+    var note = $("actionNote");
+    if(note) note.textContent = "Merged with evidence pack attached";
+  });
+  var ch = $("changesBtn");
+  if(ch) ch.addEventListener("click", function(){
+    ch.textContent = "Changes requested";
+    ch.disabled = true;
+  });
+}
+
+function requestEvidence(){
+  if(state.pending) return;
+  state.pending = true;
+  var btn = $("requestBtn");
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin"></span> Requesting…';
+  var zone = $("replyZone");
+  zone.innerHTML = '<div class="reply fade"><span class="spin"></span><div>'
+    + '<strong>claude-code[bot]</strong> <span class="meta">just now</span>'
+    + '<div class="mono">re-running with expired-token case…</div></div></div>';
+  setTimeout(function(){
+    state.pending = false;
+    state.resolved = true;
+    var pr = current();
+    pr.verdict = "proven";
+    pr.claims = [3,3];
+    pr.metrics = [
+      ["p95 login latency","340ms","287ms","up","-53ms"],
+      ["auth middleware test coverage","71%","79%","up","+8pts"],
+      ["bundle size","412kb","412kb","flat","0"]
+    ];
+    renderList();
+    render();
+    var zone2 = $("replyZone");
+    if(zone2){
+      zone2.innerHTML = '<div class="reply fade"><span class="avatar" style="width:20px;height:20px;font-size:10px">C</span><div>'
+        + '<strong>claude-code[bot]</strong> <span class="meta">just now</span>'
+        + '<div class="mono">re-running with expired-token case… done. New clip attached (0:12). '
+        + 'Added <span style="color:var(--green)">expired-token.spec.ts</span>, coverage back to 79%.</div></div></div>';
+    }
+    var main = $("main");
+    if(main && main.scrollIntoView) { /* keep position, no jump */ }
+  }, 1500);
+}
+
+/* ---------- boot ---------- */
+$("prlist").addEventListener("click", function(e){
+  var btn = e.target.closest ? e.target.closest(".pritem") : null;
+  if(!btn) return;
+  var id = parseInt(btn.getAttribute("data-id"), 10);
+  if(isNaN(id)) return;
+  if(id === state.id) return;
+  state.id = id;
+  renderList();
+  render();
+  if(window.innerWidth < 861){
+    var m = $("main");
+    if(m && m.scrollIntoView) m.scrollIntoView({behavior:"smooth", block:"start"});
+  }
+});
+
+try{
+  renderList();
+  render();
+}catch(err){
+  $("main").innerHTML = '<div class="card"><div class="empty">Something went wrong rendering this pull request. Pick another one from the list.</div></div>';
+}
+})();
+</script>
+</body>
+</html>
