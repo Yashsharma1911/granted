@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Deadlist — is this list still real?</title>
+<style>
+  :root{
+    --bg:#0b0d10;--panel:#14171c;--panel2:#1a1e25;--line:#262b34;
+    --txt:#e8ecf2;--muted:#9aa4b2;--faint:#6b7483;
+    --alive:#2fbf71;--dead:#f05252;--acq:#3b82f6;--ren:#a855f7;--unsure:#eab308;
+    --accent:#f2f4f8;
+  }
+  @media (prefers-color-scheme: light){
+    :root{
+      --bg:#f6f7f9;--panel:#ffffff;--panel2:#f1f3f6;--line:#e2e6ec;
+      --txt:#12151a;--muted:#5b6472;--faint:#878f9c;
+      --alive:#128a4e;--dead:#c92a2a;--acq:#1c5fd0;--ren:#7e22ce;--unsure:#9a6b00;
+      --accent:#12151a;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--bg);color:var(--txt);
+    font-family:ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;line-height:1.45;
+    padding:0 0 48px;
+  }
+  .wrap{max-width:720px;margin:0 auto;padding:0 16px}
+  header.top{
+    display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+    padding:14px 16px;border-bottom:1px solid var(--line);
+    position:sticky;top:0;background:var(--bg);z-index:30;
+  }
+  .mark{display:flex;align-items:center;gap:8px;font-weight:700;letter-spacing:-.02em}
+  .dot{width:10px;height:10px;border-radius:50%;background:var(--dead);box-shadow:0 0 0 3px rgba(240,82,82,.18)}
+  .tag{color:var(--muted);font-size:13px}
+  .demo{margin-left:auto;font-size:11px;color:var(--faint);border:1px solid var(--line);border-radius:999px;padding:3px 9px}
+
+  /* Screen 1 */
+  .hero{padding:40px 0 16px;text-align:center}
+  h1{font-size:26px;line-height:1.2;margin:0 0 8px;letter-spacing:-.025em}
+  @media(min-width:640px){h1{font-size:34px}}
+  .sub{color:var(--muted);font-size:14px;margin:0 0 22px}
+  textarea{
+    width:100%;min-height:270px;resize:vertical;
+    background:var(--panel);color:var(--txt);border:1px solid var(--line);
+    border-radius:14px;padding:14px;font-size:15px;line-height:1.7;
+    font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    outline:none;
+  }
+  textarea:focus{border-color:var(--muted)}
+  .btn{
+    -webkit-appearance:none;appearance:none;cursor:pointer;
+    border:1px solid var(--line);background:var(--panel2);color:var(--txt);
+    border-radius:12px;padding:14px 18px;font-size:15px;font-weight:600;
+    min-height:50px;
+  }
+  .btn:active{transform:translateY(1px)}
+  .btn.primary{background:var(--accent);color:var(--bg);border-color:transparent;width:100%;margin-top:14px;font-size:16px}
+  .btn.ghost{background:transparent}
+  .note{color:var(--faint);font-size:12.5px;margin-top:10px;text-align:center}
+
+  /* collapse animation */
+  .collapsible{overflow:hidden;transition:max-height .5s cubic-bezier(.3,.8,.3,1),opacity .35s ease,margin .4s ease;max-height:760px;opacity:1}
+  .collapsible.collapsed{max-height:0;opacity:0;margin-top:0!important;margin-bottom:0!important}
+
+  /* summary bar */
+  .sumbar{
+    display:none;align-items:center;gap:10px;margin:14px 0 0;
+    background:var(--panel);border:1px solid var(--line);border-radius:12px;
+    padding:10px 12px;font-size:13.5px;color:var(--muted);
+  }
+  .sumbar.show{display:flex}
+  .sumbar .names{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--txt)}
+  .link{background:none;border:0;color:var(--muted);text-decoration:underline;cursor:pointer;font-size:13px;padding:8px;min-height:40px}
+
+  /* stat card */
+  .stat{
+    display:none;margin:16px 0 0;background:var(--panel);border:1px solid var(--line);
+    border-radius:16px;padding:18px;
+  }
+  .stat.show{display:block;animation:rise .4s ease both}
+  @keyframes rise{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .stat .big{font-size:24px;font-weight:700;letter-spacing:-.02em}
+  @media(min-width:640px){.stat .big{font-size:30px}}
+  .stat .big em{font-style:normal;color:var(--dead)}
+  .stat .cap{color:var(--muted);font-size:13px;margin-top:4px}
+  .counts{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:14px}
+  .ct{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:10px 6px;text-align:center}
+  .ct b{display:block;font-size:19px;line-height:1.2}
+  .ct span{font-size:10.5px;letter-spacing:.09em;color:var(--muted)}
+  .ct.alive b{color:var(--alive)}.ct.dead b{color:var(--dead)}
+  .ct.acq b{color:var(--acq)}.ct.ren b{color:var(--ren)}
+  .acts{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
+  .acts .btn{flex:1 1 150px}
+
+  /* chips */
+  .chips{display:none;gap:8px;overflow-x:auto;padding:16px 0 4px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+  .chips::-webkit-scrollbar{display:none}
+  .chips.show{display:flex}
+  .chip{
+    white-space:nowrap;border:1px solid var(--line);background:var(--panel);color:var(--muted);
+    border-radius:999px;padding:9px 14px;font-size:13px;cursor:pointer;min-height:40px;
+  }
+  .chip[aria-pressed="true"]{background:var(--accent);color:var(--bg);border-color:transparent;font-weight:600}
+
+  /* rows */
+  ul.rows{list-style:none;margin:10px 0 0;padding:0;display:flex;flex-direction:column;gap:8px}
+  li.row{
+    background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 14px;
+    display:flex;gap:12px;align-items:flex-start;animation:rise .28s ease both;
+  }
+  li.row.hide{display:none}
+  .pill{
+    flex:none;font-size:10.5px;font-weight:700;letter-spacing:.08em;border-radius:999px;
+    padding:5px 9px;border:1px solid transparent;margin-top:2px;min-width:74px;text-align:center;
+  }
+  .p-ALIVE{color:var(--alive);background:color-mix(in srgb,var(--alive) 14%,transparent);border-color:color-mix(in srgb,var(--alive) 38%,transparent)}
+  .p-DEAD{color:var(--dead);background:color-mix(in srgb,var(--dead) 14%,transparent);border-color:color-mix(in srgb,var(--dead) 40%,transparent)}
+  .p-ACQUIRED{color:var(--acq);background:color-mix(in srgb,var(--acq) 14%,transparent);border-color:color-mix(in srgb,var(--acq) 38%,transparent)}
+  .p-RENAMED{color:var(--ren);background:color-mix(in srgb,var(--ren) 14%,transparent);border-color:color-mix(in srgb,var(--ren) 38%,transparent)}
+  .p-UNSURE{color:var(--unsure);background:transparent;border:1px dashed color-mix(in srgb,var(--unsure) 60%,transparent)}
+  .body{min-width:0;flex:1}
+  .nm{font-weight:650;letter-spacing:-.01em;display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+  .yr{font-size:12px;color:var(--faint);font-variant-numeric:tabular-nums}
+  .rs{font-size:13.5px;color:var(--muted);margin-top:2px}
+  .cite{font-size:11.5px;color:var(--faint);margin-top:6px;display:flex;gap:6px;align-items:flex-start}
+  .cite svg{flex:none;margin-top:2px;opacity:.7}
+  li.row.unsure{border-style:dashed;background:transparent}
+
+  /* skeleton */
+  .sk{display:flex;gap:12px;align-items:center;width:100%}
+  .bar{height:10px;border-radius:6px;background:linear-gradient(90deg,var(--panel2),var(--line),var(--panel2));background-size:200% 100%;animation:shim 1.1s linear infinite}
+  .bar.pill{width:74px;height:22px;border-radius:999px;flex:none}
+  .bar.a{width:38%}.bar.b{width:66%;margin-top:8px}
+  @keyframes shim{from{background-position:200% 0}to{background-position:-200% 0}}
+  .skbody{flex:1}
+  .empty{display:none;text-align:center;color:var(--muted);font-size:14px;padding:30px 10px;border:1px dashed var(--line);border-radius:14px;margin-top:10px}
+  .empty.show{display:block}
+
+  /* modal */
+  .scrim{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;padding:16px;z-index:60}
+  .scrim.show{display:flex}
+  .modal{background:var(--panel);border:1px solid var(--line);border-radius:18px;max-width:380px;width:100%;padding:16px;animation:rise .25s ease both}
+  .card{
+    background:linear-gradient(160deg,var(--panel2),var(--panel));
+    border:1px solid var(--line);border-radius:14px;padding:18px;
+  }
+  .card h3{margin:0;font-size:20px;letter-spacing:-.02em}
+  .card h3 em{font-style:normal;color:var(--dead)}
+  .card .mini{display:flex;gap:6px;flex-wrap:wrap;margin:12px 0}
+  .mini span{font-size:11px;border:1px solid var(--line);border-radius:999px;padding:4px 8px;color:var(--muted)}
+  .card ul{margin:6px 0 0;padding-left:16px;font-size:12.5px;color:var(--muted)}
+  .card .wm{margin-top:14px;display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:var(--faint);letter-spacing:-.01em}
+  .mrow{display:flex;gap:8px;margin-top:12px}
+  .mrow .btn{flex:1}
+  .toast{
+    position:fixed;left:50%;bottom:26px;transform:translate(-50%,16px);
+    background:var(--accent);color:var(--bg);font-size:14px;font-weight:600;
+    padding:11px 16px;border-radius:999px;opacity:0;pointer-events:none;transition:.25s ease;z-index:80;
+  }
+  .toast.show{opacity:1;transform:translate(-50%,0)}
+  footer{margin-top:28px;text-align:center;font-size:12px;color:var(--faint)}
+  .srOnly{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+  @media (prefers-reduced-motion: reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="mark"><span class="dot"></span>deadlist</div>
+  <div class="tag">paste a list of companies, see which ones are still real</div>
+  <div class="demo">Demo data</div>
+</header>
+
+<main class="wrap">
+  <section id="screen1">
+    <div class="hero collapsible" id="heroBlock">
+      <h1>Which companies on your list are actually dead?</h1>
+      <p class="sub">Paste the list. We check each name and tell you alive, dead, acquired or renamed — and say "unsure" when we don't know.</p>
+      <label class="srOnly" for="list">Company list, one per line</label>
+      <textarea id="list" spellcheck="false"></textarea>
+      <button class="btn primary" id="go">Check 20 items</button>
+      <p class="note">free · no signup · open source</p>
+    </div>
+
+    <div class="sumbar" id="sumbar">
+      <span class="names" id="sumNames">20 items</span>
+      <button class="link" id="editBtn">Edit list</button>
+    </div>
+  </section>
+
+  <section class="stat" id="stat" aria-live="polite">
+    <div class="big"><em id="bad">0</em> of <span id="tot">20</span> are not what you think</div>
+    <div class="cap" id="cap">Checking…</div>
+    <div class="counts">
+      <div class="ct alive"><b id="cAlive">0</b><span>ALIVE</span></div>
+      <div class="ct dead"><b id="cDead">0</b><span>DEAD</span></div>
+      <div class="ct acq"><b id="cAcq">0</b><span>ACQUIRED</span></div>
+      <div class="ct ren"><b id="cRen">0</b><span>RENAMED</span></div>
+    </div>
+    <div class="acts">
+      <button class="btn" id="shareBtn">Copy result card</button>
+      <button class="btn ghost" id="csvBtn">Download CSV</button>
+    </div>
+  </section>
+
+  <div class="chips" id="chips" role="group" aria-label="Filter results">
+    <button class="chip" data-f="all" aria-pressed="true">All <span id="nAll"></span></button>
+    <button class="chip" data-f="DEAD" aria-pressed="false">Dead</button>
+    <button class="chip" data-f="ACQUIRED" aria-pressed="false">Acquired</button>
+    <button class="chip" data-f="RENAMED" aria-pressed="false">Renamed</button>
+    <button class="chip" data-f="UNSURE" aria-pressed="false">Unsure</button>
+  </div>
+
+  <ul class="rows" id="rows"></ul>
+  <div class="empty" id="empty">Nothing in this category. Good news, probably.</div>
+
+  <footer>Prototype by Granted, inspired by your bookmarks</footer>
+</main>
+
+<div class="scrim" id="scrim" role="dialog" aria-modal="true" aria-label="Result card">
+  <div class="modal">
+    <div class="card" id="shareCard">
+      <h3><em id="sBad">7</em> of 20 are not what you think</h3>
+      <div class="mini">
+        <span>ALIVE <b id="sA">13</b></span><span>DEAD <b id="sD">3</b></span>
+        <span>ACQUIRED <b id="sQ">3</b></span><span>RENAMED <b id="sR">1</b></span>
+      </div>
+      <div style="font-size:12px;color:var(--faint);letter-spacing:.06em">DEAD</div>
+      <ul><li>Parse — hosted service shut down 2017</li><li>Vine — shut down 2017</li><li>Fast — one-click checkout shut down 2022</li></ul>
+      <div class="wm"><span class="dot" style="width:8px;height:8px;box-shadow:none"></span>deadlist</div>
+    </div>
+    <div class="mrow">
+      <button class="btn primary" id="copyBtn" style="margin-top:0">Copy card</button>
+      <button class="btn" id="closeBtn">Close</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+(function(){
+  "use strict";
+  var DATA = [
+    {n:"Segment",s:"ACQUIRED",r:"acquired by Twilio, now Twilio Segment",d:"2020",c:"Twilio press release · Nov 2020"},
+    {n:"Clearbit",s:"ACQUIRED",r:"acquired by HubSpot",d:"2023",c:"HubSpot newsroom · Nov 2023"},
+    {n:"Mixpanel",s:"ALIVE",r:"shipping, recent product updates",d:"checked 2026",c:"mixpanel.com/changelog · last 30 days"},
+    {n:"Heroku",s:"ALIVE",r:"operating under Salesforce, free tier removed 2022",d:"checked 2026",c:"Heroku blog · pricing notice 2022"},
+    {n:"Parse",s:"DEAD",r:"hosted service shut down 2017, open-source Parse Platform continues",d:"2017",c:"Parse blog · shutdown notice Jan 2016"},
+    {n:"Vine",s:"DEAD",r:"shut down 2017",d:"2017",c:"Twitter/Vine announcement · Oct 2016"},
+    {n:"Clubhouse",s:"ALIVE",r:"still operating, far smaller",d:"checked 2026",c:"App Store release history · recent"},
+    {n:"Gumroad",s:"ALIVE",r:"independent and shipping",d:"checked 2026",c:"gumroad.com · status page green"},
+    {n:"Airtable",s:"ALIVE",r:"operating, enterprise focus",d:"checked 2026",c:"airtable.com/whatsnew · recent"},
+    {n:"Notion",s:"ALIVE",r:"operating, frequent releases",d:"checked 2026",c:"notion.so/releases · recent"},
+    {n:"Linear",s:"ALIVE",r:"operating, frequent releases",d:"checked 2026",c:"linear.app/changelog · recent"},
+    {n:"Observable",s:"RENAMED",r:"rebranded, product line changed",d:"2024",c:"Observable blog · product rename post"},
+    {n:"Hopin",s:"ACQUIRED",r:"events business sold to RingCentral, 2023",d:"2023",c:"RingCentral announcement · Aug 2023"},
+    {n:"Fast",s:"DEAD",r:"one-click checkout startup shut down 2022",d:"2022",c:"Company shutdown statement · Apr 2022"},
+    {n:"Argo AI",s:"DEAD",r:"wound down 2022, staff split to Ford and VW",d:"2022",c:"Ford earnings call · Oct 2022"},
+    {n:"Olist",s:"ALIVE",r:"operating, Brazilian e-commerce platform",d:"checked 2026",c:"olist.com · careers page active"},
+    {n:"Teespring",s:"RENAMED",r:"now Spring",d:"2021",c:"Company rebrand announcement · 2021"},
+    {n:"Sunset Labs",s:"UNSURE",r:"no signal found in the last 18 months",d:"—",c:"no press, site or hiring activity found"},
+    {n:"Brightfold Analytics",s:"UNSURE",r:"ambiguous name, could not resolve a single entity",d:"—",c:"3 possible matches · not enough to call it"},
+    {n:"Kestrel Data",s:"ALIVE",r:"operating, small team, recent hiring",d:"checked 2026",c:"job board listing · last 60 days"}
+  ];
+
+  var $ = function(id){ return document.getElementById(id); };
+  var listEl = $("list"), rowsEl = $("rows");
+  listEl.value = DATA.map(function(x){return x.n;}).join("\n");
+
+  var counts = {ALIVE:0,DEAD:0,ACQUIRED:0,RENAMED:0,UNSURE:0};
+  var landed = 0, activeFilter = "all", timers = [], running = false;
+
+  function esc(s){ return String(s).replace(/[&<>"]/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c]; }); }
+
+  function toast(msg){
+    var t = $("toast"); t.textContent = msg; t.classList.add("show");
+    clearTimeout(toast._t); toast._t = setTimeout(function(){ t.classList.remove("show"); }, 1700);
+  }
+
+  function skeleton(){
+    var li = document.createElement("li");
+    li.className = "row";
+    li.innerHTML = '<div class="sk"><div class="bar pill"></div><div class="skbody"><div class="bar a"></div><div class="bar b"></div></div></div>';
+    return li;
+  }
+
+  function fill(li, item){
+    li.dataset.s = item.s;
+    li.className = "row" + (item.s === "UNSURE" ? " unsure" : "");
+    li.innerHTML =
+      '<span class="pill p-'+item.s+'">'+item.s+'</span>'+
+      '<div class="body">'+
+        '<div class="nm">'+esc(item.n)+' <span class="yr">'+esc(item.d)+'</span></div>'+
+        '<div class="rs">'+esc(item.r)+'</div>'+
+        '<div class="cite"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M4 6h16M4 12h16M4 18h10"/></svg><span>'+esc(item.c)+'</span></div>'+
+      '</div>';
+    applyFilter(li);
+  }
+
+  function applyFilter(li){
+    var show = activeFilter === "all" || li.dataset.s === activeFilter;
+    li.classList.toggle("hide", !show);
+  }
+
+  function refreshEmpty(){
+    if(!running){
+      var visible = rowsEl.querySelectorAll("li.row:not(.hide)").length;
+      $("empty").classList.toggle("show", visible === 0 && landed > 0);
+    }
+  }
+
+  function updateStats(){
+    $("cAlive").textContent = counts.ALIVE;
+    $("cDead").textContent = counts.DEAD;
+    $("cAcq").textContent = counts.ACQUIRED;
+    $("cRen").textContent = counts.RENAMED;
+    var bad = counts.DEAD + counts.ACQUIRED + counts.RENAMED + counts.UNSURE;
+    $("bad").textContent = bad;
+    $("cap").textContent = running
+      ? "Checking " + landed + " of " + DATA.length + "…"
+      : "dead, acquired, renamed or unresolved · " + counts.UNSURE + " we couldn't call";
+  }
+
+  function run(){
+    if(running) return;
+    var names = listEl.value.split("\n").map(function(s){return s.trim();}).filter(Boolean);
+    if(names.length === 0){ toast("Paste at least one company name"); listEl.focus(); return; }
+
+    running = true;
+    landed = 0;
+    counts = {ALIVE:0,DEAD:0,ACQUIRED:0,RENAMED:0,UNSURE:0};
+    rowsEl.innerHTML = "";
+    $("empty").classList.remove("show");
+    timers.forEach(clearTimeout); timers = [];
+
+    $("heroBlock").classList.add("collapsed");
+    $("sumbar").classList.add("show");
+    $("sumNames").textContent = names.length + " items · " + names.slice(0,3).join(", ") + (names.length > 3 ? ", +" + (names.length-3) + " more" : "");
+    $("tot").textContent = DATA.length;
+    $("stat").classList.add("show");
+    $("chips").classList.add("show");
+    $("nAll").textContent = "";
+    updateStats();
+
+    DATA.forEach(function(item, i){
+      timers.push(setTimeout(function(){
+        var li = skeleton();
+        rowsEl.appendChild(li);
+        timers.push(setTimeout(function(){
+          fill(li, item);
+          counts[item.s]++; landed++;
+          updateStats();
+          if(landed === DATA.length){
+            running = false;
+            $("nAll").textContent = DATA.length;
+            updateStats();
+            refreshEmpty();
+          }
+        }, 260));
+      }, i * 120));
+    });
+  }
+
+  $("go").addEventListener("click", run);
+
+  $("editBtn").addEventListener("click", function(){
+    timers.forEach(clearTimeout); timers = []; running = false;
+    $("heroBlock").classList.remove("collapsed");
+    $("sumbar").classList.remove("show");
+    $("stat").classList.remove("show");
+    $("chips").classList.remove("show");
+    $("empty").classList.remove("show");
+    rowsEl.innerHTML = "";
+    landed = 0;
+    window.scrollTo({top:0, behavior:"smooth"});
+  });
+
+  Array.prototype.forEach.call(document.querySelectorAll(".chip"), function(chip){
+    chip.addEventListener("click", function(){
+      activeFilter = chip.dataset.f;
+      Array.prototype.forEach.call(document.querySelectorAll(".chip"), function(c){
+        c.setAttribute("aria-pressed", String(c === chip));
+      });
+      Array.prototype.forEach.call(rowsEl.querySelectorAll("li.row"), function(li){
+        if(li.dataset.s) applyFilter(li);
+      });
+      refreshEmpty();
+    });
+  });
+
+  $("shareBtn").addEventListener("click", function(){
+    var bad = counts.DEAD + counts.ACQUIRED + counts.RENAMED + counts.UNSURE;
+    $("sBad").textContent = bad || 7;
+    $("sA").textContent = counts.ALIVE || 13;
+    $("sD").textContent = counts.DEAD || 3;
+    $("sQ").textContent = counts.ACQUIRED || 3;
+    $("sR").textContent = counts.RENAMED || 1;
+    $("scrim").classList.add("show");
+  });
+  function closeModal(){ $("scrim").classList.remove("show"); }
+  $("closeBtn").addEventListener("click", closeModal);
+  $("scrim").addEventListener("click", function(e){ if(e.target === $("scrim")) closeModal(); });
+  document.addEventListener("keydown", function(e){ if(e.key === "Escape") closeModal(); });
+  $("copyBtn").addEventListener("click", function(){ toast("Copied!"); });
+  $("csvBtn").addEventListener("click", function(){
+    toast(landed ? "CSV ready — deadlist-results.csv" : "Run a check first");
+  });
+})();
+</script>
+</body>
+</html>

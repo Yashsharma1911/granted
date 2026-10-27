@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-26T20:41:00.321Z",
+  "updated": "2026-10-27T20:41:47.853Z",
   "ideas": [
     {
       "id": "2026-10-22-agentgauntlet",
@@ -220,6 +220,66 @@
       "sources_count": 7,
       "superseded_by": null,
       "sibling": "2026-10-26-exploded"
+    },
+    {
+      "id": "2026-10-27-stalecheck",
+      "number": 10,
+      "date": "2026-10-27",
+      "track": "venture",
+      "short_name": "Stalecheck",
+      "verdict": "watch",
+      "score": 7.2,
+      "scores": {
+        "pain": 7,
+        "market_pull": 7,
+        "timing": 8,
+        "gap": 7,
+        "wedge": 7
+      },
+      "effort": "3+ months",
+      "category": "Back-office automation",
+      "tags": [
+        "finance",
+        "ap",
+        "vendor-data",
+        "agents"
+      ],
+      "pain_type": "expressed",
+      "one_liner": "For the AP manager or financial controller at a 50-500 person company with 200-2,000 suppliers in NetSuite, Xero or QuickBooks, Stalecheck re-verifies every supplier record against live public evidence each month — still trading, name/registration changed, insolvency filed, website dead, duplicate of another vendor — and hands back a ranked worklist of the 20 records that actually need a human.",
+      "prototype_url": "https://yashsharma1911.github.io/granted/ideas/2026-10-27-stalecheck/",
+      "sources_count": 14,
+      "superseded_by": null,
+      "sibling": "2026-10-27-deadlist"
+    },
+    {
+      "id": "2026-10-27-deadlist",
+      "number": 11,
+      "date": "2026-10-27",
+      "track": "build",
+      "short_name": "Deadlist",
+      "verdict": "watch",
+      "score": 7.2,
+      "scores": {
+        "wow": 8,
+        "shareability": 7,
+        "buildability": 8,
+        "freshness": 8,
+        "usefulness": 5
+      },
+      "effort": "a weekend",
+      "category": "Developer tools",
+      "tags": [
+        "data",
+        "research",
+        "csv",
+        "web-grounded"
+      ],
+      "pain_type": "latent",
+      "one_liner": "Paste any list — your SaaS subscriptions, a 'top 50 AI tools' blog post, your CRM accounts, your bookmarks — and Deadlist tells you which of them are dead, acquired, renamed or pivoted, each with a citation and a date.",
+      "prototype_url": "https://yashsharma1911.github.io/granted/ideas/2026-10-27-deadlist/",
+      "sources_count": 5,
+      "superseded_by": null,
+      "sibling": "2026-10-27-stalecheck"
     }
   ]
 }
