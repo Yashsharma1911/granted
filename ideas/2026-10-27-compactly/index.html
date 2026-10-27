@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Compactly — your license, mapped to your next 13 weeks</title>
+<style>
+:root{
+--bg:#f6f7f9;--card:#ffffff;--ink:#11161d;--muted:#5c6773;--line:#e3e7ec;
+--green:#128a4f;--greenbg:#e3f6ec;--amber:#b4700a;--amberbg:#fdf0d8;
+--grey:#9aa4b0;--greybg:#eceff3;--red:#c62828;--redbg:#fde8e8;--accent:#1d4ed8;
+}
+@media (prefers-color-scheme:dark){
+:root{
+--bg:#0d1117;--card:#161b22;--ink:#e7edf3;--muted:#98a4b3;--line:#262d36;
+--green:#4ade80;--greenbg:#14301f;--amber:#f0b429;--amberbg:#352a0f;
+--grey:#5a646f;--greybg:#20262e;--red:#ff6b6b;--redbg:#3a1b1b;--accent:#7aa2ff;
+}
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+background:var(--bg);color:var(--ink);
+font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+font-size:16px;line-height:1.45;-webkit-text-size-adjust:100%;
+}
+header.top{
+position:sticky;top:0;z-index:30;background:var(--card);border-bottom:1px solid var(--line);
+padding:10px 14px;display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;
+}
+.brand{font-weight:700;letter-spacing:-.02em}
+.brand .dot{color:var(--green)}
+.tag{color:var(--muted);font-size:13px}
+.demo{margin-left:auto;font-size:11px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:2px 8px}
+main{max-width:1100px;margin:0 auto;padding:14px 14px 90px}
+h1,h2,h3{margin:0}
+button{font:inherit;color:inherit}
+/* ---------- screen 1 ---------- */
+#screen1{min-height:68vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:18px;padding-top:18px}
+.drop{
+width:100%;max-width:520px;border:2px dashed var(--line);border-radius:18px;background:var(--card);
+padding:38px 20px;cursor:pointer;transition:border-color .15s,transform .1s;
+}
+.drop:hover,.drop:focus-visible{border-color:var(--accent);outline:none}
+.drop:active{transform:scale(.995)}
+.drop svg{display:block;margin:0 auto 12px}
+.drop .big{font-size:18px;font-weight:600;max-width:330px;margin:0 auto}
+.drop .sub{color:var(--muted);font-size:13px;margin-top:8px}
+.chips{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;max-width:520px}
+.chip{
+background:var(--card);border:1px solid var(--line);border-radius:999px;padding:12px 16px;
+min-height:44px;cursor:pointer;font-size:14px;
+}
+.chip:hover{border-color:var(--accent)}
+.or{color:var(--muted);font-size:13px}
+/* shimmer */
+#reading{display:none;width:100%;max-width:520px;text-align:left}
+#reading.on{display:block}
+.shimLine{height:52px;border-radius:12px;margin-bottom:10px;background:var(--card);border:1px solid var(--line);overflow:hidden;position:relative}
+.shimLine::after{
+content:"";position:absolute;inset:0;transform:translateX(-100%);
+background:linear-gradient(90deg,transparent,rgba(125,145,175,.22),transparent);
+animation:sh 1.1s infinite;
+}
+@keyframes sh{100%{transform:translateX(100%)}}
+.readingLbl{text-align:center;color:var(--muted);font-size:14px;margin-bottom:12px}
+/* ---------- cards ---------- */
+#screen2{display:none}
+#screen2.on{display:block}
+.docstrip{display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:8px;margin-bottom:16px}
+.doc{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px}
+.doc .t{font-size:13px;font-weight:600;display:flex;align-items:center;gap:5px}
+.doc .i{font-size:11px;color:var(--muted)}
+.doc .e{font-size:12px;margin-top:4px}
+.tick{color:var(--green);flex:0 0 auto}
+.masked{font-variant-numeric:tabular-nums;letter-spacing:.5px}
+.panels{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}
+@media (max-width:860px){.panels{grid-template-columns:1fr}}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px}
+.headline{font-size:22px;font-weight:700;letter-spacing:-.02em;line-height:1.2}
+.sublead{color:var(--muted);font-size:13px;margin-top:4px}
+.secTitle{font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:6px}
+/* map */
+svg.map{width:100%;height:auto;display:block;margin-top:8px;touch-action:manipulation}
+svg.map rect.st{stroke:var(--card);stroke-width:1.4;cursor:pointer}
+svg.map rect.st:hover{stroke:var(--ink);stroke-width:2}
+svg.map text.ab{font-size:9px;font-weight:700;pointer-events:none;fill:#0b2016}
+@media (prefers-color-scheme:dark){svg.map text.ab{fill:#0b1016}}
+.legend{display:flex;flex-direction:column;gap:5px;margin-top:10px;font-size:12.5px}
+.legend div{display:flex;gap:8px;align-items:flex-start}
+.sw{width:13px;height:13px;border-radius:3px;flex:0 0 auto;margin-top:3px}
+.statebox{margin-top:10px;border:1px solid var(--line);border-radius:12px;padding:11px;background:var(--bg)}
+.statebox .nm{font-weight:700}
+.pill{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;margin-top:4px}
+.statebox p{margin:7px 0 0;font-size:13px;color:var(--muted)}
+.bona{display:inline-block;margin-top:8px;font-size:13px;color:var(--accent);text-decoration:none;font-weight:600;min-height:32px}
+/* timeline */
+.presets{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 14px}
+.preset{border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:9px 11px;font-size:13px;cursor:pointer;min-height:42px}
+.preset[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+.barwrap{position:relative;margin:26px 0 10px;padding-bottom:4px}
+.bar{height:34px;border-radius:9px;background:linear-gradient(90deg,var(--greybg),var(--greybg));border:1px solid var(--line);position:relative;overflow:hidden}
+.wk{position:absolute;top:0;bottom:0;width:1px;background:var(--line)}
+.wklbl{position:absolute;top:-17px;font-size:10px;color:var(--muted);transform:translateX(-50%)}
+.mk{position:absolute;top:-10px;width:2px;height:54px;transform:translateX(-1px)}
+.mk .head{position:absolute;top:-7px;left:50%;transform:translateX(-50%);width:11px;height:11px;border-radius:50%;border:2px solid var(--card)}
+.barends{display:flex;justify-content:space-between;font-size:11.5px;color:var(--muted);margin-top:6px}
+.cred{display:flex;gap:9px;align-items:flex-start;padding:9px 0;border-top:1px solid var(--line);font-size:13.5px}
+.cred .d{width:10px;height:10px;border-radius:50%;flex:0 0 auto;margin-top:5px}
+.cred .nmx{font-weight:600}
+.cred .st{font-size:12px;color:var(--muted)}
+.alert{background:var(--redbg);border:1px solid var(--red);border-radius:12px;padding:11px;margin-top:12px;font-size:13.5px}
+.alert b{color:var(--red)}
+.okbox{background:var(--greenbg);border:1px solid var(--green);border-radius:12px;padding:11px;margin-top:12px;font-size:13.5px}
+/* card out */
+#cardOut{display:none;margin-top:14px}
+#cardOut.on{display:block}
+.pngcard{border:1px solid var(--line);border-radius:14px;background:linear-gradient(140deg,var(--greenbg),var(--card));padding:16px}
+.pngcard .ttl{font-weight:700;font-size:15px}
+.pngcard ul{margin:9px 0 0;padding-left:17px;font-size:14px}
+.pngcard .fine{font-size:11px;color:var(--muted);margin-top:10px}
+/* bottom bar */
+.bottom{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--line);padding:9px 12px calc(9px + env(safe-area-inset-bottom));z-index:40}
+.bottom .row{max-width:1100px;margin:0 auto;display:flex;gap:9px}
+.btn{flex:1;min-height:48px;border-radius:12px;border:1px solid var(--line);background:var(--bg);cursor:pointer;font-size:14px;font-weight:600;padding:8px}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+footer.note{font-size:11px;color:var(--muted);text-align:center;max-width:1100px;margin:16px auto 0;padding:0 12px}
+.toast{position:fixed;left:50%;bottom:78px;transform:translateX(-50%) translateY(14px);opacity:0;pointer-events:none;background:var(--ink);color:var(--bg);padding:11px 16px;border-radius:999px;font-size:13.5px;font-weight:600;z-index:60;transition:.25s;max-width:92vw;text-align:center}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+<header class="top">
+  <span class="brand">Compactly<span class="dot">.</span></span>
+  <span class="tag">your license, mapped to your next 13 weeks</span>
+  <span class="demo">Demo data</span>
+</header>
+
+<main>
+  <!-- ================= SCREEN 1 ================= -->
+  <section id="screen1">
+    <div class="drop" id="drop" tabindex="0" role="button" aria-label="Drop photos of your license and certifications">
+      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M12 16V4"/><path d="M7 9l5-5 5 5"/><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/>
+      </svg>
+      <div class="big">Drop photos of your license and certs.</div>
+      <div class="sub">Nothing leaves this page.</div>
+    </div>
+    <div class="or">or try a sample</div>
+    <div class="chips" id="chips">
+      <button class="chip" data-s="RN license (TX)">RN license (TX)</button>
+      <button class="chip" data-s="BLS card">BLS card</button>
+      <button class="chip" data-s="Vaccine record">Vaccine record</button>
+    </div>
+    <div id="reading" aria-live="polite">
+      <div class="readingLbl" id="readingLbl">Reading your documents…</div>
+      <div class="shimLine"></div><div class="shimLine"></div><div class="shimLine"></div>
+      <div class="shimLine"></div><div class="shimLine"></div>
+    </div>
+  </section>
+
+  <!-- ================= SCREEN 2 ================= -->
+  <section id="screen2" aria-live="polite">
+    <div class="secTitle">5 documents read · license no. <span class="masked">••••4417</span></div>
+    <div class="docstrip" id="docstrip"></div>
+
+    <div class="panels">
+      <!-- MAP -->
+      <div class="panel">
+        <h1 class="headline" id="mapHead">43 states you can take a contract in right now.</h1>
+        <div class="sublead">On your Texas multistate (compact) RN license.</div>
+        <svg class="map" id="map" viewBox="0 0 620 400" role="img" aria-label="US map of compact license coverage"></svg>
+        <div class="legend">
+          <div><span class="sw" style="background:var(--green)"></span><span>Covered by your Texas multistate license today <b>(43)</b></span></div>
+          <div><span class="sw" style="background:var(--amber)"></span><span>Enacted, not yet implemented — Massachusetts <b>(1)</b></span></div>
+          <div><span class="sw" style="background:var(--grey)"></span><span>Needs a separate license by endorsement <b>(7)</b></span></div>
+        </div>
+        <div class="statebox" id="statebox">
+          <div class="nm">Tap a state</div>
+          <p>See whether your Texas multistate license covers it, or whether you need to apply by endorsement first.</p>
+        </div>
+      </div>
+
+      <!-- TIMELINE -->
+      <div class="panel">
+        <div class="secTitle">Contract window</div>
+        <div class="presets" id="presets"></div>
+        <div style="font-weight:700;font-size:15px" id="contractLbl">Contract: 9 Nov 2026 → 7 Feb 2027</div>
+        <div class="barwrap">
+          <div class="bar" id="bar"></div>
+          <div class="barends"><span id="endL">Week 1</span><span id="endR">Week 13</span></div>
+        </div>
+        <div id="credlist"></div>
+        <div id="verdict"></div>
+      </div>
+    </div>
+
+    <div id="cardOut">
+      <div class="pngcard" id="pngcard">
+        <div class="ttl">Compactly card — RN, Texas multistate</div>
+        <ul id="cardList"></ul>
+        <div class="fine">No license numbers included. Planning aid only. Demo data.</div>
+      </div>
+    </div>
+
+    <footer class="note">
+      Planning aid, not legal advice. Compact data last checked 27 Oct 2026 — verify with the destination board.<br>
+      Prototype by Granted, inspired by your bookmarks
+    </footer>
+  </section>
+</main>
+
+<div class="bottom" id="bottom" style="display:none">
+  <div class="row">
+    <button class="btn" id="btnCard">Copy my card</button>
+    <button class="btn primary" id="btnIcs">Download reminders (.ics)</button>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function(){
+"use strict";
+
+/* ---------------- data ---------------- */
+var CREDS=[
+ {id:"rn",name:"RN License",issuer:"Texas BON · multistate/compact",exp:"2027-04-30"},
+ {id:"bls",name:"BLS (AHA)",issuer:"American Heart Association",exp:"2026-12-15"},
+ {id:"acls",name:"ACLS (AHA)",issuer:"American Heart Association",exp:"2027-08-01"},
+ {id:"tb",name:"TB screening",issuer:"QuantiFERON-TB Gold",exp:"2027-01-20"},
+ {id:"flu",name:"Flu vaccination",issuer:"2026-27 season",exp:"2027-03-31"}
+];
+
+var PRESETS=[
+ {label:"9 Nov 2026",start:"2026-11-09"},
+ {label:"4 Jan 2027",start:"2027-01-04"},
+ {label:"1 Mar 2027",start:"2027-03-01"}
+];
+
+/* grid map: [abbr, col, row, status]  g=green a=amber x=grey */
+var NOTE_OCT="implemented 1 Oct 2025";
+var STATES=[
+ ["AK",0,0,"g"],["ME",10,0,"g"],
+ ["WA",1,1,"g"],["MT",2,1,"g"],["ND",3,1,"g"],["MN",4,1,"g"],["WI",5,1,"g"],["MI",6,1,"g"],["NY",8,1,"g"],["VT",9,1,"g"],["NH",10,1,"g"],
+ ["OR",1,2,"g"],["ID",2,2,"g"],["WY",3,2,"g"],["SD",4,2,"g"],["IA",5,2,"g"],["IL",6,2,"g"],["IN",7,2,"g"],["OH",8,2,"g"],["PA",9,2,"g"],["NJ",10,2,"g"],["CT",11,2,"g"],["RI",12,2,"g"],
+ ["CA",1,3,"g"],["NV",2,3,"g"],["UT",3,3,"g"],["CO",4,3,"g"],["NE",5,3,"g"],["MO",6,3,"g"],["KY",7,3,"g"],["WV",8,3,"g"],["VA",9,3,"g"],["MD",10,3,"g"],["DE",11,3,"g"],["MA",12,3,"a"],
+ ["AZ",2,4,"g"],["NM",3,4,"g"],["KS",4,4,"g"],["AR",5,4,"g"],["TN",6,4,"g"],["NC",7,4,"g"],["SC",8,4,"g"],["DC",9,4,"x"],
+ ["HI",1,5,"g"],["OK",4,5,"g"],["LA",5,5,"g"],["MS",6,5,"g"],["AL",7,5,"g"],["GA",8,5,"g"],
+ ["TX",3,6,"h"],["FL",9,6,"g"],
+ ["PR",11,6,"x"],["GU",12,6,"x"],["VI",12,5,"x"],["AS",11,5,"x"],["MP",10,5,"x"],["NMI",10,6,"x"]
+];
+/* keep grey count at 7 for legend: DC, PR, GU, VI, AS, MP, NMI */
+
+var NAMES={AK:"Alaska",ME:"Maine",WA:"Washington",MT:"Montana",ND:"North Dakota",MN:"Minnesota",WI:"Wisconsin",MI:"Michigan",NY:"New York",VT:"Vermont",NH:"New Hampshire",OR:"Oregon",ID:"Idaho",WY:"Wyoming",SD:"South Dakota",IA:"Iowa",IL:"Illinois",IN:"Indiana",OH:"Ohio",PA:"Pennsylvania",NJ:"New Jersey",CT:"Connecticut",RI:"Rhode Island",CA:"California",NV:"Nevada",UT:"Utah",CO:"Colorado",NE:"Nebraska",MO:"Missouri",KY:"Kentucky",WV:"West Virginia",VA:"Virginia",MD:"Maryland",DE:"Delaware",MA:"Massachusetts",AZ:"Arizona",NM:"New Mexico",KS:"Kansas",AR:"Arkansas",TN:"Tennessee",NC:"North Carolina",SC:"South Carolina",DC:"District of Columbia",HI:"Hawaii",OK:"Oklahoma",LA:"Louisiana",MS:"Mississippi",AL:"Alabama",GA:"Georgia",TX:"Texas",FL:"Florida",PR:"Puerto Rico",GU:"Guam",VI:"U.S. Virgin Islands",AS:"American Samoa",MP:"N. Mariana Is.",NMI:"Other territory"};
+
+var RECENT={CA:1,NY:1,OR:1,HI:1,AK:1,MN:1,NV:1,IL:1,MI:1,CT:1};
+
+/* ---------------- helpers ---------------- */
+function $(id){return document.getElementById(id);}
+function d(s){var p=s.split("-");return new Date(Date.UTC(+p[0],+p[1]-1,+p[2]));}
+var MON=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+function fmt(dt){return dt.getUTCDate()+" "+MON[dt.getUTCMonth()]+" "+dt.getUTCFullYear();}
+function addDays(dt,n){return new Date(dt.getTime()+n*86400000);}
+var DAY=86400000;
+
+var toastT=null;
+function toast(msg){
+  var t=$("toast");t.textContent=msg;t.classList.add("on");
+  if(toastT)clearTimeout(toastT);
+  toastT=setTimeout(function(){t.classList.remove("on");},2600);
+}
+
+/* ---------------- screen 1 ---------------- */
+var started=false;
+function begin(label){
+  if(started)return;started=true;
+  var r=$("reading");
+  $("readingLbl").textContent=label?("Reading your documents… ("+label+" +4 more)"):"Reading your documents…";
+  r.classList.add("on");
+  $("drop").style.display="none";
+  $("chips").style.display="none";
+  document.querySelector(".or").style.display="none";
+  setTimeout(function(){
+    $("screen1").style.display="none";
+    $("screen2").classList.add("on");
+    $("bottom").style.display="block";
+    window.scrollTo(0,0);
+  },1500);
+}
+$("drop").addEventListener("click",function(){begin("");});
+$("drop").addEventListener("keydown",function(e){if(e.key==="Enter"||e.key===" "){e.preventDefault();begin("");}});
+["dragover","drop"].forEach(function(ev){
+  $("drop").addEventListener(ev,function(e){e.preventDefault();if(ev==="drop")begin("");});
+});
+Array.prototype.forEach.call(document.querySelectorAll(".chip"),function(c){
+  c.addEventListener("click",function(){begin(c.getAttribute("data-s"));});
+});
+
+/* ---------------- doc cards ---------------- */
+(function renderDocs(){
+  var h="";
+  CREDS.forEach(function(c){
+    h+='<div class="doc"><div class="t"><svg class="tick" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>'+c.name+'</div>'+
+      '<div class="i">'+c.issuer+'</div>'+
+      '<div class="e">Expires '+fmt(d(c.exp))+'</div>'+
+      (c.id==="rn"?'<div class="i masked">No. ••••4417</div>':'<div class="i">read from image</div>')+
+      '</div>';
+  });
+  $("docstrip").innerHTML=h;
+})();
+
+/* ---------------- map ---------------- */
+(function renderMap(){
+  var W=44,H=44,GX=6,GY=6,OX=18,OY=14;
+  var parts=[];
+  STATES.forEach(function(s){
+    var ab=s[0],col=s[1],row=s[2],st=s[3];
+    var x=OX+col*(W+GX),y=OY+row*(H+GY);
+    var fill= st==="a"?"var(--amber)": st==="x"?"var(--grey)":"var(--green)";
+    var extra= st==="h"?' stroke="var(--ink)" stroke-width="3"':'';
+    parts.push('<rect class="st" data-ab="'+ab+'" x="'+x+'" y="'+y+'" width="'+W+'" height="'+H+'" rx="7" fill="'+fill+'"'+extra+'><title>'+NAMES[ab]+'</title></rect>');
+    parts.push('<text class="ab" x="'+(x+W/2)+'" y="'+(y+H/2+3.5)+'" text-anchor="middle">'+(ab==="NMI"?"TER":ab)+'</text>');
+  });
+  $("map").innerHTML=parts.join("");
+  $("map").addEventListener("click",function(e){
+    var t=e.target;
+    if(t&&t.getAttribute&&t.getAttribute("data-ab")) showState(t.getAttribute("data-ab"));
+  });
+})();
+
+function showState(ab){
+  var row=null;
+  for(var i=0;i<STATES.length;i++){if(STATES[i][0]===ab){row=STATES[i];break;}}
+  if(!row){ $("statebox").innerHTML='<div class="nm">Not found</div><p>We don\'t have compact data for that jurisdiction yet.</p>'; return; }
+  var st=row[3],name=NAMES[ab]||ab,pill,pc,pbg,sentence;
+  if(st==="h"){
+    pill="Your home state";pc="var(--green)";pbg="var(--greenbg)";
+    sentence="Texas is your primary state of residence and issued your multistate license — it travels with you to every compact jurisdiction.";
+  }else if(st==="g"){
+    pill="Covered today";pc="var(--green)";pbg="var(--greenbg)";
+    sentence="Your Texas multistate license lets you practise here now without a separate application"+(RECENT[ab]?" — implemented 1 Oct 2025.":".");
+  }else if(st==="a"){
+    pill="Enacted, not yet implemented";pc="var(--amber)";pbg="var(--amberbg)";
+    sentence="Legislation is passed but the board has not switched on multistate privileges yet — you still need a single-state license to work here today.";
+  }else{
+    pill="Endorsement required";pc="var(--grey)";pbg="var(--greybg)";
+    sentence="Single-state license by endorsement required — timing and fees vary by board; check the board before accepting a start date.";
+  }
+  $("statebox").innerHTML='<div class="nm">'+name+'</div>'+
+    '<span class="pill" style="color:'+pc+';background:'+pbg+'">'+pill+'</span>'+
+    '<p>'+sentence+'</p>'+
+    '<a class="bona" href="#" data-board="1">'+name+' Board of Nursing →</a>';
+}
+$("statebox").addEventListener("click",function(e){
+  var a=e.target.closest?e.target.closest("a[data-board]"):null;
+  if(a){e.preventDefault();toast("Board link is a placeholder in this prototype");}
+});
+
+/* ---------------- timeline ---------------- */
+var activeIdx=0;
+
+(function buildPresets(){
+  var h="";
+  PRESETS.forEach(function(p,i){
+    h+='<button class="preset" data-i="'+i+'" aria-pressed="'+(i===0?"true":"false")+'">Start '+p.label+'</button>';
+  });
+  $("presets").innerHTML=h;
+  $("presets").addEventListener("click",function(e){
+    var b=e.target.closest?e.target.closest("button[data-i]"):null;
+    if(!b)return;
+    var i=parseInt(b.getAttribute("data-i"),10);
+    if(isNaN(i)||!PRESETS[i]){toast("That start date isn't available");return;}
+    activeIdx=i;
+    Array.prototype.forEach.call($("presets").children,function(c,ci){c.setAttribute("aria-pressed",ci===i?"true":"false");});
+    renderTimeline();
+    $("cardOut").classList.remove("on");
+  });
+})();
+
+function renderTimeline(){
+  var start=d(PRESETS[activeIdx].start);
+  var end=addDays(start,13*7-1);
+  var span=end.getTime()-start.getTime();
+  $("contractLbl").textContent="Contract: "+fmt(start)+" → "+fmt(end);
+  $("endL").textContent="Week 1 · "+fmt(start);
+  $("endR").textContent="Week 13 · "+fmt(end);
+
+  var bar=$("bar");
+  var inner="";
+  for(var w=1;w<13;w++){
+    var pct=(w/13)*100;
+    inner+='<div class="wk" style="left:'+pct+'%"></div>';
+  }
+  bar.innerHTML=inner;
+
+  /* week labels + markers layered on barwrap */
+  var old=document.querySelectorAll(".barwrap .mk, .barwrap .wklbl");
+  Array.prototype.forEach.call(old,function(n){n.parentNode.removeChild(n);});
+  var wrap=document.querySelector(".barwrap");
+  [1,4,7,10,13].forEach(function(w){
+    var el=document.createElement("div");
+    el.className="wklbl";
+    el.style.left=(((w-0.5)/13)*100)+"%";
+    el.textContent="w"+w;
+    wrap.appendChild(el);
+  });
+
+  var rows=[],inside=[],soonest=null;
+  CREDS.forEach(function(c){
+    var e=d(c.exp);
+    var isIn = e.getTime()>=start.getTime() && e.getTime()<=end.getTime();
+    var before = e.getTime()<start.getTime();
+    var week = Math.floor((e.getTime()-start.getTime())/(7*DAY))+1;
+    if(week<1)week=1; if(week>13)week=13;
+    var status,color;
+    if(before){status="expired before this contract starts";color="var(--red)";}
+    else if(isIn){status="expires in week "+week+" of this contract";color="var(--red)";}
+    else {status="expires after this contract";color="var(--green)";}
+    if(!before&&isIn)inside.push({c:c,week:week,e:e});
+    if(before)inside.push({c:c,week:0,e:e});
+    if(soonest===null||e.getTime()<soonest.e.getTime())soonest={c:c,e:e};
+    rows.push({c:c,e:e,status:status,color:color,isIn:isIn,before:before,week:week});
+
+    if(isIn){
+      var pct=((e.getTime()-start.getTime())/span)*100;
+      var mk=document.createElement("div");
+      mk.className="mk";
+      mk.style.left=pct+"%";
+      mk.style.background=color;
+      mk.innerHTML='<div class="head" style="background:'+color+'"></div>';
+      mk.title=c.name+" expires "+fmt(e);
+      wrap.appendChild(mk);
+    }
+  });
+
+  var html="";
+  rows.sort(function(a,b){return a.e-b.e;}).forEach(function(r){
+    html+='<div class="cred"><span class="d" style="background:'+r.color+'"></span><div><div class="nmx">'+r.c.name+' · '+fmt(r.e)+'</div><div class="st" style="color:'+(r.color==="var(--red)"?"var(--red)":"var(--muted)")+'">'+r.status+'</div></div></div>';
+  });
+  $("credlist").innerHTML=html;
+
+  var problems=rows.filter(function(r){return r.isIn||r.before;});
+  if(problems.length){
+    var p=problems.sort(function(a,b){return a.e-b.e;})[0];
+    var msg;
+    if(p.before){
+      msg="<b>Your "+p.c.name+" expires "+fmt(p.e)+", before this contract even starts.</b> Renew it before you submit — agencies check this at submission.";
+    }else{
+      msg="<b>Your "+p.c.name+" expires in week "+p.week+" of this contract.</b> Most facilities will not let you start, and agencies check this at submission.";
+    }
+    $("verdict").innerHTML='<div class="alert">'+msg+'</div>';
+  }else{
+    $("verdict").innerHTML='<div class="okbox">All 5 credentials stay valid through this whole contract. Soonest expiry after the end date: '+soonest.c.name+', '+fmt(soonest.e)+'.</div>';
+  }
+
+  lastSummary={
+    start:start,end:end,
+    soonest:soonest,
+    runway:Math.max(0,Math.round((soonest.e.getTime()-start.getTime())/(7*DAY))),
+    problems:problems.length
+  };
+}
+var lastSummary=null;
+renderTimeline();
+showState("TX");
+
+/* ---------------- bottom actions ---------------- */
+$("btnCard").addEventListener("click",function(){
+  if(!lastSummary){toast("Pick a start date first");return;}
+  var s=lastSummary;
+  var items=[
+    "43 states covered by a Texas multistate RN license",
+    "Soonest expiry: "+s.soonest.c.name+", "+fmt(s.soonest.e),
+    s.runway+" weeks of runway from "+fmt(s.start),
+    "Contract window: "+fmt(s.start)+" → "+fmt(s.end),
+    s.problems? s.problems+" credential"+(s.problems>1?"s":"")+" to renew before this contract ends" : "All credentials valid for the full contract"
+  ];
+  $("cardList").innerHTML=items.map(function(i){return "<li>"+i+"</li>";}).join("");
+  $("cardOut").classList.add("on");
+  $("cardOut").scrollIntoView({behavior:"smooth",block:"center"});
+  toast("Copied — safe to send to your recruiter");
+});
+
+$("btnIcs").addEventListener("click",function(){
+  toast("5 reminders added to compactly.ics (demo)");
+});
+
+})();
+</script>
+</body>
+</html>

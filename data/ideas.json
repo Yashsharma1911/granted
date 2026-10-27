@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-26T21:08:26.787Z",
+  "updated": "2026-10-27T16:25:51.470Z",
   "ideas": [
     {
       "id": "2026-10-26-catalog-check",
@@ -305,6 +305,66 @@
       "sources_count": 7,
       "superseded_by": null,
       "sibling": "2026-10-26-ledgerline"
+    },
+    {
+      "id": "2026-10-27-quotefirst",
+      "number": 12,
+      "date": "2026-10-27",
+      "track": "venture",
+      "short_name": "Quotefirst",
+      "verdict": "watch",
+      "score": 7.2,
+      "scores": {
+        "pain": 8,
+        "market_pull": 7,
+        "timing": 8,
+        "gap": 6,
+        "wedge": 7
+      },
+      "effort": "3+ months",
+      "category": "Back-office automation",
+      "tags": [
+        "manufacturing",
+        "quoting",
+        "document-ai",
+        "sales-ops"
+      ],
+      "pain_type": "expressed",
+      "one_liner": "An AI RFQ triage desk that watches a small machine shop's sales@ inbox, turns every emailed PDF/drawing/spreadsheet into a structured request, scores it against the shop's own machines and capabilities, and drafts a same-day \"we can do this, here's the ballpark and when\" reply.",
+      "prototype_url": "https://github.com/Yashsharma1911/granted/blob/catalog-test/ideas/2026-10-27-quotefirst/index.html",
+      "sources_count": 12,
+      "superseded_by": null,
+      "sibling": "2026-10-27-compactly"
+    },
+    {
+      "id": "2026-10-27-compactly",
+      "number": 13,
+      "date": "2026-10-27",
+      "track": "build",
+      "short_name": "Compactly",
+      "verdict": "watch",
+      "score": 6.2,
+      "scores": {
+        "wow": 7,
+        "shareability": 6,
+        "buildability": 7,
+        "freshness": 5,
+        "usefulness": 6
+      },
+      "effort": "a weekend",
+      "category": "Consumer data tools",
+      "tags": [
+        "healthcare",
+        "ocr",
+        "maps",
+        "nurses"
+      ],
+      "pain_type": "latent",
+      "one_liner": "A free browser tool where a travel nurse drops photos of her license, BLS card and vaccine records and instantly gets a shareable map of the 43 compact states she can work in today, plus a timeline showing which credential expires mid-contract.",
+      "prototype_url": "https://github.com/Yashsharma1911/granted/blob/catalog-test/ideas/2026-10-27-compactly/index.html",
+      "sources_count": 9,
+      "superseded_by": null,
+      "sibling": "2026-10-27-quotefirst"
     }
   ]
 }

@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quotefirst — RFQ triage desk</title>
+<style>
+:root{
+  --bg:#f6f7f9; --panel:#ffffff; --ink:#15191e; --muted:#5f6b78; --line:#e2e6ec;
+  --green:#0f7a4a; --greenbg:#e3f6ec; --amber:#8a5a00; --amberbg:#fdf0d6;
+  --grey:#4a5460; --greybg:#e9ecf0; --accent:#1d4ed8; --accentbg:#e8eefc;
+  --shadow:0 1px 2px rgba(16,24,40,.06),0 4px 14px rgba(16,24,40,.06);
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --bg:#0e1116; --panel:#161b22; --ink:#e8edf3; --muted:#9aa7b4; --line:#262d36;
+    --green:#5ddb9b; --greenbg:#102b1f; --amber:#f2c062; --amberbg:#2e2411;
+    --grey:#b2bdc9; --greybg:#222a33; --accent:#8ab0ff; --accentbg:#16233d;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 6px 18px rgba(0,0,0,.35);
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--ink);
+  font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  -webkit-text-size-adjust:100%;
+}
+.wrap{max-width:1180px;margin:0 auto;padding:12px 14px 40px}
+header.top{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;padding:6px 0 12px}
+.brand{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.brand b{font-size:19px;letter-spacing:-.2px}
+.brand span{color:var(--muted);font-size:13.5px}
+.demo-tag{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:3px 8px}
+.toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;width:100%;justify-content:space-between}
+.toggle{display:inline-flex;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:4px;box-shadow:var(--shadow)}
+.toggle button{
+  appearance:none;border:0;background:transparent;color:var(--muted);font:inherit;font-weight:600;
+  padding:11px 14px;border-radius:9px;cursor:pointer;min-height:44px;
+}
+.toggle button[aria-pressed="true"]{background:var(--accentbg);color:var(--accent)}
+.profile-btn{
+  appearance:none;border:1px solid var(--line);background:var(--panel);color:var(--ink);font:inherit;font-weight:600;
+  padding:11px 14px;border-radius:12px;cursor:pointer;min-height:44px;display:inline-flex;gap:8px;align-items:center;box-shadow:var(--shadow)
+}
+.drawer{display:none;margin:0 0 14px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px;box-shadow:var(--shadow)}
+.drawer.open{display:block}
+.drawer h3{margin:0 0 4px;font-size:14px}
+.drawer p.hint{margin:0 0 10px;color:var(--muted);font-size:12.5px}
+pre.json{
+  margin:0;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:12px;overflow:auto;
+  font:12.5px/1.6 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--ink)
+}
+.tolrow{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:12px}
+.tolrow label{font-size:13px;color:var(--muted)}
+.tolrow select{font:inherit;padding:10px 12px;min-height:44px;border-radius:10px;border:1px solid var(--line);background:var(--panel);color:var(--ink)}
+.banner{
+  background:var(--panel);border:1px solid var(--line);border-left:4px solid var(--line);
+  border-radius:12px;padding:12px 14px;color:var(--muted);font-size:13.5px;margin-bottom:12px
+}
+.statline{
+  background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:12px;
+  display:flex;gap:16px;flex-wrap:wrap;align-items:center;box-shadow:var(--shadow);font-size:13.5px
+}
+.statline b{font-size:17px;display:block;letter-spacing:-.2px}
+.statline div span{color:var(--muted);font-size:12px}
+.cols{display:grid;grid-template-columns:minmax(0,360px) minmax(0,1fr);gap:14px;align-items:start}
+@media (max-width:860px){.cols{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow)}
+.queue{display:flex;flex-direction:column;gap:10px}
+.rfq{
+  text-align:left;width:100%;appearance:none;font:inherit;color:inherit;cursor:pointer;
+  background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 13px;box-shadow:var(--shadow);
+  display:block;min-height:44px
+}
+.rfq:hover{border-color:var(--accent)}
+.rfq[aria-current="true"]{border-color:var(--accent);box-shadow:0 0 0 2px var(--accentbg),var(--shadow)}
+.rfq .r1{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
+.rfq .cust{font-weight:650;font-size:14.5px;letter-spacing:-.1px}
+.rfq .part{color:var(--muted);font-size:13px;margin-top:2px}
+.rfq .reason{color:var(--muted);font-size:12.5px;margin-top:7px;border-top:1px dashed var(--line);padding-top:7px}
+.chip{font-size:11px;font-weight:800;letter-spacing:.06em;padding:5px 9px;border-radius:999px;white-space:nowrap}
+.c-QUOTE{background:var(--greenbg);color:var(--green)}
+.c-CLARIFY{background:var(--amberbg);color:var(--amber)}
+.c-NOQUOTE{background:var(--greybg);color:var(--grey)}
+.flash{animation:flash 1.1s ease}
+@keyframes flash{0%{box-shadow:0 0 0 0 rgba(15,122,74,.55)}100%{box-shadow:0 0 0 14px rgba(15,122,74,0)}}
+.sec{padding:14px}
+.sec+.sec{border-top:1px solid var(--line)}
+.sec h4{margin:0 0 10px;font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.detail-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;flex-wrap:wrap}
+.detail-head h2{margin:0;font-size:17px;letter-spacing:-.2px}
+.detail-head .sub{color:var(--muted);font-size:13px;margin-top:3px}
+table.ex{width:100%;border-collapse:collapse;font-size:13.5px}
+table.ex td{padding:8px 0;border-bottom:1px solid var(--line);vertical-align:top}
+table.ex tr:last-child td{border-bottom:0}
+table.ex td.k{color:var(--muted);width:42%;padding-right:10px}
+.nf{color:var(--amber);font-weight:650}
+ul.rules{margin:0;padding-left:18px}
+ul.rules li{margin-bottom:8px;font-size:13.5px}
+ul.rules li:last-child{margin-bottom:0}
+ul.rules code{background:var(--bg);border:1px solid var(--line);border-radius:5px;padding:1px 5px;font-size:12px}
+textarea{
+  width:100%;min-height:190px;resize:vertical;font:13.5px/1.55 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:12px
+}
+textarea:focus{outline:2px solid var(--accent);outline-offset:1px}
+.btnrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+button.b{
+  appearance:none;font:inherit;font-weight:650;cursor:pointer;min-height:44px;padding:11px 15px;border-radius:11px;
+  border:1px solid var(--line);background:var(--panel);color:var(--ink)
+}
+button.b.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+@media (prefers-color-scheme:dark){button.b.primary{color:#0e1116}}
+.verdictsel{display:none;gap:6px;margin-top:10px;flex-wrap:wrap}
+.verdictsel.open{display:flex}
+.verdictsel button{
+  appearance:none;font:inherit;font-weight:700;font-size:12px;letter-spacing:.05em;cursor:pointer;min-height:44px;
+  padding:10px 14px;border-radius:999px;border:1px solid var(--line);background:var(--panel);color:var(--muted)
+}
+.verdictsel button[aria-pressed="true"].v-QUOTE{background:var(--greenbg);color:var(--green);border-color:var(--green)}
+.verdictsel button[aria-pressed="true"].v-CLARIFY{background:var(--amberbg);color:var(--amber);border-color:var(--amber)}
+.verdictsel button[aria-pressed="true"].v-NOQUOTE{background:var(--greybg);color:var(--grey);border-color:var(--grey)}
+/* inbox */
+.inbox{overflow:hidden}
+.mail{display:flex;gap:10px;padding:12px 13px;border-bottom:1px solid var(--line);align-items:flex-start}
+.mail:last-child{border-bottom:0}
+.mail.unread .subj{font-weight:700}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--accent);margin-top:6px;flex:0 0 8px}
+.dot.off{background:transparent}
+.mail .body{min-width:0;flex:1}
+.mail .from{font-size:12.5px;color:var(--muted);display:flex;justify-content:space-between;gap:8px}
+.mail .subj{font-size:14px;margin:2px 0 3px;overflow:hidden;text-overflow:ellipsis}
+.mail .snip{font-size:12.5px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.atts{display:flex;gap:5px;flex-wrap:wrap;margin-top:6px}
+.att{font-size:11px;color:var(--muted);border:1px solid var(--line);border-radius:6px;padding:2px 6px;background:var(--bg)}
+.toast{
+  position:fixed;left:50%;bottom:22px;transform:translate(-50%,24px);opacity:0;pointer-events:none;
+  background:var(--ink);color:var(--bg);padding:13px 18px;border-radius:12px;font-size:13.5px;font-weight:600;
+  box-shadow:0 10px 30px rgba(0,0,0,.3);transition:opacity .22s,transform .22s;z-index:50;max-width:92vw;text-align:center
+}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+footer{margin-top:26px;text-align:center;color:var(--muted);font-size:12px}
+.hidden{display:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <b>Quotefirst</b>
+      <span>reads the RFQ inbox and tells a machine shop what to quote, clarify or decline — before lunch.</span>
+    </div>
+    <div class="toolbar">
+      <div class="toggle" role="group" aria-label="View">
+        <button id="btnBefore" aria-pressed="false">Before (shared inbox)</button>
+        <button id="btnAfter" aria-pressed="true">After (Quotefirst)</button>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <span class="demo-tag">Demo data</span>
+        <button class="profile-btn" id="btnProfile" aria-expanded="false">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 7h18M3 12h18M3 17h12"/></svg>
+          Your shop profile
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <section class="drawer" id="drawer">
+    <h3>Shop profile — Ridgeway Precision Machining</h3>
+    <p class="hint">Every verdict below is scored against this. Change the tolerance floor and watch RFQ #3 re-score live.</p>
+    <pre class="json" id="profileJson"></pre>
+    <div class="tolrow">
+      <label for="tolSel">tolerance_floor_in</label>
+      <select id="tolSel">
+        <option value="0.001">0.001" (current)</option>
+        <option value="0.0002">0.0002" (new grinder + CMM)</option>
+      </select>
+      <span class="demo-tag">live re-score</span>
+    </div>
+  </section>
+
+  <!-- BEFORE -->
+  <main id="viewBefore" class="hidden">
+    <div class="banner">11 messages. 6 are RFQs. Average reply time last month: 3.4 days. 2 RFQs never answered.</div>
+    <div class="card inbox" id="inboxList"></div>
+  </main>
+
+  <!-- AFTER -->
+  <main id="viewAfter">
+    <div class="statline">
+      <div><b>6</b><span>new RFQs</span></div>
+      <div><b id="readyCount">3</b><span>ready to quote</span></div>
+      <div><b>41 min</b><span>median time-to-first-reply</span></div>
+    </div>
+    <div class="cols">
+      <div class="queue" id="queue"></div>
+      <div class="card" id="detail"></div>
+    </div>
+  </main>
+
+  <footer>Prototype by Granted, inspired by your bookmarks</footer>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function(){
+  "use strict";
+
+  var profile = {
+    shop: "Ridgeway Precision Machining",
+    machines: ["Haas VF-4 (3-axis)", "Haas VF-2SS (3-axis)", "Doosan Lynx 220 (turning)", "Okuma Genos L250 (turning)"],
+    max_envelope_in: "40 x 20 x 25",
+    tolerance_floor_in: 0.001,
+    materials: ["6061-T6", "7075", "SS304", "SS316", "cast iron", "brass", "Delrin"],
+    not_offered: ["sheet-metal weldments", "anodize in-house", "Ti-6Al-4V >10 pcs"],
+    max_run_pcs: 500,
+    backlog_weeks: 7,
+    itar_registered: false
+  };
+
+  function renderProfile(){
+    document.getElementById("profileJson").textContent = JSON.stringify(profile, null, 2);
+  }
+
+  /* ---------- BEFORE: inbox ---------- */
+  var inbox = [
+    {f:"purchasing@northstaraero.com",t:"7:02 AM",s:"RFQ 44821 — bracket, 250 pcs (Tolerance pkg attached)",p:"Please quote per attached print and tolerance package. Need pricing by Fri…",a:["print_44821.pdf","tol_pkg_rev C.pdf","terms_NSA.pdf"],u:true},
+    {f:"d.okafor@lakeshoremeddev.com",t:"6:48 AM",s:"Quote needed ASAP — SS316 manifold",p:"Same part as the March run, 40 pcs this time. Spreadsheet has the line items.",a:["manifold_qty40.xlsx"],u:true},
+    {f:"mikeb4471@gmail.com",t:"Sun 9:14 PM",s:"Re: Re: FWD: quote request",p:"sorry here's a pic of the print, let me know what you think — sent from my iPhone",a:["IMG_4471.HEIC"],u:true},
+    {f:"news@moderntoolingweekly.com",t:"Sun 5:00 AM",s:"5 carbide trends shaping Q4 (+ webinar invite)",p:"Your weekly digest of tooling news, sponsored by…",a:[],u:false},
+    {f:"eng@grainlinerobotics.io",t:"Sat 4:33 PM",s:"RFQ — Ti housing rev D (12 pcs) — flatness callout",p:"Rev D updates datum B. Please confirm you can hold the flatness…",a:["housing_revD.pdf","GDT_notes.pdf"],u:true},
+    {f:"no-reply@mcmaster-order.com",t:"Sat 11:20 AM",s:"Your order #88-4412 has shipped",p:"1 of 1 packages shipped via UPS Ground. Tracking: 1Z…",a:[],u:false},
+    {f:"j.bowman@bowmanfab.com",t:"Fri 6:51 PM",s:"Mixed BOM for Q1 build — 9 line items",p:"Attached BOM covers machined and fabbed parts, quote what you can…",a:["BOM_Q1_build.xlsx","weldment_sk.pdf"],u:true},
+    {f:"sourcing@deltacore-energy.com",t:"Fri 3:12 PM",s:"Volume RFQ: 6061 plate, 4,500 pcs, 3-week lead",p:"Annual blanket opportunity. Need confirmation of capacity by Monday…",a:["dc_plate.step.pdf"],u:true},
+    {f:"winners@toolprize-offers.biz",t:"Fri 1:09 AM",s:"CONGRATULATIONS!! Your shop has been pre-selected 💰",p:"Claim your industrial grant before it expires!!! Click here now…",a:[],u:false},
+    {f:"orders@hartleypump.com",t:"Thu 4:40 PM",s:"RFQ — cast iron impeller, 60 pcs, drawing attached",p:"Standard repeat geometry, please advise lead time with quote.",a:["impeller_2201.pdf"],u:false},
+    {f:"editor@shopfloorbrief.com",t:"Thu 7:00 AM",s:"The Shop Floor Brief: reshoring, tariffs, and you",p:"This week: what the new tariff schedule means for job shops…",a:[],u:false}
+  ];
+
+  function renderInbox(){
+    var host = document.getElementById("inboxList"), html = "";
+    for (var i=0;i<inbox.length;i++){
+      var m = inbox[i], at = "";
+      for (var j=0;j<m.a.length;j++){ at += '<span class="att">📎 '+esc(m.a[j])+'</span>'; }
+      html += '<div class="mail'+(m.u?' unread':'')+'">'+
+        '<span class="dot'+(m.u?'':' off')+'"></span>'+
+        '<div class="body">'+
+          '<div class="from"><span>'+esc(m.f)+'</span><span>'+esc(m.t)+'</span></div>'+
+          '<div class="subj">'+esc(m.s)+'</div>'+
+          '<div class="snip">'+esc(m.p)+'</div>'+
+          (at?'<div class="atts">'+at+'</div>':'')+
+        '</div></div>';
+    }
+    host.innerHTML = html;
+  }
+
+  /* ---------- AFTER: RFQ data ---------- */
+  var NF = null; // "not found"
+
+  var rfqs = [
+    {
+      id:1, cust:"Northstar Aerospace", part:"6061-T6 bracket", qty:"250 pcs", due:"14 Nov",
+      verdict:"QUOTE", reason:"3-axis, 0.005\" tol, fits Haas VF-4; est. 6 hrs est. work.",
+      ex:{"Customer":"Northstar Aerospace","Part number":"NSA-44821-02","Quantity":"250 pcs","Material":"6061-T6 aluminium","Finish":"Clear anodize (outsourced)","Key tolerances":"±0.005\" profile, 0.002\" position","Due date":"14 Nov 2025","Source":"page 2 of print_44821.pdf"},
+      rules:[
+        "Tolerance 0.005\" vs your floor <code>0.001\"</code> — comfortably inside.",
+        "Envelope 7.5 × 4.2 × 1.1\" vs your max <code>40 × 20 × 25\"</code>.",
+        "Material 6061-T6 is in your <code>materials</code> list.",
+        "Qty 250 vs <code>max_run_pcs 500</code>; due 14 Nov clears your 7-week backlog."
+      ],
+      drafts:{
+        QUOTE:"Hi Dana,\n\nThanks for RFQ 44821 — we've got the print and the Rev C tolerance package. The 6061-T6 bracket is a good fit for our VF-4 and we can hold the ±0.005\" profile without special fixturing.\n\nWe're preparing pricing for 250 pcs against your 14 Nov need date and will have it to you within the day. Anodize will be outsourced to our usual plater; I'll note the added days in the quote.\n\nBest,\nRay — Ridgeway Precision Machining",
+        CLARIFY:"Hi Dana,\n\nThanks for RFQ 44821. Before we price the 250-pc bracket run, could you confirm two things?\n\n1. Is the clear anodize to MIL-A-8625 Type II, Class 1?\n2. Is 14 Nov a dock date or a ship date?\n\nOnce I have those I'll turn pricing around same day.\n\nBest,\nRay — Ridgeway Precision Machining",
+        NOQUOTE:"Hi Dana,\n\nThanks for sending RFQ 44821 our way. We're going to pass on this one — our schedule through November is committed and I'd rather be straight with you than quote a date we can't hold.\n\nPlease keep us on the list for the next round; we'd like another shot at this part.\n\nBest,\nRay — Ridgeway Precision Machining"
+      }
+    },
+    {
+      id:2, cust:"Lakeshore Medical Devices", part:"SS316 manifold", qty:"40 pcs", due:"7 Nov",
+      verdict:"QUOTE", reason:"Material and tolerance in profile; repeat customer, quoted twice in 2025.",
+      ex:{"Customer":"Lakeshore Medical Devices","Part number":"LMD-7741-M","Quantity":"40 pcs","Material":"SS316","Finish":"Passivate per ASTM A967","Key tolerances":"±0.002\" bore, 32 Ra","Due date":"7 Nov 2025","Source":"row 4 of manifold_qty40.xlsx"},
+      rules:[
+        "Tolerance 0.002\" vs your floor <code>0.001\"</code> — inside.",
+        "SS316 listed in <code>materials</code>; proven on the Lynx 220.",
+        "Repeat part — quoted Mar 2025 (60 pcs) and Jul 2025 (25 pcs); geometry unchanged.",
+        "Qty 40 vs <code>max_run_pcs 500</code>; 7 Nov fits the current slot."
+      ],
+      drafts:{
+        QUOTE:"Hi Dayo,\n\nGood to hear from you again. We've run this manifold twice in 2025, so the setup and fixtures are already proven — no surprises on our side.\n\nPricing for 40 pcs with passivation is coming over today, and 7 Nov is workable.\n\nBest,\nRay — Ridgeway Precision Machining",
+        CLARIFY:"Hi Dayo,\n\nThanks for the repeat order. One quick check before I price it: is this the same revision we ran in July (LMD-7741-M Rev B), or has the bore spec moved?\n\nAs soon as you confirm, pricing follows same day.\n\nBest,\nRay — Ridgeway Precision Machining",
+        NOQUOTE:"Hi Dayo,\n\nThanks for coming back to us. Unfortunately we have to pass on the November run — our turning cells are fully committed and 7 Nov isn't realistic.\n\nIf the date can move into December, I'd be glad to quote it.\n\nBest,\nRay — Ridgeway Precision Machining"
+      }
+    },
+    {
+      id:3, cust:"Grainline Robotics", part:"Ti-6Al-4V housing", qty:"12 pcs", due:"28 Nov",
+      verdict:"CLARIFY", reason:"Print calls 0.0004\" flatness on datum B — below your 0.001\" floor. Ask if typical or critical.",
+      rescoreTarget:true,
+      ex:{"Customer":"Grainline Robotics","Part number":"GRB-HSG-004 Rev D","Quantity":"12 pcs","Material":"Ti-6Al-4V","Finish":"As-machined","Key tolerances":"0.0004\" flatness on datum B","Due date":"28 Nov 2025","Source":"page 1 of housing_revD.pdf (GD&T block)"},
+      rules:[
+        "Flatness 0.0004\" vs your floor <code>0.001\"</code> — tighter than you hold.",
+        "Ti-6Al-4V at 12 pcs brushes <code>not_offered: Ti-6Al-4V &gt;10 pcs</code>.",
+        "Envelope 11 × 6 × 4\" vs <code>40 × 20 × 25\"</code> — fine.",
+        "Due 28 Nov is inside the <code>7-week</code> backlog only if cut is scheduled this week."
+      ],
+      rulesAfter:[
+        "Flatness 0.0004\" vs your floor <code>0.0002\"</code> — now inside capability (grinder + CMM).",
+        "Ti-6Al-4V at 12 pcs: still 2 over the <code>&gt;10 pcs</code> note — flagged, not blocking.",
+        "Envelope 11 × 6 × 4\" vs <code>40 × 20 × 25\"</code> — fine.",
+        "Due 28 Nov clears the schedule with the grinding pass added."
+      ],
+      drafts:{
+        QUOTE:"Hi Priya,\n\nWe've reviewed Rev D of the housing. The 0.0004\" flatness on datum B is within what we now hold since the grinder and CMM came online, so we can quote it as drawn.\n\nPricing for 12 pcs in Ti-6Al-4V is in progress and will reach you today, with a CMM report included per lot.\n\nBest,\nRay — Ridgeway Precision Machining",
+        CLARIFY:"Hi Priya,\n\nThanks for Rev D. One item before we price it: the print calls 0.0004\" flatness on datum B. That's tighter than our standard 0.001\" floor.\n\nIs that number functionally critical, or is it a carry-over from the typical block? If 0.001\" works we can quote immediately; if 0.0004\" is required we'd add a grinding operation and a CMM report, which changes lead time.\n\nAlso, is Ti-6Al-4V fixed, or is 17-4 acceptable at this quantity?\n\nBest,\nRay — Ridgeway Precision Machining",
+        NOQUOTE:"Hi Priya,\n\nThanks for sending Rev D. After reviewing the GD&T we're going to pass — the 0.0004\" flatness on datum B sits below what we can reliably hold, and I'd rather say so now than miss it at inspection.\n\nHappy to look at the next revision if that callout relaxes.\n\nBest,\nRay — Ridgeway Precision Machining"
+      }
+    },
+    {
+      id:4, cust:"Bowman Fabrication", part:"Mixed BOM", qty:"9 line items", due:"5 Dec",
+      verdict:"CLARIFY", reason:"BOM includes 2 sheet-metal weldments you don't do; confirm whether partial quote acceptable.",
+      ex:{"Customer":"Bowman Fabrication","Part number":"BOM_Q1_build (9 lines)","Quantity":"9 line items (qty 10–120 ea.)","Material":"Mixed: 6061, SS304, sheet steel","Finish":NF,"Key tolerances":"±0.010\" typical, 2 lines unspecified","Due date":"5 Dec 2025","Source":"sheet 1 of BOM_Q1_build.xlsx"},
+      rules:[
+        "Lines 4 and 7 are sheet-metal weldments — in <code>not_offered</code>.",
+        "Remaining 7 lines are 6061/SS304, both in <code>materials</code>.",
+        "Finish column empty on 9 of 9 lines — <span class=\"nf\">not found</span>.",
+        "Total machined qty 410 pcs vs <code>max_run_pcs 500</code> — inside."
+      ],
+      drafts:{
+        QUOTE:"Hi Jeff,\n\nWe've been through the Q1 BOM and can cover the machined lines. Pricing for those is being put together now and will be with you today.\n\nBest,\nRay — Ridgeway Precision Machining",
+        CLARIFY:"Hi Jeff,\n\nThanks for the Q1 BOM. We can quote 7 of the 9 lines today. Lines 4 and 7 are sheet-metal weldments, which we don't do in house.\n\nTwo questions:\n1. Is a partial quote on the 7 machined lines useful, or do you need the package quoted whole?\n2. The finish column is blank throughout — should we assume as-machined?\n\nSay the word and I'll send the 7-line quote straight away.\n\nBest,\nRay — Ridgeway Precision Machining",
+        NOQUOTE:"Hi Jeff,\n\nThanks for the Q1 BOM. Since two of the nine lines are weldments we can't produce, and it reads like you need a single-source package, we'll step aside on this one.\n\nIf the machined lines ever get split out, send them over.\n\nBest,\nRay — Ridgeway Precision Machining"
+      }
+    },
+    {
+      id:5, cust:"Deltacore Energy", part:"Aluminium plate", qty:"4,500 pcs", due:"20 Nov",
+      verdict:"NO-QUOTE", reason:"Quantity 9x your largest 2025 run; lead time 3 weeks against 7-week backlog.",
+      ex:{"Customer":"Deltacore Energy","Part number":"DC-PLT-1180","Quantity":"4,500 pcs","Material":"6061-T6 plate","Finish":"Mill finish","Key tolerances":"±0.010\"","Due date":"20 Nov 2025 (3-week lead)","Source":"page 1 of dc_plate.step.pdf"},
+      rules:[
+        "Qty 4,500 vs <code>max_run_pcs 500</code> — 9× your largest 2025 run.",
+        "3-week lead vs <code>backlog_weeks 7</code> — cannot be met.",
+        "Tolerance ±0.010\" and 6061-T6 are both fine; volume is the blocker.",
+        "Suggested action: decline with a capacity note, offer a 500-pc pilot."
+      ],
+      drafts:{
+        QUOTE:"Hi Sam,\n\nWe'd like to take a run at the 4,500-pc plate program. Pricing follows today, with a proposed phased delivery schedule rather than a single 20 Nov drop.\n\nBest,\nRay — Ridgeway Precision Machining",
+        CLARIFY:"Hi Sam,\n\nThanks for including us on the plate program. Before quoting: is the 4,500 pcs a single 20 Nov delivery, or can it be released in monthly batches?\n\nBatched, we can be competitive. As one drop in three weeks, it's beyond our current capacity.\n\nBest,\nRay — Ridgeway Precision Machining",
+        NOQUOTE:"Hi Sam,\n\nThanks for the opportunity on DC-PLT-1180. We're going to pass. At 4,500 pcs inside three weeks the volume is well past what we can commit to against a seven-week backlog, and I won't quote a date we can't hold.\n\nIf you ever want a 500-pc pilot lot or a batched release schedule, we'd be glad to price it.\n\nBest,\nRay — Ridgeway Precision Machining"
+      }
+    },
+    {
+      id:6, cust:"Hartley Pump Co.", part:"Cast iron impeller", qty:"60 pcs", due:"21 Nov",
+      verdict:"QUOTE", reason:"Standard; drawing legible; all dims extracted.",
+      ex:{"Customer":"Hartley Pump Co.","Part number":"HP-2201-IMP","Quantity":"60 pcs","Material":"Cast iron (class 30)","Finish":"As-cast + machined faces","Key tolerances":"±0.005\" bore, ±0.015\" profile","Due date":"21 Nov 2025","Source":"page 1 of impeller_2201.pdf"},
+      rules:[
+        "All 23 dimensions extracted at high confidence; no blanks.",
+        "Tolerance 0.005\" vs floor <code>0.001\"</code> — inside.",
+        "Cast iron is in <code>materials</code>; fixture exists from the 2024 run.",
+        "Qty 60 and 21 Nov both clear <code>max_run_pcs</code> and backlog."
+      ],
+      drafts:{
+        QUOTE:"Hi Terri,\n\nDrawing received and fully legible — we pulled all dimensions cleanly and still have the fixture from the 2024 run.\n\nQuote for 60 pcs with lead time is coming over today.\n\nBest,\nRay — Ridgeway Precision Machining",
+        CLARIFY:"Hi Terri,\n\nThanks for the impeller RFQ. Quick check: are the castings supplied by you, or should we source them? That changes the lead time materially.\n\nBest,\nRay — Ridgeway Precision Machining",
+        NOQUOTE:"Hi Terri,\n\nThanks for thinking of us on the impeller. We have to pass this round — the turning cells are committed through late November.\n\nPlease send the next one; we'd like to stay in the rotation.\n\nBest,\nRay — Ridgeway Precision Machining"
+      }
+    },
+    {
+      id:7, cust:"(unknown sender)", part:"Phone photo of a print", qty:"no qty", due:"—",
+      verdict:"CLARIFY", reason:"No quantity, no material callout, no due date. Draft asks for all three.",
+      ex:{"Customer":"mikeb4471@gmail.com (no company match)","Part number":NF,"Quantity":NF,"Material":NF,"Finish":NF,"Key tolerances":"±1/64\" handwritten, partially obscured","Due date":NF,"Source":"IMG_4471.HEIC — single photo, angled, 1 of 1 pages"},
+      rules:[
+        "4 required fields <span class=\"nf\">not found</span>: part no., qty, material, due date.",
+        "Sender domain is consumer email — no record in your customer list.",
+        "Only tolerance visible is a handwritten ±1/64\"; cannot compare to <code>0.001\"</code> floor.",
+        "Below the auto-quote threshold — a 3-question reply unblocks it."
+      ],
+      drafts:{
+        QUOTE:"Hi Mike,\n\nThanks for the photo — we can work from it. Pricing will follow shortly.\n\nBest,\nRay — Ridgeway Precision Machining",
+        CLARIFY:"Hi Mike,\n\nThanks for sending the print over. The photo is readable but a few things we need to quote aren't on it:\n\n1. How many pieces?\n2. What material (and temper, if applicable)?\n3. When do you need them?\n\nIf you can snap a flat, straight-on photo of the full page — or email the PDF — I'll get you a number the same day.\n\nBest,\nRay — Ridgeway Precision Machining",
+        NOQUOTE:"Hi Mike,\n\nThanks for reaching out. Based on what we can see, this part isn't a fit for our shop, so we'll pass rather than hold you up.\n\nBest of luck with the project.\n\nBest,\nRay — Ridgeway Precision Machining"
+      }
+    },
+    {
+      id:8, cust:"Verity Defense Systems", part:"ITAR-marked assembly", qty:"30 pcs", due:"12 Dec",
+      verdict:"NO-QUOTE", reason:"ITAR registration required; flagged for owner review, not auto-declined.",
+      ex:{"Customer":"Verity Defense Systems","Part number":"VDS-A-3310 (controlled)","Quantity":"30 pcs","Material":"17-4 PH H900","Finish":"Black oxide","Key tolerances":"±0.003\"","Due date":"12 Dec 2025","Source":"page 1 of vds_a3310.pdf — ITAR banner detected"},
+      rules:[
+        "ITAR banner detected on page 1; <code>itar_registered: false</code> in your profile.",
+        "Machining itself is in scope: ±0.003\" vs floor <code>0.001\"</code>, 17-4 is workable.",
+        "Qty 30 and 12 Dec both clear capacity — compliance is the only blocker.",
+        "Held for owner review rather than auto-declined; DDTC registration is ~$3k/yr."
+      ],
+      drafts:{
+        QUOTE:"Hi Lauren,\n\nWe can take on VDS-A-3310. Our registration is in order and pricing for 30 pcs will follow today.\n\nBest,\nRay — Ridgeway Precision Machining",
+        CLARIFY:"Hi Lauren,\n\nThanks for the RFQ on VDS-A-3310. The package is ITAR-marked and we aren't currently DDTC-registered — we're actively looking at it.\n\nIs registration a hard requirement for this specific part, or is there an unclassified sub-assembly we could quote in the meantime?\n\nBest,\nRay — Ridgeway Precision Machining",
+        NOQUOTE:"Hi Lauren,\n\nThank you for the RFQ on VDS-A-3310. We have to decline: the package is ITAR-controlled and we aren't DDTC-registered at this time, so we can't accept the technical data.\n\nThe machining itself is well within our capability, and registration is on our roadmap — I'll reach out as soon as that's in place.\n\nBest,\nRay — Ridgeway Precision Machining"
+      }
+    }
+  ];
+
+  var state = { view:"after", selected:1, verdicts:{}, drafts:{} };
+  for (var i=0;i<rfqs.length;i++){ state.verdicts[rfqs[i].id] = rfqs[i].verdict; }
+
+  function esc(s){
+    return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+  }
+  function key(v){ return v === "NO-QUOTE" ? "NOQUOTE" : v; }
+  function byId(id){ for (var i=0;i<rfqs.length;i++){ if (rfqs[i].id===id) return rfqs[i]; } return null; }
+
+  function currentReason(r){
+    var v = state.verdicts[r.id];
+    if (r.rescoreTarget && profile.tolerance_floor_in === 0.0002 && v === "QUOTE"){
+      return "Flatness 0.0004\" now clears your 0.0002\" floor — grinder + CMM pass added.";
+    }
+    if (v !== r.verdict){
+      if (v === "QUOTE") return "Verdict changed by you — queued for pricing.";
+      if (v === "CLARIFY") return "Verdict changed by you — clarification draft loaded.";
+      return "Verdict changed by you — decline draft loaded.";
+    }
+    return r.reason;
+  }
+
+  function renderQueue(flashId){
+    var host = document.getElementById("queue"), html = "";
+    for (var i=0;i<rfqs.length;i++){
+      var r = rfqs[i], v = state.verdicts[r.id];
+      html += '<button class="rfq'+(flashId===r.id?' flash':'')+'" type="button" data-id="'+r.id+'" aria-current="'+(state.selected===r.id)+'">'+
+        '<div class="r1"><div><div class="cust">'+esc(r.cust)+'</div>'+
+        '<div class="part">'+esc(r.part)+' · '+esc(r.qty)+(r.due!=="—"?' · due '+esc(r.due):'')+'</div></div>'+
+        '<span class="chip c-'+key(v)+'">'+esc(v)+'</span></div>'+
+        '<div class="reason">'+esc(currentReason(r))+'</div></button>';
+    }
+    host.innerHTML = html;
+    var btns = host.querySelectorAll(".rfq");
+    for (var k=0;k<btns.length;k++){
+      btns[k].addEventListener("click", function(){
+        state.selected = parseInt(this.getAttribute("data-id"),10);
+        renderQueue(); renderDetail();
+        if (window.innerWidth < 861){
+          var d = document.getElementById("detail");
+          if (d && d.scrollIntoView) d.scrollIntoView({behavior:"smooth", block:"start"});
+        }
+      });
+    }
+    var ready = 0;
+    for (var m=0;m<rfqs.length;m++){ if (state.verdicts[rfqs[m].id] === "QUOTE") ready++; }
+    document.getElementById("readyCount").textContent = String(ready);
+  }
+
+  function draftFor(r){
+    var v = key(state.verdicts[r.id]);
+    var saved = state.drafts[r.id + "|" + v];
+    if (typeof saved === "string") return saved;
+    return r.drafts[v] || "";
+  }
+
+  function renderDetail(){
+    var r = byId(state.selected);
+    var host = document.getElementById("detail");
+    if (!r){
+      host.innerHTML = '<div class="sec"><h4>No RFQ selected</h4><p style="color:var(--muted);margin:0">Pick a card from the queue to see what Quotefirst extracted.</p></div>';
+      return;
+    }
+    var v = state.verdicts[r.id];
+    var rows = "";
+    for (var k in r.ex){
+      if (!Object.prototype.hasOwnProperty.call(r.ex,k)) continue;
+      var val = r.ex[k];
+      rows += '<tr><td class="k">'+esc(k)+'</td><td>'+(val===null?'<span class="nf">not found</span>':esc(val))+'</td></tr>';
+    }
+    var ruleset = (r.rescoreTarget && profile.tolerance_floor_in === 0.0002) ? r.rulesAfter : r.rules;
+    var bullets = "";
+    for (var i=0;i<ruleset.length;i++){ bullets += '<li>'+ruleset[i]+'</li>'; }
+
+    host.innerHTML =
+      '<div class="sec"><div class="detail-head"><div>'+
+        '<h2>'+esc(r.cust)+'</h2>'+
+        '<div class="sub">'+esc(r.part)+' · '+esc(r.qty)+(r.due!=="—"?' · due '+esc(r.due):'')+'</div>'+
+      '</div><span class="chip c-'+key(v)+'">'+esc(v)+'</span></div></div>'+
+      '<div class="sec"><h4>Extracted</h4><table class="ex"><tbody>'+rows+'</tbody></table></div>'+
+      '<div class="sec"><h4>Why this verdict</h4><ul class="rules">'+bullets+'</ul></div>'+
+      '<div class="sec"><h4>Draft reply</h4>'+
+        '<textarea id="draft" spellcheck="false" aria-label="Draft reply"></textarea>'+
+        '<div class="btnrow">'+
+          '<button class="b" id="btnCopy" type="button">Copy</button>'+
+          '<button class="b primary" id="btnSend" type="button">Send</button>'+
+          '<button class="b" id="btnChange" type="button" aria-expanded="false">Change verdict</button>'+
+        '</div>'+
+        '<div class="verdictsel" id="vsel" role="group" aria-label="Change verdict">'+
+          '<button type="button" class="v-QUOTE" data-v="QUOTE" aria-pressed="'+(v==="QUOTE")+'">QUOTE</button>'+
+          '<button type="button" class="v-CLARIFY" data-v="CLARIFY" aria-pressed="'+(v==="CLARIFY")+'">CLARIFY</button>'+
+          '<button type="button" class="v-NOQUOTE" data-v="NO-QUOTE" aria-pressed="'+(v==="NO-QUOTE")+'">NO-QUOTE</button>'+
+        '</div>'+
+      '</div>';
+
+    var ta = document.getElementById("draft");
+    ta.value = draftFor(r);
+    ta.addEventListener("input", function(){
+      state.drafts[r.id + "|" + key(state.verdicts[r.id])] = ta.value;
+    });
+
+    document.getElementById("btnCopy").addEventListener("click", function(){
+      var text = ta.value;
+      if (!text || !text.trim()){ toast("Nothing to copy — the draft is empty."); return; }
+      var done = function(){ toast("Draft copied to clipboard."); };
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText){
+          navigator.clipboard.writeText(text).then(done, function(){ fallbackCopy(ta, done); });
+        } else { fallbackCopy(ta, done); }
+      } catch(e){ fallbackCopy(ta, done); }
+    });
+
+    document.getElementById("btnSend").addEventListener("click", function(){
+      if (!ta.value.trim()){ toast("Add a line or two before sending."); return; }
+      var btn = this;
+      btn.disabled = true; btn.textContent = "Sending…";
+      window.setTimeout(function(){
+        btn.disabled = false; btn.textContent = "Sent ✓";
+        toast("Sent — reply logged, 41 min after receipt");
+        window.setTimeout(function(){ if (btn.isConnected) btn.textContent = "Send"; }, 2600);
+      }, 550);
+    });
+
+    var chg = document.getElementById("btnChange"), vsel = document.getElementById("vsel");
+    chg.addEventListener("click", function(){
+      var open = vsel.classList.toggle("open");
+      chg.setAttribute("aria-expanded", String(open));
+    });
+    var vb = vsel.querySelectorAll("button");
+    for (var b=0;b<vb.length;b++){
+      vb[b].addEventListener("click", function(){
+        var nv = this.getAttribute("data-v");
+        if (state.verdicts[r.id] === nv) return;
+        state.verdicts[r.id] = nv;
+        renderQueue(); renderDetail();
+        var re = document.getElementById("btnChange");
+        if (re){ document.getElementById("vsel").classList.add("open"); re.setAttribute("aria-expanded","true"); }
+        toast("Verdict set to " + nv + " — draft swapped to the matching template.");
+      });
+    }
+  }
+
+  function fallbackCopy(ta, done){
+    try {
+      ta.focus(); ta.select();
+      var ok = document.execCommand && document.execCommand("copy");
+      if (ok) { done(); } else { toast("Copy blocked by the browser — select the text manually."); }
+      window.getSelection && window.getSelection().removeAllRanges();
+    } catch(e){
+      toast("Copy blocked by the browser — select the text manually.");
+    }
+  }
+
+  var toastTimer = null;
+  function toast(msg){
+    var t = document.getElementById("toast");
+    t.textContent = msg;
+    t.classList.add("show");
+    if (toastTimer) window.clearTimeout(toastTimer);
+    toastTimer = window.setTimeout(function(){ t.classList.remove("show"); }, 2800);
+  }
+
+  function setView(v){
+    state.view = v;
+    document.getElementById("viewBefore").classList.toggle("hidden", v !== "before");
+    document.getElementById("viewAfter").classList.toggle("hidden", v !== "after");
+    document.getElementById("btnBefore").setAttribute("aria-pressed", String(v === "before"));
+    document.getElementById("btnAfter").setAttribute("aria-pressed", String(v === "after"));
+  }
+
+  document.getElementById("btnBefore").addEventListener("click", function(){ setView("before"); });
+  document.getElementById("btnAfter").addEventListener("click", function(){ setView("after"); });
+
+  document.getElementById("btnProfile").addEventListener("click", function(){
+    var d = document.getElementById("drawer");
+    var open = d.classList.toggle("open");
+    this.setAttribute("aria-expanded", String(open));
+  });
+
+  document.getElementById("tolSel").addEventListener("change", function(){
+    var val = parseFloat(this.value);
+    if (isNaN(val) || val <= 0){ toast("Tolerance floor must be a positive number."); return; }
+    profile.tolerance_floor_in = val;
+    renderProfile();
+    var target = null;
+    for (var i=0;i<rfqs.length;i++){ if (rfqs[i].rescoreTarget) target = rfqs[i]; }
+    if (!target) return;
+    var newVerdict = (val <= 0.0004) ? "QUOTE" : "CLARIFY";
+    var changed = state.verdicts[target.id] !== newVerdict;
+    state.verdicts[target.id] = newVerdict;
+    state.selected = target.id;
+    if (state.view !== "after") setView("after");
+    renderQueue(changed ? target.id : null);
+    renderDetail();
+    toast(changed
+      ? "Re-scored: Grainline Robotics → " + newVerdict + " (0.0004\" now clears your " + val + "\" floor)"
+      : "Profile updated — no verdicts changed.");
+  });
+
+  renderProfile();
+  renderInbox();
+  renderQueue();
+  renderDetail();
+  setView("after");
+})();
+</script>
+</body>
+</html>
