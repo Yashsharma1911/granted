@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-27T16:46:32.249Z",
+  "updated": "2026-10-27T18:26:56.243Z",
   "ideas": [
     {
       "id": "2026-10-26-catalog-check",
@@ -425,6 +425,66 @@
       "sources_count": 10,
       "superseded_by": null,
       "sibling": "2026-10-27-receipts"
+    },
+    {
+      "id": "2026-10-27-mandate",
+      "number": 16,
+      "date": "2026-10-27",
+      "track": "venture",
+      "short_name": "Mandate",
+      "verdict": "watch",
+      "score": 7.2,
+      "scores": {
+        "pain": 7,
+        "market_pull": 7,
+        "timing": 8,
+        "gap": 7,
+        "wedge": 7
+      },
+      "effort": "3+ months",
+      "category": "Back-office automation",
+      "tags": [
+        "insurance",
+        "approvals",
+        "compliance",
+        "agents"
+      ],
+      "pain_type": "expressed",
+      "one_liner": "For principals of 5–50 person independent P&C insurance agencies, Mandate sits between every AI tool the staff already use (ChatGPT drafts, EZLynx EVA, AI texting, voice receptionists) and the client, holding each outbound message in one approval queue with a coverage-risk flag and an immutable, exportable E&O record of who approved what.",
+      "prototype_url": "https://github.com/Yashsharma1911/granted/blob/catalog-test/ideas/2026-10-27-mandate/index.html",
+      "sources_count": 12,
+      "superseded_by": null,
+      "sibling": "2026-10-27-figures"
+    },
+    {
+      "id": "2026-10-27-figures",
+      "number": 17,
+      "date": "2026-10-27",
+      "track": "build",
+      "short_name": "Figures",
+      "verdict": "watch",
+      "score": 7,
+      "scores": {
+        "wow": 8,
+        "shareability": 8,
+        "buildability": 7,
+        "freshness": 6,
+        "usefulness": 6
+      },
+      "effort": "a weekend",
+      "category": "Consumer data tools",
+      "tags": [
+        "datasets",
+        "patents",
+        "search",
+        "visualization"
+      ],
+      "pain_type": "latent",
+      "one_liner": "A free, no-signup wall of 350,000 US design-patent drawings you can scroll, search in plain English (\"folding chair\", \"camera grip\", \"toaster\"), and pull one out to see every figure of that invention plus a one-line plain-English description and a link to the patent.",
+      "prototype_url": "https://github.com/Yashsharma1911/granted/blob/catalog-test/ideas/2026-10-27-figures/index.html",
+      "sources_count": 7,
+      "superseded_by": null,
+      "sibling": "2026-10-27-mandate"
     }
   ]
 }

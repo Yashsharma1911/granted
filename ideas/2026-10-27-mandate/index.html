@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mandate — send gate &amp; approval record for AI</title>
+<style>
+:root{
+  --bg:#f5f6f8; --panel:#ffffff; --ink:#111827; --muted:#5b6472; --line:#e3e6ec;
+  --accent:#12376b; --accent-soft:#e8eef7;
+  --red:#b3261e; --red-bg:#fdecea; --amber:#8a5a00; --amber-bg:#fdf3e0;
+  --green:#15663c; --green-bg:#e8f5ec; --shadow:0 1px 2px rgba(16,24,40,.06),0 6px 18px rgba(16,24,40,.06);
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#0d1117; --panel:#151b24; --ink:#e9edf4; --muted:#9aa5b5; --line:#263141;
+    --accent:#7aa7e8; --accent-soft:#1a2535;
+    --red:#ff8f85; --red-bg:#3a1d1a; --amber:#ffc46b; --amber-bg:#3a2d12;
+    --green:#7fd6a3; --green-bg:#133026; --shadow:0 1px 2px rgba(0,0,0,.4),0 6px 18px rgba(0,0,0,.35);
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--ink);
+  font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,Helvetica,Arial,sans-serif;
+  -webkit-text-size-adjust:100%;
+}
+.wrap{max-width:860px;margin:0 auto;padding:0 14px 48px}
+header.top{
+  position:sticky;top:0;z-index:30;background:var(--panel);border-bottom:1px solid var(--line);
+  padding:10px 14px 8px;
+}
+.brandrow{display:flex;align-items:center;gap:9px;max-width:860px;margin:0 auto}
+.logo{width:26px;height:26px;border-radius:6px;background:var(--accent);display:grid;place-items:center;flex:none}
+.logo svg{width:15px;height:15px;fill:#fff}
+@media (prefers-color-scheme: dark){.logo svg{fill:#0d1117}}
+h1{font-size:15px;margin:0;font-weight:700;letter-spacing:-.2px}
+h1 span{font-weight:400;color:var(--muted);font-size:13px;display:block}
+.ctx{max-width:860px;margin:7px auto 0;font-size:11.5px;color:var(--muted);display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.pill{background:var(--accent-soft);color:var(--accent);border-radius:99px;padding:2px 8px;font-weight:600}
+.toggle{max-width:860px;margin:9px auto 0;display:flex;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:3px;gap:3px}
+.toggle button{
+  flex:1;min-height:40px;border:0;border-radius:8px;background:transparent;color:var(--muted);
+  font:600 13.5px/1 inherit;cursor:pointer;letter-spacing:.2px
+}
+.toggle button[aria-selected="true"]{background:var(--accent);color:#fff;box-shadow:var(--shadow)}
+@media (prefers-color-scheme: dark){.toggle button[aria-selected="true"]{color:#0d1117}}
+section[hidden]{display:none}
+h2.sec{font-size:12px;text-transform:uppercase;letter-spacing:.9px;color:var(--muted);margin:22px 0 8px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow)}
+
+/* BEFORE */
+.alert{background:var(--red-bg);border:1px solid var(--red);color:var(--red);border-radius:12px;padding:12px 13px;margin-top:14px;font-size:13.5px;font-weight:600;display:flex;gap:9px;align-items:flex-start}
+.alert svg{width:17px;height:17px;flex:none;fill:currentColor;margin-top:1px}
+.windows{display:grid;grid-template-columns:1fr;gap:10px;margin-top:10px}
+@media(min-width:720px){.windows{grid-template-columns:repeat(3,1fr)}}
+.win{overflow:hidden}
+.winbar{display:flex;align-items:center;gap:6px;padding:7px 10px;border-bottom:1px solid var(--line);background:var(--bg);font-size:11.5px;font-weight:700;color:var(--muted)}
+.dots{display:flex;gap:3px}.dots i{width:7px;height:7px;border-radius:99px;background:var(--line);display:block}
+.winbody{max-height:190px;overflow:auto;-webkit-overflow-scrolling:touch}
+.row{padding:7px 10px;border-bottom:1px solid var(--line);font-size:12px}
+.row:last-child{border-bottom:0}
+.row b{display:block;font-weight:600;font-size:12.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row span{color:var(--muted);font-size:11px}
+.noapp{color:var(--red);font-size:10.5px;font-weight:700;letter-spacing:.3px}
+.btn{
+  -webkit-appearance:none;appearance:none;border:1px solid var(--accent);background:var(--accent);color:#fff;
+  min-height:46px;padding:0 18px;border-radius:10px;font:600 14px/1 inherit;cursor:pointer;
+}
+@media (prefers-color-scheme: dark){.btn{color:#0d1117}}
+.btn.ghost{background:transparent;color:var(--accent)}
+.btn.sm{min-height:40px;font-size:13px;padding:0 13px}
+.btn:active{transform:translateY(1px)}
+.btn[disabled]{opacity:.55;cursor:default}
+.searchbox{margin-top:10px;padding:13px;text-align:center}
+.spin{width:18px;height:18px;border:2px solid var(--line);border-top-color:var(--accent);border-radius:99px;display:inline-block;animation:sp .8s linear infinite;vertical-align:-4px;margin-right:7px}
+@keyframes sp{to{transform:rotate(360deg)}}
+.verdict{margin-top:11px;border-top:1px dashed var(--line);padding-top:11px;text-align:left;font-size:13px}
+.verdict .big{font-size:17px;font-weight:700;color:var(--red);letter-spacing:-.3px}
+.verdict ul{margin:8px 0 0;padding-left:18px;color:var(--muted);font-size:12.5px}
+
+/* AFTER */
+.counter{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
+.stat{flex:1 1 30%;min-width:96px;padding:10px 11px;border-radius:11px;background:var(--panel);border:1px solid var(--line);box-shadow:var(--shadow)}
+.stat b{display:block;font-size:20px;letter-spacing:-.6px;line-height:1.15}
+.stat span{font-size:11px;color:var(--muted)}
+.stat.hold b{color:var(--red)}
+.q{margin-top:10px;display:flex;flex-direction:column;gap:8px}
+.item{display:flex;gap:10px;padding:11px;border-radius:12px;background:var(--panel);border:1px solid var(--line);box-shadow:var(--shadow);text-align:left;width:100%;font:inherit;color:inherit;cursor:pointer;align-items:flex-start}
+.item.held{border-left:4px solid var(--red)}
+.item.held.amberline{border-left-color:var(--amber)}
+.item.done{opacity:.62;cursor:default;box-shadow:none}
+.chan{width:30px;height:30px;border-radius:8px;background:var(--accent-soft);display:grid;place-items:center;flex:none}
+.chan svg{width:16px;height:16px;stroke:var(--accent);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.it-main{min-width:0;flex:1}
+.it-head{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.cl{font-weight:700;font-size:13.5px}
+.line{font-size:11px;color:var(--muted)}
+.ex{font-size:12.6px;color:var(--ink);margin-top:3px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.meta{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;align-items:center}
+.tag{font-size:10.5px;font-weight:700;letter-spacing:.3px;padding:3px 7px;border-radius:5px;text-transform:uppercase}
+.t-red{background:var(--red-bg);color:var(--red)}
+.t-amb{background:var(--amber-bg);color:var(--amber)}
+.t-ok{background:var(--green-bg);color:var(--green)}
+.src{font-size:10.5px;color:var(--muted);border:1px solid var(--line);padding:3px 7px;border-radius:5px}
+.cd{font-size:10.5px;font-weight:700;color:var(--accent);background:var(--accent-soft);padding:3px 7px;border-radius:5px;font-variant-numeric:tabular-nums}
+.stamp{font-size:10.5px;color:var(--green);font-weight:600}
+.empty{padding:22px 14px;text-align:center;color:var(--muted);font-size:13px}
+
+/* drawer */
+.scrim{position:fixed;inset:0;background:rgba(10,14,20,.5);z-index:40;opacity:0;pointer-events:none;transition:opacity .18s}
+.scrim.on{opacity:1;pointer-events:auto}
+.drawer{
+  position:fixed;left:0;right:0;bottom:0;z-index:50;background:var(--panel);
+  border-radius:16px 16px 0 0;max-height:92vh;overflow:auto;transform:translateY(100%);
+  transition:transform .22s ease;box-shadow:0 -8px 30px rgba(0,0,0,.25);
+  padding:0 14px calc(18px + env(safe-area-inset-bottom));
+}
+.drawer.on{transform:translateY(0)}
+@media(min-width:720px){.drawer{left:50%;right:auto;transform:translate(-50%,100%);width:620px;border-radius:16px;bottom:16px}.drawer.on{transform:translate(-50%,0)}}
+.grab{position:sticky;top:0;background:var(--panel);padding:10px 0 8px;z-index:2}
+.grab i{display:block;width:40px;height:4px;border-radius:9px;background:var(--line);margin:0 auto 9px}
+.dh{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.dh h3{margin:0;font-size:16px;letter-spacing:-.3px}
+.x{border:0;background:var(--bg);color:var(--muted);width:34px;height:34px;border-radius:9px;font-size:17px;cursor:pointer;flex:none}
+.block{border:1px solid var(--line);border-radius:10px;padding:11px;margin-top:10px;font-size:13px}
+.block h4{margin:0 0 6px;font-size:10.5px;letter-spacing:.8px;text-transform:uppercase;color:var(--muted)}
+mark{background:#ffe680;color:#4a3800;padding:1px 2px;border-radius:3px}
+@media (prefers-color-scheme: dark){mark{background:#7a6212;color:#ffeeb0}}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:12.5px}
+.kv dt{color:var(--muted)}.kv dd{margin:0;font-weight:600}
+textarea{width:100%;min-height:110px;border:1px solid var(--line);border-radius:9px;padding:10px;font:inherit;font-size:13.5px;background:var(--bg);color:var(--ink);resize:vertical}
+input[type=text]{width:100%;min-height:46px;border:1px solid var(--line);border-radius:9px;padding:0 11px;font:inherit;font-size:14px;background:var(--bg);color:var(--ink)}
+.acts{display:flex;gap:8px;margin-top:13px;flex-wrap:wrap}
+.acts .btn{flex:1 1 150px}
+.btn.kill{border-color:var(--red);color:var(--red);background:transparent}
+.hint{font-size:11.5px;color:var(--muted);margin-top:8px}
+.err{color:var(--red);font-size:12.5px;margin-top:7px;font-weight:600}
+
+/* evidence */
+.doc{margin-top:10px;padding:16px;background:#fff;color:#111827;border:1px solid #d7dbe3;border-radius:10px;box-shadow:var(--shadow)}
+@media (prefers-color-scheme: dark){.doc{background:#f7f8fa;color:#111827;border-color:#444c5c}}
+.doc h3{margin:0 0 2px;font-size:16px;letter-spacing:-.2px}
+.doc .sub{font-size:11.5px;color:#5b6472}
+.doc hr{border:0;border-top:1px solid #d7dbe3;margin:11px 0}
+.tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid #d7dbe3;border-radius:7px}
+table{border-collapse:collapse;width:100%;min-width:720px;font-size:11.5px}
+th,td{border-bottom:1px solid #e3e6ec;padding:6px 8px;text-align:left;vertical-align:top}
+th{background:#eef1f6;font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:#434c5c;position:sticky;top:0}
+td.final{min-width:220px}
+.yn{font-weight:700}
+.seal{margin-top:12px;border-top:2px solid #111827;padding-top:9px;font-size:11px;color:#434c5c;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.seal b{color:#111827}
+footer{margin-top:26px;text-align:center;font-size:11.5px;color:var(--muted)}
+.demo{font-size:10.5px;color:var(--muted);letter-spacing:.4px;text-transform:uppercase;margin-top:4px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="brandrow">
+    <div class="logo" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 1 3 5v6c0 5.2 3.8 10 9 12 5.2-2 9-6.8 9-12V5l-9-4zm-1.2 15-3.5-3.5 1.5-1.5 2 2 5-5 1.5 1.5-6.5 6.5z"/></svg></div>
+    <div>
+      <h1>Mandate <span>The send gate &amp; approval record for AI in insurance agencies</span></h1>
+    </div>
+  </div>
+  <div class="ctx">
+    <span><span class="pill">Harbor Point Insurance Agency</span> &nbsp;Friday 4:58pm</span>
+    <span class="demo">Demo data</span>
+  </div>
+  <div class="toggle" role="tablist" aria-label="View">
+    <button id="tabBefore" role="tab" aria-selected="false" aria-controls="before">BEFORE — today</button>
+    <button id="tabAfter" role="tab" aria-selected="true" aria-controls="after">AFTER — with Mandate</button>
+  </div>
+</header>
+
+<div class="wrap">
+
+<!-- ============ BEFORE ============ -->
+<section id="before" role="tabpanel" aria-labelledby="tabBefore" hidden>
+  <div class="alert">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>
+    <div>Client claims you confirmed coverage for the box truck. Find the proof.<br>
+    <span style="font-weight:500;font-size:12px;opacity:.9">Northside Builders LLC · demand letter received 4:41pm</span></div>
+  </div>
+
+  <div class="windows">
+    <div class="win card">
+      <div class="winbar"><span class="dots"><i></i><i></i><i></i></span> Outlook — Sent Items</div>
+      <div class="winbody" id="w1"></div>
+    </div>
+    <div class="win card">
+      <div class="winbar"><span class="dots"><i></i><i></i><i></i></span> EZLynx — EVA drafts</div>
+      <div class="winbody" id="w2"></div>
+    </div>
+    <div class="win card">
+      <div class="winbar"><span class="dots"><i></i><i></i><i></i></span> AI text replies log</div>
+      <div class="winbody" id="w3"></div>
+    </div>
+  </div>
+
+  <div class="searchbox card">
+    <button class="btn" id="searchBtn">Search for proof</button>
+    <div id="searchOut" class="verdict" hidden></div>
+  </div>
+  <p class="demo" style="text-align:center">Three tools, three clocks, nobody's name on anything.</p>
+</section>
+
+<!-- ============ AFTER ============ -->
+<section id="after" role="tabpanel" aria-labelledby="tabAfter">
+  <h2 class="sec">Approval queue · outbound to clients</h2>
+  <div class="counter">
+    <div class="stat"><b id="cRel">7</b><span>auto-released</span></div>
+    <div class="stat hold"><b id="cHold">3</b><span>awaiting you</span></div>
+    <div class="stat"><b id="cAvg">46 sec</b><span>avg hold</span></div>
+  </div>
+  <div class="q" id="queueHold"></div>
+  <h2 class="sec" id="relHdr">Released</h2>
+  <div class="q" id="queueRel"></div>
+
+  <h2 class="sec">Evidence</h2>
+  <div class="card" style="padding:13px">
+    <div style="font-size:13px;color:var(--muted);margin-bottom:10px">Every message to a client — human, AI, or automation — in one sealed chronological record.</div>
+    <button class="btn" id="expBtn">Export E&amp;O pack — Northside Builders LLC</button>
+    <div id="expOut"></div>
+  </div>
+</section>
+
+<footer>
+  Prototype by Granted, inspired by your bookmarks
+</footer>
+</div>
+
+<div class="scrim" id="scrim"></div>
+<div class="drawer" id="drawer" role="dialog" aria-modal="true" aria-labelledby="dTitle" aria-hidden="true">
+  <div class="grab"><i></i>
+    <div class="dh"><h3 id="dTitle">—</h3><button class="x" id="dClose" aria-label="Close">✕</button></div>
+  </div>
+  <div id="dBody"></div>
+</div>
+
+<script>
+(function(){
+"use strict";
+var ICON={
+  email:'<svg viewBox="0 0 24 24"><rect x="2.5" y="5" width="19" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>',
+  sms:'<svg viewBox="0 0 24 24"><path d="M21 12a8 8 0 0 1-11.6 7.1L3 21l1.9-6.4A8 8 0 1 1 21 12z"/></svg>',
+  voice:'<svg viewBox="0 0 24 24"><rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3.5"/></svg>'
+};
+var ITEMS=[
+ {id:1,ch:"sms",client:"Marisol Ortega",line:"Personal Auto",src:"AI texting bot",ex:"Here's your ID card for the 2021 Civic — attached as a PDF. Let me know if you need a printed copy.",risk:"ROUTINE",state:"released",time:"4:12pm",stamp:"Auto-released · routine, no risk phrases"},
+ {id:2,ch:"email",client:"Dale Ferrin",line:"Homeowners",src:"EVA auto-draft",ex:"Appointment Tue 10am confirmed. We'll go over your renewal options then — nothing you need to bring.",risk:"ROUTINE",state:"released",time:"4:19pm",stamp:"Auto-released · routine, no risk phrases"},
+ {id:3,ch:"email",client:"Northside Builders LLC",line:"Commercial Auto — Fleet",src:"CSR Dana M. via ChatGPT draft",ex:"Yes, your new box truck is covered under the fleet policy effective today. You're all set to put it on the road.",risk:"HOLD · COVERAGE STATEMENT",level:"red",state:"held",time:"4:51pm",
+  full:"Hi Tom,\n\nThanks for the heads up on the new vehicle. Yes, your new box truck is covered under the fleet policy effective today. You're all set to put it on the road — the VIN will show up on your next ID card batch.\n\nHave a good weekend,\nDana M.\nHarbor Point Insurance Agency",
+  flag:"your new box truck is covered under the fleet policy effective today",
+  why:"Affirms coverage for a vehicle with no endorsement on file. Automatic additions under this fleet policy require carrier confirmation.",
+  policy:{Carrier:"Granite Mutual",Policy:"CA-884120-03",Line:"Commercial Auto — Fleet (12 units)",Effective:"03/01/2026 – 03/01/2027","Pending endorsement":"None on file"},
+  rewrite:"Hi Tom,\n\nThanks for the heads up on the new vehicle. I've requested the endorsement for the box truck; I'll confirm once the carrier issues it. Please hold off on dispatching it until I send that confirmation.\n\nDana M.\nHarbor Point Insurance Agency"},
+ {id:4,ch:"email",client:"Priya Raghunathan",line:"BOP — Retail",src:"EVA auto-draft",ex:"Your renewal premium will be about $4,100, roughly flat versus last year. I'll send the formal offer next week.",risk:"HOLD · PRICING",level:"amber",state:"held",time:"4:53pm",
+  full:"Hi Priya,\n\nGood news on the renewal. Your renewal premium will be about $4,100, roughly flat versus last year. I'll send the formal offer next week once underwriting finishes their review.\n\nBest,\nHarbor Point Insurance Agency",
+  flag:"will be about $4,100, roughly flat versus last year",
+  why:"Quotes a premium figure before the carrier has released renewal terms. Underwriting flagged a loss-ratio review on 10/22.",
+  policy:{Carrier:"Keystone Casualty",Policy:"BOP-220914",Line:"Businessowners — Retail",Effective:"12/01/2025 – 12/01/2026","Renewal terms":"Not yet released"},
+  rewrite:"Hi Priya,\n\nYour renewal is in underwriting now. I don't have final numbers yet — as soon as the carrier releases terms I'll send them over with options to compare. I'd expect that early next week.\n\nHarbor Point Insurance Agency"},
+ {id:5,ch:"email",client:"Vantage Fabrication Co.",line:"General Liability",src:"CSR Dana M.",ex:"We've gone ahead and bound the GL increase to $2M per occurrence, effective this morning. Updated certs to follow.",risk:"HOLD · BINDING",level:"red",state:"held",time:"4:55pm",
+  full:"Hi Rachel,\n\nPer your call this morning — we've gone ahead and bound the GL increase to $2M per occurrence, effective this morning. Updated certs to follow by Monday.\n\nDana M.",
+  flag:"we've gone ahead and bound the GL increase to $2M per occurrence",
+  why:"Claims binding authority. Harbor Point holds no binding authority above $1M on this carrier's GL program.",
+  policy:{Carrier:"Allied Harbor Specialty",Policy:"GL-77201",Line:"General Liability",Effective:"07/15/2026 – 07/15/2027","Binding authority":"Up to $1M occurrence"},
+  rewrite:"Hi Rachel,\n\nI've submitted the request to raise your GL limit to $2M per occurrence to the carrier. Coverage stays at current limits until they confirm the endorsement — I'll send written confirmation and updated certs the moment it's issued.\n\nDana M."},
+ {id:6,ch:"email",client:"Cobalt Mechanical",line:"General Liability",src:"EVA auto-draft",ex:"Certificate of insurance attached for the Maple Street job. The GC is listed as certificate holder as requested.",risk:"ROUTINE",state:"released",time:"4:33pm",stamp:"Auto-released · cert matches policy of record"},
+ {id:7,ch:"sms",client:"Jordan Blake",line:"Personal Auto",src:"AI texting bot",ex:"Sorry to hear about the fender bender — that should be fully covered, just send photos and we'll get it moving.",risk:"HOLD · CLAIMS ADVICE",level:"red",state:"held",time:"4:56pm",
+  full:"Sorry to hear about the fender bender — that should be fully covered, just send photos and we'll get it moving. No need to worry about the deductible on this one.",
+  flag:"that should be fully covered",
+  why:"Predicts a claims outcome. Coverage determination belongs to the carrier's adjuster; policy carries a $1,000 collision deductible.",
+  policy:{Carrier:"Granite Mutual",Policy:"PA-331902",Line:"Personal Auto",Effective:"05/20/2026 – 11/20/2026",Collision:"$1,000 deductible"},
+  rewrite:"Sorry to hear about the fender bender. Send over photos and I'll get the claim reported to Granite Mutual today. The adjuster makes the coverage call and will walk you through your deductible — I'll stay on it with you."},
+ {id:8,ch:"email",client:"Hartley Landscaping",line:"Commercial Package",src:"Automation — billing rule",ex:"Policy cancels for non-payment on 11/03 unless we receive payment. Please call the office to make arrangements.",risk:"HOLD · CANCELLATION",level:"red",state:"held",time:"4:57pm",
+  full:"Dear Hartley Landscaping,\n\nOur records show your account is past due. Policy cancels for non-payment on 11/03 unless we receive payment in full. Please call the office to make arrangements.\n\nHarbor Point Insurance Agency — Billing",
+  flag:"Policy cancels for non-payment on 11/03",
+  why:"Cancellation notices are carrier-issued and statutorily noticed. Agency billing record shows a payment posted 10/24 that may clear the balance.",
+  policy:{Carrier:"Keystone Casualty",Policy:"CP-401855",Line:"Commercial Package",Effective:"02/10/2026 – 02/10/2027","Open balance":"$412.00 (payment posted 10/24)"},
+  rewrite:"Dear Hartley Landscaping,\n\nOur records show a balance of $412.00 on your account. A payment posted 10/24 may already cover this — I'm confirming with Keystone Casualty now. Any cancellation notice would come directly from the carrier; nothing has been issued. I'll follow up Monday with the confirmed balance."},
+ {id:9,ch:"email",client:"Northside Builders LLC",line:"Commercial Auto — Fleet",src:"CSR Ray T., licensed agent",ex:"Attaching the loss runs you requested — five years, straight from Granite Mutual. Let me know if the lender needs anything else.",risk:"ROUTINE",state:"released",time:"4:44pm",stamp:"Auto-released · document transmittal, no assertions"},
+ {id:10,ch:"voice",client:"Fulton Metalworks",line:"Workers Compensation",src:"AI receptionist — voice agent",ex:"Voice agent told caller a workers comp quote would be ready by Friday. Call duration 2:14, caller: Angela Fulton.",risk:"HOLD · COMMITMENT",level:"amber",state:"held",time:"4:58pm",
+  full:"Voice agent transcript summary (2:14, inbound, Angela Fulton):\n\nCaller asked about the status of the workers comp quote. The agent replied: \"Your workers comp quote will be ready by Friday — someone will email it to you before end of day.\"\n\nCaller confirmed email address and ended the call.",
+  flag:"Your workers comp quote will be ready by Friday",
+  why:"Commits the agency to a delivery date. Two of three markets have not responded; the experience mod is still being verified with NCCI.",
+  policy:{Carrier:"In marketing (3 submissions)",Policy:"Quote #WC-5591",Line:"Workers Compensation",Effective:"Target 12/01/2026","Mod status":"Pending NCCI verification"},
+  rewrite:"Hi Angela — following up on your call. Your workers comp submission is with three markets right now. I don't want to promise a date I can't hold: I'll call you Monday with exactly where each carrier stands, and send quotes the day they land."}
+];
+
+var STATE={};
+ITEMS.forEach(function(i){STATE[i.id]={state:i.state,approver:null,edited:false,finalText:null,killReason:null};});
+
+/* ---------- BEFORE ---------- */
+var W1=[["Re: new box truck — Northside Builders","Dana M. · 4:51pm · to tom@northsidebuilders.com"],
+["Loss runs attached — Northside Builders","Ray T. · 4:44pm"],
+["Cert — Maple Street job","no-reply@agency · 4:33pm"],
+["Renewal check-in — Raghunathan","EVA mailer · 4:53pm"],
+["Updated certs to follow — Vantage","Dana M. · 4:55pm"],
+["Past due notice — Hartley","billing-bot · 4:57pm"]];
+var W2=[["Draft: fleet addition reply","generated 4:49pm · sent? unknown"],
+["Draft: renewal premium estimate","generated 4:52pm · sent 4:53pm"],
+["Draft: appointment confirm","generated 4:18pm · sent 4:19pm"],
+["Draft: cert of insurance","generated 4:31pm · sent 4:33pm"],
+["Draft: fleet addition reply (v2)","generated 4:50pm · no send record"]];
+var W3=[["+1 (207) 555-0148 — ID card","out 4:12pm · bot"],
+["+1 (207) 555-0192 — fender bender","out 4:56pm · bot"],
+["+1 (207) 555-0117 — box truck?","in 4:47pm / out 4:48pm · bot"],
+["+1 (207) 555-0163 — payment link","out 4:57pm · bot"]];
+function fillWin(el,rows){
+  rows.forEach(function(r){
+    var d=document.createElement("div");d.className="row";
+    var b=document.createElement("b");b.textContent=r[0];
+    var s=document.createElement("span");s.textContent=r[1];
+    var n=document.createElement("div");n.className="noapp";n.textContent="approver: —";
+    d.appendChild(b);d.appendChild(s);d.appendChild(n);el.appendChild(d);
+  });
+}
+fillWin(document.getElementById("w1"),W1);
+fillWin(document.getElementById("w2"),W2);
+fillWin(document.getElementById("w3"),W3);
+
+var searchBtn=document.getElementById("searchBtn"),searchOut=document.getElementById("searchOut");
+searchBtn.addEventListener("click",function(){
+  searchBtn.disabled=true;
+  searchOut.hidden=false;
+  searchOut.innerHTML='<span class="spin"></span>Searching Outlook, EZLynx and the texting log…';
+  setTimeout(function(){
+    searchOut.innerHTML='<div class="big">3 systems, 2 logins, no approver recorded.</div>'+
+    '<ul><li>Outlook: 1 message mentioning "box truck" — sender is a shared mailbox.</li>'+
+    '<li>EZLynx: 2 EVA drafts, one with no send record. Timestamps differ from Outlook by 4 min.</li>'+
+    '<li>Texting log: outbound reply at 4:48pm — body retained 30 days, author field blank.</li>'+
+    '<li>Nobody signed off. No licensed reviewer is attached to any of it.</li></ul>'+
+    '<p class="hint">Elapsed: 11 min. Still cannot answer the client\u2019s question.</p>';
+    searchBtn.disabled=false;searchBtn.textContent="Search again";
+  },1400);
+});
+
+/* ---------- AFTER ---------- */
+var holdWrap=document.getElementById("queueHold"),relWrap=document.getElementById("queueRel");
+var countdowns={3:432,4:508,5:289,7:226,8:671,10:377};
+function fmt(s){var m=Math.floor(s/60),x=s%60;return m+":"+(x<10?"0":"")+x;}
+
+function makeItem(it){
+  var st=STATE[it.id];
+  var held=st.state==="held";
+  var btn=document.createElement(held?"button":"div");
+  btn.className="item"+(held?" held":" done")+(held&&it.level==="amber"?" amberline":"");
+  if(held){btn.type="button";btn.addEventListener("click",function(){openDrawer(it.id);});}
+  var ch=document.createElement("div");ch.className="chan";ch.innerHTML=ICON[it.ch];
+  var main=document.createElement("div");main.className="it-main";
+  var head=document.createElement("div");head.className="it-head";
+  var l=document.createElement("div");
+  l.innerHTML='<div class="cl"></div><div class="line"></div>';
+  l.querySelector(".cl").textContent=it.client;
+  l.querySelector(".line").textContent=it.line;
+  var r=document.createElement("div");r.className="line";r.textContent=it.time;
+  head.appendChild(l);head.appendChild(r);
+  var ex=document.createElement("div");ex.className="ex";
+  ex.textContent=(st.finalText?st.finalText.split("\n").filter(function(x){return x.trim();}).slice(0,2).join(" "):it.ex);
+  var meta=document.createElement("div");meta.className="meta";
+  var tag=document.createElement("span");
+  if(st.state==="killed"){tag.className="tag t-red";tag.textContent="KILLED";}
+  else if(held){tag.className="tag "+(it.level==="amber"?"t-amb":"t-red");tag.textContent=it.risk;}
+  else {tag.className="tag t-ok";tag.textContent=it.risk==="ROUTINE"?"ROUTINE · SENT":"RELEASED";}
+  meta.appendChild(tag);
+  var src=document.createElement("span");src.className="src";src.textContent=it.src;meta.appendChild(src);
+  if(held){
+    var cd=document.createElement("span");cd.className="cd";cd.dataset.cd=it.id;
+    cd.textContent="releases in "+fmt(countdowns[it.id]);meta.appendChild(cd);
+  }else{
+    var sp=document.createElement("span");sp.className="stamp";
+    if(st.state==="killed"){sp.style.color="var(--red)";sp.textContent="Killed by Ray T. · "+(st.killReason||"");}
+    else if(st.approver){sp.textContent="✓ "+st.approver+(st.edited?" · edited before send":"");}
+    else sp.textContent="✓ "+it.stamp;
+    meta.appendChild(sp);
+  }
+  main.appendChild(head);main.appendChild(ex);main.appendChild(meta);
+  btn.appendChild(ch);btn.appendChild(main);
+  return btn;
+}
+function render(){
+  holdWrap.innerHTML="";relWrap.innerHTML="";
+  var h=0,rl=0;
+  ITEMS.forEach(function(it){
+    var st=STATE[it.id];
+    if(st.state==="held"){h++;holdWrap.appendChild(makeItem(it));}
+    else{if(st.state!=="killed")rl++;relWrap.appendChild(makeItem(it));}
+  });
+  if(h===0){
+    var e=document.createElement("div");e.className="card empty";
+    e.textContent="Queue clear. Nothing is waiting on a licensed reviewer.";
+    holdWrap.appendChild(e);
+  }
+  document.getElementById("cHold").textContent=h;
+  document.getElementById("cRel").textContent=rl;
+  document.getElementById("cAvg").textContent=(h===3?"46 sec":(h===2?"52 sec":(h===1?"58 sec":"1 min 4 sec")));
+}
+setInterval(function(){
+  var any=false;
+  document.querySelectorAll("[data-cd]").forEach(function(el){
+    var id=el.dataset.cd;
+    if(countdowns[id]>0){countdowns[id]--;any=true;}
+    el.textContent=countdowns[id]>0?("releases in "+fmt(countdowns[id])):"hold expired · escalated";
+  });
+  return any;
+},1000);
+
+/* drawer */
+var drawer=document.getElementById("drawer"),scrim=document.getElementById("scrim"),
+    dBody=document.getElementById("dBody"),dTitle=document.getElementById("dTitle"),cur=null;
+function closeDrawer(){drawer.classList.remove("on");scrim.classList.remove("on");drawer.setAttribute("aria-hidden","true");cur=null;}
+document.getElementById("dClose").addEventListener("click",closeDrawer);
+scrim.addEventListener("click",closeDrawer);
+document.addEventListener("keydown",function(e){if(e.key==="Escape"&&cur)closeDrawer();});
+
+function esc(s){return s.replace(/[&<>]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;"}[c];});}
+function highlight(text,phrase){
+  var t=esc(text),p=esc(phrase);
+  var i=t.indexOf(p);
+  if(i<0)return t.replace(/\n/g,"<br>");
+  return (t.slice(0,i)+"<mark>"+p+"</mark>"+t.slice(i+p.length)).replace(/\n/g,"<br>");
+}
+function openDrawer(id){
+  var it=ITEMS.filter(function(x){return x.id===id;})[0];
+  cur=id;dTitle.textContent=it.client+" — "+it.line;
+  var pol="";for(var k in it.policy){pol+="<dt>"+esc(k)+"</dt><dd>"+esc(it.policy[k])+"</dd>";}
+  dBody.innerHTML=
+   '<div class="meta" style="margin-top:2px"><span class="tag '+(it.level==="amber"?"t-amb":"t-red")+'">'+esc(it.risk)+'</span>'+
+   '<span class="src">'+esc(it.src)+'</span><span class="src">'+esc(it.ch==="voice"?"Voice agent summary":it.ch.toUpperCase())+' · '+it.time+'</span></div>'+
+   '<div class="block"><h4>Full draft — not yet sent</h4><div id="dText">'+highlight(it.full,it.flag)+'</div></div>'+
+   '<div class="block"><h4>Why it is held</h4>'+esc(it.why)+'</div>'+
+   '<div class="block"><h4>Policy snapshot</h4><dl class="kv">'+pol+'</dl></div>'+
+   '<div id="dAction"></div>'+
+   '<div class="acts"><button class="btn" id="bApprove">Approve &amp; send</button>'+
+   '<button class="btn ghost" id="bEdit">Edit &amp; send</button>'+
+   '<button class="btn kill" id="bKill">Kill</button></div>'+
+   '<p class="hint">Approver on duty: Ray T. — licensed producer, ME #PR-20417. Every outcome is written to the client record.</p>';
+  document.getElementById("bApprove").addEventListener("click",function(){finish(it,it.full,false);});
+  document.getElementById("bEdit").addEventListener("click",function(){showEdit(it);});
+  document.getElementById("bKill").addEventListener("click",function(){showKill(it);});
+  drawer.classList.add("on");scrim.classList.add("on");drawer.setAttribute("aria-hidden","false");
+  drawer.scrollTop=0;
+}
+function showEdit(it){
+  var a=document.getElementById("dAction");
+  a.innerHTML='<div class="block"><h4>Safer rewrite — suggested</h4>'+
+   '<textarea id="ta"></textarea><div id="taErr"></div>'+
+   '<div class="acts"><button class="btn" id="bSendEdit">Approve edited version &amp; send</button></div>'+
+   '<p class="hint">Both the original AI draft and your edit are stored. The record shows what changed.</p></div>';
+  var ta=document.getElementById("ta");ta.value=it.rewrite;ta.focus();
+  document.getElementById("bSendEdit").addEventListener("click",function(){
+    var v=ta.value.trim();
+    var err=document.getElementById("taErr");
+    if(v.length<15){err.className="err";err.textContent="That looks too short to send. Write at least a full sentence, or use Kill instead.";return;}
+    if(v===it.full.trim()){err.className="err";err.textContent="Nothing changed from the flagged draft. Edit the wording or use Approve & send.";return;}
+    finish(it,v,true);
+  });
+  a.scrollIntoView({behavior:"smooth",block:"nearest"});
+}
+function showKill(it){
+  var a=document.getElementById("dAction");
+  a.innerHTML='<div class="block"><h4>Kill this message — reason required</h4>'+
+   '<input type="text" id="kr" placeholder="e.g. Carrier has not confirmed the endorsement" maxlength="90">'+
+   '<div id="krErr"></div><div class="acts"><button class="btn kill" id="bKillGo">Kill &amp; log reason</button></div></div>';
+  var kr=document.getElementById("kr");kr.focus();
+  document.getElementById("bKillGo").addEventListener("click",function(){
+    var v=kr.value.trim(),err=document.getElementById("krErr");
+    if(v.length<4){err.className="err";err.textContent="Add a short reason — this is what the file shows later.";return;}
+    STATE[it.id].state="killed";STATE[it.id].killReason=v;
+    closeDrawer();render();
+  });
+  a.scrollIntoView({behavior:"smooth",block:"nearest"});
+}
+function finish(it,text,edited){
+  var s=STATE[it.id];
+  s.state="released";s.edited=edited;s.finalText=text;
+  s.approver="Approved by Ray T., licensed, 4:59pm";
+  closeDrawer();render();
+  document.getElementById("relHdr").scrollIntoView({behavior:"smooth",block:"start"});
+}
+
+/* ---------- EVIDENCE ---------- */
+var LOG=[
+ ["10/02 9:14am","Email","EVA auto-draft","Routine","Auto (rule R-12)","Renewal questionnaire attached for the fleet policy — please confirm unit count.","No"],
+ ["10/06 2:31pm","SMS","AI texting bot","Routine","Auto (rule R-04)","Your COI for the Harborview job was emailed this morning.","No"],
+ ["10/09 11:02am","Email","Ray T. (licensed)","Routine","Ray T., licensed","Attaching 5-year loss runs from Granite Mutual for your lender.","No"],
+ ["10/14 4:07pm","Voice","AI receptionist","Commitment","Ray T., licensed","Caller asked about adding a vehicle. Agent confirmed a callback by Thursday; no coverage represented.","Yes — removed \u201ccoverage starts right away\u201d"],
+ ["10/17 10:48am","Email","CSR Dana M. via ChatGPT","Pricing","Ray T., licensed","The fleet renewal is in underwriting; I'll send terms as soon as the carrier releases them.","Yes — removed \u201clikely around $18k, flat\u201d"],
+ ["10/21 3:22pm","SMS","AI texting bot","Routine","Auto (rule R-04)","Payment of $1,482.00 received, thank you.","No"],
+ ["10/23 9:05am","Email","EVA auto-draft","Routine","Auto (rule R-12)","Appointment confirmed for Tue 10am with Ray T.","No"],
+ ["10/27 4:44pm","Email","Ray T. (licensed)","Routine","Auto (rule R-09)","Attaching the loss runs you requested — five years, straight from Granite Mutual.","No"],
+ ["10/27 4:51pm","Email","CSR Dana M. via ChatGPT","Coverage statement","PENDING_APPROVER","PENDING_TEXT","PENDING_CHANGED"]
+];
+var expBtn=document.getElementById("expBtn"),expOut=document.getElementById("expOut");
+expBtn.addEventListener("click",function(){
+  expBtn.disabled=true;
+  expOut.innerHTML='<div class="card" style="padding:14px;margin-top:10px;font-size:13px;color:var(--muted)"><span class="spin"></span>Assembling 30-day record, sealing hash…</div>';
+  setTimeout(function(){buildDoc();expBtn.disabled=false;expBtn.textContent="Re-export E&O pack — Northside Builders LLC";},900);
+});
+function cell(t){var td=document.createElement("td");td.textContent=t;return td;}
+function buildDoc(){
+  var s3=STATE[3];
+  var rows=LOG.map(function(r){return r.slice();});
+  var last=rows[rows.length-1];
+  if(s3.state==="released"){
+    last[4]=s3.approver?"Ray T., licensed (4:59pm)":"Auto";
+    last[5]=(s3.finalText||ITEMS[2].full).replace(/\n+/g," ").trim();
+    last[6]=s3.edited?"Yes — coverage affirmation replaced with endorsement-requested wording":"No — approved as drafted";
+  }else if(s3.state==="killed"){
+    last[4]="Ray T., licensed (4:59pm)";
+    last[5]="NOT SENT — message killed before release. Reason: "+s3.killReason;
+    last[6]="n/a — never transmitted";
+  }else{
+    last[4]="— held, awaiting licensed review";
+    last[5]="HELD IN QUEUE (not transmitted): \u201cYes, your new box truck is covered under the fleet policy effective today.\u201d";
+    last[6]="n/a — not yet released";
+  }
+  var doc=document.createElement("div");doc.className="doc";
+  var head=document.createElement("div");
+  head.innerHTML='<h3>Outbound Communication Record — E&amp;O Pack</h3>'+
+   '<div class="sub"><b>Client:</b> Northside Builders LLC &nbsp;·&nbsp; <b>Agency:</b> Harbor Point Insurance Agency, Portland ME &nbsp;·&nbsp; <b>Period:</b> 09/27/2026 – 10/27/2026</div>'+
+   '<div class="sub"><b>Scope:</b> all outbound client communications across email, SMS and voice, including those authored or drafted by automated systems.</div><hr>';
+  doc.appendChild(head);
+  var wrapT=document.createElement("div");wrapT.className="tbl-wrap";
+  var t=document.createElement("table");
+  var thead=document.createElement("thead"),tr=document.createElement("tr");
+  ["Date / time","Channel","Author (human or AI tool)","Risk tag","Approver","Final text","Changed from draft"].forEach(function(h){
+    var th=document.createElement("th");th.textContent=h;tr.appendChild(th);
+  });
+  thead.appendChild(tr);t.appendChild(thead);
+  var tb=document.createElement("tbody");
+  rows.forEach(function(r){
+    var row=document.createElement("tr");
+    r.forEach(function(c,i){
+      var td=cell(c);
+      if(i===5)td.className="final";
+      if(i===6){td.className="yn";}
+      row.appendChild(td);
+    });
+    tb.appendChild(row);
+  });
+  t.appendChild(tb);wrapT.appendChild(t);doc.appendChild(wrapT);
+  var seal=document.createElement("div");seal.className="seal";
+  seal.innerHTML='<div><b>Record sealed, hash a3f9…</b><br>9 entries · no gaps detected · append-only log<br>Generated 10/27/2026 4:59pm EDT by Mandate for Harbor Point Insurance Agency</div>'+
+   '<div style="text-align:right"><b>Attesting approver</b><br>Ray T., licensed producer<br>ME license #PR-20417</div>';
+  doc.appendChild(seal);
+  expOut.innerHTML="";expOut.appendChild(doc);
+  var note=document.createElement("p");note.className="demo";note.style.textAlign="center";
+  note.textContent="Demo data · figures and names are illustrative";
+  expOut.appendChild(note);
+}
+
+/* tabs */
+var tB=document.getElementById("tabBefore"),tA=document.getElementById("tabAfter"),
+    sB=document.getElementById("before"),sA=document.getElementById("after");
+function show(which){
+  var before=which==="before";
+  tB.setAttribute("aria-selected",before?"true":"false");
+  tA.setAttribute("aria-selected",before?"false":"true");
+  sB.hidden=!before;sA.hidden=before;
+  window.scrollTo(0,0);
+}
+tB.addEventListener("click",function(){show("before");});
+tA.addEventListener("click",function(){show("after");});
+
+render();
+})();
+</script>
+</body>
+</html>
