@@ -85,7 +85,7 @@ main { outline: none; }
   max-width: 1180px; margin: 0 auto; padding: 18px 24px;
 }
 .brand { display: inline-flex; align-items: center; gap: 9px; text-decoration: none; font: 500 22px/1 var(--serif); letter-spacing: -.01em; }
-.brand svg { width: 20px; height: 20px; fill: none; stroke: var(--ink); stroke-width: 1.8; stroke-linecap: round; }
+.brand svg { width: 22px; height: 22px; fill: none; stroke: var(--ink); stroke-width: 1.7; stroke-linejoin: round; }
 .brand svg circle { fill: var(--stamp-dig); stroke: none; }
 .topbar-sep { width: 1px; height: 18px; background: var(--line-2); }
 .topbar-crumb { color: var(--muted); font-size: 14px; }
