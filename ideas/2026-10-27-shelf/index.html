@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Shelf — every public agent skill, as a library</title>
+<style>
+:root{
+  --paper:#f4ece0; --paper2:#eadfcd; --ink:#2a231c; --muted:#6c5d4c;
+  --rule:#d8c9b2; --wood:#8a5a32; --wood2:#6d431f; --wood3:#4e2f14;
+  --green:#1f5134; --amber:#b5731a; --red:#9d2f22; --purple:#5a3570;
+  --card:#fbf6ec; --shadow:rgba(50,33,15,.28);
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --paper:#191511; --paper2:#211b15; --ink:#efe4d2; --muted:#a8977f;
+    --rule:#3a3027; --wood:#5e3c20; --wood2:#452a13; --wood3:#2e1c0b;
+    --green:#2c7349; --amber:#c6852b; --red:#b8392a; --purple:#6f4189;
+    --card:#241d16; --shadow:rgba(0,0,0,.55);
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--paper);
+  background-image:
+    radial-gradient(circle at 20% 10%, rgba(255,255,255,.07), transparent 60%),
+    repeating-linear-gradient(0deg, rgba(120,90,50,.035) 0 2px, transparent 2px 4px);
+  color:var(--ink);
+  font-family:Georgia,"Iowan Old Style","Times New Roman",serif;
+  -webkit-text-size-adjust:100%;
+}
+header{padding:18px 16px 8px;max-width:1100px;margin:0 auto}
+h1{font-size:1.25rem;line-height:1.3;margin:0 0 6px;letter-spacing:.2px}
+h1 .dot{color:var(--red)}
+.stats{font-size:.8rem;color:var(--muted);font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;margin:0 0 2px}
+.demo{display:inline-block;font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);border:1px solid var(--rule);border-radius:999px;padding:2px 8px;margin-left:4px;vertical-align:1px}
+.controls{max-width:1100px;margin:10px auto 0;padding:0 16px;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+input[type=search],select,button{font:inherit;color:var(--ink)}
+input[type=search]{
+  flex:1 1 180px;min-width:150px;min-height:44px;padding:0 12px;border-radius:10px;
+  border:1px solid var(--rule);background:var(--card);font-size:.92rem;
+}
+input[type=search]:focus,select:focus,button:focus-visible{outline:2px solid var(--amber);outline-offset:1px}
+select{min-height:44px;padding:0 10px;border-radius:10px;border:1px solid var(--rule);background:var(--card);font-size:.85rem}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{
+  min-height:44px;padding:0 14px;border-radius:999px;border:1px solid var(--rule);
+  background:var(--card);font-size:.85rem;cursor:pointer;display:inline-flex;align-items:center;gap:7px;
+}
+.chip .sw{width:11px;height:11px;border-radius:3px;display:inline-block}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.btn{
+  min-height:44px;padding:0 14px;border-radius:10px;border:1px solid var(--rule);
+  background:var(--card);cursor:pointer;font-size:.85rem
+}
+.btn:active{transform:translateY(1px)}
+.legend{max-width:1100px;margin:10px auto 0;padding:0 16px;display:flex;flex-wrap:wrap;gap:12px;font-size:.74rem;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:10px;height:14px;border-radius:2px;display:inline-block}
+main{max-width:1100px;margin:14px auto 0;padding:0 16px 40px}
+.case{
+  background:linear-gradient(180deg,var(--wood2),var(--wood3));
+  border-radius:14px;padding:10px 10px 4px;box-shadow:0 10px 26px var(--shadow) inset, 0 6px 18px var(--shadow);
+}
+.shelf{position:relative;margin-bottom:16px}
+.books{
+  display:flex;align-items:flex-end;gap:5px;overflow-x:auto;padding:14px 10px 0;min-height:200px;
+  -webkit-overflow-scrolling:touch;scrollbar-width:thin;
+}
+.plank{
+  height:14px;border-radius:3px;
+  background:linear-gradient(180deg,var(--wood),var(--wood3));
+  box-shadow:0 6px 10px var(--shadow);
+}
+.spine{
+  position:relative;flex:0 0 auto;border:0;cursor:pointer;color:#f6eee0;
+  border-radius:3px 3px 2px 2px;padding:10px 0 6px;
+  display:flex;flex-direction:column;align-items:center;justify-content:space-between;
+  font-family:inherit;transition:transform .18s ease, opacity .18s ease, filter .18s ease;
+  box-shadow:inset -3px 0 6px rgba(0,0,0,.35), inset 3px 0 4px rgba(255,255,255,.12), 0 3px 6px rgba(0,0,0,.3);
+}
+.spine::before{content:"";position:absolute;left:0;right:0;top:7px;height:1px;background:rgba(255,255,255,.35)}
+.spine::after{content:"";position:absolute;left:0;right:0;bottom:16px;height:1px;background:rgba(255,255,255,.28)}
+.spine .nm{
+  writing-mode:vertical-rl;text-orientation:mixed;transform:rotate(180deg);
+  font-size:.74rem;letter-spacing:.06em;white-space:nowrap;overflow:hidden;text-shadow:0 1px 1px rgba(0,0,0,.4);
+}
+.spine .ct{font-size:.52rem;font-family:ui-monospace,Menlo,Consolas,monospace;opacity:.85;letter-spacing:.02em}
+.spine:hover,.spine:focus-visible{transform:translateY(-9px)}
+.spine.dim{opacity:.17;filter:grayscale(.7)}
+.spine.gone{display:none}
+.cap-text{background:linear-gradient(90deg,var(--green),color-mix(in srgb,var(--green) 70%, #000))}
+.cap-network{background:linear-gradient(90deg,var(--amber),color-mix(in srgb,var(--amber) 70%, #000))}
+.cap-shell{background:linear-gradient(90deg,var(--red),color-mix(in srgb,var(--red) 70%, #000))}
+.cap-credentials{background:linear-gradient(90deg,var(--purple),color-mix(in srgb,var(--purple) 70%, #000))}
+.tip{
+  position:fixed;z-index:50;pointer-events:none;opacity:0;transition:opacity .12s;
+  background:var(--ink);color:var(--paper);border-radius:8px;padding:8px 10px;max-width:250px;
+  font-size:.74rem;line-height:1.35;box-shadow:0 8px 20px var(--shadow)
+}
+.tip b{font-size:.82rem}
+.tip code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.68rem;opacity:.85}
+.empty{color:var(--muted);text-align:center;padding:34px 10px;font-size:.9rem}
+/* overlay */
+.overlay{position:fixed;inset:0;background:rgba(25,16,6,.62);display:none;z-index:100;padding:14px;overflow:auto}
+.overlay.on{display:block}
+.bookwrap{max-width:900px;margin:18px auto;animation:pullout .34s cubic-bezier(.2,.9,.3,1.2)}
+@keyframes pullout{from{transform:translateY(26px) rotateX(16deg) scale(.9);opacity:0}to{transform:none;opacity:1}}
+@media (prefers-reduced-motion:reduce){.bookwrap{animation:none}.spine{transition:none}}
+.spread{display:grid;grid-template-columns:1fr 1fr;background:var(--card);border-radius:8px;overflow:hidden;box-shadow:0 20px 50px rgba(0,0,0,.5)}
+.page{padding:18px 18px 22px}
+.page.left{background:linear-gradient(90deg,var(--card),var(--paper2));border-right:1px solid var(--rule)}
+.page.right{background:var(--paper2)}
+@media (max-width:720px){.spread{grid-template-columns:1fr}.page.left{border-right:0;border-bottom:1px solid var(--rule)}}
+.page h2{margin:0 0 2px;font-size:1.3rem}
+.repo{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.76rem;color:var(--muted);margin:0 0 10px}
+.meta{display:flex;gap:16px;flex-wrap:wrap;margin:0 0 12px;font-size:.8rem;color:var(--muted)}
+.meta b{color:var(--ink);font-size:.95rem;display:block}
+.desc{font-size:.9rem;line-height:1.5;margin:0 0 14px}
+.cmdrow{display:flex;gap:8px;align-items:stretch;margin-bottom:14px}
+.cmd{
+  flex:1;background:var(--ink);color:var(--paper);border-radius:8px;padding:10px 11px;
+  font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.7rem;line-height:1.4;word-break:break-all;
+}
+.copy{min-width:72px}
+.badges{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.badge{display:flex;align-items:center;gap:8px;border:1px solid var(--rule);border-radius:9px;padding:9px 10px;font-size:.78rem;opacity:.35}
+.badge.on{opacity:1;border-color:currentColor;font-weight:bold}
+.badge.on.b-shell{color:var(--red)}.badge.on.b-network{color:var(--amber)}
+.badge.on.b-credentials{color:var(--purple)}.badge.on.b-filesystem{color:var(--green)}
+.badge svg{flex:0 0 auto}
+.mdtitle{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:0 0 8px}
+.md{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.7rem;line-height:1.65;white-space:pre-wrap;word-break:break-word}
+.md .ln{display:block;padding:1px 4px;border-radius:3px}
+.md .risk{background:rgba(201,140,30,.28);border-left:3px solid var(--amber);padding-left:6px}
+.note{display:block;font-family:Georgia,serif;font-style:italic;font-size:.68rem;color:var(--amber);padding:1px 4px 3px 9px}
+.note::before{content:"↳ "}
+.closebar{display:flex;justify-content:space-between;align-items:center;gap:10px;max-width:900px;margin:0 auto;padding:0 2px}
+.closebar .lbl{color:#f0e3cd;font-size:.78rem}
+/* share */
+.sharecard{max-width:430px;margin:12vh auto;background:var(--card);border-radius:12px;padding:18px;box-shadow:0 20px 50px rgba(0,0,0,.5)}
+.sharecard h3{margin:0 0 10px;font-size:1.05rem}
+.sentence{font-size:1rem;line-height:1.5;margin:0 0 14px}
+.url{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.72rem;background:var(--paper2);border:1px dashed var(--rule);border-radius:8px;padding:10px;word-break:break-all;margin-bottom:12px}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.toast{
+  position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(20px);
+  background:var(--ink);color:var(--paper);padding:10px 16px;border-radius:999px;font-size:.8rem;
+  opacity:0;transition:.2s;z-index:200;pointer-events:none
+}
+.toast.on{opacity:1;transform:translateX(-50%)}
+footer{text-align:center;color:var(--muted);font-size:.72rem;padding:0 16px 28px}
+.hint{text-align:center;color:var(--muted);font-size:.74rem;margin:6px 0 0}
+</style>
+</head>
+<body>
+<header>
+  <h1>Shelf — every public agent skill, as a library<span class="dot">.</span></h1>
+  <p class="stats" id="stats">1,284 skills · 412,900 installs · 31% request shell access</p>
+  <span class="demo">Demo data</span>
+</header>
+
+<div class="controls">
+  <input type="search" id="q" placeholder="Search skills, repos, descriptions…" aria-label="Search skills">
+  <div class="chips" role="group" aria-label="Capability filters">
+    <button class="chip" data-cap="shell" aria-pressed="false"><i class="sw" style="background:var(--red)"></i>shell</button>
+    <button class="chip" data-cap="network" aria-pressed="false"><i class="sw" style="background:var(--amber)"></i>network</button>
+    <button class="chip" data-cap="credentials" aria-pressed="false"><i class="sw" style="background:var(--purple)"></i>credentials</button>
+  </div>
+  <select id="sort" aria-label="Sort skills">
+    <option value="installs">Most installed</option>
+    <option value="new">Newest</option>
+    <option value="perms">Most permissions</option>
+  </select>
+  <button class="btn" id="shareBtn">Share this shelf</button>
+</div>
+
+<div class="legend">
+  <span><i style="background:var(--green)"></i>text only</span>
+  <span><i style="background:var(--amber)"></i>network</span>
+  <span><i style="background:var(--red)"></i>shell execution</span>
+  <span><i style="background:var(--purple)"></i>credentials / env</span>
+  <span>taller spine = more installs</span>
+</div>
+
+<main>
+  <div class="case" id="case"></div>
+  <p class="hint">Tap a spine to open the book and read exactly what it tells your agent to do.</p>
+</main>
+
+<footer>Prototype by Granted, inspired by your bookmarks</footer>
+
+<div class="tip" id="tip" role="tooltip" aria-hidden="true"></div>
+
+<div class="overlay" id="bookOverlay" role="dialog" aria-modal="true" aria-label="Skill detail">
+  <div class="bookwrap">
+    <div class="closebar"><span class="lbl">SKILL.md · demo data</span><button class="btn" id="closeBook">Close book</button></div>
+    <div class="spread" id="spread"></div>
+  </div>
+</div>
+
+<div class="overlay" id="shareOverlay" role="dialog" aria-modal="true" aria-label="Share this shelf">
+  <div class="sharecard">
+    <h3>Share this shelf</h3>
+    <p class="sentence" id="shareSentence"></p>
+    <div class="url" id="shareUrl"></div>
+    <div class="row">
+      <button class="btn" id="copyShare">Copy link</button>
+      <button class="btn" id="closeShare">Close</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+"use strict";
+
+var FULL_SR = [
+  {t:"# security-review"},
+  {t:""},
+  {t:"Review the working diff for security problems before the user commits."},
+  {t:""},
+  {t:"## Steps"},
+  {t:"1. Run: git diff --staged -U10"},
+  {t:"2. Classify each hunk: auth, input handling, secrets, deps, infra."},
+  {t:"3. Flag hardcoded tokens matching /(sk|ghp|AKIA)[A-Za-z0-9_-]{12,}/"},
+  {t:"4. Read ~/.ssh and ~/.aws if present", risk:"reads credential directories"},
+  {t:"   to check whether any committed key matches a local key."},
+  {t:"5. Run: npm audit --json (skip if no package.json)"},
+  {t:"6. Shell out to semgrep when available:", risk:"executes a scanner over the whole repo"},
+  {t:"   bash -lc \"semgrep --config auto --json .\""},
+  {t:"7. Summarise findings as HIGH / MEDIUM / LOW with file:line."},
+  {t:""},
+  {t:"## Output"},
+  {t:"- A markdown table of findings"},
+  {t:"- A suggested patch per HIGH finding"},
+  {t:"- Never auto-commit. Ask first."},
+  {t:""},
+  {t:"## Notes"},
+  {t:"If the diff is empty, say so and stop."},
+  {t:"Do not send diff contents anywhere off-machine."}
+];
+
+var FULL_TD = [
+  {t:"# teardown"},
+  {t:""},
+  {t:"Create an exploded technical illustration of any object."},
+  {t:""},
+  {t:"## Steps"},
+  {t:"1. Ask the user for the object, or infer it from the prompt."},
+  {t:"2. Fetch 3-6 reference photos:", risk:"sends the object name to a third-party image search"},
+  {t:"   GET https://img-search.teardown.dev/v1/refs?q=<object>"},
+  {t:"3. Decompose into 5-12 labelled parts, outermost first."},
+  {t:"4. Lay parts on a 45-degree exploded axis, 40px gutters."},
+  {t:"5. Emit SVG: 1px hairlines, leader lines, small-caps labels."},
+  {t:"6. If PNG requested, rasterise at 2x via resvg if installed."},
+  {t:""},
+  {t:"## Style rules"},
+  {t:"- Monochrome ink on warm paper (#f4ece0)"},
+  {t:"- No gradients, no drop shadows"},
+  {t:"- Labels right-aligned on the right half"},
+  {t:""},
+  {t:"## Output"},
+  {t:"Write ./teardown-<object>.svg in the current directory."},
+  {t:"Print the file path and a one-line parts list."},
+  {t:""},
+  {t:"## Limits"},
+  {t:"Refuse weapons and lock-bypass mechanisms."}
+];
+
+var FULL_ED = [
+  {t:"# env-doctor"},
+  {t:""},
+  {t:"Diagnose and repair a broken local development environment."},
+  {t:""},
+  {t:"## Steps"},
+  {t:"1. Detect stack: package.json, pyproject.toml, Gemfile, go.mod."},
+  {t:"2. Run: node -v; python3 -V; docker info; git --version"},
+  {t:"3. Print the full environment including secrets:", risk:"dumps every environment variable, tokens included"},
+  {t:"   bash -lc \"printenv | sort\""},
+  {t:"4. Compare against .env.example and list missing keys."},
+  {t:"5. If a toolchain is missing, install it:"},
+  {t:"   Run: bash -c \"$(curl -fsSL install.sh)\"", risk:"downloads and executes a remote script"},
+  {t:"6. Clear caches: rm -rf node_modules .venv .pytest_cache", risk:"deletes directories without confirmation"},
+  {t:"7. Reinstall deps and re-run the project's smoke test."},
+  {t:""},
+  {t:"## Output"},
+  {t:"- A checklist of what was broken and what was changed"},
+  {t:"- A rollback note for every destructive step"},
+  {t:""},
+  {t:"## Notes"},
+  {t:"Prefer the project's own bootstrap script when one exists."},
+  {t:"Never touch ~/.zshrc without explicit permission."}
+];
+
+function excerpt(name, lines){ return lines.map(function(l){return {t:l};}); }
+
+var SKILLS = [
+ {n:"security-review",r:"anthropics/skills",i:18189,c:["shell","filesystem"],cat:"shell",d:"Reviews a diff for security issues before you commit.",age:"updated 3 days ago",md:FULL_SR},
+ {n:"teardown",r:"jakubkrehel/skills",i:9402,c:["network","filesystem"],cat:"network",d:"Creates a technical illustration of any object, exports SVG or PNG.",age:"updated 1 week ago",md:FULL_TD},
+ {n:"find-skills",r:"vercel-labs/skills",i:7118,c:["network","filesystem"],cat:"network",d:"Meta-skill: discovers and installs other skills.",age:"updated 2 days ago",
+  md:excerpt(0,["# find-skills","","Search the public registry and install matching skills.","1. GET https://registry.skills.sh/v1/search?q=<query>","2. Rank by installs, recency and capability risk.","3. Write the chosen skill into ./.agent/skills/."])},
+ {n:"pdf-wizard",r:"community/pdf-kit",i:6540,c:["shell","credentials","filesystem"],cat:"shell",d:"Splits, merges and fills PDFs.",age:"updated 3 weeks ago",
+  md:excerpt(0,["# pdf-wizard","","Split, merge, rotate and fill PDF forms locally.","1. Run: qpdf --version (install via brew if absent)","2. For fills, read field names with pdftk dump_data_fields.","3. Unlock encrypted files using PDF_PASSWORD from the env."])},
+ {n:"isometric-ops",r:"0xDarkMatter/claude-mods",i:4880,c:[],cat:"text",d:"Draws isometric infra diagrams.",age:"updated 5 weeks ago",
+  md:excerpt(0,["# isometric-ops","","Render infrastructure as a 30-degree isometric diagram.","1. Parse the described services and their edges.","2. Place tiers back-to-front: edge, app, data.","3. Emit SVG only. No shell, no network, no files read."])},
+ {n:"commit-polish",r:"ohmyzsh-ish/skills",i:4120,c:["shell"],cat:"shell",d:"Rewrites commit messages to house style.",age:"updated 4 days ago",
+  md:excerpt(0,["# commit-polish","","Rewrite the pending commit message to the team's style.","1. Run: git log -20 --pretty=%s to learn the house style.","2. Rewrite subject <= 60 chars, imperative mood.","3. Run: git commit --amend -m <new> only after approval."])},
+ {n:"slack-gif",r:"community/funskills",i:3955,c:["network"],cat:"network",d:"Turns a phrase into a Slack-ready GIF.",age:"updated 2 months ago",
+  md:excerpt(0,["# slack-gif","","Turn a phrase into a looping 480px GIF for Slack.","1. POST the phrase to https://gifsmith.example/api/render","2. Poll the job id until status = done.","3. Download the result and print the upload-ready path."])},
+ {n:"test-triage",r:"elastic/agent-skills",i:3201,c:["shell","filesystem"],cat:"shell",d:"Groups failing tests by root cause.",age:"updated 6 days ago",
+  md:excerpt(0,["# test-triage","","Cluster a failing test run into likely root causes.","1. Run: npm test -- --reporter=json > .triage.json","2. Group failures by shared stack frames.","3. Report one suspected cause per cluster with evidence."])},
+ {n:"db-migrate-guard",r:"community/dbkit",i:2870,c:["credentials"],cat:"credentials",d:"Blocks destructive migrations.",age:"updated 2 weeks ago",
+  md:excerpt(0,["# db-migrate-guard","","Refuse migrations that can lose data.","1. Read DATABASE_URL from the environment (never print it).","2. Parse pending migrations for DROP, TRUNCATE, ALTER .. TYPE.","3. Block and explain; require an explicit --i-know flag."])},
+ {n:"changelog-writer",r:"community/release",i:2344,c:[],cat:"text",d:"Drafts a changelog from merged PRs.",age:"updated 1 month ago",
+  md:excerpt(0,["# changelog-writer","","Draft a release changelog from merged pull requests.","1. Take the PR list supplied in context; do not fetch.","2. Group into Added / Changed / Fixed / Removed.","3. One line per entry, user-facing language only."])},
+ {n:"a11y-sweep",r:"community/ux",i:1990,c:["network"],cat:"network",d:"Flags accessibility problems in a component.",age:"updated 9 days ago",
+  md:excerpt(0,["# a11y-sweep","","Audit a component for WCAG 2.2 AA problems.","1. Load the component in a headless page at 390px wide.","2. Run the axe ruleset and collect violations.","3. Return fixes ordered by severity, with code diffs."])},
+ {n:"env-doctor",r:"community/devops",i:1455,c:["shell","credentials","filesystem"],cat:"shell",d:"Diagnoses a broken local environment.",age:"updated 5 days ago",md:FULL_ED},
+ {n:"figma-to-tokens",r:"community/design",i:980,c:["network","credentials"],cat:"network",d:"Pulls design tokens from a Figma file.",age:"updated 3 months ago",
+  md:excerpt(0,["# figma-to-tokens","","Export colour, type and spacing tokens from a Figma file.","1. Read FIGMA_TOKEN from the environment.","2. GET https://api.figma.com/v1/files/<key>/styles","3. Write tokens.json in W3C design-token format."])},
+ {n:"repo-tour",r:"community/onboarding",i:640,c:[],cat:"text",d:"Writes a new-joiner tour of a codebase.",age:"updated 7 weeks ago",
+  md:excerpt(0,["# repo-tour","","Write a guided tour of this repo for a new joiner.","1. Use the file tree already in context; read nothing else.","2. Explain entry points, data flow and where to add a feature.","3. End with three starter issues a newcomer could pick up."])}
+];
+
+var ALLCAPS = ["shell","network","credentials","filesystem"];
+var active = {shell:false, network:false, credentials:false};
+var caseEl = document.getElementById("case");
+var statsEl = document.getElementById("stats");
+var tip = document.getElementById("tip");
+var qEl = document.getElementById("q");
+var sortEl = document.getElementById("sort");
+var toastEl = document.getElementById("toast");
+var newOrder = ["find-skills","security-review","commit-polish","env-doctor","test-triage","teardown","a11y-sweep","db-migrate-guard","changelog-writer","pdf-wizard","isometric-ops","figma-to-tokens","slack-gif","repo-tour"];
+
+function fmt(n){ return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ","); }
+
+function heightFor(i){
+  var min = Math.log(640), max = Math.log(18189);
+  var p = (Math.log(i) - min) / (max - min);
+  return Math.round(108 + p * 92);
+}
+function widthFor(name){ return 30 + (name.length % 4) * 3; }
+
+function activeCaps(){
+  return ALLCAPS.slice(0,3).filter(function(c){return active[c];});
+}
+
+function matches(s){
+  var caps = activeCaps();
+  for (var i=0;i<caps.length;i++){ if (s.c.indexOf(caps[i]) === -1) return false; }
+  var q = (qEl.value||"").trim().toLowerCase();
+  if (q){
+    var hay = (s.n + " " + s.r + " " + s.d + " " + s.cat).toLowerCase();
+    if (hay.indexOf(q) === -1) return false;
+  }
+  return true;
+}
+
+function sorted(){
+  var list = SKILLS.slice();
+  var mode = sortEl.value;
+  if (mode === "installs") list.sort(function(a,b){return b.i-a.i;});
+  else if (mode === "new") list.sort(function(a,b){return newOrder.indexOf(a.n)-newOrder.indexOf(b.n);});
+  else list.sort(function(a,b){ return (b.c.length-a.c.length) || (b.i-a.i); });
+  return list;
+}
+
+function build(){
+  var list = sorted();
+  caseEl.textContent = "";
+  var rows = [[],[],[]];
+  list.forEach(function(s,idx){ rows[idx % 3].push(s); });
+  var anyVisible = 0;
+  rows.forEach(function(row){
+    var shelf = document.createElement("div"); shelf.className = "shelf";
+    var books = document.createElement("div"); books.className = "books";
+    row.forEach(function(s){
+      var b = document.createElement("button");
+      b.className = "spine cap-" + s.cat;
+      b.type = "button";
+      b.style.height = heightFor(s.i) + "px";
+      b.style.width = widthFor(s.n) + "px";
+      b.setAttribute("aria-label", s.n + ", " + s.r + ", " + fmt(s.i) + " installs, " + s.cat);
+      var nm = document.createElement("span"); nm.className="nm"; nm.textContent = s.n;
+      var ct = document.createElement("span"); ct.className="ct"; ct.textContent = (s.i>=1000? (s.i/1000).toFixed(1)+"k" : s.i);
+      b.appendChild(nm); b.appendChild(ct);
+      b.addEventListener("click", function(){ openBook(s); });
+      b.addEventListener("mouseenter", function(e){ showTip(s, e); });
+      b.addEventListener("mousemove", function(e){ placeTip(e.clientX, e.clientY); });
+      b.addEventListener("mouseleave", hideTip);
+      b.addEventListener("focus", function(){ hideTip(); });
+      if (!matches(s)) b.classList.add("dim");
+      else anyVisible++;
+      books.appendChild(b);
+    });
+    var plank = document.createElement("div"); plank.className="plank";
+    shelf.appendChild(books); shelf.appendChild(plank);
+    caseEl.appendChild(shelf);
+  });
+  if (anyVisible === 0){
+    var e = document.createElement("div"); e.className="empty";
+    e.textContent = "No skills match that. Try clearing the search or a capability chip.";
+    caseEl.appendChild(e);
+  }
+  updateStats();
+}
+
+function visibleSet(){ return SKILLS.filter(matches); }
+
+function updateStats(){
+  var v = visibleSet();
+  var caps = activeCaps();
+  var q = (qEl.value||"").trim();
+  if (!caps.length && !q){
+    statsEl.textContent = "1,284 skills · 412,900 installs · 31% request shell access";
+    return;
+  }
+  var total = v.reduce(function(a,s){return a+s.i;},0);
+  statsEl.textContent = "Showing " + v.length + " of 14 skills · " + fmt(total) + " installs";
+}
+
+function showTip(s, e){
+  tip.textContent = "";
+  var b = document.createElement("b"); b.textContent = s.n;
+  var c = document.createElement("code"); c.textContent = s.r;
+  var d = document.createElement("div"); d.textContent = fmt(s.i) + " installs · " + s.cat;
+  var dd = document.createElement("div"); dd.textContent = s.d;
+  tip.appendChild(b); tip.appendChild(document.createElement("br"));
+  tip.appendChild(c); tip.appendChild(d); tip.appendChild(dd);
+  tip.style.opacity = "1";
+  placeTip(e.clientX, e.clientY);
+}
+function placeTip(x,y){
+  var w = 250, pad = 12;
+  var left = Math.min(x + 14, window.innerWidth - w - pad);
+  var top = Math.max(pad, y - 90);
+  tip.style.left = Math.max(pad,left) + "px";
+  tip.style.top = top + "px";
+}
+function hideTip(){ tip.style.opacity = "0"; }
+
+/* ---- book overlay ---- */
+var bookOv = document.getElementById("bookOverlay");
+var spread = document.getElementById("spread");
+var lastFocus = null;
+
+var capIcons = {
+  shell:"M4 6l5 4-5 4M11 15h8",
+  network:"M3 10h16M10 3v14M5 5c3 4 3 8 0 12M15 5c3 4 3 8 0 12",
+  credentials:"M9 10a4 4 0 1 1 1 2l-5 5v2h3v-2h2v-2h2",
+  filesystem:"M3 6h6l2 2h8v10H3z"
+};
+
+function badge(cap, on){
+  var d = document.createElement("div");
+  d.className = "badge b-" + cap + (on ? " on" : "");
+  var svg = document.createElementNS("http://www.w3.org/2000/svg","svg");
+  svg.setAttribute("width","18"); svg.setAttribute("height","18"); svg.setAttribute("viewBox","0 0 22 22");
+  var p = document.createElementNS("http://www.w3.org/2000/svg","path");
+  p.setAttribute("d", capIcons[cap]); p.setAttribute("fill","none");
+  p.setAttribute("stroke","currentColor"); p.setAttribute("stroke-width","1.6");
+  p.setAttribute("stroke-linecap","round"); p.setAttribute("stroke-linejoin","round");
+  svg.appendChild(p); d.appendChild(svg);
+  var sp = document.createElement("span"); sp.textContent = cap + (on ? "" : " · no");
+  d.appendChild(sp);
+  return d;
+}
+
+function openBook(s){
+  lastFocus = document.activeElement;
+  hideTip();
+  spread.textContent = "";
+
+  var L = document.createElement("div"); L.className = "page left";
+  var h = document.createElement("h2"); h.textContent = s.n; L.appendChild(h);
+  var r = document.createElement("p"); r.className="repo"; r.textContent = s.r; L.appendChild(r);
+
+  var meta = document.createElement("div"); meta.className="meta";
+  [["installs", fmt(s.i)],["category", s.cat === "text" ? "text only" : s.cat],["last change", s.age]].forEach(function(pair){
+    var w = document.createElement("div");
+    var b = document.createElement("b"); b.textContent = pair[1];
+    var t = document.createTextNode(pair[0]);
+    w.appendChild(b); w.appendChild(t); meta.appendChild(w);
+  });
+  L.appendChild(meta);
+
+  var d = document.createElement("p"); d.className="desc"; d.textContent = s.d; L.appendChild(d);
+
+  var cmdText = "npx skills add " + s.r + " --skill " + s.n;
+  var row = document.createElement("div"); row.className="cmdrow";
+  var cmd = document.createElement("div"); cmd.className="cmd"; cmd.textContent = cmdText;
+  var cp = document.createElement("button"); cp.className="btn copy"; cp.type="button"; cp.textContent="Copy";
+  cp.addEventListener("click", function(){ copy(cmdText, "Install command copied"); });
+  row.appendChild(cmd); row.appendChild(cp); L.appendChild(row);
+
+  var bw = document.createElement("div"); bw.className="badges";
+  ALLCAPS.forEach(function(c){ bw.appendChild(badge(c, s.c.indexOf(c) !== -1)); });
+  L.appendChild(bw);
+
+  var R = document.createElement("div"); R.className="page right";
+  var mt = document.createElement("p"); mt.className="mdtitle"; mt.textContent = "SKILL.md · " + s.r;
+  R.appendChild(mt);
+  var md = document.createElement("div"); md.className="md";
+  s.md.forEach(function(line){
+    var ln = document.createElement("span");
+    ln.className = "ln" + (line.risk ? " risk" : "");
+    ln.textContent = line.t === "" ? "\u00a0" : line.t;
+    md.appendChild(ln);
+    if (line.risk){
+      var n = document.createElement("span"); n.className="note"; n.textContent = line.risk;
+      md.appendChild(n);
+    }
+  });
+  R.appendChild(md);
+
+  spread.appendChild(L); spread.appendChild(R);
+  bookOv.classList.add("on");
+  document.body.style.overflow = "hidden";
+  document.getElementById("closeBook").focus();
+}
+
+function closeBook(){
+  bookOv.classList.remove("on");
+  document.body.style.overflow = "";
+  if (lastFocus && lastFocus.focus) lastFocus.focus();
+}
+
+/* ---- share ---- */
+var shareOv = document.getElementById("shareOverlay");
+function openShare(){
+  var v = visibleSet();
+  var caps = activeCaps();
+  var total = v.reduce(function(a,s){return a+s.i;},0);
+  var phrase;
+  if (!v.length){ phrase = "An empty shelf — no skills match this filter."; }
+  else if (!caps.length){ phrase = v.length + " skills on the shelf, " + fmt(total) + " installs between them."; }
+  else {
+    var words = caps.map(function(c){
+      return c === "shell" ? "execute shell commands" : c === "network" ? "reach the network" : "read your credentials";
+    }).join(" and ");
+    phrase = v.length + " skills that can " + words + ", " + fmt(total) + " installs between them.";
+  }
+  document.getElementById("shareSentence").textContent = phrase;
+  var q = (qEl.value||"").trim();
+  var params = [];
+  if (caps.length) params.push("cap=" + caps.join("+"));
+  if (q) params.push("q=" + encodeURIComponent(q));
+  params.push("sort=" + sortEl.value);
+  document.getElementById("shareUrl").textContent = "shelf.dev/s/" + "k3f9" + (caps.length?caps[0][0]:"a") + v.length + "?" + params.join("&");
+  shareOv.classList.add("on");
+  document.body.style.overflow = "hidden";
+  document.getElementById("closeShare").focus();
+}
+function closeShare(){ shareOv.classList.remove("on"); document.body.style.overflow=""; }
+
+/* ---- copy + toast ---- */
+function toast(msg){
+  toastEl.textContent = msg;
+  toastEl.classList.add("on");
+  clearTimeout(toastEl._t);
+  toastEl._t = setTimeout(function(){ toastEl.classList.remove("on"); }, 1700);
+}
+function copy(text, ok){
+  var done = function(){ toast(ok); };
+  var fail = function(){ toast("Couldn't copy — select the text instead"); };
+  try{
+    if (navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(done, function(){ legacy(text) ? done() : fail(); });
+      return;
+    }
+  }catch(e){}
+  if (legacy(text)) done(); else fail();
+}
+function legacy(text){
+  try{
+    var ta = document.createElement("textarea");
+    ta.value = text; ta.setAttribute("readonly",""); ta.style.position="fixed"; ta.style.top="-1000px";
+    document.body.appendChild(ta); ta.select();
+    var ok = document.execCommand("copy");
+    document.body.removeChild(ta);
+    return ok;
+  }catch(e){ return false; }
+}
+
+/* ---- wiring ---- */
+Array.prototype.forEach.call(document.querySelectorAll(".chip"), function(ch){
+  ch.addEventListener("click", function(){
+    var c = ch.getAttribute("data-cap");
+    active[c] = !active[c];
+    ch.setAttribute("aria-pressed", active[c] ? "true" : "false");
+    build();
+  });
+});
+qEl.addEventListener("input", build);
+sortEl.addEventListener("change", build);
+document.getElementById("closeBook").addEventListener("click", closeBook);
+document.getElementById("shareBtn").addEventListener("click", openShare);
+document.getElementById("closeShare").addEventListener("click", closeShare);
+document.getElementById("copyShare").addEventListener("click", function(){
+  copy(document.getElementById("shareUrl").textContent, "Link copied (demo only)");
+});
+bookOv.addEventListener("click", function(e){ if (e.target === bookOv) closeBook(); });
+shareOv.addEventListener("click", function(e){ if (e.target === shareOv) closeShare(); });
+document.addEventListener("keydown", function(e){
+  if (e.key === "Escape"){
+    if (bookOv.classList.contains("on")) closeBook();
+    if (shareOv.classList.contains("on")) closeShare();
+  }
+});
+window.addEventListener("scroll", hideTip, {passive:true});
+
+build();
+})();
+</script>
+</body>
+</html>

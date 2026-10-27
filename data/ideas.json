@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-27T16:25:51.470Z",
+  "updated": "2026-10-27T16:46:32.249Z",
   "ideas": [
     {
       "id": "2026-10-26-catalog-check",
@@ -365,6 +365,66 @@
       "sources_count": 9,
       "superseded_by": null,
       "sibling": "2026-10-27-quotefirst"
+    },
+    {
+      "id": "2026-10-27-receipts",
+      "number": 14,
+      "date": "2026-10-27",
+      "track": "venture",
+      "short_name": "Receipts",
+      "verdict": "watch",
+      "score": 7,
+      "scores": {
+        "pain": 7,
+        "market_pull": 7,
+        "timing": 7,
+        "gap": 7,
+        "wedge": 7
+      },
+      "effort": "3+ months",
+      "category": "Back-office automation",
+      "tags": [
+        "agents",
+        "healthcare",
+        "compliance",
+        "automation"
+      ],
+      "pain_type": "expressed",
+      "one_liner": "For small medical-billing companies and clinic billing managers, Receipts sits behind every payer-portal submission — human or bot — and files a timestamped evidence record (what values were entered, the confirmation page, the reference number) so a timely-filing or \"we never got it\" denial can be answered in 30 seconds instead of a week of screenshot archaeology.",
+      "prototype_url": "https://github.com/Yashsharma1911/granted/blob/catalog-test/ideas/2026-10-27-receipts/index.html",
+      "sources_count": 13,
+      "superseded_by": null,
+      "sibling": "2026-10-27-shelf"
+    },
+    {
+      "id": "2026-10-27-shelf",
+      "number": 15,
+      "date": "2026-10-27",
+      "track": "build",
+      "short_name": "Shelf",
+      "verdict": "watch",
+      "score": 6.8,
+      "scores": {
+        "wow": 7,
+        "shareability": 7,
+        "buildability": 7,
+        "freshness": 7,
+        "usefulness": 6
+      },
+      "effort": "a weekend",
+      "category": "Developer tools",
+      "tags": [
+        "agents",
+        "datasets",
+        "visualization",
+        "open-source"
+      ],
+      "pain_type": null,
+      "one_liner": "A free, no-signup shelf view of every public agent skill — thousands of SKILL.md files rendered as spines on a library shelf, sorted by installs, where pulling one out shows what it actually tells your agent to do and which shell, network and file powers it asks for.",
+      "prototype_url": "https://github.com/Yashsharma1911/granted/blob/catalog-test/ideas/2026-10-27-shelf/index.html",
+      "sources_count": 10,
+      "superseded_by": null,
+      "sibling": "2026-10-27-receipts"
     }
   ]
 }
