@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Expiry — the freshness check for anything you wrote about software</title>
+<style>
+:root{
+  --bg:#0b0d10; --panel:#12161b; --panel2:#171c23; --line:#242c35;
+  --txt:#e6edf3; --dim:#8b97a6; --accent:#5ee6a8; --red:#ff6b6b; --amber:#ffc266; --grey:#7d8794;
+  --shadow:0 10px 30px rgba(0,0,0,.45);
+}
+@media (prefers-color-scheme: light){
+  :root{
+    --bg:#f6f7f9; --panel:#ffffff; --panel2:#f1f3f6; --line:#e2e6ec;
+    --txt:#131720; --dim:#5d6878; --accent:#108a5a; --red:#c4342f; --amber:#9a6a00; --grey:#6b7480;
+    --shadow:0 8px 24px rgba(16,24,40,.08);
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--txt);
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+  -webkit-text-size-adjust:100%; line-height:1.45;
+}
+.wrap{max-width:780px;margin:0 auto;padding:14px 14px 60px}
+header.top{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 2px 14px;border-bottom:1px solid var(--line)}
+.logo{display:flex;align-items:center;gap:8px;font-weight:700;letter-spacing:-.3px}
+.dot{width:12px;height:12px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 4px color-mix(in srgb,var(--accent) 22%,transparent)}
+.tag{color:var(--dim);font-size:12.5px}
+.tabs{margin-left:auto;display:flex;gap:6px}
+.tab{appearance:none;border:1px solid var(--line);background:var(--panel);color:var(--dim);
+  padding:10px 14px;border-radius:999px;font:inherit;font-size:13px;cursor:pointer;min-height:44px}
+.tab[aria-selected="true"]{color:var(--txt);border-color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,var(--panel))}
+h1{font-size:26px;line-height:1.2;margin:28px 0 6px;letter-spacing:-.6px;text-align:center}
+.sub{color:var(--dim);font-size:13px;text-align:center;margin:0 0 22px}
+.inputrow{display:flex;gap:8px;flex-wrap:wrap}
+input[type=text]{
+  flex:1 1 240px;min-width:0;background:var(--panel);border:1px solid var(--line);color:var(--txt);
+  padding:14px;border-radius:10px;font:inherit;font-size:14px;min-height:50px}
+input[type=text]:focus{outline:2px solid var(--accent);outline-offset:1px}
+button.primary{background:var(--accent);color:#06130d;border:0;padding:14px 20px;border-radius:10px;
+  font:inherit;font-weight:700;cursor:pointer;min-height:50px;flex:0 0 auto}
+@media (prefers-color-scheme: light){button.primary{color:#fff}}
+button.primary:disabled{opacity:.6;cursor:default}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 0}
+.chip{border:1px dashed var(--line);background:transparent;color:var(--dim);border-radius:999px;
+  padding:10px 13px;font:inherit;font-size:12.5px;cursor:pointer;min-height:44px}
+.chip:hover,.chip:focus{border-color:var(--accent);color:var(--txt)}
+.hint{color:var(--dim);font-size:11.5px;margin-top:14px;text-align:center}
+.log{margin-top:22px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px;font-size:12.5px;min-height:120px}
+.log div{color:var(--dim);margin:0 0 6px;opacity:0;animation:fade .25s forwards}
+.log div.done::before{content:"✓ ";color:var(--accent)}
+.log div.run::before{content:"› ";color:var(--amber)}
+@keyframes fade{to{opacity:1}}
+.bar{height:4px;background:var(--panel2);border-radius:4px;overflow:hidden;margin-top:10px}
+.bar i{display:block;height:100%;width:0;background:var(--accent);transition:width .25s linear}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;margin-top:14px;box-shadow:var(--shadow)}
+.scorerow{display:flex;gap:16px;align-items:center}
+.ring{position:relative;flex:0 0 auto;width:104px;height:104px}
+.ring svg{transform:rotate(-90deg)}
+.ring .val{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.ring .num{font-size:26px;font-weight:700;letter-spacing:-1px}
+.ring .den{font-size:10px;color:var(--dim)}
+.meta h2{margin:0 0 4px;font-size:15px;line-height:1.3;word-break:break-word}
+.meta .url{color:var(--dim);font-size:11.5px;word-break:break-all}
+.meta .summ{margin-top:8px;font-size:13px}
+.label{font-size:10px;letter-spacing:1.6px;color:var(--dim);text-transform:uppercase}
+.legend{display:flex;gap:12px;flex-wrap:wrap;margin:14px 0 0;font-size:11px;color:var(--dim)}
+.legend span b{font-weight:700}
+.claims{margin-top:10px;border-top:1px solid var(--line)}
+.claim{border-bottom:1px solid var(--line);padding:12px 2px}
+.ctop{display:flex;gap:10px;align-items:flex-start}
+.pill{flex:0 0 auto;font-size:9.5px;letter-spacing:.8px;padding:5px 8px;border-radius:6px;font-weight:700;white-space:nowrap;margin-top:2px}
+.p-true{background:color-mix(in srgb,var(--accent) 20%,transparent);color:var(--accent)}
+.p-old{background:color-mix(in srgb,var(--red) 20%,transparent);color:var(--red)}
+.p-unk{background:color-mix(in srgb,var(--grey) 22%,transparent);color:var(--grey)}
+.ctext{flex:1 1 auto;font-size:13.5px}
+.ctext q{quotes:"“" "”"}
+.more{appearance:none;background:transparent;border:0;color:var(--red);font:inherit;font-size:12px;
+  cursor:pointer;padding:8px 0 2px;text-align:left;min-height:34px}
+.more::before{content:"▸ ";display:inline-block;transition:transform .15s}
+.more[aria-expanded="true"]::before{content:"▾ "}
+.fix{display:none;margin-top:6px;background:var(--panel2);border-left:2px solid var(--red);padding:10px;border-radius:0 8px 8px 0;font-size:12.5px;color:var(--txt)}
+.fix.open{display:block}
+.src{display:block;margin-top:6px;color:var(--dim);font-size:11px}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.btn{border:1px solid var(--line);background:var(--panel2);color:var(--txt);padding:12px 15px;border-radius:10px;
+  font:inherit;font-size:13px;cursor:pointer;min-height:46px}
+.btn:hover{border-color:var(--accent)}
+.switch{display:flex;align-items:center;gap:10px;border:1px solid var(--line);background:var(--panel2);
+  border-radius:10px;padding:10px 14px;cursor:pointer;min-height:46px;font-size:13px;user-select:none}
+.track{width:40px;height:22px;border-radius:999px;background:var(--line);position:relative;transition:background .2s;flex:0 0 auto}
+.track i{position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:var(--bg);transition:left .2s}
+.switch[aria-checked="true"] .track{background:var(--accent)}
+.switch[aria-checked="true"] .track i{left:21px}
+.watch{display:none;margin-top:12px;background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:14px}
+.watch.open{display:block}
+.watch .cap{font-size:12px;color:var(--dim);margin-top:8px}
+.watch .cap b{color:var(--red)}
+.shot{display:none;margin-top:14px}
+.shot.open{display:block}
+.shotcard{background:linear-gradient(150deg,#0e1318,#151c25);border:1px solid #2a3340;border-radius:16px;padding:18px;color:#e6edf3}
+.shotcard .sh-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.shotcard .sh-score{font-size:44px;font-weight:700;letter-spacing:-2px;line-height:1}
+.shotcard .sh-of{font-size:11px;color:#8b97a6;letter-spacing:1.4px}
+.shotcard .sh-title{font-size:13px;margin:12px 0 2px;color:#fff}
+.shotcard .sh-url{font-size:10.5px;color:#8b97a6;word-break:break-all}
+.shotcard ul{list-style:none;margin:12px 0 0;padding:0}
+.shotcard li{font-size:11.5px;color:#cfd8e3;padding:7px 0 7px 16px;position:relative;border-top:1px solid #222a34}
+.shotcard li::before{content:"";position:absolute;left:0;top:13px;width:7px;height:7px;border-radius:50%;background:#ff6b6b}
+.shotcard .sh-foot{display:flex;justify-content:space-between;margin-top:14px;font-size:10px;color:#8b97a6}
+.shotcard .mark{color:#5ee6a8;font-weight:700}
+.toast{position:fixed;left:50%;bottom:22px;transform:translate(-50%,20px);background:var(--accent);color:#06130d;
+  padding:12px 18px;border-radius:999px;font-size:13px;font-weight:700;opacity:0;pointer-events:none;transition:.25s;z-index:9}
+@media (prefers-color-scheme: light){.toast{color:#fff}}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+.board h3{font-size:14px;margin:18px 0 4px}
+.board p.note{color:var(--dim);font-size:12px;margin:0 0 12px}
+.row{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:var(--panel);border:1px solid var(--line);
+  border-radius:12px;padding:12px;margin-bottom:8px;cursor:pointer;font:inherit;color:var(--txt);min-height:60px}
+.row:hover{border-color:var(--accent)}
+.rs{flex:0 0 46px;text-align:center}
+.rs b{font-size:19px;letter-spacing:-.5px;display:block}
+.rs small{font-size:9px;color:var(--dim)}
+.rinfo{flex:1 1 auto;min-width:0}
+.rinfo .t{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rinfo .u{font-size:11px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.delta{flex:0 0 auto;font-size:11.5px;font-weight:700}
+.d-down{color:var(--red)}.d-flat{color:var(--grey)}.d-up{color:var(--accent)}
+.back{appearance:none;background:transparent;border:0;color:var(--dim);font:inherit;font-size:12.5px;cursor:pointer;padding:12px 0;min-height:44px}
+footer{color:var(--dim);font-size:11px;text-align:center;margin-top:28px;padding-top:14px;border-top:1px solid var(--line)}
+.err{color:var(--red);font-size:12.5px;margin-top:10px;min-height:16px}
+.hidden{display:none!important}
+.demo{display:inline-block;font-size:9.5px;letter-spacing:1px;color:var(--dim);border:1px solid var(--line);
+  border-radius:5px;padding:3px 6px;vertical-align:middle}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="logo"><span class="dot"></span>expiry.dev</div>
+    <div class="tag">— the freshness check for anything you wrote about software</div>
+    <div class="tabs" role="tablist">
+      <button class="tab" id="tabCheck" role="tab" aria-selected="true" onclick="showTab('check')">Check</button>
+      <button class="tab" id="tabBoard" role="tab" aria-selected="false" onclick="showTab('board')">Rot Board</button>
+    </div>
+  </header>
+
+  <!-- SCREEN 1 -->
+  <section id="screen1">
+    <h1>How much of your post is still true?</h1>
+    <p class="sub">Paste a URL. We re-check every factual claim against the live web. <span class="demo">DEMO DATA</span></p>
+    <div class="inputrow">
+      <input type="text" id="url" value="my-blog.dev/openai-api-guide-2024" aria-label="URL to check" spellcheck="false">
+      <button class="primary" id="go" onclick="startScan()">Check</button>
+    </div>
+    <div class="chips" id="chips"></div>
+    <div class="err" id="err"></div>
+    <div class="log hidden" id="log"><div class="bar"><i id="barfill"></i></div></div>
+    <p class="hint">No page is actually fetched — all results are hard-coded sample data.</p>
+  </section>
+
+  <!-- SCREEN 2 + 3 -->
+  <section id="screen2" class="hidden">
+    <button class="back" onclick="reset()">← check another page</button>
+    <div class="card">
+      <div class="scorerow">
+        <div class="ring">
+          <svg width="104" height="104" viewBox="0 0 104 104" aria-hidden="true">
+            <circle cx="52" cy="52" r="45" fill="none" stroke="var(--line)" stroke-width="9"></circle>
+            <circle id="arc" cx="52" cy="52" r="45" fill="none" stroke="var(--accent)" stroke-width="9"
+              stroke-linecap="round" stroke-dasharray="283" stroke-dashoffset="283"
+              style="transition:stroke-dashoffset .9s ease"></circle>
+          </svg>
+          <div class="val"><span class="num" id="scoreNum">0</span><span class="den">/100 STILL TRUE</span></div>
+        </div>
+        <div class="meta">
+          <div class="label">freshness report</div>
+          <h2 id="pageTitle"></h2>
+          <div class="url" id="pageUrl"></div>
+          <div class="summ" id="summary"></div>
+          <div class="url" style="margin-top:6px" id="checked"></div>
+        </div>
+      </div>
+      <div class="legend">
+        <span><b style="color:var(--accent)">●</b> still true</span>
+        <span><b style="color:var(--red)">●</b> out of date</span>
+        <span><b style="color:var(--grey)">●</b> unverifiable</span>
+      </div>
+      <div class="claims" id="claims"></div>
+      <div class="actions">
+        <button class="btn" id="copyBtn" onclick="copyCard()">⧉ Copy card</button>
+        <div class="switch" id="watch" role="switch" tabindex="0" aria-checked="false"
+             onclick="toggleWatch()" onkeydown="if(event.key===' '||event.key==='Enter'){event.preventDefault();toggleWatch()}">
+          <span class="track"><i></i></span><span>Watch weekly</span>
+        </div>
+      </div>
+      <div class="watch" id="watchPanel">
+        <div class="label">still-true score, last 8 weeks</div>
+        <div id="spark"></div>
+        <div class="cap" id="sparkCap"></div>
+      </div>
+      <div class="shot" id="shot">
+        <div class="label" style="margin-bottom:6px">shareable card preview</div>
+        <div class="shotcard" id="shotcard"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ROT BOARD -->
+  <section id="board" class="hidden board">
+    <h3>Rot Board — pages decaying fastest</h3>
+    <p class="note">Public pages we re-check weekly, worst first. <span class="demo">DEMO DATA</span></p>
+    <div id="boardRows"></div>
+  </section>
+
+  <footer>Prototype by Granted, inspired by your bookmarks</footer>
+</div>
+<div class="toast" id="toast">Copied ✓</div>
+
+<script>
+(function(){
+"use strict";
+var TRUE="STILL TRUE", OLD="OUT OF DATE", UNK="UNVERIFIABLE";
+
+var DATA = {
+ "my-blog.dev/openai-api-guide-2024":{
+  title:"The complete OpenAI API guide (2024 edition)",
+  url:"my-blog.dev/openai-api-guide-2024",
+  score:41, published:"Mar 2024",
+  history:[71,68,68,60,55,52,47,41],
+  rotted:"2 claims rotted since last week",
+  claims:[
+   {t:"gpt-4-turbo is the newest model available",v:OLD,f:"Superseded. A newer flagship model is listed as current.",s:"openai.com/api — model index, Oct 2026"},
+   {t:"Pricing starts at $0.01 per 1K input tokens",v:OLD,f:"Current listed input price differs from the figure in this post.",s:"openai.com/pricing, 12 Oct 2026"},
+   {t:"The free tier includes 100 requests per day",v:OLD,f:"Free-tier allowance is no longer described in requests per day; it is now a one-off credit grant.",s:"platform docs — limits page, Sep 2026"},
+   {t:"Install with `npm i -g vendor-cli`",v:TRUE},
+   {t:"The --stream flag is required for streaming responses",v:OLD,f:"Flag renamed; --stream now errors as unknown option.",s:"vendor-cli CHANGELOG v4.0.0, Jun 2026"},
+   {t:"The API returns JSON",v:TRUE},
+   {t:"Node 18 or later is required",v:OLD,f:"Node 20+ is now the minimum supported runtime; Node 18 builds are dropped.",s:"package.json engines field, Aug 2026"},
+   {t:"Rate limit is 60 requests per minute",v:UNK,f:"No public figure found; limits are now account-tier dependent.",s:"no public source"},
+   {t:"Responses are capped at 4,096 output tokens",v:OLD,f:"Output cap has been raised substantially on current models.",s:"model card, Oct 2026"},
+   {t:"You authenticate with a Bearer token in the Authorization header",v:TRUE},
+   {t:"Function calling is in beta",v:OLD,f:"Feature left beta and is now generally available under a renamed interface.",s:"changelog, Feb 2026"},
+   {t:"The Python SDK is published as `openai` on PyPI",v:TRUE},
+   {t:"Fine-tuning is only available for the base models",v:UNK,f:"Eligibility list changes frequently; could not confirm against a dated source.",s:"no dated source"},
+   {t:"Logs are retained for 30 days",v:TRUE}
+  ]
+ },
+ "github.com/acme/agent-kit (README)":{
+  title:"acme/agent-kit — README.md",
+  url:"github.com/acme/agent-kit",
+  score:78, published:"Jan 2026",
+  history:[92,90,86,86,84,81,80,78],
+  rotted:"1 claim rotted since last week",
+  claims:[
+   {t:"Requires Python 3.10+",v:TRUE},
+   {t:"`pip install agent-kit` installs the stable release",v:TRUE},
+   {t:"The default tool timeout is 30 seconds",v:TRUE},
+   {t:"Supports OpenAI, Anthropic and local Ollama backends",v:TRUE},
+   {t:"Set AGENTKIT_KEY in your environment to authenticate",v:OLD,f:"Env var renamed to ACME_API_KEY; the old name is read but warns on startup.",s:"repo commit 4f1c2ae, Sep 2026"},
+   {t:"The project is MIT licensed",v:TRUE},
+   {t:"Run tests with `make test`",v:TRUE},
+   {t:"Latest release is v2.3.1",v:OLD,f:"A newer tagged release exists on the releases page.",s:"github releases, Oct 2026"},
+   {t:"Discord link in the badge is active",v:UNK,f:"Invite status cannot be verified without joining.",s:"no public source"},
+   {t:"Streaming output is enabled by default",v:TRUE},
+   {t:"Docker image published to ghcr.io/acme/agent-kit",v:TRUE},
+   {t:"Windows is supported on a best-effort basis",v:TRUE}
+  ]
+ },
+ "skills/pdf-filler/SKILL.md":{
+  title:"pdf-filler — SKILL.md",
+  url:"skills/pdf-filler/SKILL.md",
+  score:93, published:"Aug 2026",
+  history:[95,95,95,94,94,93,93,93],
+  rotted:"No claims rotted since last week",
+  claims:[
+   {t:"Takes a filled-form spec as JSON and returns a flattened PDF",v:TRUE},
+   {t:"Depends on pypdf, not PyPDF2",v:TRUE},
+   {t:"Field names are matched case-insensitively",v:TRUE},
+   {t:"Checkbox values accept 'Yes' / 'Off'",v:TRUE},
+   {t:"Maximum input size is 25 MB",v:UNK,f:"Limit is enforced by the host runtime and is not documented publicly.",s:"no public source"},
+   {t:"Does not require network access at run time",v:TRUE},
+   {t:"Output preserves the original page size",v:TRUE},
+   {t:"Encrypted PDFs must be decrypted before use",v:TRUE},
+   {t:"Fails loudly when a named field is missing",v:TRUE},
+   {t:"Example invocation uses the `--template` argument",v:TRUE}
+  ]
+ },
+ "docs.vendor.com/pricing":{
+  title:"Vendor — Pricing & plans",
+  url:"docs.vendor.com/pricing",
+  score:29, published:"Nov 2024",
+  history:[62,58,52,48,44,38,33,29],
+  rotted:"3 claims rotted since last week",
+  claims:[
+   {t:"The Starter plan is $29 per seat per month",v:OLD,f:"Listed Starter price has increased and now bundles usage credits.",s:"docs.vendor.com/pricing, Oct 2026"},
+   {t:"Annual billing saves 20%",v:OLD,f:"Annual discount is now advertised at a different rate.",s:"vendor pricing page, Oct 2026"},
+   {t:"There is a 14-day free trial",v:OLD,f:"Trial replaced by a usage-credit grant with no time limit.",s:"vendor blog, Jul 2026"},
+   {t:"Enterprise plans include SSO via SAML",v:TRUE},
+   {t:"Overage is billed at $0.002 per call",v:OLD,f:"Overage rate changed and is now tiered by volume.",s:"pricing page footnote, Oct 2026"},
+   {t:"Invoices are issued in USD only",v:OLD,f:"EUR and GBP invoicing are now offered.",s:"billing FAQ, May 2026"},
+   {t:"Seats can be added mid-cycle and are pro-rated",v:TRUE},
+   {t:"The Free plan is limited to 1 project",v:OLD,f:"Free plan project limit has been raised.",s:"pricing page, Oct 2026"},
+   {t:"SOC 2 Type II report available on request",v:TRUE},
+   {t:"Support response time is under 4 hours on Enterprise",v:UNK,f:"SLA figure is no longer published outside of contracts.",s:"no public source"},
+   {t:"Payment by invoice requires a minimum annual spend",v:UNK,f:"Threshold not stated publicly.",s:"no public source"}
+  ]
+ }
+};
+
+var BOARD=[
+ {k:"docs.vendor.com/pricing",d:-4},
+ {k:"my-blog.dev/openai-api-guide-2024",d:-6},
+ {k:"blog.devschool.io/deploy-next-js-to-vercel-2023",s:34,d:-7,title:"Deploy Next.js to Vercel: the 2023 walkthrough"},
+ {k:"notes.kubeguide.net/ingress-nginx-cheatsheet",s:46,d:-3,title:"ingress-nginx cheatsheet"},
+ {k:"howto.pytorch-tips.dev/cuda-setup-ubuntu",s:58,d:-5,title:"CUDA setup on Ubuntu, step by step"},
+ {k:"github.com/acme/agent-kit (README)",d:-2},
+ {k:"handbook.dataeng.co/airflow-2-upgrade",s:81,d:0,title:"Upgrading to Airflow 2"},
+ {k:"skills/pdf-filler/SKILL.md",d:0}
+];
+
+var LOG=[
+ "fetching page…",
+ "extracting claims…",
+ "checking against the live web…",
+ "scoring freshness…"
+];
+
+var cur=null, timers=[];
+function $(id){return document.getElementById(id);}
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];});}
+function clearTimers(){timers.forEach(clearTimeout);timers=[];}
+
+// chips
+var chipKeys=Object.keys(DATA);
+$("chips").innerHTML=chipKeys.map(function(k){return '<button class="chip" data-k="'+esc(k)+'">'+esc(k)+'</button>';}).join("");
+$("chips").addEventListener("click",function(e){
+  var b=e.target.closest(".chip"); if(!b)return;
+  $("url").value=b.getAttribute("data-k"); startScan();
+});
+
+window.showTab=function(which){
+  clearTimers();
+  $("tabCheck").setAttribute("aria-selected",which==="check");
+  $("tabBoard").setAttribute("aria-selected",which==="board");
+  if(which==="board"){
+    $("screen1").classList.add("hidden");$("screen2").classList.add("hidden");$("board").classList.remove("hidden");
+  }else{
+    $("board").classList.add("hidden");
+    if(cur){$("screen2").classList.remove("hidden");}else{$("screen1").classList.remove("hidden");}
+  }
+  window.scrollTo(0,0);
+};
+
+window.reset=function(){
+  clearTimers(); cur=null;
+  $("screen2").classList.add("hidden"); $("screen1").classList.remove("hidden");
+  $("log").classList.add("hidden"); $("err").textContent="";
+  $("go").disabled=false; $("go").textContent="Check";
+  window.scrollTo(0,0);
+};
+
+function resolve(raw){
+  var v=raw.trim();
+  if(DATA[v]) return v;
+  var low=v.toLowerCase().replace(/^https?:\/\//,"").replace(/\/+$/,"");
+  for(var k in DATA){
+    var kk=k.toLowerCase();
+    if(kk===low) return k;
+    if(kk.indexOf(low)>-1 && low.length>6) return k;
+    if(DATA[k].url.toLowerCase()===low) return k;
+  }
+  return null;
+}
+
+window.startScan=function(){
+  clearTimers();
+  var raw=$("url").value;
+  $("err").textContent="";
+  if(!raw||!raw.trim()){ $("err").textContent="Pop a URL in first — or tap one of the examples below."; return; }
+  if(/\s/.test(raw.trim())&&!DATA[raw.trim()]){ /* allow, resolve handles it */ }
+  var key=resolve(raw);
+  if(!key){
+    $("err").textContent="This demo only has sample data for the 4 example pages. Tap one to see a real report.";
+    return;
+  }
+  $("go").disabled=true; $("go").textContent="Scanning…";
+  var logEl=$("log"); logEl.classList.remove("hidden");
+  logEl.innerHTML='<div class="bar"><i id="barfill"></i></div>';
+  var n=DATA[key].claims.length;
+  var lines=["fetching page…","extracting "+n+" claims…","checking against the live web…","scoring freshness…"];
+  var step=560;
+  lines.forEach(function(line,i){
+    timers.push(setTimeout(function(){
+      var prev=logEl.querySelectorAll("div.run");
+      prev.forEach(function(p){p.className="done";});
+      var d=document.createElement("div"); d.className="run"; d.textContent=line;
+      logEl.appendChild(d);
+      $("barfill").style.width=Math.round((i+1)/lines.length*100)+"%";
+    },i*step));
+  });
+  timers.push(setTimeout(function(){
+    logEl.querySelectorAll("div.run").forEach(function(p){p.className="done";});
+  },lines.length*step+120));
+  timers.push(setTimeout(function(){ render(key); },2500));
+};
+
+function pillClass(v){return v===TRUE?"p-true":(v===OLD?"p-old":"p-unk");}
+
+function render(key){
+  cur=key;
+  var d=DATA[key];
+  $("go").disabled=false; $("go").textContent="Check";
+  $("screen1").classList.add("hidden"); $("board").classList.add("hidden");
+  $("screen2").classList.remove("hidden");
+  $("tabCheck").setAttribute("aria-selected","true");
+  $("tabBoard").setAttribute("aria-selected","false");
+
+  var old=d.claims.filter(function(c){return c.v===OLD;}).length;
+  $("pageTitle").textContent=d.title;
+  $("pageUrl").textContent=d.url+" · published "+d.published;
+  $("summary").innerHTML="<b>"+old+" of "+d.claims.length+"</b> claims are out of date";
+  $("checked").textContent="checked 28 Oct 2026 · demo data";
+  $("scoreNum").textContent="0";
+  var arc=$("arc"), col = d.score>=70?"var(--accent)":(d.score>=45?"var(--amber)":"var(--red)");
+  arc.setAttribute("stroke",col);
+  arc.style.strokeDashoffset="283";
+  setTimeout(function(){ arc.style.strokeDashoffset=String(283-283*d.score/100); },40);
+  var i=0, tick=setInterval(function(){
+    i+=Math.max(1,Math.round(d.score/22));
+    if(i>=d.score){i=d.score;clearInterval(tick);}
+    $("scoreNum").textContent=i;
+  },35);
+  timers.push(tick);
+
+  $("claims").innerHTML=d.claims.map(function(c,idx){
+    var h='<div class="claim"><div class="ctop"><span class="pill '+pillClass(c.v)+'">'+c.v+'</span>'+
+          '<div class="ctext"><q>'+esc(c.t)+'</q>';
+    if(c.v!==TRUE&&c.f){
+      h+='<br><button class="more" aria-expanded="false" data-i="'+idx+'">'+(c.v===OLD?"what\u2019s true now":"why unverifiable")+'</button>'+
+         '<div class="fix" id="fix'+idx+'">'+esc(c.f)+'<span class="src">source: '+esc(c.s||"n/a")+'</span></div>';
+    }
+    h+='</div></div></div>';
+    return h;
+  }).join("");
+
+  // reset share/watch
+  $("shot").classList.remove("open");
+  $("watchPanel").classList.remove("open");
+  $("watch").setAttribute("aria-checked","false");
+  window.scrollTo(0,0);
+}
+
+$("claims").addEventListener("click",function(e){
+  var b=e.target.closest(".more"); if(!b)return;
+  var f=$("fix"+b.getAttribute("data-i")); if(!f)return;
+  var open=f.classList.toggle("open");
+  b.setAttribute("aria-expanded",open?"true":"false");
+});
+
+window.toggleWatch=function(){
+  var el=$("watch"), on=el.getAttribute("aria-checked")!=="true";
+  el.setAttribute("aria-checked",on?"true":"false");
+  var p=$("watchPanel");
+  if(!on){p.classList.remove("open");return;}
+  var d=DATA[cur]; if(!d)return;
+  p.classList.add("open");
+  $("spark").innerHTML=sparkline(d.history);
+  var dlt=d.history[7]-d.history[6];
+  $("sparkCap").innerHTML=esc(d.rotted)+" · <b>"+(dlt<0?dlt:"+"+dlt)+" pts</b> week over week";
+};
+
+function sparkline(h){
+  var w=300,ht=70,pad=8,min=Math.min.apply(null,h)-6,max=Math.max.apply(null,h)+6;
+  var pts=h.map(function(v,i){
+    var x=pad+i*(w-2*pad)/(h.length-1);
+    var y=pad+(ht-2*pad)*(1-(v-min)/(max-min));
+    return [x,y];
+  });
+  var dAttr=pts.map(function(p,i){return (i?"L":"M")+p[0].toFixed(1)+" "+p[1].toFixed(1);}).join(" ");
+  var area=dAttr+" L"+pts[pts.length-1][0].toFixed(1)+" "+(ht-pad)+" L"+pad+" "+(ht-pad)+" Z";
+  var dots=pts.map(function(p,i){
+    var last=i===pts.length-1;
+    return '<circle cx="'+p[0].toFixed(1)+'" cy="'+p[1].toFixed(1)+'" r="'+(last?3.5:2)+'" fill="'+(last?"var(--red)":"var(--dim)")+'"/>';
+  }).join("");
+  return '<svg viewBox="0 0 '+w+' '+ht+'" width="100%" height="76" role="img" aria-label="score trend">'+
+    '<path d="'+area+'" fill="color-mix(in srgb,var(--red) 12%,transparent)"/>'+
+    '<path d="'+dAttr+'" fill="none" stroke="var(--red)" stroke-width="2" stroke-linejoin="round"/>'+dots+
+    '</svg><div style="display:flex;justify-content:space-between;font-size:10px;color:var(--dim)"><span>8 wks ago · '+h[0]+'</span><span>now · '+h[7]+'</span></div>';
+}
+
+window.copyCard=function(){
+  var d=DATA[cur]; if(!d)return;
+  var reds=d.claims.filter(function(c){return c.v===OLD;}).slice(0,3);
+  if(reds.length===0) reds=d.claims.filter(function(c){return c.v===UNK;}).slice(0,3);
+  var list = reds.length
+    ? "<ul>"+reds.map(function(c){return "<li>"+esc(c.t)+"</li>";}).join("")+"</ul>"
+    : '<p style="font-size:11.5px;color:#9fe8c6;margin:12px 0 0">No out-of-date claims found. Nice.</p>';
+  var old=d.claims.filter(function(c){return c.v===OLD;}).length;
+  $("shotcard").innerHTML=
+    '<div class="sh-top"><div><div class="sh-score">'+d.score+'</div><div class="sh-of">/100 STILL TRUE</div></div>'+
+    '<div style="text-align:right"><div class="sh-of">'+old+' OF '+d.claims.length+'</div>'+
+    '<div style="font-size:11px;color:#ff6b6b">claims out of date</div></div></div>'+
+    '<div class="sh-title">'+esc(d.title)+'</div><div class="sh-url">'+esc(d.url)+'</div>'+list+
+    '<div class="sh-foot"><span>checked 28 Oct 2026</span><span class="mark">expiry.dev</span></div>';
+  $("shot").classList.add("open");
+  var t=$("toast"); t.classList.add("show");
+  timers.push(setTimeout(function(){t.classList.remove("show");},1700));
+};
+
+// board
+$("boardRows").innerHTML=BOARD.map(function(b){
+  var known=DATA[b.k];
+  var score=known?known.score:b.s;
+  var title=known?known.title:b.title;
+  var cls=b.d<0?"d-down":(b.d>0?"d-up":"d-flat");
+  var txt=b.d===0?"flat this week":(b.d>0?"+"+b.d+" this week":b.d+" this week");
+  return '<button class="row" data-k="'+esc(b.k)+'" data-live="'+(known?1:0)+'">'+
+   '<span class="rs"><b style="color:'+(score>=70?"var(--accent)":score>=45?"var(--amber)":"var(--red)")+'">'+score+'</b><small>still true</small></span>'+
+   '<span class="rinfo"><span class="t">'+esc(title)+'</span><span class="u">'+esc(known?known.url:b.k)+'</span></span>'+
+   '<span class="delta '+cls+'">'+txt+'</span></button>';
+}).sort().join("");
+// keep original order (worst-first as authored)
+$("boardRows").innerHTML=BOARD.map(function(b){
+  var known=DATA[b.k];
+  var score=known?known.score:b.s;
+  var title=known?known.title:b.title;
+  var cls=b.d<0?"d-down":(b.d>0?"d-up":"d-flat");
+  var txt=b.d===0?"flat this week":(b.d>0?"+"+b.d+" this week":b.d+" this week");
+  return {s:score,h:'<button class="row" data-k="'+esc(b.k)+'" data-live="'+(known?1:0)+'">'+
+   '<span class="rs"><b style="color:'+(score>=70?"var(--accent)":score>=45?"var(--amber)":"var(--red)")+'">'+score+'</b><small>still true</small></span>'+
+   '<span class="rinfo"><span class="t">'+esc(title)+'</span><span class="u">'+esc(known?known.url:b.k)+'</span></span>'+
+   '<span class="delta '+cls+'">'+txt+'</span></button>'};
+}).sort(function(a,b){return a.s-b.s;}).map(function(o){return o.h;}).join("");
+
+$("boardRows").addEventListener("click",function(e){
+  var r=e.target.closest(".row"); if(!r)return;
+  var k=r.getAttribute("data-k");
+  if(r.getAttribute("data-live")==="1"){ render(k); }
+  else {
+    $("board").classList.add("hidden"); $("screen2").classList.add("hidden");
+    $("screen1").classList.remove("hidden");
+    $("tabCheck").setAttribute("aria-selected","true");$("tabBoard").setAttribute("aria-selected","false");
+    $("url").value=k;
+    $("err").textContent="Full claim list for this page isn\u2019t in the demo data set — try one of the four example pages.";
+    window.scrollTo(0,0);
+  }
+});
+
+$("url").addEventListener("keydown",function(e){ if(e.key==="Enter"){ startScan(); }});
+})();
+</script>
+</body>
+</html>

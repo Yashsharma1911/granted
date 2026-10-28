@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-27T18:26:56.243Z",
+  "updated": "2026-10-28T09:16:48.610Z",
   "ideas": [
     {
       "id": "2026-10-26-catalog-check",
@@ -485,6 +485,66 @@
       "sources_count": 7,
       "superseded_by": null,
       "sibling": "2026-10-27-mandate"
+    },
+    {
+      "id": "2026-10-28-expiry",
+      "number": 18,
+      "date": "2026-10-28",
+      "track": "build",
+      "short_name": "Expiry",
+      "verdict": "dig_deeper",
+      "score": 8.4,
+      "scores": {
+        "wow": 8,
+        "shareability": 8,
+        "buildability": 9,
+        "freshness": 9,
+        "usefulness": 8
+      },
+      "effort": "a weekend",
+      "category": "Developer tools",
+      "tags": [
+        "freshness",
+        "docs",
+        "fact-check",
+        "api"
+      ],
+      "pain_type": "expressed",
+      "one_liner": "Paste a URL (your blog post, README, SKILL.md or any tutorial) and Expiry returns a shareable \"freshness card\": each factual claim about software marked still true / out of date / unverifiable with a live source, a 0-100 Still True score, and a weekly re-check if you save it.",
+      "prototype_url": "https://github.com/Yashsharma1911/granted/blob/catalog-test/ideas/2026-10-28-expiry/index.html",
+      "sources_count": 18,
+      "superseded_by": null,
+      "sibling": "2026-10-28-payeeproof"
+    },
+    {
+      "id": "2026-10-28-payeeproof",
+      "number": 19,
+      "date": "2026-10-28",
+      "track": "venture",
+      "short_name": "Payeeproof",
+      "verdict": "dig_deeper",
+      "score": 7.6,
+      "scores": {
+        "pain": 8,
+        "market_pull": 7,
+        "timing": 8,
+        "gap": 8,
+        "wedge": 7
+      },
+      "effort": "2-4 weeks",
+      "category": "Back-office automation",
+      "tags": [
+        "fintech ops",
+        "fraud",
+        "govtech",
+        "agents"
+      ],
+      "pain_type": "expressed",
+      "one_liner": "For the business manager of a small school district, town or county, Payeeproof is the one place every vendor bank-change and employee direct-deposit-change request lands: it pulls the known-good contact from the payee file, places and records an AI-assisted verification callback, forces a second approver, and emits a one-page, tamper-evident evidence PDF the state auditor and the cyber insurer will accept.",
+      "prototype_url": "https://github.com/Yashsharma1911/granted/blob/catalog-test/ideas/2026-10-28-payeeproof/index.html",
+      "sources_count": 27,
+      "superseded_by": null,
+      "sibling": "2026-10-28-expiry"
     }
   ]
 }

@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Payeeproof — Payee change verification</title>
+<style>
+:root{
+  --bg:#f5f6f8; --panel:#ffffff; --ink:#15181d; --muted:#5d6672; --line:#dfe3e9;
+  --accent:#1d4ed8; --accent-soft:#e8eefc; --red:#b42318; --red-soft:#fdecea;
+  --green:#176a3a; --green-soft:#e7f5ec; --amber:#8a5a00; --amber-soft:#fdf3e0;
+  --shadow:0 1px 2px rgba(16,24,40,.06),0 1px 3px rgba(16,24,40,.08);
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#0e1116; --panel:#161a21; --ink:#e9edf3; --muted:#9aa4b2; --line:#272d37;
+    --accent:#6f9bff; --accent-soft:#1a2440; --red:#ff8a7a; --red-soft:#331b19;
+    --green:#6fd79b; --green-soft:#132a1e; --amber:#f0c070; --amber-soft:#2d2415;
+    --shadow:0 1px 2px rgba(0,0,0,.4);
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--ink);
+  font:14px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  -webkit-text-size-adjust:100%;
+}
+header.top{
+  background:var(--panel); border-bottom:1px solid var(--line);
+  padding:10px 14px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;
+  position:sticky; top:0; z-index:20;
+}
+.logo{display:flex;align-items:center;gap:8px;font-weight:700;letter-spacing:-.2px}
+.logo svg{display:block}
+.tag{color:var(--muted); font-size:13px}
+.demo{margin-left:auto;font-size:11px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:3px 9px;white-space:nowrap}
+.wrap{max-width:1500px;margin:0 auto;padding:12px}
+.grid{display:grid;grid-template-columns:260px 1fr 1fr 1fr;gap:12px;align-items:start}
+@media (max-width:1180px){.grid{grid-template-columns:1fr 1fr}}
+@media (max-width:820px){.grid{grid-template-columns:1fr}}
+.col{display:flex;flex-direction:column;gap:12px;min-width:0}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow)}
+.card>.hd{padding:9px 12px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:8px}
+.hd h2{margin:0;font-size:12px;text-transform:uppercase;letter-spacing:.7px;color:var(--muted);font-weight:700}
+.bd{padding:12px}
+.stage{font-size:10px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--muted);
+  border:1px solid var(--line);border-radius:4px;padding:2px 6px;margin-left:auto}
+/* inbox */
+.mailrow{padding:10px 12px;border-bottom:1px solid var(--line);min-height:48px;cursor:default}
+.mailrow:last-child{border-bottom:0}
+.mailrow .f{font-weight:600;font-size:13px}
+.mailrow .s{color:var(--muted);font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mailrow.sel{background:var(--accent-soft);border-left:3px solid var(--accent);padding-left:9px}
+.mailbody{font-size:13px;color:var(--ink);margin-top:8px;padding-top:8px;border-top:1px dashed var(--line)}
+.attach{display:inline-flex;align-items:center;gap:6px;margin-top:8px;font-size:12px;color:var(--muted);
+  border:1px solid var(--line);border-radius:6px;padding:4px 8px}
+.note{margin:0;padding:10px 12px;background:rgba(127,127,127,.09);border-top:1px solid var(--line);
+  font-size:12px;color:var(--muted);font-style:italic}
+/* change log */
+.log{list-style:none;margin:0;padding:0}
+.log li{padding:9px 12px;border-bottom:1px solid var(--line);display:flex;gap:8px;align-items:flex-start}
+.log li:last-child{border-bottom:0}
+.log .t{min-width:0;flex:1}
+.log .n{font-size:12.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.log .m{font-size:11.5px;color:var(--muted)}
+.chip{font-size:10.5px;font-weight:700;letter-spacing:.3px;border-radius:999px;padding:3px 8px;white-space:nowrap;border:1px solid transparent}
+.chip.ok{background:var(--green-soft);color:var(--green);border-color:rgba(23,106,58,.25)}
+.chip.no{background:var(--red-soft);color:var(--red);border-color:rgba(180,35,24,.25)}
+.chip.un{background:var(--amber-soft);color:var(--amber);border-color:rgba(138,90,0,.25)}
+.chip.pend{background:transparent;color:var(--muted);border-color:var(--line)}
+.counts{display:flex;gap:6px;padding:10px 12px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+/* scenario toggle */
+.seg{display:flex;gap:6px;padding:8px;background:var(--panel);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow)}
+.seg button{flex:1;min-height:44px;border:1px solid var(--line);background:transparent;color:var(--ink);
+  border-radius:8px;font:inherit;font-size:12.5px;font-weight:600;cursor:pointer;padding:6px 8px;line-height:1.25}
+.seg button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+/* stepper */
+.step{border-bottom:1px solid var(--line)}
+.step:last-child{border-bottom:0}
+.step .shd{display:flex;gap:10px;align-items:center;width:100%;text-align:left;background:transparent;border:0;
+  color:var(--ink);font:inherit;padding:11px 12px;min-height:50px;cursor:pointer}
+.step .shd:disabled{cursor:not-allowed;opacity:.55}
+.num{width:24px;height:24px;border-radius:50%;border:1.5px solid var(--line);display:grid;place-items:center;
+  font-size:11.5px;font-weight:700;color:var(--muted);flex:none}
+.step.active .num,.step.done .num{border-color:var(--accent);color:#fff;background:var(--accent)}
+.step .ttl{font-weight:650;font-size:13.5px}
+.step .sub{font-size:11.5px;color:var(--muted)}
+.caret{margin-left:auto;color:var(--muted);font-size:11px}
+.sbody{padding:0 12px 14px 46px}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 10px;font-size:12.5px;margin:0}
+.kv dt{color:var(--muted)}
+.kv dd{margin:0;font-weight:550}
+.panelbox{border:1px solid var(--line);border-radius:8px;padding:10px;margin-bottom:10px;background:rgba(127,127,127,.04)}
+.flag{display:flex;gap:8px;font-size:12.5px;background:var(--amber-soft);color:var(--amber);
+  border:1px solid rgba(138,90,0,.22);border-radius:7px;padding:8px 10px;margin-top:7px;
+  animation:pop .28s ease both}
+@keyframes pop{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:44px;padding:10px 14px;
+  border-radius:8px;border:1px solid var(--accent);background:var(--accent);color:#fff;font:inherit;font-weight:650;
+  cursor:pointer;width:100%}
+.btn.ghost{background:transparent;color:var(--accent)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn.sm{min-height:38px;padding:8px 10px;font-size:12.5px;width:auto}
+.strike{text-decoration:line-through;color:var(--muted)}
+.mini{font-size:11.5px;color:var(--muted)}
+.dial{border:1px solid var(--line);border-radius:8px;padding:14px;text-align:center;background:rgba(127,127,127,.04)}
+.dots span{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--accent);margin:0 3px;
+  animation:bl 1s infinite ease-in-out}
+.dots span:nth-child(2){animation-delay:.18s}.dots span:nth-child(3){animation-delay:.36s}
+@keyframes bl{0%,80%,100%{opacity:.25;transform:translateY(0)}40%{opacity:1;transform:translateY(-3px)}}
+.tr{margin:0;padding:0;list-style:none;font-size:12.5px}
+.tr li{padding:6px 0;border-bottom:1px dashed var(--line);display:flex;gap:8px}
+.tr li:last-child{border-bottom:0}
+.tr .who{flex:none;width:58px;color:var(--muted);font-weight:650;font-size:11.5px;padding-top:1px}
+.result{display:flex;align-items:center;gap:8px;margin-top:10px;border-radius:8px;padding:10px;font-weight:700;font-size:13px}
+.result.bad{background:var(--red-soft);color:var(--red);border:1px solid rgba(180,35,24,.3)}
+.result.good{background:var(--green-soft);color:var(--green);border:1px solid rgba(23,106,58,.3)}
+/* pdf */
+.pdfwrap{background:rgba(127,127,127,.12);padding:12px;border-radius:0 0 10px 10px}
+.pdf{background:#fff;color:#15181d;border:1px solid #d7dbe2;border-radius:3px;padding:16px 16px 12px;
+  box-shadow:0 2px 8px rgba(16,24,40,.12);font-size:11.8px;line-height:1.5}
+.pdf h3{margin:0;font-size:14px;letter-spacing:-.2px}
+.pdf .brandline{display:flex;align-items:baseline;gap:8px;border-bottom:2px solid #15181d;padding-bottom:7px;margin-bottom:10px}
+.pdf .cid{margin-left:auto;font-size:10.5px;color:#5d6672;font-variant-numeric:tabular-nums}
+.pdf section{margin-bottom:10px}
+.pdf h4{margin:0 0 4px;font-size:10px;letter-spacing:.8px;text-transform:uppercase;color:#5d6672}
+.pdf .row{display:flex;gap:8px;border-bottom:1px dotted #e3e6eb;padding:3px 0}
+.pdf .row b{font-weight:600;min-width:118px;color:#444c59;font-size:11px}
+.pdf ul{margin:0;padding-left:16px}
+.pdf li{margin:2px 0}
+.pdf .pending{color:#98a1ad;font-style:italic}
+.pdf .foot{border-top:1px solid #d7dbe2;margin-top:10px;padding-top:7px;font-size:10px;color:#5d6672;
+  display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-variant-numeric:tabular-nums}
+.pdf .seal{display:inline-flex;align-items:center;gap:5px;border:1px solid #176a3a;color:#176a3a;background:#e7f5ec;
+  border-radius:4px;padding:2px 6px;font-size:10px;font-weight:700}
+.pdf .q{border-left:2px solid #d7dbe2;padding-left:8px;color:#333a45}
+.outcome{margin-top:10px;background:var(--green-soft);color:var(--green);border:1px solid rgba(23,106,58,.3);
+  border-radius:8px;padding:10px;font-size:12.5px;font-weight:650}
+.outcome.held{background:var(--red-soft);color:var(--red);border-color:rgba(180,35,24,.3)}
+.btnrow{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.btnrow .btn{flex:1;min-width:140px}
+.toast{position:fixed;left:50%;bottom:18px;transform:translate(-50%,16px);background:#15181d;color:#fff;
+  padding:11px 16px;border-radius:999px;font-size:13px;opacity:0;pointer-events:none;transition:.22s;z-index:50;
+  box-shadow:0 6px 20px rgba(0,0,0,.3);max-width:92vw;text-align:center}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+footer{text-align:center;color:var(--muted);font-size:11.5px;padding:16px 10px 26px}
+.progress{height:3px;background:var(--line);border-radius:3px;overflow:hidden;margin:0 12px 10px}
+.progress i{display:block;height:100%;background:var(--accent);width:0;transition:width .35s ease}
+.hdrow{display:flex;gap:8px;align-items:center;padding:8px 12px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.vis-hidden{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="logo">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M12 2.5 4 5.5v6c0 5 3.4 8.7 8 10 4.6-1.3 8-5 8-10v-6l-8-3Z" fill="currentColor" opacity=".14"/>
+      <path d="M12 2.5 4 5.5v6c0 5 3.4 8.7 8 10 4.6-1.3 8-5 8-10v-6l-8-3Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+      <path d="m8.4 11.8 2.5 2.5 4.7-4.8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    Payeeproof
+  </div>
+  <span class="tag">Turns a payee bank-change request into a signed, auditor-ready evidence pack.</span>
+  <span class="demo">Demo data · Westvale CUSD 31 · AP</span>
+</header>
+
+<div class="wrap">
+<div class="grid">
+
+  <!-- SIDEBAR -->
+  <div class="col">
+    <section class="card">
+      <div class="hd"><h2>Change log</h2><span class="stage">System of record</span></div>
+      <div class="counts">
+        <span class="chip ok">Confirmed 5</span>
+        <span class="chip no">Denied 2</span>
+        <span class="chip un">Unreachable 1</span>
+      </div>
+      <ul class="log" id="logList"></ul>
+    </section>
+  </div>
+
+  <!-- LEFT -->
+  <div class="col">
+    <section class="card">
+      <div class="hd"><h2>Today — AP inbox</h2><span class="stage">Before</span></div>
+      <div id="inbox"></div>
+      <p class="note">Current process: clerk calls the number in the email. Nothing is recorded.</p>
+    </section>
+  </div>
+
+  <!-- CENTER -->
+  <div class="col">
+    <div class="seg" role="group" aria-label="Scenario">
+      <button type="button" id="scA" aria-pressed="true">Case A · Northstar Transit <span class="mini" style="display:block;font-weight:500">suspected fraud</span></button>
+      <button type="button" id="scB" aria-pressed="false">Case B · Cedar Ridge Plumbing <span class="mini" style="display:block;font-weight:500">legitimate</span></button>
+    </div>
+    <section class="card">
+      <div class="hdrow">
+        <h2 style="margin:0;font-size:12px;text-transform:uppercase;letter-spacing:.7px;color:var(--muted);font-weight:700">Verification</h2>
+        <span class="stage" id="caseTag">Case PP-2025-0418</span>
+        <button class="btn ghost sm" type="button" id="replay" style="margin-left:auto">↺ Replay</button>
+      </div>
+      <div class="progress"><i id="bar"></i></div>
+      <div id="stepper"></div>
+    </section>
+  </div>
+
+  <!-- RIGHT -->
+  <div class="col">
+    <section class="card">
+      <div class="hd"><h2>After — evidence pack</h2><span class="stage" id="packStage">Entry 0 of 4</span></div>
+      <div class="pdfwrap">
+        <div class="pdf" id="pdf"></div>
+      </div>
+      <div class="bd" style="padding-top:0">
+        <div class="btnrow">
+          <button class="btn" type="button" id="exportBtn">Export for auditor</button>
+          <button class="btn ghost" type="button" id="claimBtn">Attach to insurance claim</button>
+        </div>
+        <div class="outcome" id="outcomeBox">Outcome: pending verification.</div>
+      </div>
+    </section>
+  </div>
+
+</div>
+<footer>Prototype by Granted, inspired by your bookmarks</footer>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function(){
+"use strict";
+
+/* ---------------- demo data ---------------- */
+var LOG = [
+ {n:"Summit Paving & Sealcoat", t:"Vendor bank", d:"02 Oct 2025", o:"ok", l:"Confirmed"},
+ {n:"Direct deposit change — M. Okafor", t:"Payroll direct deposit", d:"28 Sep 2025", o:"ok", l:"Confirmed"},
+ {n:"Harbor Lab Supply Inc.", t:"Vendor bank", d:"21 Sep 2025", o:"no", l:"Denied"},
+ {n:"Direct deposit change — T. Lindqvist", t:"Payroll direct deposit", d:"16 Sep 2025", o:"no", l:"Denied"},
+ {n:"Vista Food Service", t:"Remit-to address", d:"09 Sep 2025", o:"ok", l:"Confirmed"},
+ {n:"Brightline Bus Leasing", t:"Vendor bank", d:"03 Sep 2025", o:"un", l:"Unreachable"},
+ {n:"Prairie Lawn & Snow LLC", t:"Remit-to address", d:"27 Aug 2025", o:"ok", l:"Confirmed"},
+ {n:"Delta Office Interiors", t:"Vendor bank", d:"19 Aug 2025", o:"ok", l:"Confirmed"}
+];
+
+var INBOX = [
+ {from:"Angela Ruiz <a.ruiz@northstar-transit-co.net>", subj:"Updated remittance details — Northstar Transit Co.",
+  time:"8:12 AM", sel:true,
+  body:"Hi, we've moved banks. Please update our ACH details for all future payments. New routing 071000013, account ****4471. Call me at (312) 555-0188 with questions. Attached: ACH Authorization Form.pdf",
+  att:"ACH Authorization Form.pdf · 214 KB"},
+ {from:"M. Okafor, Transportation", subj:"Direct deposit change — M. Okafor, Transportation", time:"7:54 AM"},
+ {from:"Prairie Lawn & Snow LLC", subj:"W-9 update — Prairie Lawn & Snow LLC", time:"Yest."},
+ {from:"Vista Food Service", subj:"Invoice #88231 — Vista Food Service", time:"Yest."},
+ {from:"Cedar Ridge Plumbing", subj:"New banking info — Cedar Ridge Plumbing", time:"Mon"}
+];
+
+var CASES = {
+ A:{
+  id:"PP-2025-0418",
+  payee:"Northstar Transit Co.", vid:"V-10442",
+  change:"ACH bank details", routing:"071000013", acct:"****4471",
+  channel:"Email (unauthenticated)", requester:"a.ruiz@northstar-transit-co.net",
+  received:"28 Oct 2025, 8:12 AM CT",
+  flags:[
+   "Sender domain northstar-transit-co.net differs from on-file domain northstartransit.com",
+   "Callback number in request (312) 555-0188 does not match on-file number (312) 555-0104",
+   "Last payment to this vendor: $84,200 on 12 Sep"
+  ],
+  contact:{name:"Angela Ruiz", role:"Controller", phone:"(312) 555-0104",
+    verified:"14 Mar 2025 from signed contract (Exhibit B, p.4)", bad:"(312) 555-0188"},
+  call:{time:"28 Oct 2025, 8:21 AM CT", dur:"2 min 06 s", num:"(312) 555-0104"},
+  transcript:[
+   ["Clerk","Good morning — Dana Reyes, Westvale CUSD 31 accounts payable. Calling the number on our signed contract. Am I speaking with Angela Ruiz?"],
+   ["Angela","Yes, this is Angela."],
+   ["Clerk","We received an email this morning asking us to update Northstar's ACH details — new routing 071000013, account ending 4471. Can you confirm you sent that?"],
+   ["Angela","No. We have not changed banks. Our account hasn't moved in nine years."],
+   ["Clerk","And the number (312) 555-0188 in the email — is that a Northstar line?"],
+   ["Angela","That is not our number and I don't recognise the request. Please do not pay to that account."]
+  ],
+  outcome:{kind:"bad", chip:"DENIED — payee states no change was made",
+    short:"Denied — payee states no change was made",
+    excerpt:"\u201cNo. We have not changed banks. Our account hasn't moved in nine years.\u201d — A. Ruiz, Controller"},
+  approver:"D. Whitfield, Director of Business Services",
+  approveLabel:"Approve hold & flag as suspected fraud",
+  approvalText:"Hold approved — flagged as suspected fraud",
+  stamp:"28 Oct 2025, 8:26:41 AM CT",
+  hash:"9f4c…a31b",
+  finalOutcome:"Outcome: payment held. $84,200 not sent.",
+  finalClass:"held"
+ },
+ B:{
+  id:"PP-2025-0419",
+  payee:"Cedar Ridge Plumbing", vid:"V-10877",
+  change:"ACH bank details", routing:"071923828", acct:"****9032",
+  channel:"Email (unauthenticated)", requester:"billing@cedarridgeplumbing.com",
+  received:"27 Oct 2025, 3:40 PM CT",
+  flags:[
+   "Sender domain cedarridgeplumbing.com matches on-file domain — no mismatch",
+   "Callback number in request (815) 555-0142 matches on-file number (815) 555-0142",
+   "Last payment to this vendor: $6,310 on 30 Sep"
+  ],
+  contact:{name:"Rob Hanley", role:"Owner", phone:"(815) 555-0142",
+    verified:"09 Jan 2025 from signed contract (Exhibit A, p.2)", bad:null},
+  call:{time:"28 Oct 2025, 8:33 AM CT", dur:"1 min 41 s", num:"(815) 555-0142"},
+  transcript:[
+   ["Clerk","Morning — Dana Reyes, Westvale CUSD 31 accounts payable. Is this Rob Hanley?"],
+   ["Rob","Speaking."],
+   ["Clerk","We received a request to change Cedar Ridge's ACH details. Without me reading them, can you tell me the last four of the new account?"],
+   ["Rob","Nine-zero-three-two. We switched to Prairie State Bank on the first."],
+   ["Clerk","That matches. And the routing starts 0719?"],
+   ["Rob","071923828, yes. Same signer, same business, just the new bank."]
+  ],
+  outcome:{kind:"good", chip:"CONFIRMED — payee read back last 4 digits 9032, matches request",
+    short:"Confirmed — payee read back last 4 digits 9032, matches request",
+    excerpt:"\u201cNine-zero-three-two. We switched to Prairie State Bank on the first.\u201d — R. Hanley, Owner"},
+  approver:"D. Whitfield, Director of Business Services",
+  approveLabel:"Approve change & release vendor record",
+  approvalText:"Change approved — vendor master updated",
+  stamp:"28 Oct 2025, 8:37:12 AM CT",
+  hash:"2b70…c54d",
+  finalOutcome:"Outcome: change applied. Next payment released to verified account ****9032.",
+  finalClass:""
+ }
+};
+
+/* ---------------- state ---------------- */
+var state = {scenario:"A", step:1, done:{1:false,2:false,3:false,4:false}, calling:false, flagsShown:0};
+var timers = [];
+function clearTimers(){ timers.forEach(clearTimeout); timers = []; }
+function later(fn,ms){ timers.push(setTimeout(fn,ms)); }
+function C(){ return CASES[state.scenario]; }
+function esc(s){ return String(s).replace(/[&<>"]/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]; }); }
+function $(id){ return document.getElementById(id); }
+
+/* ---------------- static render ---------------- */
+function renderLog(){
+  $("logList").innerHTML = LOG.map(function(r){
+    return '<li><div class="t"><div class="n">'+esc(r.n)+'</div><div class="m">'+esc(r.t)+' · '+esc(r.d)+'</div></div>'+
+           '<span class="chip '+r.o+'">'+esc(r.l)+'</span></li>';
+  }).join("");
+}
+function renderInbox(){
+  $("inbox").innerHTML = INBOX.map(function(m){
+    var h = '<div class="mailrow'+(m.sel?" sel":"")+'">'+
+      '<div style="display:flex;gap:8px"><div class="f" style="flex:1;min-width:0">'+esc(m.from)+'</div><div class="mini">'+esc(m.time)+'</div></div>'+
+      '<div class="s">'+esc(m.subj)+'</div>';
+    if(m.body){
+      h += '<div class="mailbody">'+esc(m.body)+'</div>'+
+           '<div class="attach"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true">'+
+           '<path d="M8 7v9a4 4 0 0 0 8 0V6a2.5 2.5 0 0 0-5 0v9.5a1 1 0 0 0 2 0V7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>'+
+           esc(m.att)+'</div>';
+    }
+    return h+'</div>';
+  }).join("");
+}
+
+/* ---------------- stepper ---------------- */
+function stepShell(n, title, sub, inner, unlocked){
+  var cls = "step" + (state.step===n ? " active" : "") + (state.done[n] ? " done" : "");
+  return '<div class="'+cls+'">'+
+    '<button class="shd" type="button" data-step="'+n+'"'+(unlocked?"":" disabled")+'>'+
+      '<span class="num">'+(state.done[n] ? "✓" : n)+'</span>'+
+      '<span><span class="ttl">'+esc(title)+'</span><br><span class="sub">'+esc(sub)+'</span></span>'+
+      '<span class="caret">'+(state.step===n?"▾":"▸")+'</span>'+
+    '</button>'+
+    (state.step===n ? '<div class="sbody">'+inner+'</div>' : '')+
+  '</div>';
+}
+
+function renderStepper(){
+  var c = C(), html = "";
+  var s1 =
+    '<div class="panelbox"><dl class="kv">'+
+    '<dt>Payee</dt><dd>'+esc(c.payee)+' <span class="mini">(Vendor ID '+esc(c.vid)+')</span></dd>'+
+    '<dt>Change type</dt><dd>'+esc(c.change)+'</dd>'+
+    '<dt>New details</dt><dd>Routing '+esc(c.routing)+' / acct '+esc(c.acct)+'</dd>'+
+    '<dt>Channel</dt><dd>'+esc(c.channel)+'</dd>'+
+    '<dt>Requested by</dt><dd>'+esc(c.requester)+'</dd>'+
+    '<dt>Received</dt><dd>'+esc(c.received)+'</dd>'+
+    '</dl></div>'+
+    '<div class="mini" style="font-weight:700;letter-spacing:.4px;text-transform:uppercase">Automatic checks</div>'+
+    '<div id="flagBox"></div>'+
+    (state.flagsShown >= 3
+      ? '<div style="margin-top:12px"><button class="btn" type="button" data-go="2">Continue to known-good contact →</button></div>'
+      : '<div class="mini" style="margin-top:10px">Running checks against vendor master…</div>');
+  html += stepShell(1, "Request parsed", "Payee, change type and risk checks", s1, true);
+
+  var strike = c.contact.bad
+    ? '<div style="margin-top:8px" class="mini">From the email: <span class="strike">'+esc(c.contact.bad)+'</span> <span class="chip no" style="margin-left:4px">never used</span></div>'
+    : '<div style="margin-top:8px" class="mini">Number in the email matches the on-file number. Calling on-file record regardless.</div>';
+  var s2 =
+    '<div class="panelbox"><div style="font-weight:700">'+esc(c.contact.name)+' · <span class="mini" style="font-weight:500">'+esc(c.contact.role)+'</span></div>'+
+    '<div style="font-size:16px;font-weight:700;margin-top:3px">'+esc(c.contact.phone)+'</div>'+
+    '<div class="mini" style="margin-top:3px">Verified '+esc(c.contact.verified)+'</div>'+
+    strike+'</div>'+
+    '<button class="btn" type="button" data-go="3">📞 Place verification call</button>'+
+    '<div class="mini" style="margin-top:7px">Call is placed to the on-file number only — never the number supplied in the request.</div>';
+  html += stepShell(2, "Known-good contact", "On-file number from signed contract", s2, state.done[1]);
+
+  var s3;
+  if(state.calling){
+    s3 = '<div class="dial"><div class="dots"><span></span><span></span><span></span></div>'+
+         '<div id="dialText" style="margin-top:9px;font-weight:650">Dialling '+esc(c.call.num)+'…</div>'+
+         '<div class="mini" style="margin-top:4px">Recorded line · consent announced</div></div>';
+  } else if(state.done[3]){
+    s3 = '<div class="panelbox" style="margin-bottom:8px"><dl class="kv">'+
+         '<dt>Called</dt><dd>'+esc(c.call.num)+'</dd>'+
+         '<dt>Time</dt><dd>'+esc(c.call.time)+'</dd>'+
+         '<dt>Duration</dt><dd>'+esc(c.call.dur)+'</dd></dl></div>'+
+         '<ul class="tr">'+c.transcript.map(function(t){
+            return '<li><span class="who">'+esc(t[0])+'</span><span>'+esc(t[1])+'</span></li>'; }).join("")+'</ul>'+
+         '<div class="result '+(c.outcome.kind==="bad"?"bad":"good")+'">'+
+           (c.outcome.kind==="bad"?"⛔":"✅")+' '+esc(c.outcome.chip)+'</div>'+
+         '<div style="margin-top:12px"><button class="btn" type="button" data-go="4">Route to second approver →</button></div>';
+  } else {
+    s3 = '<button class="btn" type="button" data-go="3">📞 Place verification call</button>';
+  }
+  html += stepShell(3, "Recorded callback", "Transcript and outcome", s3, state.done[2]);
+
+  var s4 = '<div class="panelbox" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">'+
+    '<span>Routed to <b>'+esc(c.approver)+'</b></span>'+
+    '<span class="chip '+(state.done[4]?"ok":"pend")+'" style="margin-left:auto">'+(state.done[4]?"Approved":"Awaiting approval")+'</span></div>'+
+    (state.done[4]
+      ? '<div class="result '+(c.outcome.kind==="bad"?"bad":"good")+'">'+esc(c.approvalText)+' · '+esc(c.stamp)+'</div>'+
+        '<div class="mini" style="margin-top:8px">Evidence pack sealed. Record hash '+esc(c.hash)+' · append-only.</div>'
+      : '<button class="btn" type="button" data-go="approve">'+esc(c.approveLabel)+'</button>');
+  html += stepShell(4, "Second approver", "Dual control and timestamp", s4, state.done[3]);
+
+  $("stepper").innerHTML = html;
+  if(state.step===1) paintFlags();
+  var n = (state.done[1]?1:0)+(state.done[2]?1:0)+(state.done[3]?1:0)+(state.done[4]?1:0);
+  $("bar").style.width = (n/4*100)+"%";
+  $("packStage").textContent = "Entry "+n+" of 4";
+  $("caseTag").textContent = "Case "+c.id;
+}
+
+function paintFlags(){
+  var box = $("flagBox"); if(!box) return;
+  var c = C();
+  box.innerHTML = c.flags.slice(0, state.flagsShown).map(function(f,i){
+    var good = (state.scenario==="B" && i<2);
+    return '<div class="flag"'+(good?' style="background:var(--green-soft);color:var(--green);border-color:rgba(23,106,58,.25)"':'')+'>'+
+      '<span>'+(good?"✓":"⚠")+'</span><span>'+esc(f)+'</span></div>';
+  }).join("");
+}
+
+function runFlags(){
+  if(state.flagsShown >= 3) return;
+  var tick = function(){
+    state.flagsShown++;
+    if(state.step===1) renderStepper();
+    if(state.flagsShown===3){ state.done[1]=true; renderStepper(); renderPdf(); }
+    else later(tick, 700);
+  };
+  later(tick, 550);
+}
+
+/* ---------------- call animation ---------------- */
+function runCall(){
+  if(state.calling) return;
+  state.calling = true; state.step = 3; renderStepper();
+  var c = C();
+  var lines = ["Dialling "+c.call.num+"…", "Ringing…", "Connected — recording started", "Verifying identity…"];
+  var i = 0;
+  var tick = function(){
+    i++;
+    var el = $("dialText");
+    if(i < lines.length){
+      if(el) el.textContent = lines[i];
+      later(tick, 1000);
+    } else {
+      state.calling = false; state.done[3] = true;
+      renderStepper(); renderPdf();
+    }
+  };
+  later(tick, 1000);
+}
+
+/* ---------------- evidence pack ---------------- */
+function pendingRow(label){ return '<div class="row"><b>'+label+'</b><span class="pending">pending</span></div>'; }
+
+function renderPdf(){
+  var c = C(), d = state.done;
+  var entries = (d[1]?1:0)+(d[2]?1:0)+(d[3]?1:0)+(d[4]?1:0);
+  var h = '';
+  h += '<div class="brandline"><h3>Payee Change Verification Record</h3><span class="cid">Case '+esc(c.id)+'</span></div>';
+
+  h += '<section><h4>Payee &amp; request</h4>';
+  if(d[1]){
+    h += '<div class="row"><b>Payee</b><span>'+esc(c.payee)+' ('+esc(c.vid)+')</span></div>'+
+         '<div class="row"><b>Change requested</b><span>'+esc(c.change)+' → routing '+esc(c.routing)+' / acct '+esc(c.acct)+'</span></div>'+
+         '<div class="row"><b>Received via</b><span>'+esc(c.channel)+' from '+esc(c.requester)+'</span></div>'+
+         '<div class="row"><b>Received</b><span>'+esc(c.received)+'</span></div>';
+  } else { h += pendingRow("Payee") + pendingRow("Change requested"); }
+  h += '</section>';
+
+  h += '<section><h4>Risk flags (automatic)</h4>';
+  if(d[1]){ h += '<ul>'+c.flags.map(function(f){ return '<li>'+esc(f)+'</li>'; }).join("")+'</ul>'; }
+  else { h += '<div class="pending">pending — 3 checks queued</div>'; }
+  h += '</section>';
+
+  h += '<section><h4>Known-good contact used</h4>';
+  if(d[2]){
+    h += '<div class="row"><b>Contact</b><span>'+esc(c.contact.name)+', '+esc(c.contact.role)+' — '+esc(c.contact.phone)+'</span></div>'+
+         '<div class="row"><b>Source verified</b><span>'+esc(c.contact.verified)+'</span></div>';
+  } else { h += pendingRow("Contact"); }
+  h += '</section>';
+
+  h += '<section><h4>Verification call</h4>';
+  if(d[3]){
+    h += '<div class="row"><b>Call time</b><span>'+esc(c.call.time)+'</span></div>'+
+         '<div class="row"><b>Duration</b><span>'+esc(c.call.dur)+'</span></div>'+
+         '<div class="row"><b>Outcome</b><span>'+esc(c.outcome.short)+'</span></div>'+
+         '<div class="row" style="border:0;display:block"><b style="display:block;margin-bottom:3px">Transcript excerpt</b>'+
+         '<div class="q">'+esc(c.outcome.excerpt)+'</div></div>';
+  } else { h += pendingRow("Call time") + pendingRow("Outcome"); }
+  h += '</section>';
+
+  h += '<section><h4>Second approver</h4>';
+  if(d[4]){
+    h += '<div class="row"><b>Approver</b><span>'+esc(c.approver)+'</span></div>'+
+         '<div class="row"><b>Action</b><span>'+esc(c.approvalText)+'</span></div>'+
+         '<div class="row"><b>Timestamp</b><span>'+esc(c.stamp)+'</span></div>'+
+         '<div style="margin-top:7px"><span class="seal">● Signed &amp; sealed</span></div>';
+  } else { h += pendingRow("Approver") + pendingRow("Timestamp"); }
+  h += '</section>';
+
+  h += '<div class="foot"><span>Record hash '+esc(c.hash)+' · append-only · entry '+entries+' of 4</span>'+
+       '<span>Westvale CUSD 31 · Payeeproof</span></div>';
+
+  $("pdf").innerHTML = h;
+
+  var box = $("outcomeBox");
+  if(d[4]){
+    box.textContent = c.finalOutcome;
+    box.className = "outcome " + (c.finalClass || "");
+  } else {
+    box.textContent = "Outcome: pending verification — payment not released.";
+    box.className = "outcome";
+  }
+}
+
+/* ---------------- toast ---------------- */
+var toastT = null;
+function toast(msg){
+  var t = $("toast");
+  t.textContent = msg; t.classList.add("show");
+  if(toastT) clearTimeout(toastT);
+  toastT = setTimeout(function(){ t.classList.remove("show"); }, 2300);
+}
+
+/* ---------------- interactions ---------------- */
+function goStep(n){
+  if(n===2){
+    if(!state.done[1]){ toast("Finish the automatic checks first."); return; }
+    state.step = 2; state.done[2] = true; renderStepper(); renderPdf();
+  } else if(n===3){
+    if(!state.done[2]){ toast("Open step 2 and use the on-file contact first."); return; }
+    if(state.done[3]){ state.step = 3; renderStepper(); return; }
+    runCall();
+  } else if(n===4){
+    if(!state.done[3]){ toast("Complete the recorded callback first."); return; }
+    state.step = 4; renderStepper(); renderPdf();
+  } else if(n===1){
+    state.step = 1; renderStepper();
+  }
+}
+
+document.addEventListener("click", function(e){
+  var hd = e.target.closest ? e.target.closest("[data-step]") : null;
+  var go = e.target.closest ? e.target.closest("[data-go]") : null;
+  if(go){
+    var v = go.getAttribute("data-go");
+    if(v === "approve"){
+      state.done[4] = true; renderStepper(); renderPdf();
+      toast("Approval recorded · " + C().stamp);
+    } else { goStep(parseInt(v,10)); }
+    return;
+  }
+  if(hd){
+    var n = parseInt(hd.getAttribute("data-step"),10);
+    if(state.calling){ toast("Call in progress…"); return; }
+    if(n===1){ state.step=1; renderStepper(); return; }
+    if(state.done[n] || state.done[n-1]) {
+      if(n===3 && !state.done[3]) { goStep(3); return; }
+      if(n===2 && !state.done[2]) { goStep(2); return; }
+      if(n===4 && !state.done[3]) { toast("Complete the recorded callback first."); return; }
+      state.step = n; renderStepper(); renderPdf();
+    } else {
+      toast("Complete the previous step first.");
+    }
+  }
+});
+
+function reset(scenario){
+  clearTimers();
+  state = {scenario:scenario, step:1, done:{1:false,2:false,3:false,4:false}, calling:false, flagsShown:0};
+  renderStepper(); renderPdf(); runFlags();
+}
+
+$("scA").addEventListener("click", function(){
+  if(state.scenario==="A"){ reset("A"); toast("Replayed Case A"); return; }
+  $("scA").setAttribute("aria-pressed","true"); $("scB").setAttribute("aria-pressed","false");
+  reset("A");
+});
+$("scB").addEventListener("click", function(){
+  if(state.scenario==="B"){ reset("B"); toast("Replayed Case B"); return; }
+  $("scB").setAttribute("aria-pressed","true"); $("scA").setAttribute("aria-pressed","false");
+  reset("B");
+});
+$("replay").addEventListener("click", function(){ reset(state.scenario); toast("Flow reset"); });
+$("exportBtn").addEventListener("click", function(){
+  if(!state.done[4]){ toast("Pack is incomplete — finish step 4 to export."); return; }
+  toast("Evidence pack " + C().id + ".pdf queued for auditor export (demo)");
+});
+$("claimBtn").addEventListener("click", function(){
+  if(!state.done[4]){ toast("Pack is incomplete — finish step 4 first."); return; }
+  toast("Attached to crime-policy claim draft (demo)");
+});
+
+/* ---------------- boot ---------------- */
+try{
+  renderLog(); renderInbox(); renderStepper(); renderPdf(); runFlags();
+}catch(err){
+  var w = document.querySelector(".wrap");
+  if(w){ w.insertAdjacentHTML("afterbegin",
+    '<div class="card"><div class="bd">Something went wrong loading the demo. Reload the page to try again.</div></div>'); }
+}
+})();
+</script>
+</body>
+</html>
