@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Frailty — exemption desk</title>
+<style>
+:root{
+  --bg:#ffffff; --panel:#f8fafc; --panel2:#f1f5f9; --ink:#0f172a; --muted:#64748b;
+  --line:#e2e8f0; --accent:#0d6e6e; --accent-soft:#e3f3f1; --high:#b42318; --high-bg:#fef3f2;
+  --warn:#8a6100; --warn-bg:#fffaeb; --ok:#126c42; --ok-bg:#e8f6ef; --chip:#dbeeec;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#0b1220; --panel:#111a2b; --panel2:#16213404; --panel2:#152034; --ink:#e6edf6; --muted:#93a3b8;
+    --line:#223049; --accent:#3fc0b4; --accent-soft:#11302f; --high:#ff8a80; --high-bg:#2a1414;
+    --warn:#f0c159; --warn-bg:#2b2310; --ok:#6fe0a6; --ok-bg:#0f2a1e; --chip:#143b38;
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  font-size:15px; line-height:1.5; -webkit-text-size-adjust:100%;
+}
+header.top{
+  padding:14px 16px 10px; border-bottom:1px solid var(--line);
+  position:sticky; top:0; background:var(--bg); z-index:20;
+}
+.brand{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.logo{width:26px;height:26px;flex:0 0 auto}
+h1{font-size:16px;margin:0;font-weight:650;letter-spacing:-.2px}
+h1 span{font-weight:400;color:var(--muted)}
+.clinic{font-size:12px;color:var(--muted);margin-top:2px}
+.demo{font-size:10.5px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:2px 8px;white-space:nowrap}
+nav{display:flex;gap:6px;margin-top:12px;overflow-x:auto;-webkit-overflow-scrolling:touch}
+nav button{
+  appearance:none;border:1px solid var(--line);background:var(--panel);color:var(--muted);
+  padding:10px 16px;min-height:44px;border-radius:10px;font-size:14px;font-weight:550;cursor:pointer;white-space:nowrap;
+  font-family:inherit;
+}
+nav button[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+main{padding:16px 16px 92px;max-width:1180px;margin:0 auto}
+section[hidden]{display:none}
+.strip{
+  display:flex;gap:12px;align-items:flex-start;background:var(--warn-bg);border:1px solid var(--line);
+  border-left:4px solid var(--warn); border-radius:10px;padding:12px 14px;margin-bottom:14px;
+}
+.strip b{font-weight:650}
+.strip .sub{font-size:12.5px;color:var(--muted);margin-top:2px}
+.tablewrap{border:1px solid var(--line);border-radius:12px;overflow:auto;background:var(--panel)}
+table{border-collapse:collapse;width:100%;min-width:860px;font-size:13.5px}
+th{
+  text-align:left;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);
+  padding:10px 12px;border-bottom:1px solid var(--line);font-weight:600;background:var(--panel2);position:sticky;top:0;
+}
+td{padding:12px;border-bottom:1px solid var(--line);vertical-align:top}
+tr:last-child td{border-bottom:none}
+tr.clickable{cursor:pointer}
+tr.clickable:hover td{background:var(--accent-soft)}
+.nm{font-weight:600}
+.dx{color:var(--muted)}
+.badge{display:inline-block;font-size:11px;font-weight:650;letter-spacing:.03em;padding:4px 9px;border-radius:999px;white-space:nowrap}
+.b-high{background:var(--high-bg);color:var(--high)}
+.b-auto{background:var(--chip);color:var(--accent)}
+.b-ex{background:var(--ok-bg);color:var(--ok)}
+.b-low{background:var(--panel2);color:var(--muted)}
+.b-sub{background:var(--ok-bg);color:var(--ok)}
+.hint{font-size:12px;color:var(--muted);margin:10px 2px 0}
+.split{display:grid;grid-template-columns:1fr;gap:14px}
+@media(min-width:900px){.split{grid-template-columns:1fr 1fr}}
+.pane{border:1px solid var(--line);border-radius:12px;background:var(--panel);display:flex;flex-direction:column;min-height:380px}
+.pane h2{
+  font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin:0;
+  padding:12px 14px;border-bottom:1px solid var(--line);font-weight:650;display:flex;justify-content:space-between;gap:8px;align-items:center;
+}
+.chart{padding:12px 14px;overflow-y:auto;max-height:540px;font-size:13px}
+.chartblock{border-bottom:1px dashed var(--line);padding:10px 0}
+.chartblock:last-child{border-bottom:none}
+.ck{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:650;margin-bottom:4px}
+.line{padding:3px 6px;margin:1px -6px;border-radius:5px;transition:background .18s,box-shadow .18s}
+.line.hit{background:#fde68a;color:#1f2937;box-shadow:0 0 0 2px #f59e0b inset}
+@media (prefers-color-scheme: dark){.line.hit{background:#5a4512;color:#fff;box-shadow:0 0 0 2px var(--warn) inset}}
+.scan{
+  margin-top:12px;border:1px solid var(--line);background:var(--panel2);border-radius:8px;padding:12px;
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:11.5px;color:var(--muted);
+}
+.scan .t{font-weight:700;color:var(--ink);letter-spacing:.04em;font-size:11.5px}
+.scan .f{margin-top:7px;border-bottom:1px solid var(--muted);padding-bottom:1px;min-height:18px}
+.empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:30px 20px;text-align:center}
+.empty p{color:var(--muted);font-size:13px;margin:0;max-width:300px}
+.btn{
+  appearance:none;font-family:inherit;font-size:15px;font-weight:600;border-radius:10px;padding:13px 20px;min-height:48px;
+  border:1px solid var(--accent);background:var(--accent);color:#fff;cursor:pointer;
+}
+.btn:disabled{opacity:.55;cursor:default}
+.btn.ghost{background:transparent;color:var(--accent)}
+.btn.sm{font-size:13.5px;padding:10px 14px;min-height:44px}
+.bar{height:6px;background:var(--panel2);border-radius:999px;overflow:hidden;width:220px;max-width:80%}
+.bar i{display:block;height:100%;width:0;background:var(--accent);transition:width .15s linear}
+.steps{font-size:12.5px;color:var(--muted);min-height:18px}
+.out{padding:14px;display:flex;flex-direction:column;gap:14px}
+.card{border:1px solid var(--line);border-radius:10px;background:var(--bg);padding:12px 14px}
+.card h3{margin:0 0 8px;font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.kv{display:grid;grid-template-columns:140px 1fr;gap:6px 10px;font-size:13px}
+.kv div:nth-child(odd){color:var(--muted)}
+.kv b{font-weight:600}
+.filled{background:var(--accent-soft);border-radius:4px;padding:1px 6px;display:inline-block}
+.letter{font-size:13.5px;line-height:1.65}
+.letter .lh{border-bottom:1px solid var(--line);padding-bottom:8px;margin-bottom:10px}
+.letter .lh b{font-size:14px}
+.letter .lh div{font-size:11.5px;color:var(--muted)}
+.cite{
+  display:inline-block;vertical-align:super;font-size:9.5px;font-weight:700;line-height:1;
+  background:var(--chip);color:var(--accent);border:1px solid transparent;border-radius:5px;padding:2px 4px;margin-left:2px;cursor:pointer;
+  min-width:16px;text-align:center;
+}
+.cite:hover,.cite.on{background:var(--accent);color:#fff}
+.q{background:var(--warn-bg);border:1px solid var(--line);border-left:4px solid var(--warn);border-radius:10px;padding:12px 14px}
+.q .t{font-weight:650;font-size:13px;margin-bottom:4px}
+.q p{margin:0 0 10px;font-size:13px;color:var(--muted)}
+label.radio{display:flex;align-items:center;gap:10px;padding:10px;border:1px solid var(--line);border-radius:8px;margin-bottom:8px;cursor:pointer;background:var(--bg);font-size:13.5px;min-height:44px}
+label.radio input{width:18px;height:18px;accent-color:var(--accent)}
+.bottombar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;border-top:1px solid var(--line);padding:12px 14px}
+.rt{font-size:12.5px;color:var(--muted)}
+.rt b{color:var(--ink)}
+.success{background:var(--ok-bg);border:1px solid var(--ok);border-radius:10px;padding:14px;font-size:13.5px;color:var(--ok);display:flex;gap:10px}
+.success b{display:block;color:var(--ink);margin-bottom:3px}
+.tl{display:flex;flex-direction:column;gap:8px}
+.ti{display:flex;gap:12px;align-items:center;border:1px solid var(--line);border-radius:10px;padding:12px 14px;background:var(--panel)}
+.ti .dot{width:10px;height:10px;border-radius:50%;flex:0 0 auto;background:var(--muted)}
+.ti.red{border-left:4px solid var(--high)} .ti.red .dot{background:var(--high)}
+.ti.amber{border-left:4px solid var(--warn)} .ti.amber .dot{background:var(--warn)}
+.ti.green{border-left:4px solid var(--ok)} .ti.green .dot{background:var(--ok)}
+.ti .who{font-weight:600;font-size:14px}
+.ti .what{font-size:12.5px;color:var(--muted)}
+.ti .right{margin-left:auto;text-align:right;font-size:12.5px;font-weight:600;white-space:nowrap}
+.ti.red .right{color:var(--high)}
+.secthead{display:flex;align-items:baseline;gap:10px;margin:18px 2px 8px}
+.secthead h2{font-size:12px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin:0}
+footer{
+  position:fixed;bottom:0;left:0;right:0;background:var(--bg);border-top:1px solid var(--line);
+  padding:8px 14px;font-size:11px;color:var(--muted);text-align:center;z-index:20;
+}
+footer .d{opacity:.75;margin-top:2px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="brand">
+    <svg class="logo" viewBox="0 0 24 24" aria-hidden="true"><rect x="1" y="1" width="22" height="22" rx="6" fill="currentColor" opacity=".12"/><path d="M7 17V7h9M7 12h7" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round"/></svg>
+    <div>
+      <h1>Frailty <span>— provider-side Medicaid exemption desk</span></h1>
+      <div class="clinic">Riverbend Behavioral Health · Louisville, KY · Dr. L. Ortiz, NP</div>
+    </div>
+    <span class="demo">Demo data</span>
+  </div>
+  <nav role="tablist" aria-label="Sections">
+    <button role="tab" id="tab-risk" aria-selected="true" aria-controls="p-risk" data-tab="risk">At risk</button>
+    <button role="tab" id="tab-packet" aria-selected="false" aria-controls="p-packet" data-tab="packet">Packet</button>
+    <button role="tab" id="tab-clock" aria-selected="false" aria-controls="p-clock" data-tab="clock">Clock</button>
+  </nav>
+</header>
+
+<main>
+  <!-- TAB 1 -->
+  <section id="p-risk" role="tabpanel" aria-labelledby="tab-risk">
+    <div class="strip">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" style="flex:0 0 auto;margin-top:1px"><path d="M12 3l9.5 17h-19L12 3z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M12 10v4.5M12 17.2v.6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      <div>
+        <b id="needCount">4 patients need a signed provider attestation before their 30-day clock expires</b>
+        <div class="sub">Panel scanned 28 Oct · 12 of 412 active patients flagged for community-engagement exposure.</div>
+      </div>
+    </div>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Name</th><th>Age</th><th>Medicaid category</th><th>Primary dx</th><th>Last visit</th><th>Deadline</th><th>Risk</th></tr></thead>
+        <tbody id="riskBody"></tbody>
+      </table>
+    </div>
+    <p class="hint">Tap any <b>HIGH</b> row to assemble that patient's exemption packet.</p>
+  </section>
+
+  <!-- TAB 2 -->
+  <section id="p-packet" role="tabpanel" aria-labelledby="tab-packet" hidden>
+    <div class="strip" style="border-left-color:var(--accent);background:var(--accent-soft)">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" style="flex:0 0 auto;margin-top:1px"><path d="M6 3h8l4 4v14H6z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M14 3v4h4M9 12h6M9 16h6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+      <div>
+        <b id="pkHdr">Dana W., 34 · Expansion adult · Opioid use disorder (F11.20)</b>
+        <div class="sub">Cure notice dated 12 Dec — 18 days left · MACE-200 Medical Condition Exemption</div>
+      </div>
+    </div>
+
+    <div class="split">
+      <div class="pane">
+        <h2>What the clinician has today <span class="demo">chart excerpt</span></h2>
+        <div class="chart" id="chart">
+          <div class="chartblock">
+            <div class="ck">Intake note — 04 Mar 2025 (fragment)</div>
+            <div class="line" id="c-intake1">"Pt self-referred after ED visit. Reports daily IV heroin x 4 yrs, last use 02 Mar. Wants to 'stop for good this time.'"</div>
+            <div class="line" id="c-intake2">Dx on intake: Opioid use disorder, severe, F11.20. Secondary: MDD recurrent moderate F33.1.</div>
+            <div class="line">Housing: staying w/ sister, unstable. No vehicle. Transport = bus, 2 transfers.</div>
+          </div>
+          <div class="chartblock">
+            <div class="ck">Medication list (active)</div>
+            <div class="line" id="c-med">buprenorphine/naloxone 16-4 mg SL daily — started 11 Mar 2025, continuing. Weekly then biweekly dispensing.</div>
+            <div class="line">sertraline 100 mg daily</div>
+            <div class="line">hydroxyzine 25 mg PRN</div>
+          </div>
+          <div class="chartblock">
+            <div class="ck">Progress note — 12 Jun 2025</div>
+            <div class="line">"Stable on bup/nx. Attends IOP 3x/wk, 9a–12p. Cravings 3/10."</div>
+            <div class="line" id="c-iop">Treatment plan: Intensive outpatient program, 3 sessions/week, 3 hrs each + weekly individual therapy + 2x/mo med mgmt.</div>
+          </div>
+          <div class="chartblock">
+            <div class="ck">Progress note — 08 Sep 2025</div>
+            <div class="line" id="c-relapse">"Relapse x 3 days late Aug after layoff. Pt lost warehouse job 22 Aug following positive workplace screen. Restarted bup/nx 29 Aug."</div>
+            <div class="line">Sleep 3–4 hrs/night. Appetite poor.</div>
+          </div>
+          <div class="chartblock">
+            <div class="ck">Progress note — 25 Oct 2025 (most recent, 3 days ago)</div>
+            <div class="line" id="c-recent">"Abstinent 8 wks. Still highly symptomatic: panic in crowds, cannot sustain a shift &gt;4 hrs without leaving early."</div>
+            <div class="line" id="c-fn">Clinician impression: functional capacity currently limited; not able to sustain 20 hrs/wk of work or job search activity.</div>
+          </div>
+          <div class="chartblock">
+            <div class="ck">Missed-appointment log</div>
+            <div class="line" id="c-missed">Missed: 19 Jun, 02 Jul, 26 Aug, 28 Aug, 04 Sep (5 of last 22 scheduled). Reasons noted: transport, withdrawal sx, "couldn't get out of bed".</div>
+          </div>
+          <div class="chartblock">
+            <div class="ck">Screeners</div>
+            <div class="line" id="c-phq">PHQ-9 = 19 (moderately severe) — administered 25 Oct 2025. Item 4 (fatigue) = 3, Item 7 (concentration) = 3.</div>
+            <div class="line">GAD-7 = 14 (moderate) — 25 Oct 2025.</div>
+          </div>
+          <div class="chartblock">
+            <div class="ck">Dates of care on file</div>
+            <div class="line" id="c-dates">Episode of care: 04 Mar 2025 — present. 31 encounters. Rendering provider: L. Ortiz, NP, APRN KY lic. #1104872, NPI 1598234770.</div>
+          </div>
+          <div class="scan" aria-label="Blank MACE-200 form">
+            <div class="t">FORM MACE-200 (rev. 09/25)</div>
+            <div class="t">MEDICAL CONDITION EXEMPTION — COMMUNITY ENGAGEMENT</div>
+            <div class="f">1. Member name / MAID:</div>
+            <div class="f">2. Qualifying condition category:</div>
+            <div class="f">3. ICD-10 code(s):</div>
+            <div class="f">4. Licensed provider / NPI:</div>
+            <div class="f">5. Dates of care:</div>
+            <div class="f">6. Expected duration of limitation:</div>
+            <div class="f">7. Narrative — how condition impairs ability<br>&nbsp;&nbsp;&nbsp;to meet 80 hrs/mo:</div>
+            <div class="f">8. Signature / date:</div>
+            <div style="margin-top:8px;opacity:.7">[ scanned — fields blank ]</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="pane">
+        <h2>Frailty draft packet <span class="demo">simulated</span></h2>
+        <div id="rightEmpty" class="empty">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" style="color:var(--muted)"><rect x="3" y="3" width="18" height="18" rx="4" stroke="currentColor" stroke-width="1.6"/><path d="M8 12h8M12 8v8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+          <p>Nothing drafted yet. Frailty reads the chart excerpt on the left and maps it to the two-part CMS medical-exemption test.</p>
+          <button class="btn" id="assembleBtn">Assemble exemption packet</button>
+          <div class="bar" id="bar" hidden><i></i></div>
+          <div class="steps" id="steps"></div>
+        </div>
+
+        <div id="rightOut" class="out" hidden>
+          <div class="card">
+            <h3>MACE-200 — populated</h3>
+            <div class="kv">
+              <div>Member</div><div><b>Dana W.</b> · MAID <span class="filled">KY-7741-20984</span></div>
+              <div>Condition category</div><div><span class="filled">Substance Use Disorder</span> (with co-occurring mood disorder)</div>
+              <div>ICD-10</div><div><span class="filled">F11.20</span>, <span class="filled">F33.1</span></div>
+              <div>Licensed provider</div><div><span class="filled">L. Ortiz, NP, APRN</span> · KY #1104872 · NPI 1598234770</div>
+              <div>Dates of care</div><div><span class="filled">04 Mar 2025 — 25 Oct 2025</span> · 31 encounters</div>
+              <div>Treatment</div><div>Buprenorphine/naloxone 16-4 mg daily; IOP 3×/wk</div>
+              <div>Duration of limitation</div><div id="durOut"><span class="filled" style="opacity:.6">pending clinician selection</span></div>
+            </div>
+          </div>
+
+          <div class="card letter">
+            <div class="lh">
+              <b>Riverbend Behavioral Health</b>
+              <div>1420 E Broadway, Louisville, KY 40204 · (502) 555-0163 · Re: Medical Condition Exemption, member Dana W.</div>
+            </div>
+            <div id="narr">
+              <p style="margin:0 0 10px">To the Kentucky Cabinet for Health and Family Services:</p>
+              <p style="margin:0 0 10px">I am the treating licensed provider for Dana W., in continuous care at this clinic since 4 March 2025.<span class="cite" data-t="c-dates" tabindex="0" role="button">1</span> She carries a diagnosis of severe opioid use disorder (F11.20) with recurrent moderate major depression (F33.1)<span class="cite" data-t="c-intake2" tabindex="0" role="button">2</span> and is maintained on buprenorphine/naloxone 16-4 mg daily.<span class="cite" data-t="c-med" tabindex="0" role="button">3</span></p>
+              <p style="margin:0 0 10px">This condition significantly impairs her ability to complete 80 hours per month of work or qualifying activity. Her treatment plan requires intensive outpatient attendance three mornings weekly plus individual and medication visits.<span class="cite" data-t="c-iop" tabindex="0" role="button">4</span> Her most recent PHQ-9 was 19, with maximal impairment on concentration and fatigue.<span class="cite" data-t="c-phq" tabindex="0" role="button">5</span> She cannot sustain a shift beyond four hours without leaving early<span class="cite" data-t="c-recent" tabindex="0" role="button">6</span> and missed five of twenty-two scheduled appointments for withdrawal symptoms and inability to leave bed.<span class="cite" data-t="c-missed" tabindex="0" role="button">7</span> A relapse followed job loss in August 2025.<span class="cite" data-t="c-relapse" tabindex="0" role="button">8</span> In my clinical judgement she is not currently able to sustain the required hours.<span class="cite" data-t="c-fn" tabindex="0" role="button">9</span></p>
+              <p style="margin:0">Respectfully, L. Ortiz, NP, APRN</p>
+            </div>
+            <div class="hint" style="margin-top:10px">Tap a numbered chip to highlight the source line in the chart on the left. 123 words · both prongs of the CMS test addressed.</div>
+          </div>
+
+          <div class="q">
+            <div class="t">Needs clinician judgement</div>
+            <p>Confirm functional limitation period:</p>
+            <label class="radio"><input type="radio" name="dur" value="90 days"> 90 days — re-assess at next treatment-plan review</label>
+            <label class="radio"><input type="radio" name="dur" value="6 months"> 6 months — matches current IOP episode length</label>
+          </div>
+
+          <div id="signed" hidden class="success">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" style="flex:0 0 auto;margin-top:1px"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="M8 12.3l2.6 2.6L16 9.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <div><b>Packet signed by Dr. L. Ortiz, NP.</b>Submit via Kentucky kynect document upload. Re-verification due 12 months: 20 Dec 2027.</div>
+          </div>
+        </div>
+
+        <div class="bottombar" id="bottomBar" hidden>
+          <div class="rt">Review time: <b>48 seconds</b> <span style="opacity:.7">(baseline 31 min)</span></div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn ghost sm" id="backBtn">Send back for edits</button>
+            <button class="btn sm" id="signBtn">Sign &amp; export PDF</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="hint" id="toastMsg" role="status"></p>
+  </section>
+
+  <!-- TAB 3 -->
+  <section id="p-clock" role="tabpanel" aria-labelledby="tab-clock" hidden>
+    <div class="secthead"><h2>30-day cure notices</h2><span class="hint" style="margin:0">as of 28 Oct · Demo data</span></div>
+    <div class="tl" id="tlCure"></div>
+    <div class="secthead"><h2>Upcoming 12-month re-verifications</h2></div>
+    <div class="tl" id="tlReverify"></div>
+  </section>
+</main>
+
+<footer>
+  Frailty prepares documentation. The state Medicaid agency makes the determination.
+  <div class="d">Prototype by Granted, inspired by your bookmarks</div>
+</footer>
+
+<script>
+(function(){
+  "use strict";
+
+  var patients = [
+    {id:"dana", name:"Dana W.", age:34, cat:"Expansion adult", dx:"Opioid use disorder (F11.20)", last:"3 days ago", dl:"notice dated 12 Dec — 18 days left", risk:"HIGH", days:18, rev:""},
+    {id:"marcus", name:"Marcus T.", age:52, cat:"Expansion adult", dx:"Schizoaffective disorder (F25.0)", last:"11 days ago", dl:"—", risk:"LIKELY AUTO-EXEMPT", days:null, rev:"14 Feb 2027"},
+    {id:"rhea", name:"Rhea P.", age:27, cat:"Expansion adult", dx:"Generalized anxiety (F41.1) + pregnancy", last:"2 months ago", dl:"—", risk:"EXEMPT: pregnancy", days:null, rev:"03 Jun 2026"},
+    {id:"jonah", name:"Jonah K.", age:41, cat:"Expansion adult", dx:"Alcohol use disorder + cirrhosis (F10.20 / K74.60)", last:"6 days ago", dl:"notice dated 19 Dec — 25 days left", risk:"HIGH", days:25, rev:""},
+    {id:"alicia", name:"Alicia R.", age:38, cat:"Expansion adult", dx:"Major depressive disorder, recurrent severe (F33.2)", last:"9 days ago", dl:"notice dated 02 Dec — 8 days left", risk:"HIGH", days:8, rev:""},
+    {id:"terrence", name:"Terrence B.", age:46, cat:"Expansion adult", dx:"PTSD, chronic (F43.12)", last:"4 days ago", dl:"notice dated 28 Nov — 4 days left", risk:"HIGH", days:4, rev:""},
+    {id:"wendy", name:"Wendy S.", age:31, cat:"Expansion adult", dx:"Bipolar I, most recent episode manic (F31.13)", last:"17 days ago", dl:"—", risk:"LIKELY AUTO-EXEMPT", days:null, rev:"21 Jan 2027"},
+    {id:"carlos", name:"Carlos M.", age:29, cat:"Expansion adult", dx:"Stimulant use disorder, methamphetamine (F15.20)", last:"23 days ago", dl:"notice dated 21 Oct — OVERDUE 7 days", risk:"HIGH", days:-7, rev:""},
+    {id:"priya", name:"Priya N.", age:19, cat:"Expansion adult", dx:"Adjustment disorder w/ anxiety (F43.22)", last:"5 weeks ago", dl:"—", risk:"LIKELY COMPLIANT: school hours", days:null, rev:"09 Sep 2026"},
+    {id:"otis", name:"Otis D.", age:58, cat:"Expansion adult", dx:"PTSD + opioid use disorder, sustained remission", last:"8 days ago", dl:"notice dated 17 Oct — OVERDUE 11 days", risk:"HIGH", days:-11, rev:""},
+    {id:"bea", name:"Bea L.", age:44, cat:"Expansion adult", dx:"Major depressive disorder, mild (F32.0)", last:"3 weeks ago", dl:"—", risk:"LOW", days:null, rev:"30 Apr 2027"},
+    {id:"sam", name:"Sam G.", age:36, cat:"Expansion adult", dx:"Social anxiety disorder (F40.10)", last:"6 weeks ago", dl:"—", risk:"LOW", days:null, rev:"12 Mar 2027"}
+  ];
+
+  function badgeClass(r){
+    if(r==="HIGH") return "b-high";
+    if(r.indexOf("SUBMITTED")===0) return "b-sub";
+    if(r.indexOf("EXEMPT:")===0) return "b-ex";
+    if(r==="LOW") return "b-low";
+    return "b-auto";
+  }
+
+  var body = document.getElementById("riskBody");
+  function renderTable(){
+    body.textContent = "";
+    patients.forEach(function(p){
+      var tr = document.createElement("tr");
+      if(p.risk==="HIGH"){ tr.className="clickable"; tr.tabIndex=0; tr.setAttribute("role","button");
+        tr.setAttribute("aria-label","Open packet for "+p.name); }
+      function td(html, cls){ var d=document.createElement("td"); if(cls) d.className=cls; d.innerHTML=html; tr.appendChild(d); }
+      td(p.name,"nm"); td(String(p.age)); td(p.cat); td(p.dx,"dx"); td(p.last,"dx");
+      td(p.dl==="—" ? '<span class="dx">—</span>' : p.dl);
+      td('<span class="badge '+badgeClass(p.risk)+'">'+p.risk+'</span>');
+      if(p.risk==="HIGH"){
+        tr.addEventListener("click", function(){ openPacket(p); });
+        tr.addEventListener("keydown", function(e){ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); openPacket(p); } });
+      }
+      body.appendChild(tr);
+    });
+    var n = patients.filter(function(p){return p.risk==="HIGH";}).length;
+    document.getElementById("needCount").textContent =
+      n===0 ? "All attestations signed — nothing pending before the 30-day clocks expire"
+            : n+" patient"+(n===1?"":"s")+" need"+(n===1?"s":"")+" a signed provider attestation before their 30-day clock expires";
+  }
+
+  // tabs
+  var tabs = Array.prototype.slice.call(document.querySelectorAll('nav button'));
+  var panels = {risk:document.getElementById("p-risk"), packet:document.getElementById("p-packet"), clock:document.getElementById("p-clock")};
+  function show(name){
+    tabs.forEach(function(b){ b.setAttribute("aria-selected", String(b.dataset.tab===name)); });
+    Object.keys(panels).forEach(function(k){ panels[k].hidden = (k!==name); });
+    window.scrollTo(0,0);
+  }
+  tabs.forEach(function(b){ b.addEventListener("click", function(){ show(b.dataset.tab); }); });
+
+  // packet
+  var current = patients[0];
+  function openPacket(p){
+    current = p;
+    document.getElementById("pkHdr").textContent = p.name+", "+p.age+" · "+p.cat+" · "+p.dx;
+    var sub = document.querySelector("#p-packet .strip .sub");
+    sub.textContent = (p.dl==="—" ? "No active cure notice" : p.dl) + " · MACE-200 Medical Condition Exemption";
+    if(p.id!=="dana"){
+      toast("Demo chart excerpt is only wired up for Dana W. — showing her packet as the worked example.");
+    } else { toast(""); }
+    reset();
+    show("packet");
+  }
+
+  var btn = document.getElementById("assembleBtn"),
+      bar = document.getElementById("bar"),
+      barFill = bar.firstElementChild,
+      steps = document.getElementById("steps"),
+      rightEmpty = document.getElementById("rightEmpty"),
+      rightOut = document.getElementById("rightOut"),
+      bottomBar = document.getElementById("bottomBar"),
+      signed = document.getElementById("signed"),
+      timer = null;
+
+  function reset(){
+    if(timer){ clearInterval(timer); timer=null; }
+    rightEmpty.hidden=false; rightOut.hidden=true; bottomBar.hidden=true; signed.hidden=true;
+    bar.hidden=true; barFill.style.width="0%"; steps.textContent="";
+    btn.disabled=false; btn.textContent="Assemble exemption packet";
+    document.getElementById("durOut").innerHTML='<span class="filled" style="opacity:.6">pending clinician selection</span>';
+    Array.prototype.forEach.call(document.querySelectorAll('input[name="dur"]'), function(r){ r.checked=false; });
+    clearHits();
+  }
+
+  var stepText = ["Reading 31 encounters…","Extracting diagnoses + dates of care…","Mapping to CMS two-part test…","Attaching citations…"];
+  btn.addEventListener("click", function(){
+    btn.disabled=true; btn.textContent="Assembling…"; bar.hidden=false;
+    var t0=Date.now();
+    timer = setInterval(function(){
+      var pct = Math.min(100, (Date.now()-t0)/1500*100);
+      barFill.style.width = pct+"%";
+      steps.textContent = stepText[Math.min(3, Math.floor(pct/25))];
+      if(pct>=100){
+        clearInterval(timer); timer=null;
+        rightEmpty.hidden=true; rightOut.hidden=false; bottomBar.hidden=false;
+      }
+    }, 50);
+  });
+
+  // citations
+  function clearHits(){
+    Array.prototype.forEach.call(document.querySelectorAll(".line.hit"), function(l){ l.classList.remove("hit"); });
+    Array.prototype.forEach.call(document.querySelectorAll(".cite.on"), function(c){ c.classList.remove("on"); });
+  }
+  function hit(chip){
+    clearHits();
+    var el = document.getElementById(chip.dataset.t);
+    if(!el){ toast("Source line unavailable in this demo excerpt."); return; }
+    chip.classList.add("on"); el.classList.add("hit");
+    var pane = document.getElementById("chart");
+    pane.scrollTop = el.offsetTop - pane.offsetTop - 60;
+    if(window.matchMedia("(max-width:899px)").matches){
+      el.scrollIntoView({behavior:"smooth", block:"center"});
+    }
+  }
+  document.addEventListener("click", function(e){
+    var c = e.target.closest ? e.target.closest(".cite") : null;
+    if(c) hit(c);
+  });
+  document.addEventListener("mouseover", function(e){
+    var c = e.target.closest ? e.target.closest(".cite") : null;
+    if(c) hit(c);
+  });
+  document.addEventListener("keydown", function(e){
+    if((e.key==="Enter"||e.key===" ") && e.target.classList && e.target.classList.contains("cite")){
+      e.preventDefault(); hit(e.target);
+    }
+  });
+
+  Array.prototype.forEach.call(document.querySelectorAll('input[name="dur"]'), function(r){
+    r.addEventListener("change", function(){
+      document.getElementById("durOut").innerHTML = '<span class="filled">'+r.value+'</span>';
+    });
+  });
+
+  function toast(msg){ document.getElementById("toastMsg").textContent = msg || ""; }
+
+  document.getElementById("signBtn").addEventListener("click", function(){
+    var sel = document.querySelector('input[name="dur"]:checked');
+    if(!sel){ toast("Please answer the clinician-judgement question before signing."); 
+      document.querySelector(".q").scrollIntoView({behavior:"smooth", block:"center"}); return; }
+    signed.hidden=false; toast("");
+    current.risk = "SUBMITTED — awaiting state"; current.dl = "submitted 28 Oct · re-verify 20 Dec 2027";
+    current.days = null; current.rev = "20 Dec 2027";
+    renderTable(); renderClock();
+    signed.scrollIntoView({behavior:"smooth", block:"center"});
+  });
+  document.getElementById("backBtn").addEventListener("click", function(){
+    toast("Sent back to the drafting queue with your note. Nothing was submitted.");
+  });
+
+  // clock
+  function renderClock(){
+    var cure = document.getElementById("tlCure"), rev = document.getElementById("tlReverify");
+    cure.textContent=""; rev.textContent="";
+    var cureList = patients.filter(function(p){ return p.days!==null && p.days!==undefined; })
+      .sort(function(a,b){ return a.days-b.days; });
+    if(cureList.length===0){
+      var e=document.createElement("div"); e.className="ti green";
+      e.innerHTML='<span class="dot"></span><div><div class="who">No open cure notices</div><div class="what">Every 30-day clock on this panel has a signed packet.</div></div>';
+      cure.appendChild(e);
+    }
+    cureList.forEach(function(p){
+      var cls = p.days<0 ? "red" : (p.days<=10 ? "amber" : "green");
+      var right = p.days<0 ? Math.abs(p.days)+" days OVERDUE" : p.days+" days left";
+      var d=document.createElement("div"); d.className="ti "+cls;
+      d.innerHTML='<span class="dot"></span><div><div class="who">'+p.name+'</div><div class="what">'+p.dx+' · '+p.dl+'</div></div><div class="right">'+right+'</div>';
+      cure.appendChild(d);
+    });
+    patients.filter(function(p){ return p.rev; }).forEach(function(p){
+      var d=document.createElement("div"); d.className="ti";
+      d.innerHTML='<span class="dot"></span><div><div class="who">'+p.name+'</div><div class="what">'+(p.risk.indexOf("SUBMITTED")===0?"Exemption submitted — ":"")+'12-month re-verification</div></div><div class="right">'+p.rev+'</div>';
+      rev.appendChild(d);
+    });
+  }
+
+  renderTable();
+  renderClock();
+})();
+</script>
+</body>
+</html>

@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-28T09:16:48.610Z",
+  "updated": "2026-10-28T19:56:27.955Z",
   "ideas": [
     {
       "id": "2026-10-26-catalog-check",
@@ -545,6 +545,66 @@
       "sources_count": 27,
       "superseded_by": null,
       "sibling": "2026-10-28-expiry"
+    },
+    {
+      "id": "2026-10-28-frailty",
+      "number": 20,
+      "date": "2026-10-28",
+      "track": "venture",
+      "short_name": "Frailty",
+      "verdict": "dig_deeper",
+      "score": 8,
+      "scores": {
+        "pain": 8,
+        "market_pull": 7,
+        "timing": 10,
+        "gap": 8,
+        "wedge": 7
+      },
+      "effort": "3+ months",
+      "category": "Back-office automation",
+      "tags": [
+        "healthcare",
+        "medicaid",
+        "compliance",
+        "agents"
+      ],
+      "pain_type": "expressed",
+      "one_liner": "For the operations director of a community mental health center, opioid treatment program or FQHC, Frailty finds which of their Medicaid patients are about to be hit by the January 2027 work-reporting rule, assembles a state-specific \"medically frail\" exemption packet from the chart, and routes it to a clinician for a one-click signature.",
+      "prototype_url": "https://github.com/Yashsharma1911/granted/blob/catalog-test/ideas/2026-10-28-frailty/index.html",
+      "sources_count": 20,
+      "superseded_by": null,
+      "sibling": "2026-10-28-shiproom"
+    },
+    {
+      "id": "2026-10-28-shiproom",
+      "number": 21,
+      "date": "2026-10-28",
+      "track": "build",
+      "short_name": "Shiproom",
+      "verdict": "dig_deeper",
+      "score": 7.6,
+      "scores": {
+        "wow": 8,
+        "shareability": 7,
+        "buildability": 8,
+        "freshness": 7.5,
+        "usefulness": 7.5
+      },
+      "effort": "a weekend",
+      "category": "Developer tools",
+      "tags": [
+        "privacy",
+        "video",
+        "webgpu",
+        "devtools"
+      ],
+      "pain_type": "latent",
+      "one_liner": "Drop the screen recording you're about to post on X into Shiproom and, entirely in your browser, it scrubs every frame for things you didn't mean to show — API keys, customer names, Slack DMs, your email in the browser chrome, the unpaid-invoice banner — and hands back a timestamped \"leak list\" plus the same video with those boxes blurred.",
+      "prototype_url": "https://github.com/Yashsharma1911/granted/blob/catalog-test/ideas/2026-10-28-shiproom/index.html",
+      "sources_count": 13,
+      "superseded_by": null,
+      "sibling": "2026-10-28-frailty"
     }
   ]
 }
