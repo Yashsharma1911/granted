@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Skillscale — weigh your agent skills</title>
+<style>
+:root{
+  --bg:#0c0d10; --bg2:#131519; --card:#15171c; --line:#262a31;
+  --fg:#e9edf2; --mut:#8d96a5; --acc:#5ee6a8; --amber:#f3b14e; --red:#ff6b6b;
+  --blue:#6aa6ff; --purple:#b48cff;
+}
+@media (prefers-color-scheme: light){
+  :root{ --bg:#f4f5f7; --bg2:#ffffff; --card:#ffffff; --line:#e1e4ea;
+    --fg:#14161a; --mut:#5e6673; --acc:#0f9d63; --amber:#b8750a; --red:#d match; }
+}
+@media (prefers-color-scheme: light){
+  :root{ --red:#d93b3b; }
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--fg);
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+  -webkit-text-size-adjust:100%;
+  line-height:1.45;
+}
+.wrap{max-width:900px;margin:0 auto;padding:16px 16px 60px}
+header.top{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;padding:14px 0 6px;border-bottom:1px solid var(--line);margin-bottom:18px}
+header.top .brand{font-weight:700;letter-spacing:-.02em;font-size:17px}
+header.top .dot{width:9px;height:9px;border-radius:50%;background:var(--acc);display:inline-block;margin-right:7px}
+header.top .tag{color:var(--mut);font-size:13px}
+.demo{font-size:11px;color:var(--mut);border:1px solid var(--line);border-radius:999px;padding:2px 8px;margin-left:auto}
+
+/* screen 1 */
+#scale{text-align:center;padding:22px 0 10px}
+#scale h1{font-size:30px;line-height:1.15;letter-spacing:-.03em;margin:18px 0 8px}
+#scale p.sub{color:var(--mut);font-size:14px;margin:0 auto 22px;max-width:460px}
+.inputrow{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:14px}
+input[type=text]{
+  flex:1 1 320px;min-width:0;background:var(--bg2);border:1px solid var(--line);color:var(--fg);
+  border-radius:10px;padding:14px 14px;font:inherit;font-size:14px;min-height:50px}
+input[type=text]:focus{outline:2px solid var(--acc);outline-offset:1px}
+button{font:inherit;cursor:pointer;border-radius:10px;border:1px solid var(--line);background:var(--bg2);color:var(--fg);min-height:48px;padding:12px 16px}
+button:active{transform:translateY(1px)}
+.primary{background:var(--acc);color:#07160f;border-color:transparent;font-weight:700}
+@media (prefers-color-scheme: light){.primary{color:#fff}}
+.chips{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:10px 0 18px}
+.chip{font-size:12.5px;padding:9px 12px;border-radius:999px;border:1px solid var(--line);background:transparent;color:var(--mut);min-height:40px}
+.chip.on{border-color:var(--acc);color:var(--acc)}
+.drop{border:1.5px dashed var(--line);border-radius:14px;padding:26px 16px;color:var(--mut);font-size:13px;cursor:pointer;background:transparent;width:100%}
+.drop.hot{border-color:var(--acc);color:var(--acc)}
+.scanning{margin-top:22px;color:var(--mut);font-size:13px;min-height:22px}
+.scanbar{height:3px;background:var(--line);border-radius:3px;overflow:hidden;margin:12px auto 0;max-width:340px}
+.scanbar i{display:block;height:100%;width:0;background:var(--acc);transition:width 1.2s linear}
+
+/* tabs */
+.tabs{display:flex;gap:6px;margin-bottom:16px;border:1px solid var(--line);border-radius:12px;padding:4px;background:var(--bg2)}
+.tabs button{flex:1;border:0;background:transparent;color:var(--mut);font-size:13px;min-height:44px;border-radius:9px;padding:8px}
+.tabs button.on{background:var(--card);color:var(--fg);box-shadow:inset 0 0 0 1px var(--line)}
+
+/* gauge */
+.panel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px}
+.repoline{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+.repoline .r{font-size:13px;color:var(--mut);overflow:hidden;text-overflow:ellipsis}
+.gauge{position:relative;height:54px;background:var(--bg);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.gauge .seg{position:absolute;top:0;bottom:0}
+.gauge .s1{background:var(--red)}
+.gauge .s2{background:var(--amber)}
+.gauge .s3{background:var(--blue)}
+.gauge .tick{position:absolute;top:0;bottom:0;width:1px;background:var(--line)}
+.bignum{font-size:22px;letter-spacing:-.02em;margin:14px 0 2px;line-height:1.25}
+.bignum b{color:var(--acc)}
+.subnum{color:var(--mut);font-size:13px}
+.legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:14px;font-size:12px;color:var(--mut)}
+.legend span.k{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+
+/* table */
+.rowhead{display:flex;font-size:11px;color:var(--mut);padding:0 4px 8px;letter-spacing:.06em;text-transform:uppercase}
+.rowhead .c1{flex:1}
+.row{border-top:1px solid var(--line)}
+.rowbtn{display:flex;align-items:center;gap:10px;width:100%;background:transparent;border:0;color:var(--fg);text-align:left;padding:13px 4px;min-height:56px}
+.rowbtn:hover{background:rgba(127,127,127,.06)}
+.rk{color:var(--mut);font-size:12px;width:20px;flex:none}
+.nm{flex:1;min-width:0}
+.nm .n{font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mini{height:6px;background:var(--bg);border-radius:4px;overflow:hidden;margin-top:6px;max-width:320px}
+.mini i{display:block;height:100%}
+.tok{font-size:13px;text-align:right;width:62px;flex:none}
+.alw{font-size:11px;color:var(--mut);text-align:right;width:64px;flex:none}
+.pill{font-size:10.5px;padding:4px 8px;border-radius:999px;flex:none;letter-spacing:.05em;font-weight:700}
+.LEAN{background:rgba(94,230,168,.14);color:var(--acc)}
+.HEAVY{background:rgba(243,177,78,.15);color:var(--amber)}
+.OBESE{background:rgba(255,107,107,.15);color:var(--red)}
+.caret{color:var(--mut);font-size:11px;width:14px;flex:none}
+.exp{padding:2px 4px 18px;display:none}
+.row.open .exp{display:block}
+.row.open .caret{transform:rotate(90deg);display:inline-block}
+.split{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.sbox{flex:1 1 120px;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px}
+.sbox .l{font-size:10.5px;color:var(--mut);text-transform:uppercase;letter-spacing:.06em}
+.sbox .v{font-size:16px;margin-top:3px}
+.find{display:flex;gap:10px;align-items:flex-start;padding:9px 0;border-top:1px dashed var(--line);font-size:12.5px;color:var(--fg)}
+.find .ic{color:var(--amber);flex:none}
+.find .fx{color:var(--mut);opacity:.55;text-decoration:underline;font-size:11.5px;white-space:nowrap;cursor:default;margin-left:auto;align-self:center}
+.note{font-size:12px;color:var(--mut);margin-top:12px}
+
+/* leaderboard */
+.callout{background:linear-gradient(180deg,rgba(180,140,255,.14),rgba(180,140,255,.05));border:1px solid var(--line);border-radius:12px;padding:13px 14px;margin-bottom:14px;font-size:13px}
+.callout b{color:var(--purple)}
+.lb{width:100%;border-collapse:collapse;font-size:13px}
+.lb th{font-size:10.5px;color:var(--mut);text-transform:uppercase;letter-spacing:.06em;text-align:left;padding:0 6px 8px;font-weight:400}
+.lb td{padding:11px 6px;border-top:1px solid var(--line);vertical-align:middle}
+.lb td.r{text-align:right;white-space:nowrap}
+.own{color:var(--mut);font-size:11.5px}
+.up{color:var(--acc)}.down{color:var(--red)}.new{color:var(--blue)}
+
+/* modal + card */
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.72);display:none;align-items:center;justify-content:center;padding:14px;z-index:50;overflow:auto}
+.modal.on{display:flex}
+.msheet{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;max-width:660px;width:100%}
+.cardwrap{width:100%;overflow:hidden;border-radius:12px}
+.card{
+  width:1200px;height:675px;transform-origin:top left;
+  background:#0b0d11;color:#fff;padding:64px;position:relative;
+  display:flex;flex-direction:column;justify-content:space-between;
+  background-image:radial-gradient(900px 400px at 85% -10%,rgba(94,230,168,.22),transparent 60%);
+}
+.card .kic{font-size:26px;letter-spacing:.14em;color:#5ee6a8;text-transform:uppercase}
+.card .repo{font-size:40px;color:#9aa4b2;margin-top:8px;word-break:break-all}
+.card .huge{font-size:132px;line-height:.95;letter-spacing:-.045em;font-weight:700;margin:26px 0 10px}
+.card .hsub{font-size:34px;color:#c7cfda}
+.card .cbar{height:30px;border-radius:8px;background:#1b1f27;overflow:hidden;display:flex;margin:34px 0 18px}
+.card .top3{font-size:27px;color:#e9edf2}
+.card .foot{display:flex;justify-content:space-between;align-items:flex-end;font-size:26px;color:#7e8899}
+.mbtns{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.mbtns button{flex:1 1 130px}
+.toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(20px);background:var(--fg);color:var(--bg);padding:11px 18px;border-radius:999px;font-size:13px;opacity:0;pointer-events:none;transition:.25s;z-index:60}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+footer{color:var(--mut);font-size:11.5px;text-align:center;padding:26px 0 8px}
+.hid{display:none}
+@media(max-width:560px){
+  #scale h1{font-size:25px}
+  .alw{display:none}
+  .card{padding:52px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <span class="brand"><span class="dot"></span>Skillscale</span>
+    <span class="tag">weigh your agent skills — see what they cost before you type a word</span>
+    <span class="demo">Demo data</span>
+  </header>
+
+  <!-- SCREEN 1 -->
+  <section id="scale">
+    <h1>Weigh your agent skills.</h1>
+    <p class="sub">Every SKILL.md you install spends context. Skillscale puts the whole folder on a scale and tells you what it costs.</p>
+    <div class="inputrow">
+      <input type="text" id="repo" value="github.com/VoltAgent/awesome-agent-skills" spellcheck="false" aria-label="Repository to weigh">
+      <button class="primary" id="go">Weigh it</button>
+    </div>
+    <div class="chips" id="chips"></div>
+    <button class="drop" id="drop">or drop your <b>.claude/skills</b> folder — stays in your browser</button>
+    <div class="scanning" id="scanmsg"></div>
+    <div class="scanbar hid" id="scanbar"><i></i></div>
+  </section>
+
+  <!-- SCREEN 2 / 4 -->
+  <section id="app" class="hid">
+    <div class="tabs">
+      <button id="tabW" class="on">Weigh-in</button>
+      <button id="tabL">Weekly leaderboard</button>
+    </div>
+
+    <div id="viewW">
+      <div class="panel">
+        <div class="repoline">
+          <div class="r" id="repoName">—</div>
+          <button id="again" style="font-size:12px;min-height:40px;padding:8px 12px">Weigh another ↺</button>
+        </div>
+        <div class="gauge" id="gauge"></div>
+        <div class="bignum" id="bignum"></div>
+        <div class="subnum" id="subnum"></div>
+        <div class="legend">
+          <div><span class="k" style="background:var(--red)"></span>Always loaded — frontmatter descriptions</div>
+          <div><span class="k" style="background:var(--amber)"></span>Loads on fire — SKILL.md bodies</div>
+          <div><span class="k" style="background:var(--blue)"></span>Lazy — linked reference files</div>
+        </div>
+        <div class="mbtns"><button class="primary" id="shareBtn" style="flex:0 1 230px">Get my weigh-in card</button></div>
+      </div>
+
+      <div class="panel">
+        <div class="rowhead"><span class="c1">Heaviest first</span><span>tokens / always-on</span></div>
+        <div id="rows"></div>
+        <div class="note" id="foot1"></div>
+      </div>
+    </div>
+
+    <div id="viewL" class="hid">
+      <div class="panel">
+        <div class="callout">Heaviest newcomer this week: <b>notion-sync</b> by workspace-labs entered at <b>3,880 tokens</b> — 68% of it always-on. 410 installs in 6 days.</div>
+        <div class="subnum" style="margin-bottom:12px">Weekly leaderboard — 150 public skills, rescanned every Monday. Updated Mon 26 Oct. Median skill: <b>1,040 tokens</b>.</div>
+        <table class="lb">
+          <thead><tr><th>#</th><th>Skill</th><th style="text-align:right">Tokens</th><th style="text-align:right">Δ wk</th></tr></thead>
+          <tbody id="lbBody"></tbody>
+        </table>
+        <div class="note">Rankings are heaviest-first. Being #1 is not a flex.</div>
+      </div>
+    </div>
+  </section>
+
+  <footer>Prototype by Granted, inspired by your bookmarks</footer>
+</div>
+
+<div class="modal" id="modal" role="dialog" aria-label="Weigh-in card">
+  <div class="msheet">
+    <div class="cardwrap" id="cardwrap">
+      <div class="card" id="card">
+        <div>
+          <div class="kic">Skillscale weigh-in</div>
+          <div class="repo" id="cRepo"></div>
+        </div>
+        <div>
+          <div class="huge" id="cPct"></div>
+          <div class="hsub" id="cSub"></div>
+          <div class="cbar" id="cBar"></div>
+          <div class="top3" id="cTop"></div>
+        </div>
+        <div class="foot"><span id="cCount"></span><span>skillscale.dev</span></div>
+      </div>
+    </div>
+    <div class="mbtns">
+      <button class="primary" id="copyCard">Copy card</button>
+      <button id="postX">Post to X</button>
+      <button id="closeM">Close</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast">Copied.</div>
+
+<script>
+(function(){
+"use strict";
+var CTX = 200000;
+
+function s(name, desc, body, refs, findings){
+  return {name:name, desc:desc, body:body, refs:refs, findings:findings};
+}
+var D = {
+  volt: {
+    label:"github.com/VoltAgent/awesome-agent-skills",
+    skills:[
+      s("pdf-processing",260,2890,1160,[
+        "Restates default behaviour the model already does (lines 14–31, ~340 tokens).",
+        "Inline example of a 3-page extraction could move to a reference file (~1,120 tokens).",
+        "Mentions --ocr-legacy, a flag that no longer exists in the tool."]),
+      s("notion-sync",310,2470,1100,[
+        "Full API schema pasted inline; 9 of 14 endpoints are never referenced (~980 tokens).",
+        "Two near-identical 'how to paginate' sections (lines 44–61 and 88–103).",
+        "Description is 310 tokens and always loaded — target is under 120."]),
+      s("brand-guidelines",180,2240,720,[
+        "Hex palette repeated in three formats; keep one (~260 tokens).",
+        "Tone-of-voice section restates general writing advice the model already follows.",
+        "Logo clear-space rules belong in a lazy reference file (~700 tokens)."]),
+      s("git-workflow",140,1340,440,[
+        "Explains what a merge conflict is — the model knows (lines 9–22, ~230 tokens).",
+        "Three example commit graphs could collapse to one.",
+        "References a pre-commit hook that was removed in v2."]),
+      s("code-review",120,880,280,[
+        "Checklist duplicates the house lint config (~190 tokens).",
+        "Severity rubric is stated twice in different words."]),
+      s("commit-msg",70,420,120,[
+        "Conventional Commits spec is pasted in full; a 2-line summary is enough (~240 tokens).",
+        "Lean otherwise — good frontmatter discipline."])
+    ]
+  },
+  anthropic: {
+    label:"github.com/anthropics/skills",
+    skills:[
+      s("frontend-design",190,1760,510,[
+        "Component naming rules restate framework defaults (~210 tokens).",
+        "Two full page examples inline; one could be a reference file (~640 tokens)."]),
+      s("excel-export",150,1120,370,[
+        "Column-type table is useful; the surrounding prose is not (~180 tokens).",
+        "Mentions a legacy --xls flag that no longer exists in the tool."]),
+      s("changelog",110,640,190,[
+        "Keep-a-Changelog spec summarised twice (~150 tokens).",
+        "Date format explained in 4 sentences; one would do."]),
+      s("alt-text",80,280,60,[
+        "Lean. Description is tight and the body is task-only.",
+        "Could drop the 'why alt text matters' paragraph (~90 tokens)."])
+    ]
+  },
+  team: {
+    label:"my-team/.claude/skills (local folder)",
+    skills:[
+      s("grill-me",90,230,60,[
+        "Mostly lean; the persona preamble restates default behaviour (~70 tokens).",
+        "No linked references — nothing to lazy-load."]),
+      s("slug-it",50,140,20,[
+        "The leanest skill in this folder. Nothing to cut.",
+        "Consider merging with alt-text to save one frontmatter block."]),
+      s("code-review",120,880,280,[
+        "Local fork has drifted from upstream — 2 duplicated sections (~310 tokens).",
+        "Checklist duplicates the house lint config."]),
+      s("git-workflow",140,1340,440,[
+        "Explains what a merge conflict is — the model knows (~230 tokens).",
+        "References a pre-commit hook that was removed in v2."])
+    ]
+  }
+};
+var PRESETS = [
+  {k:"volt", label:"VoltAgent/awesome-agent-skills"},
+  {k:"anthropic", label:"anthropics/skills"},
+  {k:"team", label:"my-team/.claude/skills"}
+];
+var LB = [
+  ["pdf-processing","voltagent",4310,3],
+  ["notion-sync","workspace-labs",3880,"NEW"],
+  ["brand-guidelines","acme-design",3140,-1],
+  ["salesforce-ops","crm-tools",2980,1],
+  ["frontend-design","anthropics",2460,-2],
+  ["k8s-triage","sre-collective",2310,"NEW"],
+  ["git-workflow","devrel-kit",1920,0],
+  ["excel-export","anthropics",1640,2],
+  ["figma-tokens","acme-design",1480,-3],
+  ["code-review","devrel-kit",1280,0],
+  ["sql-tuning","datafolk",1150,1],
+  ["changelog","anthropics",940,-1],
+  ["commit-msg","devrel-kit",610,0],
+  ["alt-text","a11y-guild",420,2],
+  ["slug-it","tiny-skills",210,-1]
+];
+
+var cur="volt", curTotals=null;
+var $=function(id){return document.getElementById(id)};
+function fmt(n){return n.toLocaleString("en-US")}
+function tot(x){return x.desc+x.body+x.refs}
+function verdict(t){return t>2500?"OBESE":(t>=800?"HEAVY":"LEAN")}
+
+/* chips */
+PRESETS.forEach(function(p){
+  var b=document.createElement("button");
+  b.className="chip"; b.textContent=p.label; b.type="button";
+  b.onclick=function(){
+    cur=p.k;
+    $("repo").value = p.k==="team" ? "my-team/.claude/skills" : "github.com/"+D[p.k].label.replace("github.com/","");
+    paintChips();
+    if(!$("app").classList.contains("hid")) render();
+  };
+  $("chips").appendChild(b);
+});
+function paintChips(){
+  var cs=$("chips").children;
+  for(var i=0;i<cs.length;i++) cs[i].className = "chip"+(PRESETS[i].k===cur?" on":"");
+}
+paintChips();
+
+/* drop zone */
+var dz=$("drop");
+["dragenter","dragover"].forEach(function(e){dz.addEventListener(e,function(ev){ev.preventDefault();dz.classList.add("hot")})});
+["dragleave","drop"].forEach(function(e){dz.addEventListener(e,function(ev){ev.preventDefault();dz.classList.remove("hot")})});
+function loadLocal(){ cur="team"; $("repo").value="my-team/.claude/skills"; paintChips(); scan(); }
+dz.addEventListener("drop",loadLocal);
+dz.addEventListener("click",loadLocal);
+
+/* scan */
+$("go").addEventListener("click",function(){
+  var v=$("repo").value.trim();
+  if(!v){ $("scanmsg").textContent="Enter a repo or skills folder path first — try a preset below."; return; }
+  if(v.length<4){ $("scanmsg").textContent="That doesn't look like a repo path. Try github.com/owner/repo."; return; }
+  var lower=v.toLowerCase();
+  if(lower.indexOf("anthropic")>-1) cur="anthropic";
+  else if(lower.indexOf(".claude")>-1||lower.indexOf("my-team")>-1) cur="team";
+  else if(lower.indexOf("volt")>-1) cur="volt";
+  paintChips(); scan();
+});
+function scan(){
+  var n=D[cur].skills.length;
+  $("scanmsg").textContent="reading "+n+" SKILL.md files…";
+  $("scanbar").classList.remove("hid");
+  var bar=$("scanbar").firstChild; bar.style.width="0%";
+  setTimeout(function(){bar.style.width="100%"},30);
+  setTimeout(function(){
+    $("scanmsg").textContent=""; $("scanbar").classList.add("hid"); bar.style.width="0%";
+    $("scale").classList.add("hid"); $("app").classList.remove("hid");
+    showTab("W"); render();
+    window.scrollTo(0,0);
+  },1200);
+}
+
+/* render weigh-in */
+function render(){
+  var set=D[cur], sk=set.skills.slice().sort(function(a,b){return tot(b)-tot(a)});
+  var dsum=0,bsum=0,rsum=0;
+  sk.forEach(function(x){dsum+=x.desc;bsum+=x.body;rsum+=x.refs});
+  var total=dsum+bsum+rsum, pct=total/CTX*100;
+  curTotals={total:total,pct:pct,desc:dsum,body:bsum,refs:rsum,sk:sk,label:set.label};
+
+  $("repoName").textContent=set.label+" · "+sk.length+" skills";
+  var g=$("gauge"); g.innerHTML="";
+  function seg(cls,start,w){var d=document.createElement("div");d.className="seg "+cls;
+    d.style.left=(start/CTX*100)+"%";d.style.width=(w/CTX*100)+"%";g.appendChild(d);}
+  seg("s1",0,dsum); seg("s2",dsum,bsum); seg("s3",dsum+bsum,rsum);
+  for(var t=50000;t<CTX;t+=50000){var tk=document.createElement("div");tk.className="tick";tk.style.left=(t/CTX*100)+"%";g.appendChild(tk);}
+
+  $("bignum").innerHTML="<b>"+fmt(total)+" tokens</b> — "+pct.toFixed(1)+"% of a 200k context window, gone before you type a word.";
+  $("subnum").textContent="Always loaded: "+fmt(dsum)+" · Loads on fire: "+fmt(bsum)+" · Lazy: "+fmt(rsum)+"  (0–200,000 token scale)";
+
+  var rows=$("rows"); rows.innerHTML="";
+  var max=tot(sk[0])||1;
+  sk.forEach(function(x,i){
+    var t=tot(x), v=verdict(t);
+    var row=document.createElement("div"); row.className="row";
+    var btn=document.createElement("button"); btn.type="button"; btn.className="rowbtn";
+    btn.innerHTML='<span class="caret">▶</span><span class="rk">'+(i+1)+'</span>'+
+      '<span class="nm"><span class="n">'+x.name+'</span><span class="mini"><i style="width:'+(t/max*100)+'%;background:var('+(v==="OBESE"?"--red":v==="HEAVY"?"--amber":"--acc")+')"></i></span></span>'+
+      '<span class="tok">'+fmt(t)+'</span><span class="alw">'+fmt(x.desc)+' on</span>'+
+      '<span class="pill '+v+'">'+v+'</span>';
+    var exp=document.createElement("div"); exp.className="exp";
+    var h='<div class="split">'+
+      '<div class="sbox"><div class="l">Description (always)</div><div class="v">'+fmt(x.desc)+'</div></div>'+
+      '<div class="sbox"><div class="l">SKILL.md body</div><div class="v">'+fmt(x.body)+'</div></div>'+
+      '<div class="sbox"><div class="l">References (lazy)</div><div class="v">'+fmt(x.refs)+'</div></div></div>';
+    x.findings.forEach(function(f){
+      h+='<div class="find"><span class="ic">▲</span><span>'+f+'</span><span class="fx">Fix with skill-diet</span></div>';
+    });
+    exp.innerHTML=h;
+    btn.onclick=function(){ row.classList.toggle("open"); };
+    row.appendChild(btn); row.appendChild(exp); rows.appendChild(row);
+  });
+  var obese=sk.filter(function(x){return tot(x)>2500}).length;
+  $("foot1").textContent="Tap a row for the token split and bloat findings. "+obese+" skill"+(obese===1?"":"s")+" over 2,500 tokens. Estimated savings if slimmed: ~"+fmt(Math.round(total*0.72))+" tokens (72%).";
+}
+
+/* tabs */
+function showTab(which){
+  var w=which==="W";
+  $("tabW").className=w?"on":""; $("tabL").className=w?"":"on";
+  $("viewW").classList.toggle("hid",!w); $("viewL").classList.toggle("hid",w);
+}
+$("tabW").onclick=function(){showTab("W")};
+$("tabL").onclick=function(){showTab("L")};
+$("again").onclick=function(){ $("app").classList.add("hid"); $("scale").classList.remove("hid"); window.scrollTo(0,0); };
+
+/* leaderboard */
+(function(){
+  var tb=$("lbBody");
+  LB.forEach(function(r,i){
+    var ch = r[3]==="NEW" ? '<span class="new">NEW</span>' :
+      (r[3]>0 ? '<span class="up">▲'+r[3]+'</span>' : (r[3]<0 ? '<span class="down">▼'+Math.abs(r[3])+'</span>' : '<span style="color:var(--mut)">—</span>'));
+    var tr=document.createElement("tr");
+    tr.innerHTML='<td style="color:var(--mut)">'+(i+1)+'</td><td>'+r[0]+'<div class="own">'+r[1]+'</div></td>'+
+      '<td class="r">'+fmt(r[2])+'</td><td class="r">'+ch+'</td>';
+    tb.appendChild(tr);
+  });
+})();
+
+/* share card */
+function scaleCard(){
+  var w=$("cardwrap").clientWidth||320, k=w/1200;
+  $("card").style.transform="scale("+k+")";
+  $("cardwrap").style.height=(675*k)+"px";
+}
+$("shareBtn").onclick=function(){
+  if(!curTotals) return;
+  var c=curTotals;
+  $("cRepo").textContent=c.label.replace("github.com/","");
+  $("cPct").textContent=c.pct.toFixed(1)+"%";
+  $("cSub").textContent="of your 200k context window — "+fmt(c.total)+" tokens gone before you type a word.";
+  var bar=$("cBar"); bar.innerHTML="";
+  function sg(col,v){var d=document.createElement("div");d.style.background=col;d.style.width=(v/CTX*100)+"%";bar.appendChild(d);}
+  sg("#ff6b6b",c.desc); sg("#f3b14e",c.body); sg("#6aa6ff",c.refs);
+  var t3=c.sk.slice(0,3).map(function(x){return x.name+" "+fmt(tot(x))}).join(" · ");
+  $("cTop").textContent="Top 3 heaviest: "+t3;
+  $("cCount").textContent=c.sk.length+" skills weighed";
+  $("modal").classList.add("on"); scaleCard();
+};
+window.addEventListener("resize",function(){ if($("modal").classList.contains("on")) scaleCard(); });
+$("closeM").onclick=function(){$("modal").classList.remove("on")};
+$("modal").addEventListener("click",function(e){ if(e.target===$("modal")) $("modal").classList.remove("on"); });
+function toast(msg){ var t=$("toast"); t.textContent=msg; t.classList.add("on"); setTimeout(function(){t.classList.remove("on")},1500); }
+$("copyCard").onclick=function(){toast("Copied.")};
+$("postX").onclick=function(){toast("Copied.")};
+})();
+</script>
+</body>
+</html>

@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-27T20:41:47.853Z",
+  "updated": "2026-10-28T20:54:37.984Z",
   "ideas": [
     {
       "id": "2026-10-22-agentgauntlet",
@@ -280,6 +280,66 @@
       "sources_count": 5,
       "superseded_by": null,
       "sibling": "2026-10-27-stalecheck"
+    },
+    {
+      "id": "2026-10-28-skillscale",
+      "number": 12,
+      "date": "2026-10-28",
+      "track": "build",
+      "short_name": "Skillscale",
+      "verdict": "dig_deeper",
+      "score": 8.5,
+      "scores": {
+        "wow": 8,
+        "shareability": 8.5,
+        "buildability": 9,
+        "freshness": 9,
+        "usefulness": 8
+      },
+      "effort": "a weekend",
+      "category": "Developer tools",
+      "tags": [
+        "agents",
+        "skills",
+        "tokens",
+        "devtools"
+      ],
+      "pain_type": "expressed",
+      "one_liner": "Paste a GitHub skills repo (or drop your .claude/skills folder) and Skillscale weighs every SKILL.md in tokens, shows what share of your agent's context window it eats before you type a word, and gives you a shareable \"context weigh-in\" card plus a public weekly leaderboard of the fattest skills in the ecosystem.",
+      "prototype_url": "https://yashsharma1911.github.io/granted/ideas/2026-10-28-skillscale/",
+      "sources_count": 17,
+      "superseded_by": null,
+      "sibling": "2026-10-28-backcheck"
+    },
+    {
+      "id": "2026-10-28-backcheck",
+      "number": 13,
+      "date": "2026-10-28",
+      "track": "venture",
+      "short_name": "Backcheck",
+      "verdict": "dig_deeper",
+      "score": 7.6,
+      "scores": {
+        "pain": 8,
+        "market_pull": 7.5,
+        "timing": 8,
+        "gap": 7.5,
+        "wedge": 7
+      },
+      "effort": "3+ months",
+      "category": "Back-office automation",
+      "tags": [
+        "construction",
+        "permitting",
+        "agents",
+        "document-ai"
+      ],
+      "pain_type": "expressed",
+      "one_liner": "For the permit coordinator / job captain at a 5-50 person architecture, engineering or multi-site-rollout team, Backcheck turns a city's plan-check correction letter PDF into a complete, agency-formatted resubmittal package — every comment parsed and numbered, routed to the right discipline owner, a drafted code-cited response linked to the revised sheet, and a backcheck that refuses to export until every comment is closed.",
+      "prototype_url": "https://yashsharma1911.github.io/granted/ideas/2026-10-28-backcheck/",
+      "sources_count": 32,
+      "superseded_by": null,
+      "sibling": "2026-10-28-skillscale"
     }
   ]
 }

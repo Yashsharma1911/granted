@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Backcheck — Resubmittal Agent</title>
+<style>
+:root{
+  --bg:#f4f5f7; --panel:#ffffff; --ink:#15181d; --muted:#646b78; --line:#e2e5ea;
+  --accent:#1f5eff; --green:#0f8a53; --greenbg:#e6f6ee; --red:#c62a2a; --redbg:#fdeceb;
+  --amber:#9a6400; --amberbg:#fff4de; --paper:#fbfaf6; --shadow:0 1px 3px rgba(16,20,28,.08),0 8px 24px rgba(16,20,28,.06);
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --bg:#0e1116; --panel:#161b22; --ink:#e9edf3; --muted:#9aa4b2; --line:#272e38;
+    --accent:#6b9bff; --green:#39c98a; --greenbg:#10291f; --red:#ff7a7a; --redbg:#2c1517;
+    --amber:#e9b64a; --amberbg:#2b2213; --paper:#1b1f26; --shadow:0 1px 3px rgba(0,0,0,.5);
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--ink);
+  font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  font-size:15px; line-height:1.45; -webkit-text-size-adjust:100%;
+}
+button{font:inherit;color:inherit;cursor:pointer}
+header.top{
+  position:sticky;top:0;z-index:30;background:var(--panel);border-bottom:1px solid var(--line);
+  padding:10px 14px;
+}
+.brandrow{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.logo{width:26px;height:26px;flex:none}
+.brand{font-weight:700;font-size:16px;letter-spacing:-.01em}
+.tag{color:var(--muted);font-size:13px}
+.demochip{margin-left:auto;font-size:11px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:3px 9px;white-space:nowrap}
+.stepper{display:flex;align-items:center;gap:6px;margin-top:10px;overflow-x:auto;padding-bottom:2px}
+.step{display:flex;align-items:center;gap:7px;border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-size:12.5px;color:var(--muted);white-space:nowrap;background:transparent}
+.step .dot{width:18px;height:18px;border-radius:50%;background:var(--line);color:var(--muted);display:grid;place-items:center;font-size:11px;font-weight:700}
+.step.active{border-color:var(--accent);color:var(--accent);background:color-mix(in srgb,var(--accent) 10%,transparent);font-weight:600}
+.step.active .dot{background:var(--accent);color:#fff}
+.step.done{border-color:var(--green);color:var(--green)}
+.step.done .dot{background:var(--green);color:#fff}
+.arrow{color:var(--muted);flex:none}
+main{display:grid;grid-template-columns:minmax(0,340px) minmax(0,1fr);gap:14px;padding:14px;max-width:1400px;margin:0 auto;align-items:start}
+@media (max-width:900px){main{grid-template-columns:1fr}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);overflow:hidden}
+.phead{display:flex;align-items:center;gap:8px;padding:11px 13px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.ptitle{font-weight:650;font-size:13.5px}
+.psub{font-size:11.5px;color:var(--muted)}
+.btn{border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:10px 14px;font-size:13.5px;font-weight:600;min-height:44px;display:inline-flex;align-items:center;justify-content:center;gap:7px}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.primary:hover{filter:brightness(1.07)}
+.btn.green{background:var(--green);border-color:var(--green);color:#fff}
+.btn.ghost{font-weight:500}
+.btn[disabled],.btn.disabled{opacity:1;background:var(--bg);color:var(--muted);border-color:var(--line);cursor:not-allowed;font-weight:500}
+.btn.block{width:100%}
+.scanwrap{padding:13px;max-height:62vh;overflow:auto}
+.scan{background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:16px 14px;font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-size:11.5px;line-height:1.5;color:var(--ink);position:relative;filter:contrast(1.02)}
+.scan:after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(105deg,rgba(0,0,0,.05) 0%,rgba(0,0,0,0) 22%,rgba(0,0,0,0) 78%,rgba(0,0,0,.05) 100%);border-radius:6px}
+.scanhead{text-align:center;border-bottom:2px solid currentColor;padding-bottom:7px;margin-bottom:9px}
+.scanhead b{display:block;font-size:12.5px;letter-spacing:.06em}
+.meta{display:grid;grid-template-columns:1fr 1fr;gap:1px 10px;font-size:10.5px;margin-bottom:10px;color:var(--muted)}
+.cmt{margin:0 0 8px;padding-left:2px}
+.cmt.bullet:before{content:"•  "}
+.margin-note{font-style:italic;transform:rotate(-1.1deg);border-left:3px solid var(--red);padding:3px 0 3px 7px;margin:9px 0 9px 14px;color:var(--red)}
+table.scantbl{width:100%;border-collapse:collapse;margin:8px 0;font-size:10.5px}
+table.scantbl td,table.scantbl th{border:1px solid var(--muted);padding:3px 5px;text-align:left}
+.stamp{position:absolute;top:8px;right:8px;border:2px solid var(--red);color:var(--red);font-weight:700;font-size:9px;letter-spacing:.1em;padding:3px 6px;transform:rotate(-8deg);opacity:.75;border-radius:3px}
+.toolbar{display:flex;gap:7px;align-items:center;flex-wrap:wrap;padding:11px 13px;border-bottom:1px solid var(--line)}
+.chipf{border:1px solid var(--line);background:transparent;border-radius:999px;padding:7px 12px;font-size:12.5px;min-height:38px}
+.chipf.on{background:var(--ink);color:var(--panel);border-color:var(--ink)}
+.emptystate{padding:46px 22px;text-align:center;color:var(--muted)}
+.emptystate svg{opacity:.5;margin-bottom:10px}
+.emptystate h3{color:var(--ink);margin:0 0 6px;font-size:15px}
+.emptystate p{margin:0 auto;max-width:320px;font-size:13px}
+.loading{padding:40px 22px;text-align:center;color:var(--muted);font-size:13px}
+.bar{height:6px;background:var(--line);border-radius:4px;overflow:hidden;max-width:280px;margin:14px auto 10px}
+.bar i{display:block;height:100%;width:0;background:var(--accent);border-radius:4px;transition:width .25s linear}
+.lline{font-size:12.5px;min-height:18px}
+.tblwrap{overflow-x:auto}
+table.grid{width:100%;border-collapse:collapse;font-size:13px;min-width:620px}
+table.grid th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);padding:9px 10px;border-bottom:1px solid var(--line);white-space:nowrap;background:var(--panel);position:sticky;top:0}
+table.grid th.sortable{cursor:pointer}
+table.grid th.sortable:hover{color:var(--accent)}
+table.grid td{padding:10px;border-bottom:1px solid var(--line);vertical-align:top}
+table.grid tr.row{cursor:pointer}
+table.grid tr.row:hover td{background:color-mix(in srgb,var(--accent) 6%,transparent)}
+tr.closed td{background:var(--greenbg)}
+tr.closed:hover td{background:var(--greenbg)}
+.num{font-variant-numeric:tabular-nums;font-weight:650;white-space:nowrap}
+.ctext{max-width:360px}
+.trunc{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.chip{display:inline-block;font-size:11px;font-weight:650;padding:3px 8px;border-radius:999px;white-space:nowrap}
+.d-Fire{background:#fde8e8;color:#b02424}.d-Arch{background:#e7edff;color:#2a49b8}
+.d-Struct{background:#ece6fb;color:#5b3bb5}.d-MEP{background:#e3f3ec;color:#0c7a4c}
+.d-Civil{background:#fdf0dc;color:#8a5a08}
+@media (prefers-color-scheme:dark){
+  .d-Fire{background:#3a1a1a;color:#ff9b9b}.d-Arch{background:#18224a;color:#9ab4ff}
+  .d-Struct{background:#261c45;color:#c0a9ff}.d-MEP{background:#10301f;color:#64d6a2}
+  .d-Civil{background:#332512;color:#efba63}
+}
+.st{font-size:11.5px;font-weight:650;display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.st.open{color:var(--amber)}.st.closed{color:var(--green)}
+.st i{width:8px;height:8px;border-radius:50%;background:currentColor;display:inline-block}
+.flag{color:var(--red);font-size:10.5px;font-weight:700;display:block;margin-top:4px}
+.code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11.5px;color:var(--muted)}
+.statusbar{display:flex;align-items:center;gap:13px;padding:12px 13px;border-top:1px solid var(--line);flex-wrap:wrap}
+.ring{flex:none}
+.ringtxt{font-size:13px;font-weight:650;line-height:1.25}
+.ringtxt span{display:block;font-weight:400;color:var(--muted);font-size:11.5px}
+.spacer{flex:1 1 auto;min-width:4px}
+/* drawer */
+.scrim{position:fixed;inset:0;background:rgba(10,13,18,.5);opacity:0;pointer-events:none;transition:opacity .2s;z-index:40}
+.scrim.on{opacity:1;pointer-events:auto}
+.drawer{position:fixed;top:0;right:0;height:100%;width:min(460px,100%);background:var(--panel);border-left:1px solid var(--line);z-index:50;transform:translateX(102%);transition:transform .26s ease;display:flex;flex-direction:column}
+.drawer.on{transform:none}
+@media (max-width:620px){.drawer{top:auto;bottom:0;height:92%;width:100%;border-left:none;border-top:1px solid var(--line);border-radius:16px 16px 0 0;transform:translateY(102%)}.drawer.on{transform:none}}
+.dhead{display:flex;align-items:flex-start;gap:10px;padding:14px;border-bottom:1px solid var(--line)}
+.dbody{padding:14px;overflow:auto;flex:1}
+.dfoot{padding:12px 14px;border-top:1px solid var(--line);display:flex;gap:9px}
+.lbl{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:650;margin:16px 0 6px}
+.lbl:first-child{margin-top:0}
+.verbatim{background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:11px;font-size:13.5px}
+.source{border:1px solid var(--accent);border-left:4px solid var(--accent);border-radius:8px;padding:11px;font-size:12.5px;background:color-mix(in srgb,var(--accent) 7%,transparent)}
+.source b{display:block;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11.5px;margin-bottom:4px}
+textarea,select,input[type=text]{
+  width:100%;font:inherit;font-size:13.5px;color:var(--ink);background:var(--panel);
+  border:1px solid var(--line);border-radius:9px;padding:10px;min-height:44px
+}
+textarea{min-height:130px;resize:vertical;line-height:1.5}
+textarea:focus,select:focus,input:focus{outline:2px solid var(--accent);outline-offset:-1px;border-color:var(--accent)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.hint{font-size:11.5px;color:var(--muted);margin-top:6px}
+.warn{font-size:12.5px;color:var(--red);background:var(--redbg);border-radius:8px;padding:8px 10px;margin-top:8px;display:none}
+.warn.on{display:block}
+.gate{padding:13px;border-top:1px solid var(--line);background:var(--bg)}
+.gatenote{font-size:12px;color:var(--muted);text-align:center;margin-top:8px}
+/* deliverable */
+.doc{padding:16px;max-height:none}
+.docpaper{background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:20px 18px;font-size:13px}
+.docpaper h2{font-size:15px;margin:0 0 3px;letter-spacing:-.01em}
+.docpaper h3{font-size:12px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin:22px 0 8px;border-bottom:1px solid var(--line);padding-bottom:5px}
+.docmeta{font-size:11.5px;color:var(--muted);margin-bottom:14px}
+.matrix{width:100%;border-collapse:collapse;font-size:12px}
+.matrix th{text-align:left;font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);border-bottom:1px solid var(--line);padding:6px 7px}
+.matrix td{border-bottom:1px solid var(--line);padding:8px 7px;vertical-align:top}
+.matrix td.rsp{color:var(--ink)}
+.cklist{list-style:none;padding:0;margin:0;font-size:12.5px}
+.cklist li{display:flex;gap:8px;padding:5px 0;align-items:flex-start}
+.ck{color:var(--green);flex:none;margin-top:2px}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 0 14px}
+.stat{border:1px solid var(--line);border-radius:11px;padding:11px 12px}
+.stat .k{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:700}
+.stat .v{font-size:17px;font-weight:700;margin-top:3px;letter-spacing:-.02em}
+.stat.after{border-color:var(--green);background:var(--greenbg)}
+.stat.after .v{color:var(--green)}
+.toast{position:fixed;left:50%;bottom:20px;transform:translate(-50%,24px);background:var(--ink);color:var(--bg);padding:11px 16px;border-radius:10px;font-size:13px;font-weight:600;opacity:0;pointer-events:none;transition:.22s;z-index:60;max-width:92vw;text-align:center}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+footer{text-align:center;color:var(--muted);font-size:11.5px;padding:8px 14px 26px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="brandrow">
+    <svg class="logo" viewBox="0 0 32 32" aria-hidden="true"><rect x="1.5" y="1.5" width="29" height="29" rx="8" fill="#1f5eff"/><path d="M9 16.5l4.6 4.6L23.5 11" stroke="#fff" stroke-width="3.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <div>
+      <div class="brand">Backcheck</div>
+      <div class="tag">Turns a city correction letter into a closed-out resubmittal package.</div>
+    </div>
+    <span class="demochip">Demo data</span>
+  </div>
+  <nav class="stepper" id="stepper" aria-label="Progress">
+    <div class="step" id="s1"><span class="dot">1</span>Correction letter</div>
+    <svg class="arrow" width="14" height="10" viewBox="0 0 14 10" aria-hidden="true"><path d="M1 5h11M8.5 1.5L12 5l-3.5 3.5" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <div class="step active" id="s2"><span class="dot">2</span>Backcheck</div>
+    <svg class="arrow" width="14" height="10" viewBox="0 0 14 10" aria-hidden="true"><path d="M1 5h11M8.5 1.5L12 5l-3.5 3.5" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <div class="step" id="s3"><span class="dot">3</span>Resubmittal package</div>
+  </nav>
+</header>
+
+<main>
+  <!-- LEFT: scanned letter -->
+  <section class="panel" aria-label="Correction letter">
+    <div class="phead">
+      <div>
+        <div class="ptitle">Correction_Notice_6912845-CN_Cycle2.pdf</div>
+        <div class="psub">Scanned · 3 pages · received 2026‑10‑12</div>
+      </div>
+    </div>
+    <div style="padding:13px 13px 0"><button class="btn primary block" id="parseBtn">
+      <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M2 8h3l2-5 2 10 2-5h3" stroke="currentColor" stroke-width="1.7" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Parse letter</button></div>
+    <div class="scanwrap">
+      <div class="scan">
+        <div class="stamp">CORRECTIONS<br>REQUIRED</div>
+        <div class="scanhead">
+          <b>CITY OF SEATTLE — SDCI</b>
+          <b>PLAN REVIEW CORRECTION NOTICE</b>
+        </div>
+        <div class="meta">
+          <div>Permit #6912845-CN</div><div>Review Cycle 2 of 3</div>
+          <div>Reviewer: J. Alvarez</div><div>Date: 2026-10-12</div>
+          <div style="grid-column:1/-1">Response required within 30 days of the date above.</div>
+        </div>
+        <p class="cmt">1. Provide hydraulic calculations for the most remote area per NFPA 13 §27.2; calcs submitted are for an earlier sprinkler layout.</p>
+        <p class="cmt">2. Sheet A2.1 — exit access travel distance appears to exceed 250 ft (IBC Table 1017.2). Clarify or provide revised plan.</p>
+        <p class="cmt">3. Waterflow and tamper switch connections to the fire alarm panel not shown. Reference FA sheets.</p>
+        <p class="cmt">C-4. Drainage: provide revised downspout tie-in detail; previous response did not address 2026-08-30 comment.</p>
+        <p class="cmt bullet">Energy code compliance form COMcheck not included in submittal.</p>
+        <p class="cmt">6. Occupant load calculation on A0.1 does not match plumbing fixture count on P1.0.</p>
+        <div class="margin-note">7 — Seal missing on S-sheets!! chk w/ EOR</div>
+        <p class="cmt">8. Accessible route slope at main entry not dimensioned — ADA / ICC A117.1.</p>
+        <table class="scantbl">
+          <tr><th colspan="2">9. DOOR SCHEDULE / HARDWARE</th></tr>
+          <tr><td>Exit 2</td><td>Door hardware not listed; provide hardware group.</td></tr>
+          <tr><td>Exit 3</td><td>Panic hardware required per IBC 1010.2.9 — not shown.</td></tr>
+        </table>
+        <p class="cmt">10. Geotechnical report referenced on S0.1 is not attached.</p>
+        <p class="cmt">11. Provide manufacturer's cut sheets for rooftop units RTU-1 through RTU-3.</p>
+        <p class="cmt">12. Comment #4 from Cycle 1 remains unresolved.</p>
+        <p style="margin-top:12px;border-top:1px solid currentColor;padding-top:7px;font-size:10px">Resubmittal shall include a written response to each comment, keyed to the comment number above. Incomplete responses will be returned without review.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- RIGHT: workspace -->
+  <section class="panel" aria-label="Backcheck workspace">
+    <div class="phead">
+      <div style="flex:1 1 180px">
+        <div class="ptitle" id="wsTitle">Comment workspace</div>
+        <div class="psub" id="wsSub">Permit #6912845-CN · Cycle 2 of 3</div>
+      </div>
+      <button class="btn ghost" id="backToTable" style="display:none">← Back to comments</button>
+    </div>
+
+    <!-- empty -->
+    <div id="viewEmpty" class="emptystate">
+      <svg width="46" height="46" viewBox="0 0 48 48" aria-hidden="true"><rect x="10" y="5" width="28" height="38" rx="3" stroke="currentColor" stroke-width="2.2" fill="none"/><path d="M16 15h16M16 22h16M16 29h10" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+      <h3>No comments parsed yet</h3>
+      <p>Hit <b>Parse letter</b> on the correction notice to extract every comment, match code sections and draft responses.</p>
+    </div>
+
+    <!-- loading -->
+    <div id="viewLoading" class="loading" style="display:none">
+      <div><b style="color:var(--ink)">Parsing correction notice…</b></div>
+      <div class="bar"><i id="barFill"></i></div>
+      <div class="lline" id="loadLine">Reading page 1 of 3…</div>
+    </div>
+
+    <!-- table -->
+    <div id="viewTable" style="display:none">
+      <div class="toolbar" role="group" aria-label="Filter by discipline">
+        <span class="psub" style="margin-right:2px">Discipline:</span>
+        <button class="chipf on" data-f="All">All 12</button>
+        <button class="chipf" data-f="Fire">Fire</button>
+        <button class="chipf" data-f="Arch">Arch</button>
+        <button class="chipf" data-f="Struct">Struct</button>
+        <button class="chipf" data-f="MEP">MEP</button>
+        <button class="chipf" data-f="Civil">Civil</button>
+        <span class="spacer"></span>
+        <button class="btn ghost" id="fillAll" style="min-height:38px;padding:7px 12px">⚡ Fill all remaining with drafts</button>
+      </div>
+      <div class="tblwrap">
+        <table class="grid">
+          <thead><tr>
+            <th class="sortable" data-s="id">#</th>
+            <th>Comment</th>
+            <th class="sortable" data-s="disc">Discipline</th>
+            <th class="sortable" data-s="code">Code reference</th>
+            <th class="sortable" data-s="owner">Owner</th>
+            <th class="sortable" data-s="status">Status</th>
+            <th class="sortable" data-s="sheet">Sheet</th>
+          </tr></thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+      <div id="noMatch" class="emptystate" style="display:none;padding:28px"><p>No comments in that discipline.</p></div>
+      <div class="statusbar">
+        <svg class="ring" width="52" height="52" viewBox="0 0 52 52" aria-hidden="true">
+          <circle cx="26" cy="26" r="21" stroke="var(--line)" stroke-width="7" fill="none"/>
+          <circle id="ringArc" cx="26" cy="26" r="21" stroke="var(--accent)" stroke-width="7" fill="none" stroke-linecap="round"
+            stroke-dasharray="131.9" stroke-dashoffset="131.9" transform="rotate(-90 26 26)" style="transition:stroke-dashoffset .4s,stroke .4s"/>
+        </svg>
+        <div class="ringtxt"><span id="ringLabel">0 of 12 comments closed</span><span id="ringSub">3 carried over from Cycle 1</span></div>
+      </div>
+      <div class="gate">
+        <button class="btn block disabled" id="exportBtn" disabled>12 comments still open — Backcheck will not export an incomplete package.</button>
+        <div class="gatenote" id="gateNote">Every comment needs an accepted response before export unlocks.</div>
+      </div>
+    </div>
+
+    <!-- deliverable -->
+    <div id="viewDoc" style="display:none" class="doc">
+      <div class="stats">
+        <div class="stat"><div class="k">Before</div><div class="v">~6.5 hrs</div><div class="psub">Excel + Bluebeam across 4 consultants</div></div>
+        <div class="stat after"><div class="k">After</div><div class="v">18 minutes</div><div class="psub">12 / 12 comments closed</div></div>
+      </div>
+      <div class="docpaper">
+        <h2>Response to Plan Review Corrections</h2>
+        <div class="docmeta">Permit #6912845-CN · Review Cycle 2 of 3 · City of Seattle SDCI · Attn: J. Alvarez · Submitted 2026-10-28</div>
+        <p style="margin:0 0 8px">Dear Mr. Alvarez,</p>
+        <p style="margin:0 0 8px">On behalf of the design team, please find below our written responses to each of the twelve (12) comments issued in the Cycle 2 correction notice dated 2026-10-12. Responses are keyed to your comment numbering. Revised sheets are clouded and deltas are keyed to Revision Δ2. Three comments carried over from Cycle 1 are called out explicitly and resolved in full.</p>
+        <p style="margin:0 0 8px">We respectfully request approval of this resubmittal. Please contact the undersigned with any questions.</p>
+        <p style="margin:0">Sincerely,<br>M. Okafor, AIA — Project Architect, Harbor Line Studio</p>
+
+        <h3>Comment / Response Matrix</h3>
+        <div style="overflow-x:auto"><table class="matrix"><thead><tr><th>#</th><th>Comment</th><th>Response</th><th>Code ref.</th><th>Revised sheet</th></tr></thead><tbody id="matrixBody"></tbody></table></div>
+
+        <h3>Attachments checklist</h3>
+        <ul class="cklist" id="ckBody"></ul>
+      </div>
+      <div style="display:flex;gap:9px;margin-top:13px;flex-wrap:wrap">
+        <button class="btn green" id="dlBtn">Download PDF + matrix (.xlsx)</button>
+        <button class="btn ghost" id="againBtn">Back to comments</button>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>Prototype by Granted, inspired by your bookmarks</footer>
+
+<div class="scrim" id="scrim"></div>
+<aside class="drawer" id="drawer" aria-hidden="true" aria-label="Comment detail">
+  <div class="dhead">
+    <div style="flex:1">
+      <div class="ptitle" id="dTitle">Comment</div>
+      <div class="psub" id="dSub"></div>
+    </div>
+    <button class="btn ghost" id="dClose" style="min-height:38px;padding:6px 11px" aria-label="Close">✕</button>
+  </div>
+  <div class="dbody">
+    <div class="lbl">Verbatim comment</div>
+    <div class="verbatim" id="dVerb"></div>
+    <div class="lbl">Matched code section</div>
+    <div class="source" id="dSource"></div>
+    <div class="lbl">Backcheck-drafted response <span style="text-transform:none;letter-spacing:0;font-weight:400">(editable)</span></div>
+    <textarea id="dResp" spellcheck="false"></textarea>
+    <div class="warn" id="dWarn">A response can't be empty — write at least a sentence before accepting.</div>
+    <div class="two" style="margin-top:14px">
+      <div><div class="lbl" style="margin:0 0 6px">Owner</div>
+        <select id="dOwner">
+          <option>Harbor Line Studio (Arch)</option>
+          <option>Pinnacle Structural</option>
+          <option>Cascade MEP Engineers</option>
+          <option>Redline Fire Protection</option>
+          <option>Sound Civil Group</option>
+          <option>Unassigned</option>
+        </select></div>
+      <div><div class="lbl" style="margin:0 0 6px">Revised sheet</div>
+        <input type="text" id="dSheet" placeholder="e.g. A2.1"></div>
+    </div>
+    <div class="hint" id="dHint"></div>
+  </div>
+  <div class="dfoot">
+    <button class="btn primary" id="dAccept" style="flex:1">Accept response</button>
+    <button class="btn ghost" id="dReopen" style="display:none">Reopen</button>
+  </div>
+</aside>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function(){
+"use strict";
+var DATA = [
+ {id:"1",disc:"Fire",code:"NFPA 13 §27.2",owner:"Redline Fire Protection",sheet:"FP2.0",carry:false,
+  text:"Provide hydraulic calculations for the most remote area per NFPA 13 §27.2; calcs submitted are for an earlier sprinkler layout.",
+  src:"NFPA 13 (2022) §27.2 — Hydraulic calculation procedures. The design area shall be the hydraulically most demanding area; calculations shall reflect the sprinkler layout shown on the permitted drawings.",
+  resp:"Response: Updated hydraulic calculations for the hydraulically most remote area have been prepared against the current sprinkler layout dated 2026-10-20 and are attached as Appendix A. Calculations supersede the prior set and reflect Sheet FP2.0, Δ2. Per NFPA 13 §27.2 the design area is the most demanding 1,500 sq ft; density 0.10 gpm/sq ft is achieved with 12 psi safety margin.",
+  att:"Appendix A — Hydraulic calculations, most remote area (2026-10-20)"},
+ {id:"2",disc:"Arch",code:"IBC 2021 §1017.2",owner:"Harbor Line Studio (Arch)",sheet:"A2.1",carry:false,
+  text:"Sheet A2.1 — exit access travel distance appears to exceed 250 ft (IBC Table 1017.2). Clarify or provide revised plan.",
+  src:"IBC 2021 §1017.2 — Exit access travel distance. Table 1017.2 permits 250 ft for Group B occupancies with a sprinkler system installed in accordance with §903.3.1.1.",
+  resp:"Response: Travel distance has been revised to 238 ft. See revised Sheet A2.1, Detail 3/A2.1, and the revised exit path diagram. Refer to IBC §1017.2 for the applicable limit.",
+  att:"Revised Sheet A2.1 with exit path diagram (Δ2)"},
+ {id:"3",disc:"Fire",code:"NFPA 72 §17.12",owner:"Redline Fire Protection",sheet:"FA1.1",carry:false,
+  text:"Waterflow and tamper switch connections to the fire alarm panel not shown. Reference FA sheets.",
+  src:"NFPA 72 (2022) §17.12 — Supervisory signal-initiating devices. Valve supervisory and waterflow devices shall be connected to and monitored by the fire alarm control unit.",
+  resp:"Response: Waterflow switch (FS-1) and tamper switches (TS-1, TS-2) are now shown connected to FACP on revised Sheet FA1.1 with riser diagram 2/FA1.1. Monitoring arrangement complies with NFPA 72 §17.12; tamper switches report as supervisory, waterflow as alarm.",
+  att:"Revised Sheet FA1.1 — fire alarm riser and device connections"},
+ {id:"4",disc:"Civil",code:"SMC 22.800 / 2026-08-30 comment",owner:"Sound Civil Group",sheet:"C3.2",carry:true,
+  text:"C-4. Drainage: provide revised downspout tie-in detail; previous response did not address 2026-08-30 comment.",
+  src:"Seattle Stormwater Code SMC 22.800–22.808 — Roof drainage shall be tightlined to an approved discharge point; connection details shall be shown on the civil plans.",
+  resp:"Response: Carried-over comment acknowledged. Revised downspout tie-in detail 5/C3.2 now shows the 6\" tightline connection, cleanout at grade and bedding section, directly addressing the 2026-08-30 comment which our Cycle 1 response did not fully answer. All six downspout locations are keyed on C3.2.",
+  att:"Revised Sheet C3.2 — downspout tie-in detail 5/C3.2"},
+ {id:"5",disc:"MEP",code:"WSEC-C 2021 §C401.2",owner:"Cascade MEP Engineers",sheet:"M0.2",carry:false,
+  text:"Energy code compliance form COMcheck not included in submittal.",
+  src:"Washington State Energy Code — Commercial §C401.2 — Compliance documentation. A completed compliance report shall be submitted demonstrating envelope, mechanical and lighting compliance.",
+  resp:"Response: COMcheck report (envelope, mechanical, interior lighting) generated 2026-10-21 is attached as Appendix B and reproduced on Sheet M0.2. Project shows 7.4% better than the WSEC-C 2021 baseline.",
+  att:"Appendix B — COMcheck compliance report (2026-10-21)"},
+ {id:"6",disc:"Arch",code:"IBC 2021 §1004 / UPC Table 422.1",owner:"Harbor Line Studio (Arch)",sheet:"A0.1, P1.0",carry:false,
+  text:"Occupant load calculation on A0.1 does not match plumbing fixture count on P1.0.",
+  src:"IBC 2021 §1004.5 and UPC Table 422.1 — Minimum plumbing fixtures shall be based on the occupant load determined in accordance with §1004.",
+  resp:"Response: Occupant load has been reconciled at 214 occupants (107 M / 107 F). Sheet A0.1 occupant load table and Sheet P1.0 fixture count schedule have both been revised to match; fixture counts now exceed UPC Table 422.1 minimums by one lavatory per group.",
+  att:"Revised Sheets A0.1 and P1.0 — reconciled occupant load / fixture tables"},
+ {id:"7",disc:"Struct",code:"WAC 196-23-020",owner:"Pinnacle Structural",sheet:"S1.0–S4.2",carry:false,
+  text:"(Margin note) Seal missing on S-sheets — check with EOR.",
+  src:"WAC 196-23-020 — Use of seal and signature. All structural documents issued for permit shall bear the seal, signature and date of the licensed engineer in responsible charge.",
+  resp:"Response: All structural sheets S1.0 through S4.2 have been sealed, signed and dated by the Engineer of Record (K. Breen, PE #48213) in the attached resubmittal set, in accordance with WAC 196-23-020.",
+  att:"Sealed structural set S1.0–S4.2 (K. Breen, PE #48213)"},
+ {id:"8",disc:"Arch",code:"ICC A117.1 §403.3",owner:"Harbor Line Studio (Arch)",sheet:"A1.1",carry:false,
+  text:"Accessible route slope at main entry not dimensioned — ADA / ICC A117.1.",
+  src:"ICC A117.1 (2017) §403.3 — Slope. The running slope of walking surfaces shall not exceed 1:20; cross slope shall not exceed 1:48.",
+  resp:"Response: Accessible route at the main entry is now fully dimensioned on Sheet A1.1 with spot elevations at 10 ft intervals. Running slope is 1:24 and cross slope 1:60, both within the limits of ICC A117.1 §403.3. No ramp is required.",
+  att:"Revised Sheet A1.1 — accessible route slopes and spot elevations"},
+ {id:"9",disc:"Arch",code:"IBC 2021 §1010.2.9",owner:"Harbor Line Studio (Arch)",sheet:"A6.1",carry:false,
+  text:"Door schedule table — Exit 2: door hardware not listed, provide hardware group. Exit 3: panic hardware required per IBC 1010.2.9, not shown.",
+  src:"IBC 2021 §1010.2.9 — Panic and fire exit hardware. Doors serving a Group A or E occupancy, or any space with an occupant load of 50 or more equipped with a latch, shall be equipped with panic hardware.",
+  resp:"Response: Door schedule on revised Sheet A6.1 now lists Hardware Group HW-04 at Exit 2 and Hardware Group HW-07 (listed panic hardware, Von Duprin 99 series or equal) at Exit 3, satisfying IBC §1010.2.9. Both exits serve occupant loads above 50.",
+  att:"Revised Sheet A6.1 — door and hardware schedule"},
+ {id:"10",disc:"Struct",code:"IBC 2021 §1803.6",owner:"Pinnacle Structural",sheet:"S0.1",carry:true,
+  text:"Geotechnical report referenced on S0.1 is not attached.",
+  src:"IBC 2021 §1803.6 — Reporting. The geotechnical investigation report shall be submitted to the building official as part of the permit documents.",
+  resp:"Response: Carried-over item. The geotechnical investigation report by Puget Terra Consultants dated 2026-05-14 (Project 26-0411) is attached in full as Appendix C and is referenced in General Note 4 on revised Sheet S0.1, per IBC §1803.6.",
+  att:"Appendix C — Geotechnical report, Puget Terra 26-0411 (2026-05-14)"},
+ {id:"11",disc:"MEP",code:"IMC 2021 §301.4",owner:"Cascade MEP Engineers",sheet:"M4.1",carry:false,
+  text:"Provide manufacturer's cut sheets for rooftop units RTU-1 through RTU-3.",
+  src:"IMC 2021 §301.4 — Listed and labeled. Mechanical equipment shall be listed and labeled for the application; manufacturer's data shall be provided for review.",
+  resp:"Response: Manufacturer's cut sheets for RTU-1, RTU-2 and RTU-3 (Trane Precedent, 7.5 / 10 / 10 ton, AHRI certified) are attached as Appendix D with weights and curb details coordinated to Sheet M4.1 and structural roof framing on S3.1.",
+  att:"Appendix D — RTU-1/2/3 manufacturer cut sheets and curb details"},
+ {id:"12",disc:"Fire",code:"IFC 2021 §507.5.1 (Cycle 1 #4)",owner:"Redline Fire Protection",sheet:"C1.1, FP1.0",carry:true,
+  text:"Comment #4 from Cycle 1 remains unresolved.",
+  src:"IFC 2021 §507.5.1 — Where required. A fire hydrant shall be located within 400 ft of all portions of the facility as measured by an approved route around the exterior.",
+  resp:"Response: Carried-over Cycle 1 comment #4 is now fully resolved. A new private hydrant H-2 has been added 180 ft from the northeast corner; the hose-lay diagram on revised Sheet C1.1 demonstrates all portions of the building are within 400 ft per IFC §507.5.1. Fire department connection relocated accordingly on FP1.0.",
+  att:"Revised Sheets C1.1 and FP1.0 — hydrant H-2 and hose-lay diagram"}
+];
+
+var state = DATA.map(function(c){
+  return {id:c.id,disc:c.disc,code:c.code,owner:c.owner,sheet:c.sheet,carry:c.carry,
+          text:c.text,src:c.src,resp:c.resp,att:c.att,closed:false};
+});
+var filter="All", sortKey="id", sortDir=1, openId=null, parsed=false;
+
+function $(id){return document.getElementById(id);}
+function esc(s){return String(s).replace(/[&<>"]/g,function(m){return({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m]);});}
+function toast(msg){var t=$("toast");t.textContent=msg;t.classList.add("on");clearTimeout(t._h);t._h=setTimeout(function(){t.classList.remove("on");},2200);}
+function closedCount(){var n=0;state.forEach(function(c){if(c.closed)n++;});return n;}
+
+/* ---- parse animation ---- */
+var LINES=["Reading page 1 of 3…","OCR on scanned margin notes…","Splitting 12 comments from mixed formats…","Matching code sections (IBC / NFPA / WSEC / ICC A117.1)…","Assigning disciplines and consultant owners…","Drafting responses from the revised sheet set…"];
+$("parseBtn").addEventListener("click",function(){
+  if(parsed){ showTable(); toast("Already parsed — 12 comments loaded."); return; }
+  var btn=this; btn.disabled=true; btn.style.opacity=".6";
+  show("viewLoading");
+  var i=0,fill=$("barFill"),line=$("loadLine");
+  var iv=setInterval(function(){
+    i++;
+    fill.style.width=Math.min(100,Math.round(i/LINES.length*100))+"%";
+    line.textContent=LINES[Math.min(i,LINES.length-1)];
+    if(i>=LINES.length){
+      clearInterval(iv);
+      setTimeout(function(){
+        parsed=true; btn.disabled=false; btn.style.opacity="1";
+        btn.innerHTML="✓ Letter parsed — 12 comments";
+        showTable(); render();
+        toast("12 comments extracted · 3 carried over from Cycle 1");
+      },260);
+    }
+  },250);
+});
+
+function show(which){
+  ["viewEmpty","viewLoading","viewTable","viewDoc"].forEach(function(v){$(v).style.display="none";});
+  $(which).style.display= which==="viewDoc" ? "block" : (which==="viewTable"?"block":"block");
+}
+function setStep(n){
+  [1,2,3].forEach(function(i){
+    var el=$("s"+i); el.className="step"+(i===n?" active":(i<n?" done":""));
+  });
+}
+function showTable(){
+  show("viewTable"); setStep(2);
+  $("wsTitle").textContent="Comment workspace";
+  $("wsSub").textContent="Permit #6912845-CN · Cycle 2 of 3";
+  $("backToTable").style.display="none";
+}
+
+/* ---- table ---- */
+function sortedRows(){
+  var rows=state.filter(function(c){return filter==="All"||c.disc===filter;});
+  var ord={id:function(c){return parseInt(c.id,10);},disc:function(c){return c.disc;},
+           code:function(c){return c.code;},owner:function(c){return c.owner;},
+           status:function(c){return c.closed?1:0;},sheet:function(c){return c.sheet;}};
+  var f=ord[sortKey]||ord.id;
+  return rows.slice().sort(function(a,b){
+    var x=f(a),y=f(b);
+    if(x<y)return -1*sortDir; if(x>y)return 1*sortDir;
+    return parseInt(a.id,10)-parseInt(b.id,10);
+  });
+}
+function render(){
+  var rows=sortedRows(), tb=$("tbody"), html="";
+  rows.forEach(function(c){
+    html+='<tr class="row'+(c.closed?" closed":"")+'" data-id="'+c.id+'" tabindex="0">'+
+      '<td class="num">'+c.id+'</td>'+
+      '<td class="ctext"><div class="trunc">'+esc(c.text)+'</div>'+
+        (c.carry?'<span class="flag">⚑ Carried over from Cycle 1</span>':'')+'</td>'+
+      '<td><span class="chip d-'+c.disc+'">'+c.disc+'</span></td>'+
+      '<td class="code">'+esc(c.code)+'</td>'+
+      '<td style="font-size:12.5px">'+esc(c.owner)+'</td>'+
+      '<td><span class="st '+(c.closed?"closed":"open")+'"><i></i>'+(c.closed?"Closed":"Open")+'</span></td>'+
+      '<td class="code">'+esc(c.sheet)+'</td></tr>';
+  });
+  tb.innerHTML=html;
+  $("noMatch").style.display=rows.length?"none":"block";
+  updateProgress();
+}
+$("tbody").addEventListener("click",function(e){
+  var tr=e.target.closest("tr.row"); if(tr) openDrawer(tr.getAttribute("data-id"));
+});
+$("tbody").addEventListener("keydown",function(e){
+  if(e.key!=="Enter"&&e.key!==" ")return;
+  var tr=e.target.closest("tr.row"); if(tr){e.preventDefault();openDrawer(tr.getAttribute("data-id"));}
+});
+Array.prototype.forEach.call(document.querySelectorAll("th.sortable"),function(th){
+  th.addEventListener("click",function(){
+    var k=th.getAttribute("data-s");
+    if(sortKey===k){sortDir=-sortDir;}else{sortKey=k;sortDir=1;}
+    render();
+  });
+});
+Array.prototype.forEach.call(document.querySelectorAll(".chipf"),function(b){
+  b.addEventListener("click",function(){
+    Array.prototype.forEach.call(document.querySelectorAll(".chipf"),function(x){x.classList.remove("on");});
+    b.classList.add("on"); filter=b.getAttribute("data-f"); render();
+  });
+});
+
+/* ---- progress + gate ---- */
+function updateProgress(){
+  var n=closedCount(), C=131.9;
+  $("ringArc").setAttribute("stroke-dashoffset",String(C-(C*n/12)));
+  $("ringArc").setAttribute("stroke",n===12?"var(--green)":"var(--accent)");
+  $("ringLabel").textContent=n+" of 12 comments closed";
+  var carryOpen=state.filter(function(c){return c.carry&&!c.closed;}).length;
+  $("ringSub").textContent = n===12 ? "All disciplines signed off" :
+    (carryOpen?carryOpen+" Cycle 1 carry-overs still open":(12-n)+" remaining");
+  var btn=$("exportBtn");
+  if(n===12){
+    btn.disabled=false; btn.classList.remove("disabled"); btn.classList.add("green");
+    btn.textContent="Export resubmittal package →";
+    $("gateNote").textContent="All 12 responses accepted. Package is complete.";
+  }else{
+    btn.disabled=true; btn.classList.add("disabled"); btn.classList.remove("green");
+    btn.textContent=(12-n)+" comment"+((12-n)===1?"":"s")+" still open — Backcheck will not export an incomplete package.";
+    $("gateNote").textContent="Every comment needs an accepted response before export unlocks.";
+  }
+}
+
+/* ---- drawer ---- */
+function find(id){for(var i=0;i<state.length;i++){if(state[i].id===id)return state[i];}return null;}
+function openDrawer(id){
+  var c=find(id); if(!c)return;
+  openId=id;
+  $("dTitle").textContent="Comment "+c.id+" · "+c.disc;
+  $("dSub").innerHTML=(c.carry?'<span style="color:var(--red);font-weight:650">⚑ Carried over from Cycle 1</span> · ':'')+"Permit #6912845-CN · Cycle 2";
+  $("dVerb").textContent=c.text;
+  $("dSource").innerHTML="<b>"+esc(c.code)+"</b>"+esc(c.src);
+  $("dResp").value=c.resp;
+  $("dSheet").value=c.sheet;
+  var sel=$("dOwner"), found=false;
+  for(var i=0;i<sel.options.length;i++){if(sel.options[i].value===c.owner){sel.selectedIndex=i;found=true;}}
+  if(!found)sel.selectedIndex=sel.options.length-1;
+  $("dWarn").classList.remove("on");
+  $("dHint").textContent=c.closed?"Accepted — this response is locked into the package.":"Draft generated by Backcheck from the revised sheet set. Edit freely.";
+  $("dAccept").style.display=c.closed?"none":"inline-flex";
+  $("dReopen").style.display=c.closed?"inline-flex":"none";
+  $("dReopen").style.flex=c.closed?"1":"";
+  $("drawer").classList.add("on"); $("drawer").setAttribute("aria-hidden","false");
+  $("scrim").classList.add("on");
+}
+function closeDrawer(){
+  openId=null;
+  $("drawer").classList.remove("on"); $("drawer").setAttribute("aria-hidden","true");
+  $("scrim").classList.remove("on");
+}
+$("dClose").addEventListener("click",closeDrawer);
+$("scrim").addEventListener("click",closeDrawer);
+document.addEventListener("keydown",function(e){if(e.key==="Escape")closeDrawer();});
+
+function syncFields(c){
+  c.resp=$("dResp").value;
+  c.owner=$("dOwner").value;
+  var s=$("dSheet").value.trim();
+  c.sheet=s||"—";
+}
+$("dAccept").addEventListener("click",function(){
+  var c=find(openId); if(!c)return;
+  var txt=$("dResp").value.trim();
+  if(txt.length<12){ $("dWarn").classList.add("on"); $("dResp").focus(); return; }
+  $("dWarn").classList.remove("on");
+  syncFields(c); c.closed=true;
+  render(); closeDrawer();
+  var n=closedCount();
+  toast(n===12?"All 12 closed — export unlocked 🎉":"Comment "+c.id+" closed · "+n+" of 12");
+});
+$("dReopen").addEventListener("click",function(){
+  var c=find(openId); if(!c)return;
+  syncFields(c); c.closed=false; render(); closeDrawer(); toast("Comment "+c.id+" reopened");
+});
+$("dResp").addEventListener("input",function(){
+  if($("dResp").value.trim().length>=12)$("dWarn").classList.remove("on");
+});
+
+/* ---- fill all ---- */
+$("fillAll").addEventListener("click",function(){
+  var open=state.filter(function(c){return !c.closed;});
+  if(!open.length){toast("Everything is already closed.");return;}
+  var i=0;
+  var iv=setInterval(function(){
+    open[i].closed=true; i++; render();
+    if(i>=open.length){clearInterval(iv);toast("All 12 drafts accepted — export unlocked 🎉");}
+  },110);
+});
+
+/* ---- export ---- */
+$("exportBtn").addEventListener("click",function(){
+  if(closedCount()<12)return;
+  buildDoc(); show("viewDoc"); setStep(3);
+  $("wsTitle").textContent="Resubmittal package — ready";
+  $("wsSub").textContent="Response to Plan Review Corrections · Permit #6912845-CN, Cycle 2";
+  $("backToTable").style.display="inline-flex";
+  window.scrollTo({top:0,behavior:"smooth"});
+});
+function buildDoc(){
+  var m="",ck="";
+  state.slice().sort(function(a,b){return parseInt(a.id,10)-parseInt(b.id,10);}).forEach(function(c){
+    m+="<tr><td class=\"num\">"+c.id+"</td><td>"+esc(c.text)+(c.carry?'<br><span style="color:var(--red);font-size:10.5px;font-weight:700">⚑ Cycle 1 carry-over — resolved</span>':'')+
+       "</td><td class=\"rsp\">"+esc(c.resp)+"</td><td class=\"code\">"+esc(c.code)+"</td><td class=\"code\">"+esc(c.sheet)+"</td></tr>";
+    ck+='<li><svg class="ck" width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3.3 3.3L13 5" stroke="currentColor" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg><span>'+esc(c.att)+"</span></li>";
+  });
+  ck+='<li><svg class="ck" width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3.3 3.3L13 5" stroke="currentColor" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Full revised drawing set, clouded, Revision Δ2 (2026-10-27)</span></li>';
+  $("matrixBody").innerHTML=m;
+  $("ckBody").innerHTML=ck;
+}
+$("againBtn").addEventListener("click",showTable);
+$("backToTable").addEventListener("click",showTable);
+$("dlBtn").addEventListener("click",function(){toast("Demo only — no files are generated in this prototype.");});
+
+setStep(2);
+updateProgress();
+})();
+</script>
+</body>
+</html>
