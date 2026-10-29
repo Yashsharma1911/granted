@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Parsedoff — the blind taste test for document parsers</title>
+<style>
+:root{
+  --bg:#0B0D10; --panel:#12161B; --panel2:#171C23; --line:#222A33;
+  --text:#E6EDF3; --muted:#8A97A6; --lime:#C8FF4D; --red:#FF5C5C; --green:#4DE08A;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+}
+@media (prefers-color-scheme: light){
+  :root{
+    --bg:#F4F6F8; --panel:#FFFFFF; --panel2:#F0F3F6; --line:#D9E0E7;
+    --text:#10151B; --muted:#5B6773; --lime:#5F8F00; --red:#C62828; --green:#1C7A48;
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);-webkit-text-size-adjust:100%;line-height:1.45}
+button{font-family:inherit;color:inherit}
+.wrap{max-width:1280px;margin:0 auto;padding:0 14px}
+/* ---------- top nav ---------- */
+header.nav{position:sticky;top:0;z-index:40;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.nav-in{max-width:1280px;margin:0 auto;padding:10px 14px;display:flex;align-items:center;gap:12px}
+.brand{display:flex;align-items:center;gap:9px;background:none;border:0;padding:6px;cursor:pointer;min-height:44px}
+.dot{width:12px;height:12px;border-radius:3px;background:var(--lime);box-shadow:0 0 14px color-mix(in srgb,var(--lime) 60%,transparent)}
+.wordmark{font-family:var(--mono);font-weight:700;letter-spacing:-.4px;font-size:17px}
+.wordmark span{color:var(--lime)}
+.tag-mini{color:var(--muted);font-size:12px;display:none}
+@media(min-width:760px){.tag-mini{display:inline}}
+.nav-sp{flex:1}
+.navbtn{background:transparent;border:1px solid var(--line);border-radius:9px;padding:9px 13px;font-size:13px;cursor:pointer;min-height:44px}
+.navbtn.active{border-color:var(--lime);color:var(--lime)}
+/* ---------- screens ---------- */
+.screen{display:none;padding:18px 0 90px}
+.screen.on{display:block}
+/* ---------- drop ---------- */
+.hero{text-align:center;padding:26px 0 10px}
+.logo-big{font-family:var(--mono);font-weight:700;font-size:clamp(30px,8vw,52px);letter-spacing:-2px;margin:0}
+.logo-big span{color:var(--lime)}
+.tagline{color:var(--muted);margin:8px 0 0;font-size:clamp(14px,3.4vw,17px)}
+.demo-pill{display:inline-block;margin-top:12px;font-family:var(--mono);font-size:11px;color:var(--muted);border:1px solid var(--line);border-radius:99px;padding:3px 10px}
+.drop{margin:22px auto 6px;max-width:760px;border:2px dashed var(--line);border-radius:16px;background:var(--panel);padding:32px 18px;text-align:center;cursor:pointer;transition:.18s;width:100%}
+.drop:hover,.drop:focus-visible{border-color:var(--lime);background:var(--panel2);outline:none}
+.drop b{display:block;font-size:17px}
+.drop small{color:var(--muted);font-size:13px}
+.drop svg{margin-bottom:10px}
+.sec-h{display:flex;align-items:baseline;gap:10px;margin:26px 4px 12px}
+.sec-h h2{font-size:14px;margin:0;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.strip{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+@media(min-width:620px){.strip{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media(min-width:1000px){.strip{grid-template-columns:repeat(8,minmax(0,1fr))}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:9px;cursor:pointer;text-align:left;transition:.15s;display:flex;flex-direction:column;gap:8px;min-height:44px}
+.card:hover,.card:focus-visible{border-color:var(--lime);transform:translateY(-2px);outline:none}
+.thumb{aspect-ratio:3/4;background:#fff;border-radius:6px;padding:7px;display:flex;flex-direction:column;gap:3px;overflow:hidden;position:relative}
+.ln{height:3px;background:#C9D2DB;border-radius:2px}
+.ln.d{background:#6B7784}.ln.s{width:46%}.ln.m{width:72%}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:2px}
+.cell{height:5px;background:#E2E7EC;border-radius:1px}
+.cell.hd{background:#9AA6B2}
+.boxr{display:flex;align-items:center;gap:3px}
+.chk{width:5px;height:5px;border:1px solid #6B7784;border-radius:1px;flex:0 0 auto}
+.chk.f{background:#6B7784}
+.bar{height:4px;background:#8FA0B0;border-radius:2px}
+.rot{transform:rotate(-7deg);transform-origin:center;display:flex;flex-direction:column;gap:3px;padding:4px;border:1px dashed #C9D2DB}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.scrib{height:4px;background:repeating-linear-gradient(90deg,#3B7DD8 0 5px,transparent 5px 8px);border-radius:2px}
+.brk{border-top:2px dashed #FF5C5C;margin:3px 0}
+.cap{display:flex;align-items:flex-start;gap:6px}
+.cap b{font-size:11.5px;font-weight:600;line-height:1.25;flex:1}
+.pip{width:8px;height:8px;border-radius:50%;flex:0 0 auto;margin-top:3px}
+.pipwrap{display:flex;gap:2px;margin-top:3px}
+.diff{font-family:var(--mono);font-size:10px;color:var(--muted)}
+/* ---------- duel ---------- */
+.duelhead{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:4px 4px 14px}
+.duelhead h1{font-size:17px;margin:0}
+.ghost{background:transparent;border:1px solid var(--line);border-radius:9px;padding:8px 12px;font-size:13px;cursor:pointer;min-height:44px}
+.ghost:hover{border-color:var(--lime)}
+.cols{display:grid;gap:12px;grid-template-columns:1fr}
+@media(min-width:900px){.cols{grid-template-columns:35fr 32.5fr 32.5fr}}
+.pane{background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden;display:flex;flex-direction:column}
+.pane-h{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid var(--line);background:var(--panel2);font-size:13px;font-weight:600}
+.pane-h .lbl{font-family:var(--mono);color:var(--lime)}
+.pane-b{padding:12px;overflow:auto}
+/* page mock */
+.page{background:#fff;color:#10151B;border-radius:8px;padding:14px;font-size:11px;font-family:var(--sans);min-height:260px}
+.page h4{margin:0 0 2px;font-size:13px}
+.page .meta{color:#5B6773;font-size:10px;margin-bottom:8px}
+table.mock{width:100%;border-collapse:collapse;font-size:10.5px}
+table.mock th,table.mock td{padding:3px 4px;text-align:left}
+table.mock.bord th,table.mock.bord td{border:1px solid #C9D2DB}
+table.mock.bless td,table.mock.bless th{border:0;border-bottom:1px solid transparent}
+table.mock th{background:#EEF2F6;font-weight:700}
+.num{text-align:right!important}
+.hand{color:#2457C5;font-family:cursive;font-size:11px}
+/* parsed output */
+.out{font-family:var(--mono);font-size:11.5px;white-space:pre-wrap;word-break:break-word;color:var(--text);min-height:200px;margin:0}
+table.md{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:11px}
+table.md th,table.md td{border:1px solid var(--line);padding:4px 6px;text-align:left;vertical-align:top}
+table.md th{background:var(--panel2);color:var(--lime);font-weight:600}
+.mdp{font-family:var(--mono);font-size:11.5px;color:var(--muted);white-space:pre-wrap;margin:0 0 8px}
+.toggle{margin-top:10px;background:transparent;border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:11.5px;font-family:var(--mono);cursor:pointer;min-height:40px}
+.toggle:hover{border-color:var(--lime);color:var(--lime)}
+.caret{display:inline-block;width:7px;height:13px;background:var(--lime);vertical-align:-2px;animation:bl .7s steps(1,end) infinite}
+@keyframes bl{50%{opacity:0}}
+.stream{color:var(--muted);font-family:var(--mono);font-size:11px;padding:2px 0 8px}
+/* verdicts */
+.verdicts{margin-top:12px;display:flex;flex-direction:column;gap:7px}
+.chip{display:flex;gap:8px;align-items:flex-start;border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:11.5px;background:var(--panel2)}
+.chip.g{border-color:color-mix(in srgb,var(--green) 45%,var(--line))}
+.chip.r{border-color:color-mix(in srgb,var(--red) 45%,var(--line))}
+.chip i{font-style:normal;font-weight:700;flex:0 0 auto}
+.chip.g i{color:var(--green)}.chip.r i{color:var(--red)}
+.chip em{font-style:normal;color:var(--muted);display:block;font-family:var(--mono);font-size:10px;margin-top:2px}
+/* vote bar */
+.votebar{position:fixed;left:0;right:0;bottom:0;z-index:50;background:color-mix(in srgb,var(--panel) 95%,transparent);backdrop-filter:blur(10px);border-top:1px solid var(--line);padding:10px 14px calc(10px + env(safe-area-inset-bottom))}
+.votebar-in{max-width:1280px;margin:0 auto;display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.votebar .q{font-size:13px;font-weight:600;flex:1 1 100%}
+@media(min-width:760px){.votebar .q{flex:0 0 auto}.votebar-in{gap:10px}}
+.vbtn{flex:1;min-width:92px;min-height:48px;border-radius:11px;border:1px solid var(--line);background:var(--panel2);font-size:14px;font-weight:600;cursor:pointer}
+.vbtn:hover{border-color:var(--lime);color:var(--lime)}
+.vbtn.pick{background:var(--lime);color:#0B0D10;border-color:var(--lime)}
+/* reveal */
+.reveal{display:none;margin-top:14px;border:1px solid var(--lime);border-radius:14px;background:var(--panel);padding:14px;animation:rise .35s ease-out}
+.reveal.on{display:block}
+@keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.reveal h3{margin:0 0 6px;font-size:clamp(17px,4.4vw,24px)}
+.reveal h3 b{color:var(--lime)}
+.meter{height:10px;border-radius:6px;background:var(--panel2);overflow:hidden;display:flex;margin:10px 0 6px;border:1px solid var(--line)}
+.meter .a{background:#5B7FA8}.meter .b{background:var(--lime)}
+.mlab{display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;color:var(--muted)}
+.credit{color:var(--muted);font-size:11px;font-family:var(--mono);margin-top:12px}
+.rowbtns{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.primary{background:var(--lime);color:#0B0D10;border:0;border-radius:11px;padding:12px 16px;font-weight:700;font-size:14px;cursor:pointer;min-height:48px}
+/* leaderboard */
+.lb-note{color:var(--muted);font-size:13px;margin:0 4px 14px}
+.lbwrap{background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow-x:auto}
+table.lb{width:100%;border-collapse:collapse;min-width:620px;font-size:13px}
+table.lb th,table.lb td{padding:11px 12px;text-align:left;border-bottom:1px solid var(--line)}
+table.lb th{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:600}
+table.lb tr:last-child td{border-bottom:0}
+.rank{font-family:var(--mono);color:var(--muted)}
+.pname{font-weight:600}
+.new{font-family:var(--mono);font-size:9.5px;background:var(--lime);color:#0B0D10;border-radius:4px;padding:1px 5px;margin-left:6px;vertical-align:1px}
+.wr{font-family:var(--mono);color:var(--lime);font-weight:700}
+.catcell{min-width:78px}
+.catbar{height:6px;border-radius:3px;background:var(--panel2);overflow:hidden;border:1px solid var(--line)}
+.catbar>div{height:100%;background:var(--lime)}
+.catn{font-family:var(--mono);font-size:9.5px;color:var(--muted)}
+/* modal */
+.modal{position:fixed;inset:0;z-index:70;background:rgba(0,0,0,.72);display:none;align-items:center;justify-content:center;padding:14px;overflow:auto}
+.modal.on{display:flex}
+.sheet{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px;max-width:660px;width:100%}
+.sheet h4{margin:0 0 4px;font-size:15px}
+.sheet p.sub{margin:0 0 12px;color:var(--muted);font-size:12px}
+.sharecard{aspect-ratio:1200/630;background:linear-gradient(135deg,#0B0D10,#141A22);border:1px solid var(--line);border-radius:12px;padding:3.2%;display:flex;gap:3%;color:#E6EDF3;overflow:hidden}
+.sc-l{flex:0 0 22%;background:#fff;border-radius:6px;padding:5px;display:flex;flex-direction:column;gap:3px}
+.sc-r{flex:1;display:flex;flex-direction:column;min-width:0}
+.sc-wm{font-family:var(--mono);font-weight:700;font-size:clamp(11px,2.3vw,17px)}
+.sc-wm span{color:#C8FF4D}
+.sc-vs{font-weight:700;font-size:clamp(12px,2.9vw,24px);margin:4% 0 2%;line-height:1.2}
+.sc-badge{display:inline-block;background:#C8FF4D;color:#0B0D10;font-weight:800;font-size:clamp(9px,1.9vw,15px);border-radius:6px;padding:2px 8px;align-self:flex-start}
+.sc-rule{margin-top:auto;font-family:var(--mono);font-size:clamp(7.5px,1.55vw,12px);color:#9AA6B2;border-left:2px solid #C8FF4D;padding-left:7px}
+.toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(16px);background:var(--lime);color:#0B0D10;font-weight:700;font-size:13px;padding:10px 18px;border-radius:99px;opacity:0;pointer-events:none;transition:.25s;z-index:90}
+.toast.on{opacity:1;transform:translateX(-50%)}
+footer.site{color:var(--muted);font-size:11.5px;text-align:center;padding:18px 14px 26px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+</style>
+</head>
+<body>
+<header class="nav">
+  <div class="nav-in">
+    <button class="brand" id="homeBtn" aria-label="Parsedoff home">
+      <span class="dot"></span><span class="wordmark">parsed<span>off</span></span>
+    </button>
+    <span class="tag-mini">blind taste test for document parsers</span>
+    <span class="nav-sp"></span>
+    <button class="navbtn" id="navDuel">Duels</button>
+    <button class="navbtn" id="navLb">Leaderboard</button>
+  </div>
+</header>
+
+<!-- SCREEN 1 -->
+<section class="screen on" id="s1">
+  <div class="wrap">
+    <div class="hero">
+      <h1 class="logo-big">parsed<span>off</span></h1>
+      <p class="tagline">Which parser actually reads your ugly page?</p>
+      <span class="demo-pill">Demo data · parses pre-recorded</span>
+    </div>
+    <button class="drop" id="dropZone">
+      <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M12 16V4m0 0 4 4m-4-4L8 8"/><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg>
+      <b>Drop a page — or try one of these</b>
+      <small>PDF, PNG, that screenshot of a fax. Nothing leaves your laptop.</small>
+    </button>
+    <div class="sec-h"><h2>Sample pages</h2><span class="diff">red pips = how ugly</span></div>
+    <div class="strip" id="strip"></div>
+  </div>
+</section>
+
+<!-- SCREEN 2 / 3 -->
+<section class="screen" id="s2">
+  <div class="wrap">
+    <div class="duelhead">
+      <button class="ghost" id="backBtn">← Pages</button>
+      <h1 id="duelTitle">—</h1>
+      <span class="diff" id="duelSub"></span>
+    </div>
+    <div class="cols">
+      <div class="pane">
+        <div class="pane-h"><span class="lbl">SOURCE</span><span id="srcName">The page</span></div>
+        <div class="pane-b"><div class="page" id="pageMock"></div></div>
+      </div>
+      <div class="pane">
+        <div class="pane-h"><span class="lbl">A</span><span id="hA">Parser A</span></div>
+        <div class="pane-b">
+          <div id="outA"></div>
+          <button class="toggle" data-side="A">view raw markdown</button>
+          <div class="verdicts" id="vA"></div>
+        </div>
+      </div>
+      <div class="pane">
+        <div class="pane-h"><span class="lbl">B</span><span id="hB">Parser B</span></div>
+        <div class="pane-b">
+          <div id="outB"></div>
+          <button class="toggle" data-side="B">view raw markdown</button>
+          <div class="verdicts" id="vB"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="reveal" id="reveal">
+      <h3 id="revealLine"></h3>
+      <div class="meter"><div class="a" id="mA"></div><div class="b" id="mB"></div></div>
+      <div class="mlab"><span id="lblA"></span><span id="lblB"></span></div>
+      <div class="rowbtns">
+        <button class="primary" id="shareBtn">Share this duel</button>
+        <button class="ghost" id="nextBtn">Next page →</button>
+      </div>
+      <div class="credit">Rules from the Document Parsing Protocol (CC BY 4.0)</div>
+    </div>
+  </div>
+  <div class="votebar" id="votebar">
+    <div class="votebar-in">
+      <span class="q">Which read the page correctly?</span>
+      <button class="vbtn" data-v="A">A is better</button>
+      <button class="vbtn" data-v="T">Tie</button>
+      <button class="vbtn" data-v="B">B is better</button>
+    </div>
+  </div>
+</section>
+
+<!-- SCREEN 4 -->
+<section class="screen" id="s4">
+  <div class="wrap">
+    <div class="sec-h" style="margin-top:14px"><h2>Leaderboard</h2></div>
+    <p class="lb-note">Updated from 11,402 votes · new models enter every week. <span class="diff">Demo data</span></p>
+    <div class="lbwrap">
+      <table class="lb">
+        <thead><tr><th>#</th><th>Parser</th><th>Win rate</th><th>Votes</th><th class="catcell">Tables</th><th class="catcell">Forms</th><th class="catcell">Charts</th><th class="catcell">Scans</th></tr></thead>
+        <tbody id="lbBody"></tbody>
+      </table>
+    </div>
+    <p class="lb-note" style="margin-top:12px">Scored against the 140 rules of the Document Parsing Protocol (CC BY 4.0).</p>
+  </div>
+</section>
+
+<div class="modal" id="modal" role="dialog" aria-modal="true" aria-label="Share this duel">
+  <div class="sheet">
+    <h4>Share this duel</h4>
+    <p class="sub">1200 × 630 preview · rendered in CSS, no screenshot needed</p>
+    <div class="sharecard" id="shareCard">
+      <div class="sc-l" id="scThumb"></div>
+      <div class="sc-r">
+        <div class="sc-wm">parsed<span>off</span></div>
+        <div class="sc-vs" id="scVs"></div>
+        <div class="sc-badge" id="scBadge"></div>
+        <div class="sc-rule" id="scRule"></div>
+      </div>
+    </div>
+    <div class="rowbtns">
+      <button class="primary" id="copyBtn">Copy link</button>
+      <button class="ghost" id="closeModal">Close</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast">Copied</div>
+<footer class="site">Prototype by Granted, inspired by your bookmarks</footer>
+
+<script>
+(function(){
+"use strict";
+var $=function(s,r){return (r||document).querySelector(s);};
+var esc=function(t){return String(t).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");};
+
+/* ---------------- sample data ---------------- */
+var SAMPLES=[
+{
+ id:1,name:"Borderless invoice table",diff:3,src:"northwind-invoice-2291.pdf",
+ thumb:"invoice",
+ page:'<h4>NORTHWIND SUPPLY CO.</h4><div class="meta">Invoice 2291 · 14 Mar 2025 · Bill to: Harlowe Dental Group</div>'+
+  '<table class="mock bless"><tr><th>Item</th><th>Qty</th><th class="num">Unit</th><th class="num">Amount</th></tr>'+
+  '<tr><td>Nitrile gloves, size M (case)</td><td>12</td><td class="num">48.00</td><td class="num">576.00</td></tr>'+
+  '<tr><td>Autoclave pouches 3.5"</td><td>8</td><td class="num">22.50</td><td class="num">180.00</td></tr>'+
+  '<tr><td>Composite kit A2 shade</td><td>3</td><td class="num">189.00</td><td class="num">567.00</td></tr>'+
+  '<tr><td>Prophy angles (box 100)</td><td>14</td><td class="num">31.20</td><td class="num">436.80</td></tr>'+
+  '<tr><td>Saliva ejectors (bag 500)</td><td>6</td><td class="num">17.95</td><td class="num">107.70</td></tr>'+
+  '<tr><td>Fluoride varnish, unit dose</td><td>20</td><td class="num">9.40</td><td class="num">188.00</td></tr>'+
+  '<tr><td>Impression trays, assorted</td><td>5</td><td class="num">42.00</td><td class="num">210.00</td></tr>'+
+  '<tr><td>Surface disinfectant 1 gal</td><td>9</td><td class="num">26.75</td><td class="num">240.75</td></tr>'+
+  '<tr><td>Barrier film roll</td><td>4</td><td class="num">34.10</td><td class="num">136.40</td></tr>'+
+  '<tr><td>Freight &amp; handling</td><td>1</td><td class="num">58.00</td><td class="num">58.00</td></tr>'+
+  '<tr><td><b>Total due</b></td><td></td><td></td><td class="num"><b>2,700.65</b></td></tr></table>',
+ pair:["Tesseract","Gemini 3 Flash"],
+ a:{type:"text",md:"NORTHWIND SUPPLY CO. Invoice 2291 14 Mar 2025\nBill to: Harlowe Dental Group\nItem Qty Unit Amount Nitrile gloves, size M (case) 12 48.00 576.00 Autoclave pouches 3.5\" 8 22.50 180.00 Composite kit A2 shade 3 189.00 567.00 Prophy angles (box 100) 14 31.20 436.80 Saliva ejectors (bag 500) 6 17.95 107.70 Fluoride varnish, unit dose 20 9.40 188.00 Impression trays, assorted 5 42.00 210.00 Surface disinfectant 1 gal 9 26.75 240.75 Barrier film roll 4 34.10 136.40 Freight & handling 1 58.00 58.00 Total due 2,700.65"},
+ b:{type:"table",head:["Item","Qty","Unit","Amount"],rows:[
+   ["Nitrile gloves, size M (case)","12","48.00","576.00"],
+   ["Autoclave pouches 3.5\"","8","22.50","180.00"],
+   ["Composite kit A2 shade","3","189.00","567.00"],
+   ["Prophy angles (box 100)","14","31.20","436.80"],
+   ["Saliva ejectors (bag 500)","6","17.95","107.70"],
+   ["Fluoride varnish, unit dose","20","9.40","188.00"],
+   ["Impression trays, assorted","5","42.00","210.00"],
+   ["Surface disinfectant 1 gal","9","26.75","240.75"],
+   ["Barrier film roll","4","34.10","136.40"],
+   ["Freight & handling","1","58.00","58.00"],
+   ["**Total due**","","","**2,700.65**"]]},
+ vA:[["r","No table detected — DPP requires borderless grids be reconstructed from column alignment","DPP 2.1 Implicit table detection"],
+     ["r","Line items merged into one paragraph; 10 rows lost","DPP 2.4 Row boundaries"]],
+ vB:[["g","Reconstructed 4 columns from whitespace alignment","DPP 2.1 Implicit table detection"],
+     ["g","Kept numeric alignment and the total row","DPP 7.3 Totals are rows, not prose"]],
+ winner:"B",pct:88,votes:1476,rule:"DPP 2.1 — borderless grids must be reconstructed from column alignment"
+},
+{
+ id:2,name:"Two-tier header lab results",diff:4,thumb:"lab",src:"meridian-labs-panel.pdf",
+ page:'<h4>MERIDIAN LABS — Metabolic Panel</h4><div class="meta">Collected 02 Apr 2025 · Ordering: Dr. A. Okonjo</div>'+
+  '<table class="mock bord"><tr><th rowspan="2">Patient</th><th colspan="2">Glucose</th><th colspan="2">Creatinine</th></tr>'+
+  '<tr><th>Result mg/dL</th><th>Ref range</th><th>Result mg/dL</th><th>Ref range</th></tr>'+
+  '<tr><td>Alvarez, Maria</td><td>96</td><td>70–99</td><td>0.82</td><td>0.6–1.1</td></tr>'+
+  '<tr><td>Brennan, Colm</td><td>131</td><td>70–99</td><td>1.34</td><td>0.7–1.3</td></tr>'+
+  '<tr><td>Cho, Jin-Woo</td><td>88</td><td>70–99</td><td>0.95</td><td>0.7–1.3</td></tr>'+
+  '<tr><td>Duarte, Elena</td><td>104</td><td>70–99</td><td>0.71</td><td>0.6–1.1</td></tr>'+
+  '<tr><td>Fenwick, Grace</td><td>92</td><td>70–99</td><td>0.68</td><td>0.6–1.1</td></tr>'+
+  '<tr><td>Haddad, Nabil</td><td>147</td><td>70–99</td><td>1.52</td><td>0.7–1.3</td></tr>'+
+  '<tr><td>Ivers, Tom</td><td>85</td><td>70–99</td><td>1.07</td><td>0.7–1.3</td></tr>'+
+  '<tr><td>Kaur, Simran</td><td>99</td><td>70–99</td><td>0.74</td><td>0.6–1.1</td></tr>'+
+  '<tr><td>Novak, Petra</td><td>112</td><td>70–99</td><td>0.88</td><td>0.6–1.1</td></tr>'+
+  '<tr><td>Okafor, Chidi</td><td>78</td><td>70–99</td><td>1.19</td><td>0.7–1.3</td></tr></table>',
+ pair:["Gemini 3 Flash","Mistral OCR 4"],
+ a:{type:"table",head:["Patient","Result mg/dL Ref Range","Result mg/dL","Ref Range"],rows:[
+   ["96","70–99","0.82","0.6–1.1"],["131","70–99","1.34","0.7–1.3"],["88","70–99","0.95","0.7–1.3"],
+   ["104","70–99","0.71","0.6–1.1"],["92","70–99","0.68","0.6–1.1"],["147","70–99","1.52","0.7–1.3"],
+   ["85","70–99","1.07","0.7–1.3"],["99","70–99","0.74","0.6–1.1"],["112","70–99","0.88","0.6–1.1"],
+   ["78","70–99","1.19","0.7–1.3"]],note:"Patient names dropped into column 0 shift"},
+ b:{type:"table2",head1:["Patient","Glucose","","Creatinine",""],head2:["","Result mg/dL","Ref range","Result mg/dL","Ref range"],rows:[
+   ["Alvarez, Maria","96","70–99","0.82","0.6–1.1"],["Brennan, Colm","131","70–99","1.34","0.7–1.3"],
+   ["Cho, Jin-Woo","88","70–99","0.95","0.7–1.3"],["Duarte, Elena","104","70–99","0.71","0.6–1.1"],
+   ["Fenwick, Grace","92","70–99","0.68","0.6–1.1"],["Haddad, Nabil","147","70–99","1.52","0.7–1.3"],
+   ["Ivers, Tom","85","70–99","1.07","0.7–1.3"],["Kaur, Simran","99","70–99","0.74","0.6–1.1"],
+   ["Novak, Petra","112","70–99","0.88","0.6–1.1"],["Okafor, Chidi","78","70–99","1.19","0.7–1.3"]]},
+ vA:[["r","Merged a two-tier header — DPP keeps both header rows","DPP 3.2 Hierarchical headers"],
+     ["r","Values shifted one column left; patient names lost","DPP 3.5 Cell-to-column binding"],
+     ["r","Dropped the Glucose / Creatinine grouping","DPP 3.3 Column spans"]],
+ vB:[["g","Preserved both header tiers with spans","DPP 3.2 Hierarchical headers"],
+     ["g","All 10 patient names bound to the right row","DPP 3.5 Cell-to-column binding"]],
+ winner:"B",pct:71,votes:1284,rule:"DPP 3.2 — a two-tier header must stay two rows"
+},
+{
+ id:3,name:"Insurance claim form with checkboxes",diff:4,thumb:"form",src:"claim-FNOL-88213.pdf",
+ page:'<h4>FIRST NOTICE OF LOSS — Claim 88213</h4><div class="meta">Policy HX-4471-02 · Insured: Rowan T. Mbeki · Loss 11 Feb 2025</div>'+
+  '<table class="mock bord"><tr><th>Field</th><th>Entry</th></tr>'+
+  '<tr><td>Loss type — Collision</td><td>☒</td></tr>'+
+  '<tr><td>Loss type — Theft</td><td>☐</td></tr>'+
+  '<tr><td>Loss type — Weather</td><td>☐</td></tr>'+
+  '<tr><td>Police report filed</td><td>☒ report #2025-0417</td></tr>'+
+  '<tr><td>Injuries reported</td><td>☐</td></tr>'+
+  '<tr><td>Other vehicle involved</td><td>☒ 2019 Toyota Hilux</td></tr>'+
+  '<tr><td>Driver at time of loss</td><td>Rowan T. Mbeki</td></tr>'+
+  '<tr><td>Licence number</td><td></td></tr>'+
+  '<tr><td>Estimated damage</td><td>$4,380</td></tr>'+
+  '<tr><td>Vehicle drivable</td><td>☐</td></tr>'+
+  '<tr><td>Towed to</td><td>Kerrigan Auto Body, Lot 3</td></tr>'+
+  '<tr><td>Adjuster assigned</td><td></td></tr>'+
+  '<tr><td>Rental requested</td><td>☒</td></tr></table>',
+ pair:["LlamaParse Agentic","Docling"],
+ a:{type:"table",head:["Field","Entry"],rows:[
+   ["Police report filed","report #2025-0417"],["Other vehicle involved","2019 Toyota Hilux"],
+   ["Driver at time of loss","Rowan T. Mbeki"],["Estimated damage","$4,380"],
+   ["Towed to","Kerrigan Auto Body, Lot 3"]],note:"8 rows not emitted"},
+ b:{type:"table",head:["Field","Entry"],rows:[
+   ["Loss type — Collision","[x]"],["Loss type — Theft","[ ]"],["Loss type — Weather","[ ]"],
+   ["Police report filed","[x] report #2025-0417"],["Injuries reported","[ ]"],
+   ["Other vehicle involved","[x] 2019 Toyota Hilux"],["Driver at time of loss","Rowan T. Mbeki"],
+   ["Licence number","[blank]"],["Estimated damage","$4,380"],["Vehicle drivable","[ ]"],
+   ["Towed to","Kerrigan Auto Body, Lot 3"],["Adjuster assigned","[blank]"],["Rental requested","[x]"]]},
+ vA:[["r","Silently dropped all 7 checkbox rows","DPP 5.1 Checkboxes are content"],
+     ["r","Empty fields omitted — a missing licence number reads as never asked","DPP 5.4 Empty fields"]],
+ vB:[["g","Emitted [x] and [ ] for every checkbox","DPP 5.1 Checkboxes are content"],
+     ["g","Marked empty fields as [blank]","DPP 5.4 Empty fields"],
+     ["g","Kept checkbox + adjacent free text together","DPP 5.2 Annotated options"]],
+ winner:"B",pct:93,votes:1102,rule:"DPP 5.1 — an unchecked box is data, not whitespace"
+},
+{
+ id:4,name:"Rotated scanned receipt",diff:5,thumb:"receipt",src:"receipt-scan-rot7.jpg",
+ page:'<div class="rot"><h4 style="font-size:11px;margin:0">KOPI &amp; CO — Stall 14</h4><div class="meta" style="font-size:9px">22 Jan 2025 · 08:41 · Term 4 · Cashier Ade</div>'+
+  '<table class="mock bless" style="font-size:9.5px"><tr><td>Flat white x2</td><td class="num">9.00</td></tr>'+
+  '<tr><td>Cold brew</td><td class="num">5.50</td></tr><tr><td>Almond croissant</td><td class="num">6.20</td></tr>'+
+  '<tr><td>Bacon roll</td><td class="num">8.90</td></tr><tr><td>Oat milk surcharge</td><td class="num">0.80</td></tr>'+
+  '<tr><td>Banana bread, toasted</td><td class="num">5.40</td></tr><tr><td>Sparkling water 330ml</td><td class="num">3.10</td></tr>'+
+  '<tr><td>Subtotal</td><td class="num">38.90</td></tr><tr><td>GST 10%</td><td class="num">3.89</td></tr>'+
+  '<tr><td><b>TOTAL</b></td><td class="num"><b>42.79</b></td></tr>'+
+  '<tr><td>Visa ••4417</td><td class="num">42.79</td></tr></table></div>',
+ pair:["OCRia-1","Tesseract"],
+ a:{type:"table",head:["Item","Amount"],rows:[
+   ["Flat white x2","9.00"],["Cold brew","5.50"],["Almond croissant","6.20"],["Bacon roll","8.90"],
+   ["Oat milk surcharge","0.80"],["Banana bread, toasted","5.40"],["Sparkling water 330ml","3.10"],
+   ["Subtotal","38.90"],["GST 10%","3.89"],["**TOTAL**","**42.79**"],["Visa ••4417","42.79"]]},
+ b:{type:"text",md:"KOPl & C0 - Stall l4\n22 Jan 2O25 O8:4l Term 4 Cashier Ade\nFlat white x2 9.OO\nCold brew 5.5O Almond cro1ssant 6.2O\nBac0n roll 8.9O\n0at milk surcharge O.8O Banana bread, t0asted 5.4O\nSparkling water 33Oml 3.lO\nSubt0tal 389O\nGST lO% 389\nTOTA L 4279\nVisa ...44l7"},
+ vA:[["g","Deskewed −7° before reading","DPP 1.2 Page rotation"],
+     ["g","Decimal points preserved on all amounts","DPP 7.1 Numeric fidelity"]],
+ vB:[["r","No deskew — characters read across skewed baselines","DPP 1.2 Page rotation"],
+     ["r","Lost decimal points on subtotal, tax and total","DPP 7.1 Numeric fidelity"],
+     ["r","Confused 0/O and 1/l throughout","DPP 1.6 Glyph disambiguation"]],
+ winner:"A",pct:96,votes:844,rule:"DPP 1.2 — deskew the page before reading it"
+},
+{
+ id:5,name:"Gantt chart, project plan",diff:4,thumb:"gantt",src:"atlas-rollout-plan.png",
+ page:'<h4>ATLAS ROLLOUT — Q2 2025</h4><div class="meta">Owner: P. Lindqvist · weeks 14–26</div>'+
+  (function(){var t=[["Vendor selection","P. Lindqvist",6,18],["Contract &amp; legal","R. Ayers",22,14],
+   ["Data migration spec","N. Haruki",30,20],["Pilot — Site 01","D. Moreau",44,16],
+   ["Pilot — Site 02","D. Moreau",54,14],["Training materials","S. Ortega",40,26],
+   ["Network cutover","J. Bhatt",66,10],["Full rollout","P. Lindqvist",72,22],
+   ["Hypercare","S. Ortega",88,12]];
+   var h='<table class="mock bless" style="font-size:9.5px">';
+   for(var i=0;i<t.length;i++){h+='<tr><td style="width:34%">'+t[i][0]+'</td><td style="width:20%;color:#5B6773">'+t[i][1]+'</td><td><div style="position:relative;height:7px;background:#EEF2F6;border-radius:3px"><div style="position:absolute;left:'+t[i][2]+'%;width:'+t[i][3]+'%;top:0;bottom:0;background:#4A6FA5;border-radius:3px"></div></div></td></tr>';}
+   return h+"</table>";})(),
+ pair:["OCRia-1","Azure Document Intelligence"],
+ a:{type:"table",head:["Task","Owner","Start","End"],rows:[
+   ["Vendor selection","P. Lindqvist","Wk 14","Wk 16"],["Contract & legal","R. Ayers","Wk 16","Wk 18"],
+   ["Data migration spec","N. Haruki","Wk 17","Wk 20"],["Pilot — Site 01","D. Moreau","Wk 19","Wk 21"],
+   ["Pilot — Site 02","D. Moreau","Wk 21","Wk 22"],["Training materials","S. Ortega","Wk 19","Wk 23"],
+   ["Network cutover","J. Bhatt","Wk 23","Wk 24"],["Full rollout","P. Lindqvist","Wk 24","Wk 26"],
+   ["Hypercare","S. Ortega","Wk 26","Wk 27"]]},
+ b:{type:"text",md:"![chart](figure-1.png)\n\n**Figure 1.** Gantt chart, ATLAS Rollout Q2 2025. Owner: P. Lindqvist, weeks 14-26.\n\nTask list: Vendor selection; Contract & legal; Data migration spec; Pilot - Site 01; Pilot - Site 02; Training materials; Network cutover; Full rollout; Hypercare.\n\n*Bar positions not extracted.*"},
+ vA:[["g","Converted bars into start/end weeks","DPP 9.4 Charts become tables"],
+     ["g","Kept the owner column alongside each task","DPP 3.5 Cell-to-column binding"]],
+ vB:[["r","Emitted an image placeholder instead of data","DPP 9.4 Charts become tables"],
+     ["r","Task order kept but all dates lost","DPP 9.6 Encoded positions"]],
+ winner:"A",pct:84,votes:761,rule:"DPP 9.4 — a chart must come out as a table, not a caption"
+},
+{
+ id:6,name:"Side-by-side mini tables (annual report)",diff:3,thumb:"two",src:"annual-report-p37.pdf",
+ page:'<h4>Note 12 — Segment revenue</h4><div class="meta">Vantor Group plc · page 37 · £m</div>'+
+  '<div class="two"><table class="mock bord"><tr><th>FY24</th><th>Rev</th></tr>'+
+  '<tr><td>Industrial</td><td class="num">412.6</td></tr><tr><td>Marine</td><td class="num">188.1</td></tr>'+
+  '<tr><td>Energy</td><td class="num">267.4</td></tr><tr><td>Services</td><td class="num">96.3</td></tr>'+
+  '<tr><td>Other</td><td class="num">14.8</td></tr><tr><td><b>Total</b></td><td class="num"><b>979.2</b></td></tr></table>'+
+  '<table class="mock bord"><tr><th>FY23</th><th>Rev</th></tr>'+
+  '<tr><td>Industrial</td><td class="num">388.0</td></tr><tr><td>Marine</td><td class="num">201.7</td></tr>'+
+  '<tr><td>Energy</td><td class="num">239.9</td></tr><tr><td>Services</td><td class="num">88.5</td></tr>'+
+  '<tr><td>Other</td><td class="num">12.2</td></tr><tr><td><b>Total</b></td><td class="num"><b>930.3</b></td></tr></table></div>',
+ pair:["Docling","Mistral OCR 4"],
+ a:{type:"two",t1:{head:["FY24","Rev (£m)"],rows:[["Industrial","412.6"],["Marine","188.1"],["Energy","267.4"],["Services","96.3"],["Other","14.8"],["**Total**","**979.2**"]]},
+    t2:{head:["FY23","Rev (£m)"],rows:[["Industrial","388.0"],["Marine","201.7"],["Energy","239.9"],["Services","88.5"],["Other","12.2"],["**Total**","**930.3**"]]}},
+ b:{type:"table",head:["FY24","Rev","FY23","Rev"],rows:[
+   ["Industrial","412.6","Industrial","388.0"],["Marine","188.1","Marine","201.7"],
+   ["Energy","267.4","Energy","239.9"],["Services","96.3","Services","88.5"],
+   ["Other","14.8","Other","12.2"],["Total","979.2","Total","930.3"]],note:"two tables fused into one"},
+ vA:[["g","Kept two independent tables","DPP 4.2 Spatially separate tables"],
+     ["g","Carried the £m unit into both headers","DPP 7.5 Units travel with the column"]],
+ vB:[["r","Fused two separate tables into one 4-column grid","DPP 4.2 Spatially separate tables"],
+     ["r","Implies FY24 and FY23 rows are the same record","DPP 4.3 Row identity"]],
+ winner:"A",pct:68,votes:593,rule:"DPP 4.2 — side-by-side tables stay separate tables"
+},
+{
+ id:7,name:"Handwritten-annotated contract page",diff:5,thumb:"contract",src:"msa-v3-marked.pdf",
+ page:'<h4>MASTER SERVICES AGREEMENT — v3 (marked)</h4><div class="meta">Between Quillon Ltd and Bexley Systems · clause 7</div>'+
+  '<table class="mock bless" style="font-size:10px">'+
+  '<tr><td>7.1 Fees payable within <s>45</s> <span class="hand">30</span> days of invoice.</td></tr>'+
+  '<tr><td>7.2 Late payment interest 1.5% per month.</td></tr>'+
+  '<tr><td>7.3 Rate card fixed for <s>24</s> <span class="hand">12</span> months.</td></tr>'+
+  '<tr><td>7.4 Travel reimbursed at cost. <span class="hand">cap £500/mo — JB</span></td></tr>'+
+  '<tr><td>7.5 Termination for convenience: 90 days notice.</td></tr>'+
+  '<tr><td class="hand">7.6 add: no auto-renewal — JB 09/04</td></tr>'+
+  '<tr><td>7.7 Governing law: England &amp; Wales.</td></tr>'+
+  '<tr><td style="padding-top:8px">Initials: <span class="hand">J.B.</span> / <span class="hand">R.Q.</span></td></tr></table>',
+ pair:["Mistral OCR 4","Gemini 3 Flash"],
+ a:{type:"text",md:"## Clause 7\n\n7.1 Fees payable within 45 days of invoice.\n7.2 Late payment interest 1.5% per month.\n7.3 Rate card fixed for 24 months.\n7.4 Travel reimbursed at cost.\n7.5 Termination for convenience: 90 days notice.\n7.7 Governing law: England & Wales.\n\nInitials: ___ / ___"},
+ b:{type:"text",md:"## Clause 7\n\n7.1 Fees payable within ~~45~~ **30** days of invoice. <!-- handwritten -->\n7.2 Late payment interest 1.5% per month.\n7.3 Rate card fixed for ~~24~~ **12** months. <!-- handwritten -->\n7.4 Travel reimbursed at cost. **[margin note, handwritten]** cap £500/mo — JB\n7.5 Termination for convenience: 90 days notice.\n7.6 **[inserted, handwritten]** add: no auto-renewal — JB 09/04\n7.7 Governing law: England & Wales.\n\nInitials: **J.B.** / **R.Q.** (handwritten)"},
+ vA:[["r","Read struck-through values as live terms (45 days, 24 months)","DPP 6.3 Strikethrough"],
+     ["r","Dropped all handwritten margin notes and clause 7.6","DPP 6.1 Handwriting is content"]],
+ vB:[["g","Kept struck text and the handwritten replacement","DPP 6.3 Strikethrough"],
+     ["g","Labelled handwriting distinctly from print","DPP 6.1 Handwriting is content"],
+     ["g","Captured inserted clause 7.6 in reading order","DPP 6.5 Insertions"]],
+ winner:"B",pct:91,votes:688,rule:"DPP 6.3 — struck-out text must survive, marked as struck"
+},
+{
+ id:8,name:"Split table across a page break",diff:4,thumb:"split",src:"fleet-register-p8-9.pdf",
+ page:'<h4>FLEET REGISTER — pages 8–9</h4><div class="meta">Caldera Logistics · as at 31 Mar 2025</div>'+
+  '<table class="mock bord" style="font-size:9.5px"><tr><th>Unit</th><th>Reg</th><th>Odometer</th><th>Next service</th></tr>'+
+  '<tr><td>TRK-101</td><td>BX62 LMH</td><td>412,884</td><td>12 Apr</td></tr>'+
+  '<tr><td>TRK-104</td><td>CV17 OZR</td><td>298,310</td><td>03 May</td></tr>'+
+  '<tr><td>TRK-109</td><td>YD19 KPA</td><td>176,042</td><td>28 Apr</td></tr>'+
+  '<tr><td>VAN-212</td><td>LS68 TRE</td><td>88,901</td><td>19 Apr</td></tr></table>'+
+  '<div class="brk"></div><div class="meta" style="margin:2px 0">— page break · header repeats —</div>'+
+  '<table class="mock bord" style="font-size:9.5px"><tr><th>Unit</th><th>Reg</th><th>Odometer</th><th>Next service</th></tr>'+
+  '<tr><td>VAN-215</td><td>MK20 WFD</td><td>61,277</td><td>07 Jun</td></tr>'+
+  '<tr><td>VAN-219</td><td>NA21 JHS</td><td>44,650</td><td>22 May</td></tr>'+
+  '<tr><td>TRL-330</td><td>—</td><td>n/a</td><td>14 Jul</td></tr>'+
+  '<tr><td>TRL-336</td><td>—</td><td>n/a</td><td>02 Aug</td></tr>'+
+  '<tr><td>FLT-402</td><td>PO22 XCV</td><td>12,004</td><td>30 Sep</td></tr></table>',
+ pair:["Azure Document Intelligence","OCRia-1"],
+ a:{type:"two",t1:{head:["Unit","Reg","Odometer","Next service"],rows:[["TRK-101","BX62 LMH","412,884","12 Apr"],["TRK-104","CV17 OZR","298,310","03 May"],["TRK-109","YD19 KPA","176,042","28 Apr"],["VAN-212","LS68 TRE","88,901","19 Apr"]]},
+    t2:{head:["Unit","Reg","Odometer","Next service"],rows:[["VAN-215","MK20 WFD","61,277","07 Jun"],["VAN-219","NA21 JHS","44,650","22 May"],["TRL-330","—","n/a","14 Jul"],["TRL-336","—","n/a","02 Aug"],["FLT-402","PO22 XCV","12,004","30 Sep"]]},label1:"Table 1 (p.8)",label2:"Table 2 (p.9)"},
+ b:{type:"table",head:["Unit","Reg","Odometer","Next service"],rows:[
+   ["TRK-101","BX62 LMH","412,884","12 Apr"],["TRK-104","CV17 OZR","298,310","03 May"],
+   ["TRK-109","YD19 KPA","176,042","28 Apr"],["VAN-212","LS68 TRE","88,901","19 Apr"],
+   ["VAN-215","MK20 WFD","61,277","07 Jun"],["VAN-219","NA21 JHS","44,650","22 May"],
+   ["TRL-330","—","n/a","14 Jul"],["TRL-336","—","n/a","02 Aug"],["FLT-402","PO22 XCV","12,004","30 Sep"]]},
+ vA:[["r","Split one continued table into two","DPP 8.1 Table continuation"],
+     ["r","Repeated header emitted twice as data structure","DPP 8.2 Repeated headers"]],
+ vB:[["g","Stitched the continued table across the page break","DPP 8.1 Table continuation"],
+     ["g","Dropped the duplicated header row","DPP 8.2 Repeated headers"]],
+ winner:"B",pct:79,votes:512,rule:"DPP 8.1 — a table continued over a break is one table"
+}];
+
+/* ---------------- thumbnails ---------------- */
+function thumbHTML(kind){
+  var h="",i;
+  function lines(n,cls){var s="";for(var j=0;j<n;j++){s+='<div class="ln '+(cls||"")+'"></div>';}return s;}
+  function grid(rows){var s='<div class="grid4">';for(var r=0;r<rows;r++){for(var c=0;c<4;c++){s+='<div class="cell'+(r===0?" hd":"")+'"></div>';}}return s+"</div>";}
+  if(kind==="invoice"){h='<div class="ln d s"></div>'+lines(1,"m")+'<div style="height:4px"></div>'+grid(7);}
+  else if(kind==="lab"){h='<div class="ln d m"></div><div class="grid4"><div class="cell hd"></div><div class="cell hd" style="grid-column:span 2"></div><div class="cell hd"></div></div>'+grid(6);}
+  else if(kind==="form"){h='<div class="ln d s"></div>';for(i=0;i<8;i++){h+='<div class="boxr"><div class="chk'+(i%3===0?" f":"")+'"></div><div class="ln" style="flex:1"></div></div>';}}
+  else if(kind==="receipt"){h='<div class="rot">'+lines(1,"d s")+lines(7)+'<div class="ln d m"></div></div>';}
+  else if(kind==="gantt"){h='<div class="ln d s"></div>';for(i=0;i<7;i++){h+='<div style="display:flex;gap:3px;align-items:center"><div class="ln" style="width:30%"></div><div style="flex:1;position:relative;height:4px"><div class="bar" style="position:absolute;left:'+(i*9+5)+'%;width:'+(22+i*3)+'%"></div></div></div>';}}
+  else if(kind==="two"){h='<div class="ln d s"></div><div class="two"><div>'+grid(5)+'</div><div>'+grid(5)+'</div></div>';}
+  else if(kind==="contract"){h='<div class="ln d m"></div>'+lines(3)+'<div class="scrib"></div>'+lines(2)+'<div class="scrib" style="width:60%"></div>'+lines(2,"m")+'<div class="scrib" style="width:40%"></div>';}
+  else {h='<div class="ln d s"></div>'+grid(4)+'<div class="brk"></div>'+grid(4);}
+  return h;
+}
+
+/* ---------------- screen 1 build ---------------- */
+var strip=$("#strip");
+SAMPLES.forEach(function(s){
+  var b=document.createElement("button");
+  b.className="card";b.type="button";
+  var pips="";for(var i=0;i<5;i++){pips+='<span class="pip" style="background:'+(i<s.diff?"#FF5C5C":"rgba(130,140,150,.28)")+'"></span>';}
+  b.innerHTML='<div class="thumb">'+thumbHTML(s.thumb)+'</div><div class="cap"><b>'+esc(s.name)+'</b></div><div class="pipwrap">'+pips+'</div>';
+  b.setAttribute("aria-label","Open duel: "+s.name);
+  b.addEventListener("click",function(){openDuel(s.id);});
+  strip.appendChild(b);
+});
+
+/* ---------------- nav ---------------- */
+function show(id){
+  ["s1","s2","s4"].forEach(function(k){$("#"+k).classList.toggle("on",k===id);});
+  $("#votebar").style.display=(id==="s2")?"":"none";
+  $("#navLb").classList.toggle("active",id==="s4");
+  $("#navDuel").classList.toggle("active",id!=="s4");
+  window.scrollTo(0,0);
+}
+$("#homeBtn").addEventListener("click",function(){show("s1");});
+$("#navDuel").addEventListener("click",function(){show("s1");});
+$("#navLb").addEventListener("click",function(){show("s4");});
+$("#backBtn").addEventListener("click",function(){show("s1");});
+$("#dropZone").addEventListener("click",function(){openDuel(1);});
+$("#votebar").style.display="none";
+
+/* ---------------- markdown builders ---------------- */
+function bold(t){return esc(t).replace(/\*\*(.+?)\*\*/g,"<b>$1</b>");}
+function mdTable(head,rows){
+  var out="| "+head.join(" | ")+" |\n|"+head.map(function(){return "---";}).join("|")+"|\n";
+  rows.forEach(function(r){out+="| "+r.join(" | ")+" |\n";});
+  return out;
+}
+function rawFor(d){
+  if(d.type==="text")return d.md;
+  if(d.type==="table")return mdTable(d.head,d.rows)+(d.note?"\n<!-- "+d.note+" -->\n":"");
+  if(d.type==="table2"){
+    var out="| "+d.head1.join(" | ")+" |\n| "+d.head2.join(" | ")+" |\n|"+d.head1.map(function(){return "---";}).join("|")+"|\n";
+    d.rows.forEach(function(r){out+="| "+r.join(" | ")+" |\n";});
+    return out;
+  }
+  if(d.type==="two"){
+    return "**"+(d.label1||"Table 1")+"**\n\n"+mdTable(d.t1.head,d.t1.rows)+"\n**"+(d.label2||"Table 2")+"**\n\n"+mdTable(d.t2.head,d.t2.rows);
+  }
+  return "";
+}
+function renderTable(head,rows){
+  var h='<table class="md"><thead><tr>';
+  head.forEach(function(c){h+="<th>"+bold(c)+"</th>";});
+  h+="</tr></thead><tbody>";
+  rows.forEach(function(r){h+="<tr>";r.forEach(function(c){h+="<td>"+bold(c)+"</td>";});h+="</tr>";});
+  return h+"</tbody></table>";
+}
+function renderRich(d){
+  if(d.type==="text"){
+    var t=esc(d.md).replace(/^## (.+)$/gm,'<b style="color:var(--lime)">$1</b>')
+      .replace(/~~(.+?)~~/g,"<s>$1</s>").replace(/\*\*(.+?)\*\*/g,"<b>$1</b>")
+      .replace(/\*(.+?)\*/g,"<i>$1</i>");
+    return '<pre class="out">'+t+"</pre>";
+  }
+  if(d.type==="table"){
+    return renderTable(d.head,d.rows)+(d.note?'<div class="stream">// '+esc(d.note)+"</div>":"");
+  }
+  if(d.type==="table2"){
+    var h='<table class="md"><thead><tr>';
+    h+='<th rowspan="2">Patient</th><th colspan="2">Glucose</th><th colspan="2">Creatinine</th></tr><tr>';
+    h+="<th>Result mg/dL</th><th>Ref range</th><th>Result mg/dL</th><th>Ref range</th></tr></thead><tbody>";
+    d.rows.forEach(function(r){h+="<tr>";r.forEach(function(c){h+="<td>"+bold(c)+"</td>";});h+="</tr>";});
+    return h+"</tbody></table>";
+  }
+  if(d.type==="two"){
+    return '<div class="stream">'+esc(d.label1||"Table 1")+"</div>"+renderTable(d.t1.head,d.t1.rows)+
+           '<div class="stream" style="padding-top:10px">'+esc(d.label2||"Table 2")+"</div>"+renderTable(d.t2.head,d.t2.rows);
+  }
+  return "";
+}
+
+/* ---------------- duel ---------------- */
+var cur=null,vote=null,timers=[],showRaw={A:false,B:false};
+function clearTimers(){timers.forEach(clearTimeout);timers=[];}
+
+function stream(el,text,done){
+  var n=text.length,steps=28,i=0;
+  function tick(){
+    i++;
+    var cut=Math.ceil(n*i/steps);
+    el.innerHTML='<pre class="out">'+esc(text.slice(0,cut))+'<span class="caret"></span></pre>';
+    if(i<steps){timers.push(setTimeout(tick,1200/steps));}
+    else{done();}
+  }
+  el.innerHTML='<div class="stream">streaming…</div>';
+  timers.push(setTimeout(tick,120));
+}
+
+function paint(side){
+  var el=$("#out"+side),d=cur[side.toLowerCase()];
+  el.innerHTML=showRaw[side]?'<pre class="mdp">'+esc(rawFor(d))+"</pre>":renderRich(d);
+}
+
+function openDuel(id){
+  clearTimers();
+  cur=null;
+  for(var i=0;i<SAMPLES.length;i++){if(SAMPLES[i].id===id){cur=SAMPLES[i];}}
+  if(!cur){show("s1");return;}
+  vote=null;showRaw={A:false,B:false};
+  $("#duelTitle").textContent=cur.name;
+  $("#duelSub").textContent=cur.src+" · demo data";
+  $("#srcName").textContent="The page";
+  $("#pageMock").innerHTML=cur.page;
+  $("#hA").textContent="Parser A";$("#hB").textContent="Parser B";
+  $("#vA").innerHTML="";$("#vB").innerHTML="";
+  $("#reveal").classList.remove("on");
+  $("#votebar").style.display="";
+  Array.prototype.forEach.call(document.querySelectorAll(".vbtn"),function(b){b.classList.remove("pick");b.disabled=false;});
+  document.querySelectorAll(".toggle").forEach(function(t){t.textContent="view raw markdown";});
+  show("s2");
+  stream($("#outA"),rawFor(cur.a),function(){paint("A");});
+  stream($("#outB"),rawFor(cur.b),function(){paint("B");});
+}
+
+document.querySelectorAll(".toggle").forEach(function(btn){
+  btn.addEventListener("click",function(){
+    if(!cur)return;
+    var s=btn.getAttribute("data-side");
+    showRaw[s]=!showRaw[s];
+    btn.textContent=showRaw[s]?"view rendered table":"view raw markdown";
+    paint(s);
+  });
+});
+
+function chips(list,target){
+  var h="";
+  list.forEach(function(c){
+    h+='<div class="chip '+c[0]+'"><i>'+(c[0]==="g"?"✓":"✕")+'</i><span>'+esc(c[1])+"<em>"+esc(c[2])+"</em></span></div>";
+  });
+  target.innerHTML=h;
+}
+
+document.querySelectorAll(".vbtn").forEach(function(b){
+  b.addEventListener("click",function(){
+    if(!cur)return;
+    clearTimers();paint("A");paint("B");
+    vote=b.getAttribute("data-v");
+    document.querySelectorAll(".vbtn").forEach(function(x){x.classList.remove("pick");});
+    b.classList.add("pick");
+    doReveal();
+  });
+});
+
+function doReveal(){
+  var A=cur.pair[0],B=cur.pair[1];
+  $("#hA").textContent=A;$("#hB").textContent=B;
+  chips(cur.vA,$("#vA"));chips(cur.vB,$("#vB"));
+  var win=cur.winner,pct=cur.pct;
+  var picked=vote==="T"?"a tie":("<b>"+(vote==="A"?A:B)+"</b>");
+  var agreePct=vote==="T"?(100-pct):(vote===win?pct:(100-pct));
+  var line;
+  if(vote==="T"){
+    line="You called it a tie. <b>"+pct+"%</b> of "+cur.votes.toLocaleString()+" voters gave it to "+(win==="A"?A:B)+".";
+  }else{
+    line="You picked "+picked+". <b>"+agreePct+"%</b> of "+cur.votes.toLocaleString()+" voters agree.";
+  }
+  $("#revealLine").innerHTML=line;
+  var aPct=win==="A"?pct:100-pct;
+  $("#mA").style.width=aPct+"%";$("#mB").style.width=(100-aPct)+"%";
+  $("#lblA").textContent=A+" · "+aPct+"%";
+  $("#lblB").textContent=B+" · "+(100-aPct)+"%";
+  $("#reveal").classList.add("on");
+  setTimeout(function(){
+    var r=$("#reveal");
+    if(r&&r.scrollIntoView){r.scrollIntoView({behavior:"smooth",block:"center"});}
+  },60);
+}
+
+$("#nextBtn").addEventListener("click",function(){
+  if(!cur){show("s1");return;}
+  var idx=SAMPLES.indexOf(cur);
+  openDuel(SAMPLES[(idx+1)%SAMPLES.length].id);
+});
+
+/* ---------------- share modal ---------------- */
+$("#shareBtn").addEventListener("click",function(){
+  if(!cur)return;
+  var A=cur.pair[0],B=cur.pair[1],w=cur.winner==="A"?A:B;
+  $("#scThumb").innerHTML=thumbHTML(cur.thumb);
+  $("#scVs").textContent=A+"  vs  "+B;
+  $("#scBadge").textContent="WINNER · "+w+" · "+cur.pct+"%";
+  $("#scRule").textContent=cur.rule;
+  $("#modal").classList.add("on");
+});
+$("#closeModal").addEventListener("click",function(){$("#modal").classList.remove("on");});
+$("#modal").addEventListener("click",function(e){if(e.target===$("#modal")){$("#modal").classList.remove("on");}});
+document.addEventListener("keydown",function(e){if(e.key==="Escape"){$("#modal").classList.remove("on");}});
+var toastT=null;
+$("#copyBtn").addEventListener("click",function(){
+  var t=$("#toast");t.classList.add("on");
+  if(toastT){clearTimeout(toastT);}
+  toastT=setTimeout(function(){t.classList.remove("on");},1500);
+});
+
+/* ---------------- leaderboard ---------------- */
+var LB=[
+ {n:"OCRia-1",wr:72.4,v:1988,c:[88,79,81,74],nw:true},
+ {n:"Gemini 3 Flash",wr:68.1,v:2416,c:[84,76,62,71]},
+ {n:"Mistral OCR 4",wr:63.7,v:2204,c:[77,81,44,69]},
+ {n:"LlamaParse Agentic",wr:58.9,v:1673,c:[74,58,51,55]},
+ {n:"Docling",wr:52.3,v:1427,c:[71,66,38,43]},
+ {n:"Azure Document Intelligence",wr:47.6,v:1192,c:[63,72,29,58]},
+ {n:"Tesseract",wr:19.8,v:502,c:[21,34,8,37]}
+];
+var body=$("#lbBody");
+LB.forEach(function(p,i){
+  var tr=document.createElement("tr");
+  var cells="";
+  p.c.forEach(function(v){
+    cells+='<td class="catcell"><div class="catbar"><div style="width:'+v+'%"></div></div><span class="catn">'+v+"</span></td>";
+  });
+  tr.innerHTML='<td class="rank">'+(i+1)+'</td><td class="pname">'+esc(p.n)+(p.nw?'<span class="new">NEW THIS WEEK</span>':"")+
+    '</td><td class="wr">'+p.wr.toFixed(1)+'%</td><td class="rank">'+p.v.toLocaleString()+"</td>"+cells;
+  body.appendChild(tr);
+});
+})();
+</script>
+</body>
+</html>

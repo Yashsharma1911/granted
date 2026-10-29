@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dockproof — Pre-Ship Compliance Gate</title>
+<style>
+:root{
+  --bg:#f6f7f9; --panel:#ffffff; --ink:#111827; --muted:#5b6472; --line:#e3e7ec;
+  --green:#12795a; --greenbg:#e6f6ef; --red:#b3261e; --redbg:#fdeceb;
+  --amber:#8a5a00; --amberbg:#fdf3df; --accent:#1b3a6b; --accentbg:#e8eefb;
+  --shadow:0 1px 2px rgba(16,24,40,.06),0 4px 14px rgba(16,24,40,.05);
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#0e1116; --panel:#161b22; --ink:#e8ecf1; --muted:#9aa4b2; --line:#263040;
+    --green:#4ade9f; --greenbg:#10291f; --red:#ff8a80; --redbg:#301616;
+    --amber:#f0c674; --amberbg:#2e240f; --accent:#9dc0ff; --accentbg:#15203a;
+    --shadow:0 1px 2px rgba(0,0,0,.4);
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--ink);
+  font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  -webkit-text-size-adjust:100%;
+}
+header.top{
+  background:var(--panel); border-bottom:1px solid var(--line);
+  padding:10px 14px; position:sticky; top:0; z-index:40;
+}
+.brandline{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.logo{width:26px;height:26px;flex:0 0 auto}
+.pname{font-weight:700;font-size:16px;letter-spacing:-.2px}
+.ptag{color:var(--muted);font-size:12.5px}
+.demo{margin-left:auto;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:3px 8px}
+nav.tabs{display:flex;gap:6px;margin-top:10px;overflow-x:auto;-webkit-overflow-scrolling:touch}
+nav.tabs button{
+  flex:1 1 auto; min-height:44px; white-space:nowrap;
+  background:transparent;border:1px solid var(--line);border-radius:10px;
+  color:var(--muted);font-size:14px;font-weight:600;padding:9px 12px;cursor:pointer;
+}
+nav.tabs button[aria-selected="true"]{background:var(--accentbg);color:var(--accent);border-color:transparent}
+.shell{display:flex;max-width:1180px;margin:0 auto;gap:14px;padding:14px}
+aside.rail{
+  flex:0 0 190px; background:var(--panel); border:1px solid var(--line); border-radius:12px;
+  padding:14px; height:max-content; box-shadow:var(--shadow);
+}
+.rail .k{font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:3px}
+.rail .v{font-weight:650;margin-bottom:12px;font-size:14px}
+.rail .dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--green);margin-right:6px;vertical-align:middle}
+main{flex:1 1 auto;min-width:0}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);margin-bottom:14px;overflow:hidden}
+.card h2{margin:0;padding:12px 14px;font-size:14px;border-bottom:1px solid var(--line);letter-spacing:-.1px}
+.card .body{padding:14px}
+.cols{display:flex;gap:14px;align-items:flex-start}
+.col{flex:1 1 0;min-width:0}
+.muted{color:var(--muted)}
+.small{font-size:12.5px}
+.tiny{font-size:11.5px}
+.banner{display:flex;gap:9px;align-items:flex-start;background:var(--amberbg);color:var(--amber);border:1px solid rgba(138,90,0,.25);border-radius:10px;padding:10px 12px;font-size:13px;font-weight:600}
+/* PDF thumbs */
+.thumbs{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px}
+.thumb{flex:0 0 72px}
+.page{height:94px;border:1px solid var(--line);border-radius:5px;background:
+  repeating-linear-gradient(to bottom, transparent 0 7px, var(--line) 7px 8px) ,var(--panel);
+  background-size:100% 100%; opacity:.85; position:relative; overflow:hidden}
+.page.mark:after{content:"";position:absolute;left:8px;right:12px;top:34px;height:9px;background:rgba(240,180,40,.55)}
+.thumb span{display:block;text-align:center;font-size:10.5px;color:var(--muted);margin-top:4px}
+/* rule rows */
+.rule{border-bottom:1px solid var(--line);padding:11px 14px}
+.rule:last-child{border-bottom:0}
+.rule .hd{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.rid{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11.5px;color:var(--muted)}
+.rule p{margin:4px 0 6px;font-size:14px}
+.meta{display:flex;gap:6px;flex-wrap:wrap;font-size:11.5px;color:var(--muted)}
+.chip{border:1px solid var(--line);border-radius:999px;padding:2px 8px}
+.chip.code{font-family:ui-monospace,Menlo,monospace}
+.badge{font-size:10.5px;font-weight:800;letter-spacing:.05em;border-radius:999px;padding:3px 8px;text-transform:uppercase}
+.b-changed{background:var(--amberbg);color:var(--amber)}
+.b-new{background:var(--accentbg);color:var(--accent)}
+button.diffbtn{background:var(--amberbg);color:var(--amber);border:0;border-radius:8px;padding:8px 11px;font-size:12px;font-weight:700;cursor:pointer;min-height:36px;margin-top:8px}
+.diff{margin-top:9px;border:1px dashed var(--line);border-radius:10px;padding:11px;background:var(--bg)}
+.diff .old{text-decoration:line-through;color:var(--muted)}
+.diff .new{background:rgba(74,222,159,.18);border-radius:4px;padding:1px 3px}
+.diff .lbl{font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin:0 0 2px}
+/* gate */
+.pohdr{display:flex;gap:10px;flex-wrap:wrap;align-items:center;padding:12px 14px;border-bottom:1px solid var(--line)}
+.pohdr .po{font-weight:750;font-size:16px}
+.ded{display:flex;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px dashed var(--line);font-size:13.5px}
+.ded:last-of-type{border-bottom:0}
+.ded b{white-space:nowrap}
+.total{display:flex;justify-content:space-between;margin-top:10px;padding-top:10px;border-top:2px solid var(--line);font-weight:750}
+.check{border-bottom:1px solid var(--line)}
+.check:last-child{border-bottom:0}
+.chkrow{display:flex;gap:10px;align-items:flex-start;width:100%;text-align:left;background:transparent;border:0;color:inherit;font:inherit;padding:11px 14px;cursor:default;min-height:48px}
+.chkrow.click{cursor:pointer}
+.ic{flex:0 0 20px;width:20px;height:20px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:900;margin-top:1px}
+.ok{background:var(--greenbg);color:var(--green)}
+.bad{background:var(--redbg);color:var(--red)}
+.warn{background:var(--amberbg);color:var(--amber)}
+.chkrow .t{flex:1 1 auto;min-width:0}
+.chkrow .t .ttl{font-size:13.8px;font-weight:600}
+.chkrow .t .ttl.fixed{text-decoration:line-through;color:var(--muted)}
+.exp{font-weight:750;font-size:13px;white-space:nowrap}
+.exp.bad{background:none;color:var(--red)}
+.caret{color:var(--muted);font-size:11px;margin-top:3px}
+.detail{padding:0 14px 14px 44px;font-size:13px}
+.detail dl{display:grid;grid-template-columns:auto 1fr;gap:4px 10px;margin:0 0 10px}
+.detail dt{color:var(--muted);font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;padding-top:2px}
+.fix{background:var(--greenbg);color:var(--green);border-radius:8px;padding:9px 11px;font-weight:600;margin-bottom:10px}
+.btn{border:0;border-radius:9px;padding:11px 14px;font-size:13.5px;font-weight:700;cursor:pointer;min-height:44px}
+.btn-dark{background:var(--ink);color:var(--panel)}
+.btn-ghost{background:transparent;border:1px solid var(--line);color:var(--muted)}
+.btn-green{background:var(--green);color:#fff;width:100%}
+.btn-green[disabled]{opacity:.42;cursor:not-allowed}
+.why{margin-top:8px;background:var(--accentbg);color:var(--accent);border-radius:9px;padding:10px 11px;font-size:12.5px}
+.gatefoot{position:sticky;bottom:0;background:var(--panel);border-top:1px solid var(--line);padding:11px 14px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;z-index:30}
+.gatefoot .lbl{font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.gatefoot .amt{font-size:22px;font-weight:800;color:var(--red)}
+.gatefoot .amt.clear{color:var(--green)}
+.gatefoot .right{flex:1 1 220px;min-width:180px}
+/* packet */
+.doc{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:20px;box-shadow:var(--shadow)}
+.docgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin:14px 0}
+.docgrid div{border:1px solid var(--line);border-radius:9px;padding:9px 10px}
+.docline{display:flex;gap:8px;align-items:baseline;padding:6px 0;border-bottom:1px dotted var(--line);font-size:13px}
+.docline:last-child{border-bottom:0}
+.docline .ts{font-family:ui-monospace,Menlo,monospace;font-size:11.5px;color:var(--muted);white-space:nowrap}
+.photos{display:flex;gap:10px;flex-wrap:wrap;margin:12px 0}
+.photo{flex:1 1 150px}
+.ph{height:110px;border-radius:9px;border:1px solid var(--line);background:
+ repeating-linear-gradient(45deg,rgba(128,128,128,.10) 0 9px,rgba(128,128,128,.17) 9px 18px);
+ display:grid;place-items:center;color:var(--muted);font-size:11.5px}
+.sig{border-top:2px solid var(--line);margin-top:14px;padding-top:12px;display:flex;gap:14px;flex-wrap:wrap}
+.sig div{flex:1 1 160px}
+.sig .name{font-family:"Snell Roundhand","Brush Script MT",cursive;font-size:21px}
+.ok-stamp{display:inline-flex;gap:7px;align-items:center;border:2px solid var(--green);color:var(--green);border-radius:9px;padding:7px 11px;font-weight:800;font-size:12.5px;letter-spacing:.04em;text-transform:uppercase}
+footer.site{text-align:center;color:var(--muted);font-size:11.5px;padding:18px 14px 28px}
+.toast{
+  position:fixed;left:50%;transform:translateX(-50%) translateY(18px);bottom:18px;z-index:99;
+  background:var(--ink);color:var(--panel);padding:13px 16px;border-radius:11px;font-size:13.5px;font-weight:600;
+  box-shadow:0 10px 30px rgba(0,0,0,.28);opacity:0;pointer-events:none;transition:all .25s ease;max-width:92vw;text-align:center;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.hidden{display:none !important}
+@media (max-width:760px){
+  .shell{flex-direction:column;padding:10px;gap:10px}
+  aside.rail{flex:none;width:100%;display:flex;gap:14px;flex-wrap:wrap}
+  aside.rail .cellwrap{flex:1 1 120px}
+  .rail .v{margin-bottom:0}
+  .cols{flex-direction:column}
+  .detail{padding-left:14px}
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="brandline">
+    <svg class="logo" viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="7" width="20" height="13" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M2 11h20" stroke="currentColor" stroke-width="1.8"/><path d="M8.5 15.5l2.2 2.3 4.6-4.8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M7 7V4.5h10V7" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
+    <span class="pname">Dockproof</span>
+    <span class="ptag">— per-PO pre-ship compliance gate &amp; evidence packet for retail suppliers</span>
+    <span class="demo">Demo data</span>
+  </div>
+  <nav class="tabs" role="tablist" aria-label="Sections">
+    <button id="tab-rulebook" role="tab" aria-selected="false" aria-controls="p-rulebook">Rulebook</button>
+    <button id="tab-gate" role="tab" aria-selected="true" aria-controls="p-gate">Pre-Ship Gate</button>
+    <button id="tab-packet" role="tab" aria-selected="false" aria-controls="p-packet">Evidence Packet</button>
+  </nav>
+</header>
+
+<div class="shell">
+  <aside class="rail">
+    <div class="cellwrap"><div class="k">Supplier</div><div class="v">Northfield Snacks Co.</div></div>
+    <div class="cellwrap"><div class="k">Shipping to</div><div class="v">Walmart DC 6094<br><span class="small muted">Bentonville, AR</span></div></div>
+    <div class="cellwrap"><div class="k">Routing guide</div><div class="v small">rev 2026-09-14<br><span class="muted">118 pages · 12 rules</span></div></div>
+    <div class="cellwrap"><div class="k">90-day deductions</div><div class="v">$11,472</div></div>
+    <div class="cellwrap"><div class="k">Gate status</div><div class="v small" id="railStatus"><span class="dot" style="background:var(--red)"></span>2 blocking</div></div>
+  </aside>
+
+  <main>
+    <!-- ============ RULEBOOK ============ -->
+    <section id="p-rulebook" role="tabpanel" aria-labelledby="tab-rulebook" class="hidden">
+      <div class="cols">
+        <div class="col" style="flex:0 0 260px">
+          <div class="card">
+            <h2>Walmart Supplier Routing Guide</h2>
+            <div class="body">
+              <div class="small"><b>rev 2026-09-14</b> · 118 pages · scanned PDF</div>
+              <div class="tiny muted" style="margin:3px 0 10px">Ingested 2026-10-28 · previous rev 2026-06-02</div>
+              <div class="banner" style="margin-bottom:10px">
+                <span>⚑</span><span>3 rules changed since rev 2026-06-02 — 1 brand new.</span>
+              </div>
+              <div class="thumbs" id="thumbs"></div>
+              <div class="tiny muted" style="margin-top:8px">Highlighted pages contain changed clauses.</div>
+            </div>
+          </div>
+        </div>
+        <div class="col">
+          <div class="card">
+            <h2>12 extracted rules for DC 6094</h2>
+            <div id="ruleList"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ GATE ============ -->
+    <section id="p-gate" role="tabpanel" aria-labelledby="tab-gate">
+      <div class="card">
+        <div class="pohdr">
+          <span class="po">PO 8842190117</span>
+          <span class="small muted">1,430 cases · 22 pallets · pickup Thu 06:00 · MABD Fri</span>
+        </div>
+        <div class="cols" style="padding:14px">
+          <div class="col" style="flex:0 0 290px">
+            <h2 style="border:0;padding:0 0 8px;font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)">What shipped last time</h2>
+            <div id="deds"></div>
+            <div class="total"><span>Total, last 90 days</span><span style="color:var(--red)">$11,472</span></div>
+            <div class="tiny muted" style="margin-top:8px">5 deductions across 4 POs to DC 6094. Every one maps to a rule below.</div>
+          </div>
+          <div class="col">
+            <h2 style="border:0;padding:0 0 8px;font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)">Checks for this PO <span id="tally" class="muted"></span></h2>
+            <div class="card" style="margin:0"><div id="checkList"></div></div>
+          </div>
+        </div>
+        <div class="gatefoot">
+          <div>
+            <div class="lbl" id="expLbl">Exposure if shipped as-is</div>
+            <div class="amt" id="expAmt">$4,540</div>
+          </div>
+          <div class="right">
+            <button class="btn btn-green" id="releaseBtn" disabled>Release shipment</button>
+            <div class="tiny muted" style="margin-top:6px" id="releaseHint">Clear both blocking checks to enable release.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ PACKET ============ -->
+    <section id="p-packet" role="tabpanel" aria-labelledby="tab-packet" class="hidden">
+      <div id="packetLocked" class="card"><div class="body" style="text-align:center;padding:34px 18px">
+        <div style="font-size:30px">🗎</div>
+        <div style="font-weight:700;margin-top:8px">No evidence packet yet</div>
+        <div class="small muted" style="margin:6px auto 14px;max-width:340px">The packet is generated the moment PO 8842190117 passes the pre-ship gate. Clear the two blocking checks and release the shipment.</div>
+        <button class="btn btn-dark" id="goGate">Go to Pre-Ship Gate</button>
+      </div></div>
+
+      <div id="packetDoc" class="hidden">
+        <div class="doc">
+          <div style="display:flex;gap:10px;align-items:flex-start;flex-wrap:wrap;border-bottom:2px solid var(--line);padding-bottom:12px">
+            <div style="flex:1 1 200px">
+              <div style="font-weight:800;font-size:17px">Pre-Ship Compliance Evidence Packet</div>
+              <div class="small muted">Northfield Snacks Co. → Walmart DC 6094 · PO 8842190117</div>
+            </div>
+            <div class="ok-stamp">✓ 12/12 checks passed</div>
+          </div>
+
+          <div class="docgrid">
+            <div><div class="tiny muted">BOL</div><div><b>BOL 4471-220918</b></div></div>
+            <div><div class="tiny muted">Carrier (approved)</div><div><b>Averitt Express · SCAC AVRT</b></div></div>
+            <div><div class="tiny muted">Cases / Pallets</div><div><b>1,430 / 22</b></div></div>
+            <div><div class="tiny muted">Pickup / MABD</div><div><b>Thu 06:00 / Fri</b></div></div>
+            <div><div class="tiny muted">ASN (856) sent</div><div><b>06:41 CT, 41 min after departure</b></div></div>
+            <div><div class="tiny muted">Guide revision</div><div><b>rev 2026-09-14</b></div></div>
+          </div>
+
+          <div style="font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:4px">Timestamped checklist</div>
+          <div id="packetChecks"></div>
+
+          <div class="photos">
+            <div class="photo"><div class="ph">photo placeholder</div><div class="tiny muted" style="margin-top:4px">pallet 4 of 22 — 46" height, stretch-wrapped</div></div>
+            <div class="photo"><div class="ph">photo placeholder</div><div class="tiny muted" style="margin-top:4px">carton label close-up — long side, 1.25" from bottom</div></div>
+          </div>
+
+          <div class="sig">
+            <div><div class="tiny muted">Signed off by</div><div class="name">Marisol Vega</div><div class="tiny muted">Shipping Lead · 2026-10-30 05:48 CT</div></div>
+            <div><div class="tiny muted">Counter-signed</div><div class="name">D. Okafor</div><div class="tiny muted">QA · 2026-10-30 05:50 CT</div></div>
+          </div>
+
+          <div style="margin-top:16px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+            <button class="btn btn-dark" id="attachBtn">Attach to APDP dispute</button>
+            <span id="attachState" class="small" style="color:var(--green);font-weight:700"></span>
+          </div>
+
+          <div class="tiny muted" style="margin-top:14px;border-top:1px solid var(--line);padding-top:10px">
+            Generated by Dockproof 2026-10-30 05:51 CT — 12/12 checks passed against Walmart Routing Guide rev 2026-09-14.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <footer class="site">Prototype by Granted, inspired by your bookmarks</footer>
+  </main>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function(){
+  "use strict";
+
+  var RULES = [
+    {id:"R-01", text:"ASN (EDI 856) must be transmitted within 1 hour of shipment departure from origin.", cite:"p.31 §3.1 Advance Ship Notice", code:"CB-ASN-02", pen:"$0.75/carton, $100 min"},
+    {id:"R-02", text:"Delivery must occur inside the must-arrive-by (MABD) window; early or late both count against OTIF.", cite:"p.12 §1.4 On Time In Full", code:"OTIF", pen:"3% of COGS"},
+    {id:"R-03", text:"GS1-128 carton label applied to the LONG side of the carton, 1.25\" from the bottom edge.", cite:"p.47 §4.2 Carton Labeling", code:"CB-LBL-11", pen:"$250/shipment", badge:"CHANGED",
+      old:"GS1-128 carton label shall be applied to the short side of the shipping carton, 2\" from the bottom edge, clear of seams.",
+      neu:"GS1-128 carton label shall be applied to the LONG side of the shipping carton, 1.25\" from the bottom edge, clear of seams and strapping."},
+    {id:"R-04", text:"Maximum pallet height 48\" including pallet, unless prior DC exception on file.", cite:"p.58 §5.3 Palletization", code:"CB-PAL-03", pen:"$150/pallet"},
+    {id:"R-05", text:"Prepaid loads must move on an approved carrier from the DC 6094 carrier list.", cite:"p.22 §2.6 Carrier Selection", code:"CB-CAR-07", pen:"$450/load"},
+    {id:"R-06", text:"Case-pack quantity shipped must exactly match the quantity on item setup; audited at receiving.", cite:"p.63 §6.1 Case Pack Audit", code:"CB-CPK-09", pen:"$3/case + PO re-rate", badge:"CHANGED",
+      old:"Case pack variances are reconciled at invoice and do not incur a compliance fee.",
+      neu:"Case-pack quantity shipped must exactly match item setup. Variances are audited at receiving and assessed at $3/case plus PO re-rate (2026 program)."},
+    {id:"R-07", text:"Shipped quantity must match PO quantity; overships are refused at the dock.", cite:"p.18 §2.1 Order Accuracy", code:"CB-1147", pen:"$200 + refusal"},
+    {id:"R-08", text:"Lot code and traceability fields (LIN/LOT segments) are required on every ASN line.", cite:"p.35 §3.6 Traceability", code:"CB-TRC-01", pen:"$500/shipment", badge:"NEW",
+      old:"(not present in rev 2026-06-02)",
+      neu:"Each ASN line must carry lot code, production date and traceability segment per FSMA 204 alignment."},
+    {id:"R-09", text:"Appointment must be scheduled in Retail Link at least 48 hours before the MABD date.", cite:"p.26 §2.9 Appointments", code:"CB-APT-04", pen:"$300/load"},
+    {id:"R-10", text:"Pallet placard with PO number and carton count on two adjacent sides of each pallet.", cite:"p.55 §5.1 Pallet Placards", code:"CB-PAL-01", pen:"$75/pallet"},
+    {id:"R-11", text:"Temperature-controlled items require a recorder; ambient snack items must not be loaded with chilled freight.", cite:"p.71 §7.2 Load Integrity", code:"CB-LD-05", pen:"$600/load"},
+    {id:"R-12", text:"Invoice must be transmitted within 24 hours of ship date and reference the BOL number.", cite:"p.88 §9.1 Invoicing", code:"CB-INV-02", pen:"$150/invoice", badge:"CHANGED",
+      old:"Invoice (EDI 810) shall be transmitted within 72 hours of the ship date.",
+      neu:"Invoice (EDI 810) shall be transmitted within 24 hours of the ship date and must reference the BOL number in the REF*BM segment."}
+  ];
+
+  var DEDUCTIONS = [
+    {t:"OTIF — delivered 1 day after MABD", s:"PO 8839104... · Aug 14", v:9400},
+    {t:"ASN accuracy / late 856", s:"PO 8840221... · Sep 02", v:1072},
+    {t:"Carton label placement", s:"PO 8840976... · Sep 27", v:250},
+    {t:"Unapproved carrier on prepaid load", s:"PO 8841455... · Oct 05", v:450},
+    {t:"Pallet height over 48\"", s:"PO 8841455... · Oct 05", v:300}
+  ];
+
+  var CHECKS = [
+    {st:"red", rule:"R-03", ttl:"Carton label printed to old spec — rev 2026-09-14 moved the label to the long side",
+      obs:"Label file CRTN-LBL-v3.zpl places the GS1-128 on the short side, 2\" from bottom (matches rev 2026-06-02).",
+      exposure:250, fix:"Reprint with template CRTN-LBL-v4.zpl and re-apply on pallets 1–22 before seal. ~35 min on line 2.",
+      why:"This check was created from your 2026-09-27 deduction on PO 8840976 — $250, code CB-LBL-11, same label template."},
+    {st:"red", rule:"R-06", ttl:"Case pack on PO is 12, item setup says 10 — new case-pack audit applies at Walmart",
+      obs:"PO line 1 (Item 571-0042, Maple Pretzel Bites) ships 1,430 cases @ 12/case; item setup in Retail Link = 10/case.",
+      exposure:4290, fix:"Re-rate PO to 10/case (1,716 cases) or hold line 1 and ship 0 variance. Confirm with buyer before 05:00 Thu."},
+    {st:"amber", rule:"R-01", ttl:"ASN not yet staged; must send within 1h of departure",
+      obs:"No 856 drafted for BOL 4471-220918. Pickup is Thu 06:00, so the ASN deadline is Thu 07:00 CT.",
+      exposure:0, fix:"Stage the ASN now; Dockproof will remind the dock at departure +15 min.", softNote:"Not blocking — becomes a $1,072-class exposure if missed."},
+    {st:"ok", rule:"R-02", ttl:"Delivery plan lands inside MABD window (appt Fri 09:00)"},
+    {st:"ok", rule:"R-04", ttl:"Pallet height max 46\" across all 22 pallets"},
+    {st:"ok", rule:"R-05", ttl:"Carrier Averitt Express (AVRT) is on the DC 6094 approved list"},
+    {st:"ok", rule:"R-07", ttl:"Shipped quantity matches PO quantity (1,430 cases)"},
+    {st:"ok", rule:"R-08", ttl:"Lot code + traceability fields present on all ASN lines"},
+    {st:"ok", rule:"R-09", ttl:"Appointment booked 72h before MABD in Retail Link"},
+    {st:"ok", rule:"R-10", ttl:"Pallet placards printed, two adjacent sides, 22/22"},
+    {st:"ok", rule:"R-11", ttl:"Ambient-only load, no mixed chilled freight"},
+    {st:"ok", rule:"R-12", ttl:"Invoice scheduled T+6h with BOL in REF*BM"}
+  ];
+
+  var fixed = {}, released = false, openDetail = null, openDiff = null;
+  var $ = function(id){ return document.getElementById(id); };
+  function money(n){ return "$" + n.toLocaleString("en-US"); }
+  function ruleById(id){ for(var i=0;i<RULES.length;i++){ if(RULES[i].id===id) return RULES[i]; } return null; }
+  function esc(s){ return String(s).replace(/[&<>"]/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]; }); }
+
+  /* ---------- tabs ---------- */
+  var TABS = [["tab-rulebook","p-rulebook"],["tab-gate","p-gate"],["tab-packet","p-packet"]];
+  function showTab(which){
+    TABS.forEach(function(p){
+      var sel = p[0] === which;
+      var b = $(p[0]), s = $(p[1]);
+      if(!b || !s) return;
+      b.setAttribute("aria-selected", sel ? "true" : "false");
+      s.classList.toggle("hidden", !sel);
+    });
+    window.scrollTo(0,0);
+  }
+  TABS.forEach(function(p){ $(p[0]).addEventListener("click", function(){ showTab(p[0]); }); });
+
+  /* ---------- rulebook ---------- */
+  (function thumbs(){
+    var pages = [{n:12},{n:31},{n:35,m:1},{n:47,m:1},{n:58},{n:63,m:1},{n:71},{n:88,m:1}];
+    var h = "";
+    pages.forEach(function(p){
+      h += '<div class="thumb"><div class="page'+(p.m?" mark":"")+'"></div><span>p.'+p.n+'</span></div>';
+    });
+    $("thumbs").innerHTML = h;
+  })();
+
+  function renderRules(){
+    var h = "";
+    RULES.forEach(function(r){
+      h += '<div class="rule">';
+      h += '<div class="hd"><span class="rid">'+r.id+'</span>';
+      if(r.badge === "CHANGED") h += '<span class="badge b-changed">Changed in rev 2026-09-14</span>';
+      if(r.badge === "NEW") h += '<span class="badge b-new">New rule</span>';
+      h += '</div>';
+      h += '<p>'+esc(r.text)+'</p>';
+      h += '<div class="meta"><span class="chip">'+esc(r.cite)+'</span><span class="chip code">'+r.code+'</span><span class="chip">'+esc(r.pen)+'</span></div>';
+      if(r.badge){
+        h += '<button class="diffbtn" data-diff="'+r.id+'">'+(openDiff===r.id?"Hide":"View")+' what changed</button>';
+        if(openDiff === r.id){
+          h += '<div class="diff"><p class="lbl">rev 2026-06-02</p><div class="old">'+esc(r.old)+'</div>'+
+               '<p class="lbl" style="margin-top:8px">rev 2026-09-14</p><div><span class="new">'+esc(r.neu)+'</span></div></div>';
+        }
+      }
+      h += '</div>';
+    });
+    var el = $("ruleList");
+    el.innerHTML = h;
+    Array.prototype.forEach.call(el.querySelectorAll("[data-diff]"), function(b){
+      b.addEventListener("click", function(){
+        openDiff = (openDiff === b.getAttribute("data-diff")) ? null : b.getAttribute("data-diff");
+        renderRules();
+      });
+    });
+  }
+
+  /* ---------- deductions ---------- */
+  (function(){
+    var h = "";
+    DEDUCTIONS.forEach(function(d){
+      h += '<div class="ded"><span>'+esc(d.t)+'<br><span class="tiny muted">'+esc(d.s)+'</span></span><b style="color:var(--red)">'+money(d.v)+'</b></div>';
+    });
+    $("deds").innerHTML = h;
+  })();
+
+  /* ---------- gate ---------- */
+  function state(c){ return (c.st === "red" && fixed[c.rule]) ? "ok" : c.st; }
+  function exposure(){
+    var t = 0;
+    CHECKS.forEach(function(c){ if(c.st === "red" && !fixed[c.rule]) t += c.exposure; });
+    return t;
+  }
+  function renderChecks(){
+    var h = "", reds = 0, ambers = 0, oks = 0;
+    CHECKS.forEach(function(c, i){
+      var st = state(c);
+      if(st === "ok") oks++; else if(st === "red") reds++; else ambers++;
+      var cls = st === "ok" ? "ok" : (st === "red" ? "bad" : "warn");
+      var glyph = st === "ok" ? "✓" : (st === "red" ? "!" : "•");
+      var clickable = !!c.obs;
+      var r = ruleById(c.rule);
+      h += '<div class="check">';
+      h += '<'+(clickable?'button':'div')+' class="chkrow'+(clickable?" click":"")+'"'+(clickable?' data-i="'+i+'" aria-expanded="'+(openDetail===i)+'"':"")+'>';
+      h += '<span class="ic '+cls+'" aria-hidden="true">'+glyph+'</span>';
+      h += '<span class="t"><span class="ttl'+(c.st==="red"&&fixed[c.rule]?" fixed":"")+'">'+esc(c.ttl)+'</span>';
+      h += '<br><span class="tiny muted">'+c.rule+' · '+r.code+' · '+esc(r.cite)+'</span></span>';
+      if(c.st === "red") h += '<span class="exp bad">'+(fixed[c.rule] ? '<span style="color:var(--green)">cleared</span>' : money(c.exposure))+'</span>';
+      if(clickable) h += '<span class="caret">'+(openDetail===i?"▲":"▼")+'</span>';
+      h += '</'+(clickable?'button':'div')+'>';
+      if(clickable && openDetail === i){
+        h += '<div class="detail">';
+        h += '<dl><dt>Guide</dt><dd>'+esc(r.cite)+' — “'+esc(r.text)+'”</dd>';
+        h += '<dt>Code</dt><dd><span class="chip code">'+r.code+'</span> · '+esc(r.pen)+'</dd>';
+        h += '<dt>Observed</dt><dd>'+esc(c.obs)+'</dd>';
+        if(c.exposure) h += '<dt>Exposure</dt><dd><b style="color:var(--red)">'+money(c.exposure)+'</b> on this shipment</dd>';
+        h += '</dl>';
+        h += '<div class="fix"><b>Fix on the dock:</b> '+esc(c.fix)+'</div>';
+        if(c.softNote) h += '<div class="tiny muted" style="margin-bottom:10px">'+esc(c.softNote)+'</div>';
+        if(c.st === "red"){
+          h += '<button class="btn '+(fixed[c.rule]?"btn-ghost":"btn-dark")+'" data-fix="'+c.rule+'">'+(fixed[c.rule]?"✓ Marked fixed — undo":"Mark fixed")+'</button>';
+        }
+        if(c.why){
+          h += '<div><button class="btn btn-ghost" style="margin-top:8px" data-why="'+i+'">Why did this check exist?</button>';
+          h += '<div class="why hidden" id="why'+i+'">'+esc(c.why)+'</div></div>';
+        }
+        h += '</div>';
+      }
+      h += '</div>';
+    });
+    var el = $("checkList");
+    el.innerHTML = h;
+
+    Array.prototype.forEach.call(el.querySelectorAll("[data-i]"), function(b){
+      b.addEventListener("click", function(){
+        var i = parseInt(b.getAttribute("data-i"), 10);
+        openDetail = (openDetail === i) ? null : i;
+        renderChecks();
+      });
+    });
+    Array.prototype.forEach.call(el.querySelectorAll("[data-fix]"), function(b){
+      b.addEventListener("click", function(e){
+        e.stopPropagation();
+        var k = b.getAttribute("data-fix");
+        fixed[k] = !fixed[k];
+        renderChecks();
+        if(fixed[k]) toast("Marked fixed — exposure updated to " + money(exposure()));
+      });
+    });
+    Array.prototype.forEach.call(el.querySelectorAll("[data-why]"), function(b){
+      b.addEventListener("click", function(e){
+        e.stopPropagation();
+        var w = $("why" + b.getAttribute("data-why"));
+        if(w) w.classList.toggle("hidden");
+      });
+    });
+
+    $("tally").textContent = "— " + oks + " pass · " + ambers + " warn · " + reds + " blocking";
+    var exp = exposure();
+    $("expAmt").textContent = money(exp);
+    $("expAmt").className = "amt" + (exp === 0 ? " clear" : "");
+    $("expLbl").textContent = exp === 0 ? (released ? "Shipment released — exposure cleared" : "Exposure if shipped as-is") : "Exposure if shipped as-is";
+    var btn = $("releaseBtn");
+    btn.disabled = exp !== 0 || released;
+    btn.textContent = released ? "✓ Released — packet generated" : "Release shipment";
+    $("releaseHint").textContent = released
+      ? "Evidence packet for PO 8842190117 is ready on the Evidence Packet tab."
+      : (exp === 0 ? "All blocking checks cleared. Safe to release." : "Clear both blocking checks to enable release.");
+    $("railStatus").innerHTML = released
+      ? '<span class="dot"></span>Released'
+      : (reds ? '<span class="dot" style="background:var(--red)"></span>'+reds+' blocking' : '<span class="dot"></span>Ready to release');
+  }
+
+  $("releaseBtn").addEventListener("click", function(){
+    if(exposure() !== 0 || released) return;
+    released = true;
+    renderChecks();
+    renderPacket();
+    $("packetLocked").classList.add("hidden");
+    $("packetDoc").classList.remove("hidden");
+    toast("Shipment released — evidence packet generated");
+  });
+
+  $("goGate").addEventListener("click", function(){ showTab("tab-gate"); });
+
+  /* ---------- packet ---------- */
+  function renderPacket(){
+    var times = ["05:31","05:33","05:34","05:36","05:37","05:39","05:40","05:41","05:43","05:44","05:46","05:47"];
+    var h = "";
+    CHECKS.slice().sort(function(a,b){ return a.rule < b.rule ? -1 : 1; }).forEach(function(c, i){
+      var r = ruleById(c.rule);
+      var note = c.st === "red" ? " (remediated on dock, re-verified)" : (c.st === "amber" ? " (ASN staged 05:44, sent 06:41 CT)" : "");
+      h += '<div class="docline"><span class="ic ok" aria-hidden="true">✓</span>'+
+           '<span style="flex:1 1 auto"><b>'+r.id+'</b> '+esc(r.text.replace(/\.$/,""))+note+
+           '<br><span class="tiny muted">'+esc(r.cite)+' · '+r.code+'</span></span>'+
+           '<span class="ts">2026-10-30 '+times[i]+' CT</span></div>';
+    });
+    $("packetChecks").innerHTML = h;
+  }
+
+  $("attachBtn").addEventListener("click", function(){
+    $("attachBtn").textContent = "✓ Attached";
+    $("attachBtn").disabled = true;
+    $("attachState").textContent = "Packet attached to APDP dispute #D-77214 (demo)";
+    toast("Evidence packet attached to APDP dispute #D-77214");
+  });
+
+  /* ---------- toast ---------- */
+  var toastTimer = null;
+  function toast(msg){
+    var t = $("toast");
+    t.textContent = msg;
+    t.classList.add("show");
+    if(toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){ t.classList.remove("show"); }, 3200);
+  }
+
+  renderRules();
+  renderChecks();
+  showTab("tab-gate");
+})();
+</script>
+</body>
+</html>

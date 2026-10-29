@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-28T20:54:37.984Z",
+  "updated": "2026-10-29T20:53:47.328Z",
   "ideas": [
     {
       "id": "2026-10-22-agentgauntlet",
@@ -340,6 +340,66 @@
       "sources_count": 32,
       "superseded_by": null,
       "sibling": "2026-10-28-skillscale"
+    },
+    {
+      "id": "2026-10-29-parsedoff",
+      "number": 14,
+      "date": "2026-10-29",
+      "track": "build",
+      "short_name": "Parsedoff",
+      "verdict": "dig_deeper",
+      "score": 7.8,
+      "scores": {
+        "wow": 8,
+        "shareability": 8,
+        "buildability": 8,
+        "freshness": 9,
+        "usefulness": 6
+      },
+      "effort": "a weekend",
+      "category": "Developer tools",
+      "tags": [
+        "ocr",
+        "documents",
+        "benchmarks",
+        "agents"
+      ],
+      "pain_type": "expressed",
+      "one_liner": "Drop one ugly page — an invoice, a lab table, a scanned form — and Parsedoff shows you two anonymous parses of it side by side, you vote for the better one, then it reveals which model won and scores both against the new Document Parsing Protocol rules.",
+      "prototype_url": "https://yashsharma1911.github.io/granted/ideas/2026-10-29-parsedoff/",
+      "sources_count": 15,
+      "superseded_by": null,
+      "sibling": "2026-10-29-dockproof"
+    },
+    {
+      "id": "2026-10-29-dockproof",
+      "number": 15,
+      "date": "2026-10-29",
+      "track": "venture",
+      "short_name": "Dockproof",
+      "verdict": "dig_deeper",
+      "score": 7.6,
+      "scores": {
+        "pain": 8,
+        "market_pull": 8,
+        "timing": 7,
+        "gap": 7,
+        "wedge": 8
+      },
+      "effort": "3+ months",
+      "category": "Back-office automation",
+      "tags": [
+        "logistics",
+        "compliance",
+        "cpg",
+        "agents"
+      ],
+      "pain_type": "expressed",
+      "one_liner": "For the retail operations manager at a $5M-$100M CPG brand (and the 3PL account manager who ships for them), Dockproof turns each retailer's routing guide plus the brand's own chargeback history into a per-PO pre-ship checklist that must be cleared before the truck leaves — and files the cleared checklist, label scans and photos as a dated evidence packet that wins the dispute if a deduction lands anyway.",
+      "prototype_url": "https://yashsharma1911.github.io/granted/ideas/2026-10-29-dockproof/",
+      "sources_count": 26,
+      "superseded_by": null,
+      "sibling": "2026-10-29-parsedoff"
     }
   ]
 }
