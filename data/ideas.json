@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-29T20:53:47.328Z",
+  "updated": "2026-10-30T20:51:39.374Z",
   "ideas": [
     {
       "id": "2026-10-22-agentgauntlet",
@@ -400,6 +400,66 @@
       "sources_count": 26,
       "superseded_by": null,
       "sibling": "2026-10-29-parsedoff"
+    },
+    {
+      "id": "2026-10-30-rightsline",
+      "number": 16,
+      "date": "2026-10-30",
+      "track": "venture",
+      "short_name": "Rightsline",
+      "verdict": "dig_deeper",
+      "score": 8.1,
+      "scores": {
+        "pain": 7.5,
+        "market_pull": 7.5,
+        "timing": 8.5,
+        "gap": 8.5,
+        "wedge": 8.5
+      },
+      "effort": "2-4 weeks",
+      "category": "Back-office automation",
+      "tags": [
+        "creator-ops",
+        "compliance",
+        "paid-social",
+        "agents"
+      ],
+      "pain_type": "expressed",
+      "one_liner": "For the creative/influencer ops lead at a DTC brand or UGC-ads agency, Rightsline connects to the brand's own Meta and TikTok ad accounts, matches every live creator ad to its licence and platform authorization code, and raises one alert before an ad either loses its rights or stops delivering — with a one-click pause or renewal request.",
+      "prototype_url": "https://yashsharma1911.github.io/granted/ideas/2026-10-30-rightsline/",
+      "sources_count": 21,
+      "superseded_by": null,
+      "sibling": "2026-10-30-voiceprint"
+    },
+    {
+      "id": "2026-10-30-voiceprint",
+      "number": 17,
+      "date": "2026-10-30",
+      "track": "build",
+      "short_name": "Voiceprint",
+      "verdict": "dig_deeper",
+      "score": 7.8,
+      "scores": {
+        "wow": 8,
+        "shareability": 8,
+        "buildability": 8,
+        "freshness": 8,
+        "usefulness": 7
+      },
+      "effort": "a weekend",
+      "category": "Writing tools",
+      "tags": [
+        "writing",
+        "llm",
+        "benchmark",
+        "style"
+      ],
+      "pain_type": "expressed",
+      "one_liner": "Paste three paragraphs you actually wrote and Voiceprint shows four top models rewriting one of them, scores how much of your voice each one destroyed, hands you a copy-paste voice.md that stops it, and posts the week's model-vs-voice leaderboard.",
+      "prototype_url": "https://yashsharma1911.github.io/granted/ideas/2026-10-30-voiceprint/",
+      "sources_count": 16,
+      "superseded_by": null,
+      "sibling": "2026-10-30-rightsline"
     }
   ]
 }

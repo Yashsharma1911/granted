@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rightsline — creator rights clock for live ad accounts</title>
+<style>
+:root{
+  --bg:#f6f7f9; --panel:#ffffff; --ink:#15181d; --muted:#656f7d; --line:#e2e6ec;
+  --red:#c42b1c; --redbg:#fdecea; --amber:#9a6200; --amberbg:#fff5e0;
+  --green:#1a7f4b; --greenbg:#e8f6ee; --grey:#5c6672; --greybg:#eef0f3;
+  --accent:#1f4fd8; --accentink:#fff; --ugly:#fbfbf7;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#101317; --panel:#171b21; --ink:#e9edf2; --muted:#9aa5b3; --line:#2a313a;
+    --red:#ff7a6b; --redbg:#3a1b17; --amber:#ffc266; --amberbg:#3a2c12;
+    --green:#5fd39a; --greenbg:#123326; --grey:#9aa5b3; --greybg:#232a32;
+    --accent:#6f93ff; --accentink:#0b0e12; --ugly:#1b1e22;
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--ink); font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  -webkit-text-size-adjust:100%;
+}
+header.top{
+  position:sticky; top:0; z-index:40; background:var(--panel); border-bottom:1px solid var(--line);
+  padding:10px 14px; display:flex; flex-wrap:wrap; gap:8px; align-items:center; justify-content:space-between;
+}
+.brand{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.brand b{font-size:17px;letter-spacing:-.2px}
+.brand span{color:var(--muted);font-size:13px}
+.tagdemo{font-size:11px;border:1px solid var(--line);color:var(--muted);padding:2px 7px;border-radius:999px}
+button{font:inherit;cursor:pointer}
+.btn{
+  min-height:44px; padding:10px 16px; border-radius:10px; border:1px solid var(--line);
+  background:var(--panel); color:var(--ink);
+}
+.btn:active{transform:translateY(1px)}
+.btn.primary{background:var(--accent);color:var(--accentink);border-color:transparent;font-weight:600}
+.btn.wide{width:100%}
+.btn[disabled]{opacity:.55;cursor:default}
+.wrap{max-width:1500px;margin:0 auto;padding:14px;display:grid;gap:14px;grid-template-columns:1fr}
+@media(min-width:1050px){ .wrap{grid-template-columns:270px minmax(0,1fr);align-items:start} }
+
+/* BEFORE rail */
+.before h2{font-size:12px;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);margin:0 0 8px}
+.uglycard{background:var(--ugly);border:1px solid #b9b9ad;border-radius:3px;padding:7px;margin-bottom:10px}
+@media (prefers-color-scheme: dark){ .uglycard{border-color:#3a4049} }
+.uglycard h3{margin:0 0 6px;font-size:12px;font-weight:700}
+.chips{display:flex;flex-wrap:wrap;gap:4px}
+.chip{
+  font-size:10.5px;border:1px solid #c3c3b4;background:var(--panel);padding:2px 5px;border-radius:2px;
+  max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted)
+}
+@media (prefers-color-scheme: dark){ .chip{border-color:#39404a} }
+table.sheet{border-collapse:collapse;width:100%;font-size:10.5px;table-layout:fixed}
+table.sheet th,table.sheet td{border:1px solid #c3c3b4;padding:2px 3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media (prefers-color-scheme: dark){ table.sheet th,table.sheet td{border-color:#39404a} }
+table.sheet th{background:#ecece2;font-weight:600;text-align:left}
+@media (prefers-color-scheme: dark){ table.sheet th{background:#232a32} }
+td.blank{background:#ffe9a8}
+@media (prefers-color-scheme: dark){ td.blank{background:#4a3c12} }
+.note{font-size:10.5px;color:var(--muted);margin-top:5px;font-style:italic}
+
+/* scan */
+.scanbox{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px}
+.scanbox p.lede{margin:0 0 12px;color:var(--muted);font-size:14px}
+.steps{list-style:none;margin:14px 0 0;padding:0;display:grid;gap:9px}
+.steps li{display:flex;gap:9px;align-items:center;font-size:14px;color:var(--muted);opacity:.45}
+.steps li.on{opacity:1;color:var(--ink)}
+.steps li.done{opacity:1;color:var(--muted)}
+.dot{width:16px;height:16px;flex:0 0 16px;border-radius:50%;border:2px solid var(--line);display:inline-block}
+.steps li.on .dot{border-color:var(--accent);border-top-color:transparent;animation:spin .8s linear infinite}
+.steps li.done .dot{border-color:var(--green);background:var(--green)}
+@keyframes spin{to{transform:rotate(360deg)}}
+.bar{height:6px;border-radius:99px;background:var(--line);overflow:hidden;margin-top:14px}
+.bar i{display:block;height:100%;width:0;background:var(--accent);transition:width .25s linear}
+
+/* AFTER */
+.hide{display:none !important}
+.counters{display:grid;gap:10px;grid-template-columns:repeat(2,minmax(0,1fr));margin-bottom:14px}
+@media(min-width:760px){ .counters{grid-template-columns:repeat(4,minmax(0,1fr))} }
+.ctr{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px}
+.ctr b{display:block;font-size:26px;line-height:1.1;letter-spacing:-.5px}
+.ctr span{font-size:12.5px;color:var(--muted)}
+.ctr.r b{color:var(--red)} .ctr.a b{color:var(--amber)} .ctr.g b{color:var(--grey)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.panelhead{padding:12px 14px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.panelhead h2{margin:0;font-size:15px}
+.panelhead small{color:var(--muted);font-size:12px}
+.rows{display:grid}
+.row{
+  display:grid;gap:10px;padding:12px 14px;border-bottom:1px solid var(--line);
+  grid-template-columns:52px minmax(0,1fr) auto; align-items:center; text-align:left;
+  background:transparent;border-left:0;border-right:0;border-top:0;width:100%;color:inherit;
+}
+.row:last-child{border-bottom:0}
+.row:hover{background:rgba(127,127,127,.06)}
+.row:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.thumb{width:52px;height:52px;border-radius:9px;display:flex;align-items:center;justify-content:center;padding:3px;
+  font-size:7.5px;line-height:1.1;text-align:center;color:#fff;word-break:break-all;overflow:hidden;font-weight:600}
+.meta1{display:flex;gap:7px;align-items:center;flex-wrap:wrap}
+.handle{font-weight:650}
+.badge{font-size:10.5px;border:1px solid var(--line);border-radius:99px;padding:1px 7px;color:var(--muted);white-space:nowrap}
+.adname{font-size:12.5px;color:var(--muted);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.term{font-size:12px;color:var(--muted);margin-top:3px}
+.spend{font-variant-numeric:tabular-nums;font-weight:600;font-size:13.5px}
+.right{display:flex;flex-direction:column;align-items:flex-end;gap:4px;min-width:112px}
+.days{font-size:20px;font-weight:750;letter-spacing:-.5px;font-variant-numeric:tabular-nums;line-height:1.05}
+.pill{font-size:10.5px;font-weight:650;padding:3px 8px;border-radius:99px;text-align:right;max-width:190px}
+.t-red{color:var(--red)} .t-amber{color:var(--amber)} .t-green{color:var(--green)} .t-grey{color:var(--grey)}
+.p-red{background:var(--redbg);color:var(--red)} .p-amber{background:var(--amberbg);color:var(--amber)}
+.p-green{background:var(--greenbg);color:var(--green)} .p-grey{background:var(--greybg);color:var(--grey)}
+.row.paused{opacity:.6}
+.row.paused .spend{text-decoration:line-through}
+
+/* drawer */
+.scrim{position:fixed;inset:0;background:rgba(10,12,16,.45);z-index:50}
+.drawer{
+  position:fixed;z-index:60;background:var(--panel);border-left:1px solid var(--line);
+  top:0;right:0;height:100%;width:min(420px,100%);overflow:auto;padding:16px;
+  box-shadow:-10px 0 30px rgba(0,0,0,.12)
+}
+@media(max-width:620px){ .drawer{top:auto;bottom:0;height:88%;width:100%;border-radius:16px 16px 0 0;border-left:0;border-top:1px solid var(--line)} }
+.dhead{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:10px}
+.dhead h3{margin:0;font-size:16px}
+.x{border:1px solid var(--line);background:var(--panel);color:var(--ink);width:40px;height:40px;border-radius:10px;font-size:18px;line-height:1}
+blockquote{
+  margin:10px 0;padding:12px 14px;border-left:3px solid var(--accent);background:rgba(127,127,127,.07);
+  border-radius:0 10px 10px 0;font-size:14px;font-style:italic
+}
+.src{font-size:11.5px;color:var(--muted)}
+.fields{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0}
+.field{border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+.field span{display:block;font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.field b{font-size:13.5px}
+.conf{display:inline-flex;gap:6px;align-items:center;font-size:12px;background:var(--greenbg);color:var(--green);padding:5px 10px;border-radius:99px;font-weight:650}
+.dactions{display:grid;gap:8px;margin-top:14px}
+textarea{
+  width:100%;min-height:170px;border:1px solid var(--line);border-radius:10px;padding:10px;font:13px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  background:var(--bg);color:var(--ink);resize:vertical
+}
+.toast{
+  position:fixed;left:50%;transform:translateX(-50%);bottom:18px;z-index:80;background:var(--ink);color:var(--bg);
+  padding:10px 16px;border-radius:99px;font-size:13.5px;box-shadow:0 6px 20px rgba(0,0,0,.25)
+}
+/* report */
+.report{background:#fff;color:#15181d;border:1px solid #d8dde4;border-radius:14px;padding:22px}
+.report h1{font-size:20px;margin:0 0 4px}
+.report .sub{color:#5a6472;font-size:13px;margin-bottom:16px}
+.report h4{margin:18px 0 6px;font-size:13px;text-transform:uppercase;letter-spacing:.07em;color:#5a6472}
+.report table{width:100%;border-collapse:collapse;font-size:13px}
+.report th,.report td{border-bottom:1px solid #e6e9ee;padding:7px 6px;text-align:left;vertical-align:top}
+.report th{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:#5a6472}
+.report .risk{margin-top:18px;background:#fdecea;color:#c42b1c;border-radius:10px;padding:12px 14px;font-weight:650;font-size:14.5px}
+.report .rfoot{margin-top:14px;font-size:11.5px;color:#7a838f}
+footer{padding:22px 14px 30px;text-align:center;color:var(--muted);font-size:12px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="brand">
+    <b>Rightsline</b>
+    <span>creator rights clock for live ad accounts</span>
+    <span class="tagdemo">Demo data</span>
+  </div>
+  <button class="btn" id="exportBtn" hidden>Export client report</button>
+</header>
+
+<div class="wrap">
+  <!-- LEFT: BEFORE -->
+  <aside class="before">
+    <h2>Before — what you have today</h2>
+    <div class="uglycard">
+      <h3>Creator contracts (shared drive)</h3>
+      <div class="chips" id="chips"></div>
+    </div>
+    <div class="uglycard">
+      <h3>Rights tracker.xlsx</h3>
+      <table class="sheet">
+        <thead><tr><th>Creator</th><th>Term</th><th>Ends</th><th>Chan.</th><th>Paid?</th></tr></thead>
+        <tbody>
+          <tr><td>Mara K</td><td>90d</td><td>12 Sep</td><td class="blank"></td><td>y</td></tr>
+          <tr><td>rowan</td><td>Spark</td><td>4 Nov</td><td>TT</td><td class="blank"></td></tr>
+          <tr><td>Fitz</td><td>6mo</td><td>?</td><td>Meta</td><td>y</td></tr>
+          <tr><td>devi</td><td>60d</td><td>2 Nov</td><td>TT</td><td>y</td></tr>
+          <tr><td>sam</td><td class="blank"></td><td></td><td></td><td>?</td></tr>
+          <tr><td>jules</td><td>organic</td><td>n/a</td><td>IG</td><td class="blank"></td></tr>
+        </tbody>
+      </table>
+      <div class="note">last edited 6 weeks ago by Priya</div>
+    </div>
+  </aside>
+
+  <!-- CENTRE -->
+  <main>
+    <section class="scanbox" id="scanbox">
+      <p class="lede">Northbeam Supply Co · 2 ad accounts connected · 8 contracts in the drive. Rightsline reads every live creator ad, matches it to a licence and tells you which ones are already out of rights.</p>
+      <button class="btn primary wide" id="scanBtn">Scan 2 ad accounts + 8 contracts</button>
+      <ul class="steps hide" id="steps"></ul>
+      <div class="bar hide" id="bar"><i></i></div>
+    </section>
+
+    <section id="after" class="hide">
+      <div class="counters" id="counters"></div>
+      <div class="panel">
+        <div class="panelhead">
+          <h2>Live creator ads — worst first</h2>
+          <small id="tableSub">Tap a row to see the matched contract clause</small>
+        </div>
+        <div class="rows" id="rows"></div>
+      </div>
+    </section>
+
+    <section id="reportView" class="hide"></section>
+  </main>
+</div>
+
+<footer>Prototype by Granted, inspired by your bookmarks</footer>
+
+<div id="scrim" class="scrim hide"></div>
+<aside id="drawer" class="drawer hide" role="dialog" aria-modal="true" aria-label="Ad rights detail"></aside>
+<div id="toast" class="toast hide" role="status"></div>
+
+<script>
+(function(){
+  "use strict";
+  var FILES = ["Mara_K_contract_FINAL_v2.pdf","DM screenshot 14 Mar.png","rowan-ugc-agreement.pdf",
+    "Spark code email RE RE FWD.eml","fitzhome_SOW_signed(1).pdf","devi_cooks_terms.docx",
+    "IMG_4471.HEIC (signature)","jules_collab_notes.txt"];
+
+  var DATA = [
+    {h:"@mara.kowal",f:"MK_hook3_bathroom.mp4",c:"#7c3aed",p:"Meta",ad:"ABO | Retarget | Bathroom hook v3",spend:412,
+     term:"90d paid social, ended 12 Sep",days:-48,st:"EXPIRED & SPENDING",lv:"red",
+     q:"Brand may use the Content in paid social advertising on Meta and TikTok for ninety (90) (90) days from first publication.",
+     src:"Mara_K_contract_FINAL_v2.pdf · §4.2 Licence Term",fl:["90 days","Meta + TikTok","US","No"],conf:94},
+    {h:"@rowanbuilds",f:"rowan_unbox_v2.mp4",c:"#0ea5e9",p:"TikTok Spark",ad:"Spark | Prospecting | Unbox v2",spend:228,
+     term:"Spark code expires 4 Nov · campaign runs to 30 Nov",days:5,st:"AUTHORIZATION ENDS BEFORE CAMPAIGN — will stop delivering",lv:"red",
+     q:"Creator grants a Spark Ads authorization code valid for thirty (30) days, renewable by written request.",
+     src:"rowan-ugc-agreement.pdf · §3 Spark Authorization",fl:["30 days (code)","TikTok only","US + CA","Yes"],conf:91},
+    {h:"@devi.cooks",f:"devi_recipe_cut4.mp4",c:"#f97316",p:"TikTok Spark",ad:"Spark | BAU | Recipe cut 4",spend:310,
+     term:"60d Spark code, expires 2 Nov",days:3,st:"EXPIRES IN 3 DAYS",lv:"red",
+     q:"Authorization is granted for sixty (60) days from the date the code is issued and may not be extended automatically.",
+     src:"devi_cooks_terms.docx · §2.1",fl:["60 days","TikTok only","US","Yes"],conf:96},
+    {h:"@jules.makes",f:"jules_grwm_01.mp4",c:"#db2777",p:"Meta",ad:"ABO | Lookalike | GRWM 01",spend:136,
+     term:"Organic grant only — no paid rights",days:0,st:"GRANT IS ORGANIC ONLY — paid use not licensed",lv:"red",
+     q:"Creator agrees the Brand may reshare the Content on the Brand's own organic social channels. No paid media rights are granted.",
+     src:"jules_collab_notes.txt + DM screenshot 14 Mar.png",fl:["Perpetual (organic)","Organic only","US","No"],conf:88},
+    {h:"@theo.builds",f:"theo_shelf_demo.mp4",c:"#16a34a",p:"TikTok Spark",ad:"Spark | Retarget | Shelf demo",spend:0,
+     term:"Organic grant only — no paid rights",days:0,st:"GRANT IS ORGANIC ONLY — paid use not licensed",lv:"red",
+     q:"Permission is given for organic reposting on the Brand's TikTok account only.",
+     src:"IMG_4471.HEIC (signature) · handwritten addendum",fl:["Perpetual (organic)","Organic only","US","No"],conf:72},
+    {h:"@sam_outdoors",f:"sam_trail_b.mp4",c:"#64748b",p:"Meta",ad:"ABO | Prospecting | Trail B",spend:47,
+     term:"No contract matched",days:null,st:"NO LICENCE ON FILE",lv:"grey",
+     q:"No signed agreement or DM grant could be matched to this asset. The nearest match was a 2024 gifting email with no usage terms.",
+     src:"No source document found",fl:["Unknown","Unknown","Unknown","Unknown"],conf:0},
+    {h:"@thefitzhome",f:"fitz_testimonial.mp4",c:"#ca8a04",p:"Meta",ad:"CBO | Mid-funnel | Testimonial",spend:95,
+     term:"6 months paid social, ends 10 Nov",days:11,st:"EXPIRES IN 11 DAYS",lv:"amber",
+     q:"The licence shall continue for six (6) months from the Effective Date across paid social channels.",
+     src:"fitzhome_SOW_signed(1).pdf · §5",fl:["6 months","Meta + TikTok","US","Yes"],conf:93},
+    {h:"@priyacooks.co",f:"priya_stovetop_a.mp4",c:"#e11d48",p:"Meta",ad:"ABO | Prospecting | Stovetop A",spend:88,
+     term:"90d paid social, ends 13 Nov",days:14,st:"EXPIRES IN 14 DAYS",lv:"amber",
+     q:"Brand may use the Content in paid social advertising for ninety (90) days from first publication.",
+     src:"Spark code email RE RE FWD.eml",fl:["90 days","Meta","US","No"],conf:85},
+    {h:"@nico.rides",f:"nico_commute_c.mp4",c:"#0891b2",p:"TikTok Spark",ad:"Spark | BAU | Commute C",spend:74,
+     term:"Spark code, expires 13 Nov",days:14,st:"EXPIRES IN 14 DAYS",lv:"amber",
+     q:"Spark authorization valid through 13 November 2026 unless renewed in writing.",
+     src:"rowan-ugc-agreement.pdf · Appendix B",fl:["Until 13 Nov","TikTok only","US","Yes"],conf:90},
+    {h:"@harperhome",f:"harper_setup_v5.mp4",c:"#2563eb",p:"Meta",ad:"CBO | Evergreen | Setup v5",spend:163,
+     term:"12 months paid social, ends 2 Jun 2027",days:215,st:"COVERED",lv:"green",
+     q:"Licence granted for twelve (12) months across paid social, display and brand website.",
+     src:"fitzhome_SOW_signed(1).pdf · Schedule 2",fl:["12 months","Meta + TikTok","US + CA","Yes"],conf:97},
+    {h:"@bexandco",f:"bex_review_longform.mp4",c:"#7e22ce",p:"TikTok Spark",ad:"Spark | Evergreen | Long review",spend:119,
+     term:"Spark code renewed, expires 28 Feb 2027",days:121,st:"COVERED",lv:"green",
+     q:"Creator shall re-issue the Spark authorization code each quarter for the duration of the retainer.",
+     src:"devi_cooks_terms.docx · Retainer Addendum",fl:["Quarterly rolling","TikTok only","US","Yes"],conf:95},
+    {h:"@milo.fixes",f:"milo_howto_02.mp4",c:"#059669",p:"Meta",ad:"ABO | Mid-funnel | How-to 02",spend:52,
+     term:"6 months paid social, ends 19 Mar 2027",days:140,st:"COVERED",lv:"green",
+     q:"Brand may use the Content in paid and organic social for six (6) months from delivery.",
+     src:"Mara_K_contract_FINAL_v2.pdf · template reuse",fl:["6 months","Meta + TikTok","US","No"],conf:92}
+  ];
+
+  var state = DATA.map(function(d,i){ return {i:i, status:'open'}; });
+
+  function $(id){ return document.getElementById(id); }
+  function esc(s){ return String(s).replace(/[&<>"]/g,function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+
+  // BEFORE chips
+  $('chips').innerHTML = FILES.map(function(f){ return '<span class="chip" title="'+esc(f)+'">'+esc(f)+'</span>'; }).join('');
+
+  // SCAN
+  var STEPS = ["Reading 42 live ads from Meta…","Reading 18 live ads from TikTok…","Extracting 8 licences…","Matching assets to licences…"];
+  var scanning = false;
+  $('scanBtn').addEventListener('click', function(){
+    if(scanning) return;
+    scanning = true;
+    var btn = $('scanBtn'); btn.disabled = true; btn.textContent = 'Scanning…';
+    var ul = $('steps'); ul.classList.remove('hide');
+    ul.innerHTML = STEPS.map(function(s){ return '<li><span class="dot"></span><span>'+esc(s)+'</span></li>'; }).join('');
+    var bar = $('bar'); bar.classList.remove('hide');
+    var fill = bar.firstElementChild;
+    var items = ul.querySelectorAll('li');
+    var n = 0;
+    function step(){
+      if(n > 0) { items[n-1].classList.remove('on'); items[n-1].classList.add('done'); }
+      if(n < items.length){
+        items[n].classList.add('on');
+        fill.style.width = Math.round(((n+1)/items.length)*100) + '%';
+        n++;
+        setTimeout(step, 625);
+      } else {
+        finish();
+      }
+    }
+    step();
+  });
+
+  function finish(){
+    $('scanbox').classList.add('hide');
+    $('after').classList.remove('hide');
+    $('exportBtn').hidden = false;
+    render();
+    toast('Scan complete — 60 live creator ads checked');
+    $('after').scrollIntoView({behavior:'smooth', block:'start'});
+  }
+
+  function counts(){
+    var expired=0, soon=0, none=0, live=60;
+    DATA.forEach(function(d,i){
+      var s = state[i].status;
+      if(s==='paused'||s==='covered') return;
+      if(d.lv==='red') expired++;
+      else if(d.lv==='amber') soon++;
+      if(d.lv==='grey') none++;
+    });
+    // spec-aligned baselines beyond the 12 shown rows
+    return {live:live, expired:expired, soon:soon+2, none:none+6};
+  }
+
+  function render(){
+    var c = counts();
+    $('counters').innerHTML =
+      ctr('', c.live, 'live creator ads') +
+      ctr('r', c.expired, 'EXPIRED or unlicensed, still spending') +
+      ctr('a', c.soon, 'expiring in 14 days') +
+      ctr('g', c.none, 'no licence on file');
+
+    $('rows').innerHTML = DATA.map(function(d,i){ return rowHTML(d,i); }).join('');
+    Array.prototype.forEach.call($('rows').querySelectorAll('.row'), function(el){
+      el.addEventListener('click', function(){ openDrawer(parseInt(el.getAttribute('data-i'),10)); });
+    });
+  }
+
+  function ctr(cls,n,label){
+    return '<div class="ctr '+cls+'"><b>'+n+'</b><span>'+esc(label)+'</span></div>';
+  }
+
+  function levelOf(i){
+    var s = state[i].status;
+    if(s==='paused') return 'grey';
+    if(s==='covered') return 'green';
+    return DATA[i].lv;
+  }
+  function statusOf(i){
+    var s = state[i].status;
+    if(s==='paused') return 'PAUSED BY YOU';
+    if(s==='covered') return 'MARKED AS COVERED';
+    return DATA[i].st;
+  }
+
+  function daysText(d){
+    if(d.days === null) return '—';
+    if(d.days < 0) return '−' + Math.abs(d.days) + 'd';
+    if(d.days === 0) return '0d';
+    return d.days + 'd';
+  }
+
+  function rowHTML(d,i){
+    var lv = levelOf(i);
+    return '<button class="row'+(state[i].status==='paused'?' paused':'')+'" data-i="'+i+'">'+
+      '<span class="thumb" style="background:'+d.c+'">'+esc(d.f)+'</span>'+
+      '<span>'+
+        '<span class="meta1"><span class="handle">'+esc(d.h)+'</span><span class="badge">'+esc(d.p)+'</span>'+
+        '<span class="spend">$'+d.spend+'/day</span></span>'+
+        '<span class="adname">'+esc(d.ad)+'</span>'+
+        '<span class="term">'+esc(d.term)+'</span>'+
+      '</span>'+
+      '<span class="right">'+
+        '<span class="days t-'+lv+'">'+daysText(d)+'</span>'+
+        '<span class="pill p-'+lv+'">'+esc(statusOf(i))+'</span>'+
+      '</span>'+
+    '</button>';
+  }
+
+  // DRAWER
+  var openIdx = null;
+  function openDrawer(i){
+    if(isNaN(i) || !DATA[i]){ toast('That ad could not be opened'); return; }
+    openIdx = i;
+    var d = DATA[i];
+    var conf = d.conf ? '<span class="conf">'+d.conf+'% match — confirm</span>' : '<span class="pill p-grey">No match — needs manual review</span>';
+    $('drawer').innerHTML =
+      '<div class="dhead"><div><h3>'+esc(d.h)+'</h3><div class="src">'+esc(d.ad)+' · '+esc(d.p)+' · $'+d.spend+'/day</div></div>'+
+      '<button class="x" id="closeD" aria-label="Close">×</button></div>'+
+      '<div class="pill p-'+levelOf(i)+'" style="display:inline-block;max-width:none">'+esc(statusOf(i))+'</div>'+
+      '<blockquote>“'+esc(d.q)+'”</blockquote>'+
+      '<div class="src">Source: '+esc(d.src)+'</div>'+
+      '<div class="fields">'+
+        fld('Term', d.fl[0]) + fld('Channels', d.fl[1]) + fld('Territory', d.fl[2]) + fld('Whitelisting', d.fl[3]) +
+      '</div>'+ conf +
+      '<div class="dactions">'+
+        '<button class="btn" id="aPause">Pause ad</button>'+
+        '<button class="btn" id="aDraft">Draft renewal request</button>'+
+        '<button class="btn" id="aCover">Mark as covered</button>'+
+      '</div>'+
+      '<div id="draftArea"></div>';
+    $('drawer').classList.remove('hide');
+    $('scrim').classList.remove('hide');
+    $('closeD').addEventListener('click', closeDrawer);
+    $('aPause').addEventListener('click', function(){ act('paused','Ad paused — spend stopped'); });
+    $('aCover').addEventListener('click', function(){ act('covered','Marked as covered'); });
+    $('aDraft').addEventListener('click', draft);
+  }
+  function fld(k,v){ return '<div class="field"><span>'+esc(k)+'</span><b>'+esc(v)+'</b></div>'; }
+
+  function act(st,msg){
+    if(openIdx===null) return;
+    state[openIdx].status = st;
+    render(); toast(msg); closeDrawer();
+  }
+
+  function draft(){
+    if(openIdx===null) return;
+    var d = DATA[openIdx];
+    var msg = "Hi "+d.h.replace('@','')+" — quick one from Northbeam Supply Co.\n\n"+
+      "Your video "+d.f+" is performing well for us ($"+d.spend+"/day in spend right now).\n\n"+
+      "Our current agreement says:\n\u201C"+d.q+"\u201D\n\n"+
+      "That window is "+(d.days!==null && d.days<0 ? "already closed" : "closing shortly")+", so we'd love to renew the paid usage rights for another 90 days at $180.\n\n"+
+      "If that works, just reply \u201Cagreed\u201D and "+(d.p.indexOf('Spark')>-1 ? "re-issue the Spark code" : "we'll keep it live")+".\n\nThanks!\nPriya, Northbeam Supply Co";
+    $('draftArea').innerHTML = '<h4 style="margin:16px 0 6px;font-size:13px">Renewal request — $180 / 90 days</h4>'+
+      '<textarea id="draftText" readonly></textarea><button class="btn wide" id="copyBtn" style="margin-top:8px">Copy message</button>';
+    $('draftText').value = msg;
+    $('copyBtn').addEventListener('click', function(){
+      var ta = $('draftText');
+      try{
+        ta.removeAttribute('readonly'); ta.select(); ta.setSelectionRange(0,99999);
+        var ok = document.execCommand && document.execCommand('copy');
+        ta.setAttribute('readonly','readonly');
+        toast(ok ? 'Message copied' : 'Select the text and copy manually');
+      }catch(e){ toast('Select the text and copy manually'); }
+    });
+  }
+
+  function closeDrawer(){
+    $('drawer').classList.add('hide');
+    $('scrim').classList.add('hide');
+    openIdx = null;
+  }
+  $('scrim').addEventListener('click', closeDrawer);
+  document.addEventListener('keydown', function(e){ if(e.key==='Escape') closeDrawer(); });
+
+  var tTimer;
+  function toast(msg){
+    var t = $('toast'); t.textContent = msg; t.classList.remove('hide');
+    clearTimeout(tTimer); tTimer = setTimeout(function(){ t.classList.add('hide'); }, 2200);
+  }
+
+  // REPORT
+  var showingReport = false;
+  $('exportBtn').addEventListener('click', function(){
+    showingReport = !showingReport;
+    if(showingReport){ buildReport(); $('after').classList.add('hide'); $('reportView').classList.remove('hide'); this.textContent='Back to rights list'; }
+    else { $('reportView').classList.add('hide'); $('after').classList.remove('hide'); this.textContent='Export client report'; }
+    window.scrollTo({top:0,behavior:'smooth'});
+  });
+
+  function buildReport(){
+    var rows = [], risk = 0;
+    DATA.forEach(function(d,i){
+      var lv = levelOf(i);
+      if(lv==='red' || lv==='grey'){
+        if(state[i].status!=='paused' && state[i].status!=='covered') risk += d.spend;
+        rows.push('<tr><td><b>'+esc(d.h)+'</b><br><span style="color:#5a6472">'+esc(d.f)+'</span></td>'+
+          '<td>'+esc(d.p)+'</td><td>$'+d.spend+'/day</td><td>'+esc(d.term)+'</td><td>'+esc(statusOf(i))+'</td></tr>');
+      }
+    });
+    if(!rows.length) rows.push('<tr><td colspan="5">No exceptions — every live creator ad has valid rights. Nice.</td></tr>');
+    $('reportView').innerHTML =
+      '<div class="report">'+
+        '<h1>Creator Rights Report — Northbeam Supply Co</h1>'+
+        '<div class="sub">October 2026 · 2 ad accounts · 60 live creator ads · 8 contracts reviewed · Demo data</div>'+
+        '<h4>Exceptions requiring action</h4>'+
+        '<table><thead><tr><th>Creator / asset</th><th>Platform</th><th>Spend</th><th>Licence</th><th>Issue</th></tr></thead><tbody>'+rows.join('')+'</tbody></table>'+
+        '<div class="risk">At risk: $'+(risk||0).toLocaleString('en-US')+'/day of spend running without valid rights or authorization.</div>'+
+        '<h4>Recommended next steps</h4>'+
+        '<table><tbody>'+
+          '<tr><td>1</td><td>Pause the expired Meta ads today and renew Mara K at $180 / 90 days.</td></tr>'+
+          '<tr><td>2</td><td>Request fresh Spark codes from @rowanbuilds and @devi.cooks before 4 Nov.</td></tr>'+
+          '<tr><td>3</td><td>Get written paid-media grants for the two organic-only assets, or pull them.</td></tr>'+
+          '<tr><td>4</td><td>Source a licence for @sam_outdoors — no agreement found in the drive.</td></tr>'+
+        '</tbody></table>'+
+        '<div class="rfoot">Generated by Rightsline · figures reflect the last completed scan. Prototype — demo data.</div>'+
+      '</div>';
+  }
+})();
+</script>
+</body>
+</html>

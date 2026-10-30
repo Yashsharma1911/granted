@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Voiceprint — see which model eats your writing voice</title>
+<style>
+:root{
+  --bg:#faf8f4; --panel:#fffefb; --ink:#1b1a17; --muted:#6d685e; --line:#e2ddd2;
+  --green:#1f7a4d; --greenbg:#d9f2e2; --amber:#b06d00; --amberbg:#fdeccb; --red:#b1332b; --redbg:#fbdedb;
+  --accent:#1b1a17; --ring:#cfc8ba;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#131311; --panel:#1c1c19; --ink:#f1efe9; --muted:#a39d91; --line:#32322d;
+    --green:#4fd394; --greenbg:#15402c; --amber:#f0b košmar;
+  }
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --amber:#f3b44a; --amberbg:#43310d; --red:#ff7a6e; --redbg:#4a1d19; --ring:#3d3c36;
+  }
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--ink);
+  font-family:Georgia,"Iowan Old Style","Times New Roman",serif;
+  line-height:1.5; font-size:17px;
+  -webkit-text-size-adjust:100%;
+}
+.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace}
+.wrap{max-width:980px;margin:0 auto;padding:0 18px 48px}
+header.top{
+  border-bottom:1px solid var(--line); background:var(--panel);
+  position:sticky; top:0; z-index:20;
+}
+header.top .inner{max-width:980px;margin:0 auto;padding:12px 18px;display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+.brand{font-weight:700;letter-spacing:.02em}
+.brand .dot{color:var(--green)}
+.tagline{color:var(--muted);font-size:14px}
+.badge{margin-left:auto;font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);border:1px solid var(--line);padding:3px 8px;border-radius:999px}
+.screen{display:none;animation:fade .35s ease}
+.screen.active{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+h1{font-size:34px;line-height:1.15;margin:40px 0 14px;letter-spacing:-.01em}
+h2{font-size:22px;margin:0 0 6px}
+.sub{color:var(--muted);font-size:16px;margin:0 0 26px;max-width:46ch}
+.center{text-align:center;max-width:620px;margin:0 auto}
+.center .sub{margin-left:auto;margin-right:auto}
+textarea{
+  width:100%; min-height:220px; padding:16px; border:1px solid var(--line); border-radius:12px;
+  background:var(--panel); color:var(--ink); font-size:15px; line-height:1.6; resize:vertical;
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+}
+textarea:focus{outline:2px solid var(--ink);outline-offset:1px}
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  min-height:52px;padding:14px 26px;border-radius:999px;border:1px solid var(--ink);
+  background:var(--ink);color:var(--bg);font:inherit;font-size:17px;font-weight:700;cursor:pointer;
+}
+.btn:disabled{opacity:.35;cursor:not-allowed}
+.btn.ghost{background:transparent;color:var(--ink)}
+.btn.small{min-height:44px;padding:10px 18px;font-size:15px}
+.linkbtn{background:none;border:0;color:var(--muted);font:inherit;font-size:16px;text-decoration:underline;cursor:pointer;padding:12px;min-height:44px}
+.linkbtn:hover{color:var(--ink)}
+.row{display:flex;gap:12px;flex-wrap:wrap;align-items:center;justify-content:center;margin-top:18px}
+.note{font-size:13px;color:var(--muted);margin-top:14px}
+.err{color:var(--red);font-size:14px;margin-top:12px;min-height:20px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px}
+.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-top:18px}
+@media(max-width:560px){.stats{grid-template-columns:1fr}}
+.stat .lab{font-size:12.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.stat .val{font-size:21px;font-weight:700;margin:2px 0 6px}
+.stat .val small{font-size:13px;font-weight:400;color:var(--muted)}
+.bar{height:7px;border-radius:99px;background:var(--line);overflow:hidden}
+.bar i{display:block;height:100%;border-radius:99px;background:var(--ink)}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.chip{background:var(--greenbg);color:var(--green);border:1px solid rgba(31,122,77,.25);border-radius:999px;padding:6px 12px;font-size:14px;font-weight:700}
+.loading{text-align:center;padding:90px 0}
+.lbar{max-width:320px;height:6px;background:var(--line);border-radius:99px;margin:18px auto 0;overflow:hidden}
+.lbar i{display:block;height:100%;width:0;background:var(--ink);animation:fill 1.2s ease forwards}
+@keyframes fill{to{width:100%}}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:20px}
+@media(max-width:760px){.grid{grid-template-columns:1fr}}
+.mcard{opacity:0;transform:translateY(10px);transition:opacity .4s ease,transform .4s ease}
+.mcard.in{opacity:1;transform:none}
+.mhead{display:flex;align-items:center;gap:14px;margin-bottom:12px}
+.mname{font-size:18px;font-weight:700;line-height:1.2}
+.mname span{display:block;font-size:12px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);font-weight:400;margin-top:3px}
+.ring{position:relative;width:62px;height:62px;flex:0 0 62px}
+.ring svg{transform:rotate(-90deg)}
+.ring b{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700}
+.rw{font-size:16.5px;line-height:1.7;margin:4px 0 14px}
+mark.keep{background:var(--greenbg);color:var(--green);border-radius:4px;padding:1px 3px;font-weight:700}
+mark.lose{background:var(--redbg);color:var(--red);border-radius:4px;padding:1px 3px;font-weight:700}
+.ev{font-size:13.5px;color:var(--muted);display:flex;gap:8px;margin-top:6px;line-height:1.45}
+.ev svg{flex:0 0 14px;margin-top:4px}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;color:var(--muted);margin-top:14px;align-items:center}
+.sw{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:-1px;margin-right:5px}
+.verdict{font-size:25px;line-height:1.3;margin:28px 0 4px;letter-spacing:-.01em}
+.verdict em{font-style:normal;color:var(--red);font-weight:700}
+.verdict b{color:var(--green)}
+.panel{margin-top:22px;border:1px solid var(--line);border-radius:14px;background:var(--panel);overflow:hidden}
+.panel .ph{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.panel .ph h3{margin:0;font-size:16px}
+.code{
+  margin:0;padding:16px;max-height:340px;overflow:auto;background:transparent;
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13.5px;line-height:1.65;white-space:pre-wrap;word-break:break-word;
+}
+.board{margin-top:30px;border:1px solid var(--line);border-radius:12px;padding:14px 16px;background:var(--panel)}
+.board .bt{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.board ol{margin:10px 0 6px;padding:0;list-style:none;display:grid;gap:7px}
+.board li{display:flex;gap:10px;align-items:center;font-size:14.5px}
+.board li .n{color:var(--muted);width:16px}
+.board li .pc{margin-left:auto;font-weight:700;font-variant-numeric:tabular-nums}
+.board .cap{font-size:12px;color:var(--muted)}
+.modal{position:fixed;inset:0;background:rgba(10,10,8,.72);display:none;align-items:center;justify-content:center;padding:16px;z-index:50;overflow:auto}
+.modal.open{display:flex}
+.msheet{background:var(--panel);border:1px solid var(--line);border-radius:16px;max-width:660px;width:100%;padding:18px;margin:auto}
+.sharecard{background:#121210;color:#f5f2ea;border-radius:14px;padding:22px;max-width:600px}
+.sharecard .st{font-size:13px;letter-spacing:.3em;color:#8de0b4;font-weight:700}
+.sharecard .sq{font-size:15px;margin:6px 0 16px;color:#b7b1a4}
+.sbar{margin:11px 0}
+.sbar .l{display:flex;font-size:14px;margin-bottom:5px}
+.sbar .l b{margin-left:auto;font-variant-numeric:tabular-nums}
+.strack{height:9px;border-radius:99px;background:#2b2b26;overflow:hidden}
+.strack i{display:block;height:100%;border-radius:99px}
+.worst{margin-top:18px;border-top:1px solid #2b2b26;padding-top:14px;font-size:14px;line-height:1.5;color:#e6e0d4}
+.worst span{display:block;margin-top:6px;font-size:12.5px;color:#ff9d92}
+.toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,20px);background:var(--ink);color:var(--bg);padding:12px 20px;border-radius:999px;font-size:14px;opacity:0;pointer-events:none;transition:.25s;z-index:80}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+footer{border-top:1px solid var(--line);margin-top:34px;padding:18px;text-align:center;font-size:12.5px;color:var(--muted)}
+.backlink{margin-top:20px}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="inner">
+    <span class="brand">Voiceprint<span class="dot">.</span></span>
+    <span class="tagline">See which model eats your writing voice.</span>
+    <span class="badge">Demo data</span>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <!-- SCREEN 1 -->
+  <section id="s1" class="screen active">
+    <div class="center">
+      <h1>Which model eats your voice?</h1>
+      <p class="sub">Paste three paragraphs you actually wrote. Four models will rewrite one of them. Nothing leaves your browser.</p>
+      <textarea id="ta" rows="10" placeholder="Paste your writing here…" aria-label="Your writing"></textarea>
+      <div class="row">
+        <button class="btn" id="go" disabled>Analyse my voice</button>
+        <button class="linkbtn" id="sample">or use a sample →</button>
+      </div>
+      <div class="err" id="err" role="status"></div>
+      <p class="note">Runs entirely on this page. No upload, no account, no key.</p>
+    </div>
+  </section>
+
+  <!-- LOADING -->
+  <section id="sload" class="screen">
+    <div class="loading">
+      <h2>Reading your voice…</h2>
+      <p class="sub" style="margin:6px auto 0;text-align:center">Counting sentences, clauses, hedges and the words only you use.</p>
+      <div class="lbar"><i></i></div>
+    </div>
+  </section>
+
+  <!-- SCREEN 2 -->
+  <section id="s2" class="screen">
+    <h1 style="margin-top:30px">Your voiceprint</h1>
+    <p class="sub">Measured from the 3 paragraphs you pasted.</p>
+    <div class="card">
+      <div class="stats" id="statgrid"></div>
+      <div style="margin-top:22px">
+        <div class="stat"><div class="lab">Your words</div></div>
+        <div class="chips">
+          <span class="chip">shipped</span><span class="chip">boring</span><span class="chip">fiddly</span>
+          <span class="chip">weird</span><span class="chip">actually</span><span class="chip">quiet</span>
+        </div>
+      </div>
+    </div>
+    <p class="sub" style="margin:26px 0 0">Now watch four models rewrite paragraph 2.</p>
+    <div class="row" style="justify-content:flex-start">
+      <button class="btn" id="bake">Run the bake-off</button>
+      <button class="linkbtn" data-back="s1">← back</button>
+    </div>
+  </section>
+
+  <!-- SCREEN 3 -->
+  <section id="s3" class="screen">
+    <h1 style="margin-top:30px">The bake-off</h1>
+    <p class="sub">Same paragraph, four models. <mark class="keep">Green</mark> is your word, surviving. <mark class="lose">Red</mark> is the model's addition.</p>
+    <div class="grid" id="grid"></div>
+    <div class="legend">
+      <span><i class="sw" style="background:var(--greenbg);border:1px solid var(--green)"></i>Your voice kept</span>
+      <span><i class="sw" style="background:var(--redbg);border:1px solid var(--red)"></i>Model-speak added</span>
+    </div>
+    <p class="verdict" id="verdict"></p>
+    <div class="row" style="justify-content:flex-start">
+      <button class="btn" id="getmd">Get my voice.md</button>
+      <button class="btn ghost" id="openshare">Share result</button>
+    </div>
+
+    <div class="panel" id="mdpanel" hidden>
+      <div class="ph">
+        <h3 class="mono">voice.md</h3>
+        <button class="btn ghost small" id="copymd" style="margin-left:auto">Copy</button>
+        <button class="btn ghost small" id="closemd">Close</button>
+      </div>
+      <pre class="code" id="mdcode"></pre>
+    </div>
+
+    <div id="board3"></div>
+    <div class="backlink"><button class="linkbtn" data-back="s2">← back to voiceprint</button></div>
+  </section>
+</main>
+
+<div class="modal" id="modal" role="dialog" aria-modal="true" aria-label="Share result">
+  <div class="msheet">
+    <div class="sharecard" id="sharecard">
+      <div class="st">VOICEPRINT</div>
+      <div class="sq">How much of my voice each model ate</div>
+      <div id="sbars"></div>
+      <div class="worst">
+        “In the realm of software development, it is often the mundane elements…”
+        <span>— Gemini 3.5 Pro, 63% voice loss</span>
+      </div>
+    </div>
+    <div class="row" style="justify-content:flex-start">
+      <button class="btn small" id="dlpng">Download PNG</button>
+      <button class="btn ghost small" id="copypost">Copy post text</button>
+      <button class="linkbtn" id="closemodal">Close</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<footer>Prototype by Granted, inspired by your bookmarks</footer>
+
+<script>
+(function(){
+  "use strict";
+  var $=function(s){return document.querySelector(s)};
+  var SAMPLE="We shipped the thing on a Tuesday. No launch post, no countdown. Just a link in a reply. Seven people tried it that day and two of them wrote back, which felt like a lot.\n\nThe boring parts took the longest. Auth was fiddly. The export button broke twice. Nobody tells you that the weird, interesting bit is maybe four hours of the week and the rest is plumbing you will never mention again.\n\nI keep a list of things I almost built. It is longer than the list of things I built. That is fine, actually. The list is where the bad ideas go to be quiet.";
+
+  var STATS=[
+    {lab:"Median sentence length",val:"11 words",pct:34},
+    {lab:"Sentence length variance",val:"high",sub:"range 4–24",pct:82},
+    {lab:"Clause depth",val:"1.2 avg",pct:24},
+    {lab:"Rare-word rate",val:"18%",pct:18},
+    {lab:"Hedges per 100 words",val:"0.4",pct:8},
+    {lab:"Em dashes",val:"0",pct:2}
+  ];
+
+  var MODELS=[
+    {name:"DeepSeek V4.1 Flash",loss:22,tone:"green",
+     parts:[["t","The "],["k","boring"],["t"," parts took the longest. Auth was "],["k","fiddly"],["t",". The export button broke twice. Nobody tells you the interesting bit is maybe four hours a week, and the rest is plumbing you will never mention again."]],
+     ev:["Kept: shipped rhythm, ‘fiddly’, ‘boring’. Lost: ‘weird’.","Median sentence 11 → 12 words."]},
+    {name:"Claude Sonnet 5",loss:34,tone:"amber",
+     parts:[["t","The "],["x","unglamorous"],["t"," work consumed the most time. Authentication proved "],["x","finicky"],["t",", and the export function failed on two occasions. What nobody mentions is that the "],["x","genuinely"],["t"," interesting portion amounts to perhaps four hours per week "],["x","—"],["t"," the remainder is infrastructure you’ll never discuss again."]],
+     ev:["Killed your words: boring → unglamorous, fiddly → finicky, weird (deleted).","Median sentence 11 → 21 words. Em dashes 0 → 1."]},
+    {name:"GPT-5.2",loss:51,tone:"red",
+     parts:[["x","Here’s the thing"],["t"," nobody tells you: the "],["k","boring"],["t"," parts take the longest. Authentication was "],["x","finicky"],["t",". The export button broke"],["x","—"],["t","twice. The "],["x","genuinely"],["t"," interesting work? Maybe four hours a week. Everything else is invisible plumbing that never makes it into the retrospective."]],
+     ev:["Added: rhetorical question, colon opener, ‘Here’s the thing’.","Em dashes 0 → 1. Rare-word rate 18% → 11%."]},
+    {name:"Gemini 3.5 Pro",loss:63,tone:"red",
+     parts:[["x","In the realm of"],["t"," software development, it is "],["x","often"],["t"," the mundane elements that demand the greatest investment of time. Authentication can be particularly challenging, and export functionality "],["x","may"],["t"," require multiple iterations. "],["x","It’s worth noting"],["t"," that the truly compelling aspects of the work "],["x","often"],["t"," represent a small fraction of the overall effort, with the remainder comprising essential but unremarkable infrastructure."]],
+     ev:["Killed 5 of your 6 words. Added hedges: often (x2), may, it’s worth noting.","Median sentence 11 → 29 words. Hedges 0.4 → 4.1 per 100 words."]}
+  ];
+
+  var BOARD=[["DeepSeek V4.1 Flash",24],["Claude Sonnet 5",31],["Grok 4.2",44],["GPT-5.2",49],["Gemini 3.5 Pro",58]];
+
+  var VOICEMD="# voice.md\nWrite like this. Do not smooth it out.\n\n## Rhythm\n- Median sentence: 11 words. Keep variance high (4-24). Fragments are fine.\n- Max one clause per sentence most of the time.\n\n## Vocabulary\n- Use these, they are mine: shipped, boring, fiddly, weird, actually, quiet.\n- Never substitute: boring -> unglamorous, fiddly -> finicky.\n\n## Banned\n- Em dashes. I use zero.\n- Hedges: often, perhaps, it's worth noting, generally. My rate is 0.4 per 100 words.\n- Openers: 'Here's the thing', 'In the realm of', rhetorical questions.\n\n## Rule\nConcrete nouns over abstractions. Say the thing, then stop.";
+
+  var POST="I ran my writing through Voiceprint.\n\nDeepSeek V4.1 Flash 22% voice loss\nClaude Sonnet 5 34%\nGPT-5.2 51%\nGemini 3.5 Pro 63%\n\nGemini ate 63% of my voice. \"In the realm of software development, it is often the mundane elements...\" — that is not me.";
+
+  function toneVar(t){return t==="green"?"var(--green)":t==="amber"?"var(--amber)":"var(--red)"}
+  function show(id){
+    var all=document.querySelectorAll(".screen");
+    for(var i=0;i<all.length;i++){all[i].classList.remove("active")}
+    var el=document.getElementById(id); if(el){el.classList.add("active")}
+    window.scrollTo(0,0);
+  }
+  var toastT=null;
+  function toast(msg){
+    var t=$("#toast"); t.textContent=msg; t.classList.add("show");
+    if(toastT){clearTimeout(toastT)}
+    toastT=setTimeout(function(){t.classList.remove("show")},1900);
+  }
+  function esc(s){return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")}
+
+  /* ---- Screen 1 ---- */
+  var ta=$("#ta"), go=$("#go"), err=$("#err");
+  function sync(){
+    var v=ta.value.trim();
+    go.disabled = v.length===0;
+    if(v.length>0){err.textContent=""}
+  }
+  ta.addEventListener("input",sync);
+  $("#sample").addEventListener("click",function(){
+    ta.value=SAMPLE; sync(); ta.focus(); ta.setSelectionRange(0,0);
+  });
+  go.addEventListener("click",function(){
+    var v=ta.value.trim();
+    if(v.length===0){err.textContent="Paste some writing first, or try the sample.";return}
+    if(v.split(/\s+/).length<12){err.textContent="That is a bit short. Three paragraphs gives a far better read.";return}
+    err.textContent="";
+    show("sload");
+    setTimeout(function(){ renderStats(); show("s2"); },1200);
+  });
+
+  /* ---- Screen 2 ---- */
+  var statsDone=false;
+  function renderStats(){
+    if(statsDone)return; statsDone=true;
+    var g=$("#statgrid"), h="";
+    for(var i=0;i<STATS.length;i++){
+      var s=STATS[i];
+      h+='<div class="stat"><div class="lab">'+s.lab+'</div><div class="val">'+s.val+
+         (s.sub?' <small>('+s.sub+')</small>':'')+
+         '</div><div class="bar"><i style="width:'+s.pct+'%"></i></div></div>';
+    }
+    g.innerHTML=h;
+  }
+  $("#bake").addEventListener("click",function(){ show("s3"); renderBakeoff(); });
+
+  /* ---- Screen 3 ---- */
+  var baked=false;
+  function ringSVG(loss,tone){
+    var r=26,c=2*Math.PI*r,off=c*(1-loss/100);
+    return '<div class="ring"><svg width="62" height="62" viewBox="0 0 62 62" aria-hidden="true">'+
+      '<circle cx="31" cy="31" r="'+r+'" fill="none" stroke="var(--ring)" stroke-width="6"></circle>'+
+      '<circle cx="31" cy="31" r="'+r+'" fill="none" stroke="'+toneVar(tone)+'" stroke-width="6" stroke-linecap="round" stroke-dasharray="'+c.toFixed(1)+'" stroke-dashoffset="'+off.toFixed(1)+'"></circle>'+
+      '</svg><b style="color:'+toneVar(tone)+'">'+loss+'%</b></div>';
+  }
+  function rewriteHTML(parts){
+    var h="";
+    for(var i=0;i<parts.length;i++){
+      var kind=parts[i][0], txt=esc(parts[i][1]);
+      if(kind==="k"){h+='<mark class="keep">'+txt+'</mark>'}
+      else if(kind==="x"){h+='<mark class="lose">'+txt+'</mark>'}
+      else{h+=txt}
+    }
+    return h;
+  }
+  function tick(){return '<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="3" fill="currentColor"></circle></svg>'}
+
+  function renderBakeoff(){
+    if(baked)return; baked=true;
+    var grid=$("#grid"); grid.innerHTML="";
+    MODELS.forEach(function(m,i){
+      var d=document.createElement("div");
+      d.className="card mcard";
+      d.innerHTML='<div class="mhead">'+ringSVG(m.loss,m.tone)+
+        '<div class="mname">'+esc(m.name)+'<span>Voice loss</span></div></div>'+
+        '<p class="rw">'+rewriteHTML(m.parts)+'</p>'+
+        '<div class="ev">'+tick()+'<span>'+esc(m.ev[0])+'</span></div>'+
+        '<div class="ev">'+tick()+'<span>'+esc(m.ev[1])+'</span></div>';
+      grid.appendChild(d);
+      setTimeout(function(){d.classList.add("in")}, 120+i*400);
+    });
+    setTimeout(function(){
+      $("#verdict").innerHTML='<em>Gemini 3.5 Pro ate 63% of your voice.</em> <b>DeepSeek V4.1 Flash left 78% of it intact.</b>';
+    }, 120+MODELS.length*400);
+    $("#mdcode").textContent=VOICEMD;
+    renderBoard();
+    renderShareBars();
+  }
+
+  function renderBoard(){
+    var h='<div class="board"><div class="bt">This week, across 1,847 voiceprints</div><ol>';
+    for(var i=0;i<BOARD.length;i++){
+      h+='<li><span class="n">'+(i+1)+'.</span><span>'+BOARD[i][0]+'</span><span class="pc">'+BOARD[i][1]+'% avg loss</span></li>';
+    }
+    h+='</ol><div class="cap">Updated Mondays.</div></div>';
+    $("#board3").innerHTML=h;
+  }
+
+  function renderShareBars(){
+    var h="";
+    for(var i=0;i<MODELS.length;i++){
+      var m=MODELS[i], col=m.tone==="green"?"#4fd394":m.tone==="amber"?"#f3b44a":"#ff7a6e";
+      h+='<div class="sbar"><div class="l"><span>'+m.name+'</span><b style="color:'+col+'">'+m.loss+'%</b></div>'+
+         '<div class="strack"><i style="width:'+m.loss+'%;background:'+col+'"></i></div></div>';
+    }
+    $("#sbars").innerHTML=h;
+  }
+
+  /* ---- voice.md ---- */
+  var mdp=$("#mdpanel");
+  $("#getmd").addEventListener("click",function(){
+    mdp.hidden=false;
+    mdp.scrollIntoView({behavior:"smooth",block:"center"});
+  });
+  $("#closemd").addEventListener("click",function(){mdp.hidden=true});
+
+  function copyText(text,btn,label){
+    var done=function(){
+      if(btn){var o=btn.textContent;btn.textContent="Copied";setTimeout(function(){btn.textContent=o},2000)}
+      toast(label);
+    };
+    try{
+      if(navigator.clipboard&&navigator.clipboard.writeText){
+        navigator.clipboard.writeText(text).then(done,function(){fallback(text,done)});
+      }else{fallback(text,done)}
+    }catch(e){fallback(text,done)}
+  }
+  function fallback(text,done){
+    try{
+      var t=document.createElement("textarea");
+      t.value=text; t.setAttribute("readonly","");
+      t.style.position="fixed"; t.style.top="-1000px";
+      document.body.appendChild(t); t.select();
+      document.execCommand("copy"); document.body.removeChild(t); done();
+    }catch(e){ toast("Copy blocked — select the text manually."); }
+  }
+  $("#copymd").addEventListener("click",function(){copyText(VOICEMD,this,"voice.md copied")});
+
+  /* ---- share modal ---- */
+  var modal=$("#modal");
+  $("#openshare").addEventListener("click",function(){modal.classList.add("open")});
+  $("#closemodal").addEventListener("click",function(){modal.classList.remove("open")});
+  modal.addEventListener("click",function(e){if(e.target===modal){modal.classList.remove("open")}});
+  document.addEventListener("keydown",function(e){if(e.key==="Escape"){modal.classList.remove("open")}});
+  $("#dlpng").addEventListener("click",function(){toast("PNG saved")});
+  $("#copypost").addEventListener("click",function(){copyText(POST,this,"Post text copied")});
+
+  /* ---- back links ---- */
+  var backs=document.querySelectorAll("[data-back]");
+  for(var i=0;i<backs.length;i++){
+    backs[i].addEventListener("click",function(){show(this.getAttribute("data-back"))});
+  }
+
+  sync();
+})();
+</script>
+</body>
+</html>
