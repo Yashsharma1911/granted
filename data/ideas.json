@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-30T20:51:39.374Z",
+  "updated": "2026-10-31T20:54:22.876Z",
   "ideas": [
     {
       "id": "2026-10-22-agentgauntlet",
@@ -460,6 +460,66 @@
       "sources_count": 16,
       "superseded_by": null,
       "sibling": "2026-10-30-rightsline"
+    },
+    {
+      "id": "2026-10-31-hiringscope",
+      "number": 18,
+      "date": "2026-10-31",
+      "track": "build",
+      "short_name": "Hiringscope",
+      "verdict": "dig_deeper",
+      "score": 8.4,
+      "scores": {
+        "wow": 8,
+        "shareability": 8,
+        "buildability": 9,
+        "freshness": 9,
+        "usefulness": 8
+      },
+      "effort": "a weekend",
+      "category": "Public data tools",
+      "tags": [
+        "hiring",
+        "hacker-news",
+        "jev",
+        "public-data"
+      ],
+      "pain_type": "expressed",
+      "one_liner": "Paste your resume (or just three lines about yourself) and Hiringscope scores every one of the ~400 posts in this month's Hacker News \"Who is hiring?\" thread against you in about 30 seconds for pennies — ranked, with a reason per job and a shareable card showing how the whole market scored you.",
+      "prototype_url": "https://yashsharma1911.github.io/granted/ideas/2026-10-31-hiringscope/",
+      "sources_count": 15,
+      "superseded_by": null,
+      "sibling": "2026-10-31-frailty"
+    },
+    {
+      "id": "2026-10-31-frailty",
+      "number": 19,
+      "date": "2026-10-31",
+      "track": "venture",
+      "short_name": "Frailty",
+      "verdict": "dig_deeper",
+      "score": 7.6,
+      "scores": {
+        "pain": 8,
+        "market_pull": 7,
+        "timing": 10,
+        "gap": 8,
+        "wedge": 7
+      },
+      "effort": "3+ months",
+      "category": "Healthcare operations",
+      "tags": [
+        "healthcare",
+        "compliance",
+        "medicaid",
+        "agents"
+      ],
+      "pain_type": "expressed",
+      "one_liner": "For the revenue-cycle / patient-access director at a multi-site FQHC, community mental health centre or opioid treatment program, Frailty reads the clinic's own diagnosis, encounter and treatment data against each state's medical-frailty and SUD-treatment exclusion rules, ranks the Medicaid expansion patients most likely to be wrongly disenrolled in the next 60 days, and produces the signed, state-formatted exemption evidence packet for each one.",
+      "prototype_url": "https://yashsharma1911.github.io/granted/ideas/2026-10-31-frailty/",
+      "sources_count": 20,
+      "superseded_by": null,
+      "sibling": "2026-10-31-hiringscope"
     }
   ]
 }

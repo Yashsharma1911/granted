@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Frailty — exemption evidence engine</title>
+<style>
+:root{
+  --bg:#f6f7f9; --panel:#ffffff; --ink:#15191e; --muted:#656f7d; --line:#e2e6ea;
+  --accent:#1f6f5c; --accent-ink:#ffffff;
+  --g-bg:#e2f4e8; --g-ink:#14603f; --g-line:#b7e0c6;
+  --a-bg:#fdf0d8; --a-ink:#7e4e06; --a-line:#f0d6a2;
+  --r-bg:#fdE4e2; --r-ink:#8d2420; --r-line:#f3bfbb;
+  --mono-bg:#f1f3f5; --hl:#fff2a8; --hl-ink:#443c00;
+  --shadow:0 10px 30px rgba(16,24,40,.12);
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#0e1116; --panel:#161b22; --ink:#e7ecf2; --muted:#98a3b3; --line:#262d38;
+    --accent:#2f9b80; --accent-ink:#06130f;
+    --g-bg:#11301f; --g-ink:#7fdba6; --g-line:#1e5236;
+    --a-bg:#3a2a07; --a-ink:#f2c777; --a-line:#5d4512;
+    --r-bg:#3a1613; --r-ink:#f3a49e; --r-line:#5e2520;
+    --mono-bg:#0c1016; --hl:#5d5313; --hl-ink:#ffeea6;
+    --shadow:0 10px 30px rgba(0,0,0,.5);
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--ink);
+  font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  -webkit-text-size-adjust:100%;
+}
+.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace}
+header.top{
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  padding:12px 16px;background:var(--panel);border-bottom:1px solid var(--line);
+  position:sticky;top:0;z-index:30;
+}
+.logo{width:26px;height:26px;flex:none}
+h1{font-size:15px;margin:0;font-weight:700;letter-spacing:.1px}
+h1 span{font-weight:400;color:var(--muted)}
+.demotag{margin-left:auto;font-size:11px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:3px 9px}
+
+.shell{display:flex;align-items:flex-start;gap:16px;padding:14px;max-width:1240px;margin:0 auto}
+nav{
+  flex:0 0 174px;position:sticky;top:64px;background:var(--panel);border:1px solid var(--line);
+  border-radius:14px;padding:8px;display:flex;flex-direction:column;gap:4px
+}
+nav button{
+  display:flex;align-items:center;gap:9px;width:100%;text-align:left;border:0;background:transparent;
+  color:var(--ink);font:inherit;font-weight:600;padding:12px 12px;border-radius:10px;cursor:pointer;min-height:46px
+}
+nav button .n{margin-left:auto;font-size:11px;color:var(--muted);font-weight:600}
+nav button[aria-current="true"]{background:var(--accent);color:var(--accent-ink)}
+nav button[aria-current="true"] .n{color:var(--accent-ink);opacity:.8}
+main{flex:1;min-width:0;display:flex;flex-direction:column;gap:14px}
+
+.before{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.before .b{
+  background:transparent;border:1px dashed var(--line);border-radius:10px;padding:8px 10px;color:var(--muted);font-size:11.5px;line-height:1.3
+}
+.before .b b{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.6px;opacity:.75;font-weight:700;margin-bottom:3px}
+.beforelabel{font-size:10px;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);margin-bottom:-6px}
+
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow)}
+.stats{padding:13px 15px;display:flex;flex-wrap:wrap;gap:14px;align-items:baseline}
+.stat b{font-size:19px}
+.stat i{font-style:normal;color:var(--muted);font-size:12.5px;display:block}
+.stat.risk b{color:#b4463f}
+@media (prefers-color-scheme: dark){.stat.risk b{color:#f3a49e}}
+
+.toolbar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:10px 12px;border-bottom:1px solid var(--line)}
+.toolbar .lbl{font-size:12px;color:var(--muted);margin-right:2px}
+.chipbtn{
+  border:1px solid var(--line);background:transparent;color:var(--ink);border-radius:999px;
+  padding:8px 12px;font:inherit;font-size:12.5px;font-weight:600;cursor:pointer;min-height:38px
+}
+.chipbtn[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.sortbtn{margin-left:auto}
+
+table{width:100%;border-collapse:collapse}
+thead th{
+  text-align:left;font-size:10.5px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);
+  padding:9px 12px;border-bottom:1px solid var(--line);font-weight:700;white-space:nowrap
+}
+tbody tr{border-bottom:1px solid var(--line);cursor:pointer}
+tbody tr:last-child{border-bottom:0}
+tbody tr:hover{background:rgba(127,127,127,.07)}
+td{padding:11px 12px;vertical-align:top;font-size:13.5px}
+.pt{font-weight:700}
+.sub{color:var(--muted);font-size:11.5px;display:block;margin-top:2px}
+.chip{display:inline-block;border-radius:999px;padding:4px 9px;font-size:11.5px;font-weight:700;border:1px solid}
+.t1{background:var(--g-bg);color:var(--g-ink);border-color:var(--g-line)}
+.t2{background:var(--a-bg);color:var(--a-ink);border-color:var(--a-line)}
+.t3{background:var(--r-bg);color:var(--r-ink);border-color:var(--r-line)}
+.tsent{background:transparent;color:var(--muted);border-color:var(--line)}
+.money{font-weight:700;white-space:nowrap}
+.go{color:var(--muted);font-size:17px;line-height:1}
+.empty{padding:34px 18px;text-align:center;color:var(--muted)}
+.empty b{display:block;color:var(--ink);margin-bottom:4px}
+
+/* packet */
+.scrim{position:fixed;inset:0;background:rgba(8,11,15,.5);z-index:40;opacity:0;pointer-events:none;transition:opacity .2s}
+.scrim.on{opacity:1;pointer-events:auto}
+.sheet{
+  position:fixed;z-index:50;top:0;right:0;height:100%;width:min(980px,100%);
+  background:var(--panel);border-left:1px solid var(--line);
+  transform:translateX(102%);transition:transform .28s ease;display:flex;flex-direction:column
+}
+.sheet.on{transform:none}
+.sheethead{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--line)}
+.sheethead h2{font-size:15px;margin:0}
+.x{margin-left:auto;border:1px solid var(--line);background:transparent;color:var(--ink);border-radius:10px;min-width:44px;min-height:40px;font-size:17px;cursor:pointer}
+.split{flex:1;overflow:auto;display:grid;grid-template-columns:1fr 1fr;gap:0}
+.pane{padding:13px 14px;min-width:0}
+.pane+.pane{border-left:1px solid var(--line)}
+.panelabel{font-size:10px;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:8px;display:flex;gap:6px;align-items:center}
+pre.dump{
+  background:var(--mono-bg);border:1px solid var(--line);border-radius:10px;padding:10px;
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:11px;line-height:1.5;
+  white-space:pre-wrap;word-break:break-word;margin:0;color:var(--ink)
+}
+.form{border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.formhead{background:var(--mono-bg);padding:9px 11px;border-bottom:1px solid var(--line)}
+.formhead b{font-size:12.5px;display:block}
+.formhead i{font-style:normal;font-size:10.5px;color:var(--muted)}
+.frow{padding:8px 11px;border-bottom:1px solid var(--line);font-size:12.5px;display:flex;gap:8px}
+.frow:last-child{border-bottom:0}
+.frow .k{flex:0 0 112px;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.4px;font-weight:700;padding-top:1px}
+.frow .v{flex:1;min-width:0}
+ul.enc{margin:0;padding-left:16px}
+ul.enc li{margin-bottom:3px}
+.hl{background:var(--hl);color:var(--hl-ink);padding:7px 9px;border-radius:7px;display:block}
+.hltag{font-size:10px;text-transform:uppercase;letter-spacing:.6px;font-weight:800;display:block;margin-bottom:3px;opacity:.85}
+.cite{margin-top:10px;border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:8px;padding:9px 11px;font-size:11.5px;color:var(--muted)}
+.cite b{color:var(--ink)}
+.actions{display:flex;gap:8px;padding:11px 14px;border-top:1px solid var(--line);flex-wrap:wrap;background:var(--panel)}
+.btn{border:1px solid var(--line);background:transparent;color:var(--ink);border-radius:10px;padding:12px 15px;font:inherit;font-weight:700;cursor:pointer;min-height:46px}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn.done{opacity:.55}
+
+.rules{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.rulecard{padding:13px 15px}
+.rulecard h3{margin:0 0 2px;font-size:14px}
+.rulecard .st{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;font-weight:700}
+.rr{border-top:1px solid var(--line);padding:9px 0;font-size:12.5px}
+.rr .k{font-size:10.5px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);font-weight:700;margin-bottom:2px}
+.kv{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11.5px;background:var(--mono-bg);border:1px solid var(--line);border-radius:7px;padding:7px 9px;white-space:pre-wrap;word-break:break-word}
+.toggle{display:inline-flex;align-items:center;gap:7px;font-size:12px;color:var(--muted)}
+.sw{width:34px;height:20px;border-radius:999px;background:var(--accent);position:relative;flex:none}
+.sw::after{content:"";position:absolute;top:2px;right:2px;width:16px;height:16px;border-radius:50%;background:#fff}
+
+.packets .prow{display:flex;gap:10px;align-items:center;padding:11px 13px;border-bottom:1px solid var(--line);font-size:13.5px}
+.packets .prow:last-child{border-bottom:0}
+.packets .prow .money{margin-left:auto}
+
+footer{text-align:center;color:var(--muted);font-size:11.5px;padding:16px 12px 26px}
+.toast{
+  position:fixed;left:50%;bottom:18px;transform:translate(-50%,24px);z-index:80;
+  background:var(--ink);color:var(--bg);padding:11px 16px;border-radius:999px;font-size:13px;font-weight:600;
+  opacity:0;transition:.22s;pointer-events:none;max-width:92vw;text-align:center
+}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+.hide{display:none !important}
+
+@media (max-width:860px){
+  .shell{flex-direction:column;padding:10px;gap:10px}
+  nav{position:static;flex-direction:row;width:100%;overflow:auto;flex:none}
+  nav button{min-width:118px;justify-content:center}
+  .before{grid-template-columns:1fr}
+  .split{grid-template-columns:1fr}
+  .pane+.pane{border-left:0;border-top:1px solid var(--line)}
+  .rules{grid-template-columns:1fr}
+  thead{display:none}
+  tbody tr{display:block;padding:11px 12px}
+  td{display:block;padding:2px 0;font-size:13px}
+  td.cgo{display:none}
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <svg class="logo" viewBox="0 0 24 24" aria-hidden="true"><rect x="1" y="1" width="22" height="22" rx="6" fill="#1f6f5c"/><path d="M7 7h10M7 12h7M7 17h4" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>
+  <h1>Frailty <span>— messy clinic data in, signed state exemption packet out, ranked by who loses coverage first</span></h1>
+  <span class="demotag">Demo data · Cape Fear Community Health, 4 sites · 2 Dec 2026</span>
+</header>
+
+<div class="shell">
+  <nav aria-label="Sections">
+    <button id="nav-worklist" aria-current="true" onclick="go('worklist')">Worklist <span class="n" id="navCount">12</span></button>
+    <button id="nav-packets" onclick="go('packets')">Packets <span class="n" id="navSent">0</span></button>
+    <button id="nav-rules" onclick="go('rules')">Rules <span class="n">2</span></button>
+  </nav>
+
+  <main>
+    <div class="beforelabel">Today, without Frailty</div>
+    <div class="before">
+      <div class="b"><b>Step 1 · Front desk</b>Discovers coverage lapse at check-in. Visit already unbillable.</div>
+      <div class="b"><b>Step 2 · Counsellor</b>Calls patient, chases records across 4 sites and the hospital.</div>
+      <div class="b"><b>Step 3 · Clinician</b>Fills a blank state PDF from memory — 22 min per patient.</div>
+    </div>
+
+    <!-- WORKLIST -->
+    <section id="view-worklist">
+      <div class="card stats">
+        <div class="stat"><b>47</b><i>expansion patients renew in next 60 days</i></div>
+        <div class="stat"><b>18</b><i>need a clinician medical report</i></div>
+        <div class="stat risk"><b>$31,400</b><i>est. annual visit revenue at risk</i></div>
+      </div>
+
+      <div class="card" style="margin-top:14px">
+        <div class="toolbar">
+          <span class="lbl">Filter</span>
+          <button class="chipbtn" data-f="all" aria-pressed="true" onclick="setFilter('all')">All 12</button>
+          <button class="chipbtn t1" data-f="1" aria-pressed="false" onclick="setFilter('1')">Tier 1 · 4</button>
+          <button class="chipbtn t2" data-f="2" aria-pressed="false" onclick="setFilter('2')">Tier 2 · 6</button>
+          <button class="chipbtn t3" data-f="3" aria-pressed="false" onclick="setFilter('3')">No path · 2</button>
+          <button class="chipbtn sortbtn" id="sortBtn" onclick="toggleSort()">Sort: renewal ↑</button>
+        </div>
+        <table>
+          <thead><tr>
+            <th>Patient</th><th>Renewal</th><th>Top diagnosis</th><th>Qualifying encounters (12 mo)</th><th>Exemption path</th><th>At stake</th><th></th>
+          </tr></thead>
+          <tbody id="rows"></tbody>
+        </table>
+        <div id="emptyState" class="empty hide"><b>Nothing in this bucket</b>Try another filter — everyone else is already handled.</div>
+      </div>
+      <p style="font-size:11.5px;color:var(--muted);margin:2px 4px">Tap an amber <b>Tier 2</b> row to build the state medical report. Demo data; no PHI.</p>
+    </section>
+
+    <!-- PACKETS -->
+    <section id="view-packets" class="hide">
+      <div class="card packets">
+        <div class="toolbar"><span class="lbl">Packets sent for signature</span></div>
+        <div id="packetList"></div>
+      </div>
+    </section>
+
+    <!-- RULES -->
+    <section id="view-rules" class="hide">
+      <div class="rules">
+        <div class="card rulecard">
+          <div class="st">Rule pack · active</div>
+          <h3>North Carolina — medical frailty</h3>
+          <div class="rr"><div class="k">Tier 1 — state data should match</div>
+            Auto-exempt if the state's own files already show it. No provider report.
+            <div class="kv" style="margin-top:6px">match_any:
+  - ssi_or_ssdi_enrolled
+  - snap_abawd_exempt
+  - dx_in(claims_24mo): C50.*, C34.*, N18.5, N18.6, Z21, O09.*
+  - hospice_or_ltss_flag</div></div>
+          <div class="rr"><div class="k">Tier 2 — clinician report required <span class="toggle" style="float:right"><span class="sw"></span>on</span></div>
+            Qualifying dx + documented functional impairment, signed by an enrolled provider on form DSS-8209.
+            <div class="kv" style="margin-top:6px">require_all:
+  - dx_in(ehr_12mo): E11.2*, N18.4, J44.*, F20.*, F31.*,
+                     F11.2*, I50.*, G81.*, J45.5*
+  - encounters_12mo &gt;= 2  (≥1 face-to-face)
+  - functional_impairment_statement: true
+cure_window_days: 90</div></div>
+          <div class="rr"><div class="k">Deadlines</div>Cure window closes 14 Jan 2027 for December renewals.</div>
+        </div>
+        <div class="card rulecard">
+          <div class="st">Rule pack · available</div>
+          <h3>Washington — diagnosis + utilisation</h3>
+          <div class="rr"><div class="k">Single-tier test</div>
+            No tiering. Qualifying diagnosis plus 12-month utilisation threshold, attested by the care team.
+            <div class="kv" style="margin-top:6px">require_all:
+  - dx_in(ehr_12mo): chronic_condition_list_v3
+  - utilisation_12mo:
+      inpatient &gt;= 1  OR
+      ed_visits &gt;= 2  OR
+      outpatient &gt;= 4
+  - bh_substitution: CCBHC visit counts as outpatient
+cure_window_days: 60
+form: HCA 13-0017</div></div>
+          <div class="rr"><div class="k">Why this screen exists</div>State logic is data, not code. A new state is a rule pack, not a release.</div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<footer>Prototype by Granted, inspired by your bookmarks</footer>
+
+<div class="scrim" id="scrim" onclick="closeSheet()"></div>
+<aside class="sheet" id="sheet" role="dialog" aria-modal="true" aria-label="Exemption packet">
+  <div class="sheethead">
+    <h2 id="sheetTitle">Packet</h2>
+    <button class="x" onclick="closeSheet()" aria-label="Close">✕</button>
+  </div>
+  <div class="split">
+    <div class="pane">
+      <div class="panelabel">① Raw EHR extract <span class="chip tsent">unstructured</span></div>
+      <pre class="dump" id="dump"></pre>
+    </div>
+    <div class="pane">
+      <div class="panelabel">② Pre-filled state medical report</div>
+      <div class="form">
+        <div class="formhead"><b>NC DSS-8209 · Medical Frailty / Exemption Report</b><i>Cape Fear Community Health · NPI 1538►demo · generated 2 Dec 2026</i></div>
+        <div class="frow"><span class="k">Patient</span><span class="v" id="fPat"></span></div>
+        <div class="frow"><span class="k">Medicaid ID</span><span class="v mono" id="fMid"></span></div>
+        <div class="frow"><span class="k">Renewal due</span><span class="v" id="fRen"></span></div>
+        <div class="frow"><span class="k">Qualifying condition</span><span class="v" id="fDx"></span></div>
+        <div class="frow"><span class="k">Rule cited</span><span class="v mono" id="fRule"></span></div>
+        <div class="frow"><span class="k">Supporting encounters</span><span class="v"><ul class="enc" id="fEnc"></ul></span></div>
+        <div class="frow"><span class="k">Functional impairment</span><span class="v"><span class="hl"><span class="hltag">Clinician: edit and sign</span><span id="fImp"></span></span></span></div>
+        <div class="frow"><span class="k">Attestation</span><span class="v" id="fSign">Unsigned — routed to Dr. A. Patel, MD (attending)</span></div>
+      </div>
+      <div class="cite" id="cite"></div>
+    </div>
+  </div>
+  <div class="actions">
+    <button class="btn primary" id="sendBtn" onclick="sendForSig()">Send to Dr. Patel for signature</button>
+    <button class="btn" onclick="toast('PDF export queued — demo only, nothing leaves this page')">Export PDF</button>
+  </div>
+</aside>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function(){
+"use strict";
+
+var P = [
+ {id:1,name:"M. Alvarez, 44",mid:"NC-4471-2290",site:"Elm St",ren:"2026-12-11",dx:"Type 2 diabetes with CKD stage 4",icd:"E11.22, N18.4",
+  enc:"3 — incl. 1 inpatient 14 Aug 2026",tier:2,risk:1840,
+  rule:"NC-FRAIL-T2 §3(b) · endocrine + renal",
+  encs:["14 Aug 2026 — Inpatient, New Hanover Regional, hyperglycaemic crisis (DRG 638), 3 days","22 Sep 2026 — Nephrology office visit, eGFR 24, CPT 99214","06 Nov 2026 — Primary care f/u, A1c 10.4%, CPT 99214"],
+  imp:"Patient requires assistance with meal preparation and transportation to thrice-weekly care; fatigue and neuropathic foot pain limit standing to under 10 minutes, preventing sustained work activity.",
+  dump:["PATIENT 4471-2290  ALVAREZ,M  DOB 1982-03-07  SITE=ELM","","DX_ROWS","  2026-11-06  E11.22  DM2 W DIABETIC CKD        STATUS=A  PROV=RN0112","  2026-11-06  N18.4   CKD STAGE 4               STATUS=A","  2026-09-22  E11.42  DM2 W POLYNEUROPATHY      STATUS=A","  2026-08-14  E11.65  DM2 W HYPERGLYCEMIA       STATUS=R","  2026-02-19  I10     ESSENTIAL HTN             STATUS=A","","ENC_ROWS  (typ: IP=inpatient OP=office ED=emergency)","  2026-11-06  OP  99214  CFCH-ELM     dur=25m","  2026-09-22  OP  99214  NEPH-WILM    dur=30m","  2026-08-14  IP  DRG638 NHRMC        los=3d","  2026-05-02  OP  99213  CFCH-ELM     dur=15m","","MED_LIST","  INSULIN GLARGINE 32U QHS      rx 2026-11-06","  EMPAGLIFLOZIN 10MG DAILY      rx 2026-09-22","  LISINOPRIL 20MG DAILY         rx 2026-09-22","  GABAPENTIN 300MG TID          rx 2026-09-22","","NOTE_FRAGMENT 2026-11-06 (RN0112)","  \"...pt reports she cannot stand >10 min due to foot pain,","   daughter now preps meals + drives her to dialysis ed","   appts. missed 2 shifts at prior job before leaving in","   july. A1c 10.4. will refer CHW...\""].join("\n")},
+
+ {id:2,name:"D. Whitfield, 58",mid:"NC-3318-7741",site:"Burgaw",ren:"2026-12-14",dx:"Metastatic breast cancer, active chemotherapy",icd:"C50.911, Z51.11",
+  enc:"6 — incl. 2 inpatient",tier:1,risk:4200},
+
+ {id:3,name:"T. Nguyen, 31",mid:"NC-8820-1164",site:"Elm St",ren:"2026-12-18",dx:"Schizophrenia, CCBHC day services",icd:"F20.9",
+  enc:"9 — CCBHC visits, incl. 1 crisis 03 Oct 2026",tier:2,risk:3260,
+  rule:"NC-FRAIL-T2 §3(d) · serious mental illness",
+  encs:["03 Oct 2026 — Mobile crisis response, Coastal CCBHC, 4 hrs","17 Oct 2026 — Psychiatric med management, CPT 99213 + H0032","Weekly — Psychosocial rehab (H2017), 21 units Jul–Nov 2026"],
+  imp:"Persistent auditory hallucinations and disorganised thinking require daily staff prompting for medication, hygiene and appointment attendance; patient cannot sustain scheduled activity without CCBHC support.",
+  dump:["PATIENT 8820-1164  NGUYEN,T  DOB 1995-06-22  SITE=ELM/CCBHC","","DX_ROWS","  2026-10-17  F20.9   SCHIZOPHRENIA UNSPEC      STATUS=A  PROV=MD0441","  2026-10-03  F20.9   SCHIZOPHRENIA UNSPEC      STATUS=A","  2026-07-11  Z91.14  PT NONCOMPLIANCE W MED    STATUS=A","  2026-04-02  F17.210 NICOTINE DEPENDENCE       STATUS=A","","ENC_ROWS","  2026-10-03  CRISIS  H2011  COASTAL-CCBHC  dur=240m","  2026-10-17  OP      99213+H0032  CCBHC      dur=20m","  2026-07..11 PSR     H2017  x21 units","  2026-08-29  ED      99283  NHRMC          dur=190m","","MED_LIST","  PALIPERIDONE PALMITATE 156MG IM Q4WK  last 2026-11-02","  BENZTROPINE 1MG BID","  NICOTINE PATCH 21MG","","NOTE_FRAGMENT 2026-10-17 (MD0441)","  \"...ongoing AH, speech tangential. requires daily prompt","   from PSR staff for meds + hygiene. missed 2 injections","   when staff on leave -> crisis 10/3. no capacity for","   scheduled work hrs at this time...\""].join("\n")},
+
+ {id:4,name:"R. Boyd, 49",mid:"NC-5590-4412",site:"Riverside",ren:"2026-12-22",dx:"COPD with emphysema, 2 exacerbations",icd:"J44.1, J43.9",
+  enc:"4 — incl. 1 ED 29 Sep 2026",tier:2,risk:1420,
+  rule:"NC-FRAIL-T2 §3(a) · chronic respiratory",
+  encs:["29 Sep 2026 — Emergency dept, NHRMC, acute exacerbation, CPT 99284","12 Oct 2026 — Pulmonary f/u, FEV1 38% predicted, CPT 99214","20 Nov 2026 — Primary care, home O2 renewal, CPT 99213"],
+  imp:"Patient desaturates to 86% on exertion and uses continuous home oxygen; cannot walk one block or climb stairs without rest, which rules out regular on-site employment.",
+  dump:["PATIENT 5590-4412  BOYD,R  DOB 1977-01-30  SITE=RIVERSIDE","","DX_ROWS","  2026-11-20  J44.1   COPD W ACUTE EXACERBATION  STATUS=A","  2026-10-12  J43.9   EMPHYSEMA UNSPEC           STATUS=A","  2026-09-29  J44.1   COPD W ACUTE EXACERBATION  STATUS=R","  2026-09-29  Z99.81  DEPENDENCE ON SUPPL O2     STATUS=A","","ENC_ROWS","  2026-11-20  OP  99213  CFCH-RIV   dur=15m","  2026-10-12  OP  99214  PULM-WILM  dur=30m","  2026-09-29  ED  99284  NHRMC      dur=320m","  2026-06-04  OP  99213  CFCH-RIV   dur=15m","","MED_LIST","  TIOTROPIUM 18MCG INH DAILY","  BUDESONIDE/FORMOTEROL BID","  ALBUTEROL NEB Q4H PRN","  HOME O2 2L/MIN CONTINUOUS   dme 2026-09-30","","NOTE_FRAGMENT 2026-10-12 (PULM)","  \"...FEV1 38% pred. sats 86% amb 50ft. uses O2 continuous.","   unable to climb stairs at home, sleeps in recliner.","   2 exac in 12mo...\""].join("\n")},
+
+ {id:5,name:"J. Carter, 27",mid:"NC-1147-9903",site:"Elm St",ren:"2026-12-29",dx:"Pregnancy, 24 weeks, gestational hypertension",icd:"O09.512, O13.3",
+  enc:"5 — prenatal visits since Jul 2026",tier:1,risk:2750},
+
+ {id:6,name:"L. Okafor, 36",mid:"NC-6602-3389",site:"Riverside",ren:"2027-01-06",dx:"Opioid use disorder on buprenorphine",icd:"F11.21, Z79.891",
+  enc:"11 — monthly MOUD + counselling",tier:2,risk:2180,
+  rule:"NC-FRAIL-T2 §3(e) · substance use disorder in treatment",
+  encs:["06 Aug 2026 — MOUD induction f/u, CPT 99214 + G2086","Monthly — Buprenorphine maintenance, 5 visits Aug–Dec 2026","11 Nov 2026 — Individual SUD counselling, H0004, 8 sessions YTD"],
+  imp:"Patient is in the first year of medication-assisted treatment with weekly counselling and supervised dosing; the treatment schedule and ongoing cravings make sustained scheduled employment unstable at this stage of recovery.",
+  dump:["PATIENT 6602-3389  OKAFOR,L  DOB 1990-09-14  SITE=RIVERSIDE","","DX_ROWS","  2026-11-11  F11.21  OPIOID DEPENDENCE IN REMISS STATUS=A","  2026-08-06  F11.20  OPIOID DEPENDENCE UNCOMP    STATUS=R","  2026-08-06  Z79.891 LONG TERM OPIATE ANALG USE  STATUS=A","  2026-05-30  B19.20  VIRAL HEPATITIS C UNSPEC    STATUS=A","","ENC_ROWS","  2026-08-06  OP  99214+G2086  CFCH-RIV  dur=35m","  2026-09-04  OP  G2087        CFCH-RIV  dur=20m","  2026-10-02  OP  G2087        CFCH-RIV  dur=20m","  2026-11-11  BH  H0004 x8 ytd  CFCH-RIV","  2026-12-01  OP  G2087        CFCH-RIV  dur=20m","","MED_LIST","  BUPRENORPHINE/NALOXONE 16-4MG DAILY  rx 2026-12-01","  NALOXONE NASAL 4MG PRN","  SERTRALINE 50MG DAILY","","NOTE_FRAGMENT 2026-11-11 (LCSW)","  \"...10 months in MOUD, negative UDS x6. weekly group +","   supervised dosing. reports cravings when schedule","   disrupted. lost warehouse job 3/2026. not yet stable","   for full schedule per team...\""].join("\n")},
+
+ {id:7,name:"S. Mbeki, 52",mid:"NC-7731-0042",site:"Burgaw",ren:"2027-01-09",dx:"HIV, suppressed on ART",icd:"B20, Z21",
+  enc:"4 — q3mo ID visits",tier:1,risk:3100},
+
+ {id:8,name:"G. Hollis, 61",mid:"NC-2204-8876",site:"Riverside",ren:"2027-01-15",dx:"Heart failure with reduced EF (30%)",icd:"I50.22, I25.10",
+  enc:"5 — incl. 1 inpatient 02 Jul 2026",tier:2,risk:2960,
+  rule:"NC-FRAIL-T2 §3(c) · cardiovascular",
+  encs:["02 Jul 2026 — Inpatient, NHRMC, acute-on-chronic systolic HF, 4 days","21 Aug 2026 — Cardiology f/u, echo EF 30%, CPT 99214","09 Nov 2026 — Primary care, diuretic titration, CPT 99214"],
+  imp:"NYHA class III symptoms: patient becomes dyspnoeic after walking roughly 30 metres and requires rest breaks during basic household tasks, with daily weight monitoring and fluid restriction.",
+  dump:["PATIENT 2204-8876  HOLLIS,G  DOB 1965-04-18  SITE=RIVERSIDE","","DX_ROWS","  2026-11-09  I50.22  CHRONIC SYSTOLIC HF        STATUS=A","  2026-08-21  I50.23  AC ON CHR SYSTOLIC HF      STATUS=R","  2026-08-21  I25.10  ASCVD NATIVE CORONARY      STATUS=A","  2026-07-02  N17.9   ACUTE KIDNEY FAILURE       STATUS=R","","ENC_ROWS","  2026-11-09  OP  99214  CFCH-RIV   dur=25m","  2026-08-21  OP  99214  CARD-WILM  dur=30m","  2026-07-02  IP  DRG291 NHRMC      los=4d","  2026-04-17  OP  99213  CFCH-RIV   dur=15m","  2026-03-05  ED  99283  NHRMC      dur=210m","","MED_LIST","  SACUBITRIL/VALSARTAN 49-51MG BID","  CARVEDILOL 12.5MG BID","  FUROSEMIDE 40MG BID","  SPIRONOLACTONE 25MG DAILY","","NOTE_FRAGMENT 2026-11-09 (MD0207)","  \"...echo 8/21 EF 30%. NYHA III - SOB after ~30m walking,","   rests twice carrying laundry. daily weights, 2L fluid","   restriction. wife assists w/ shopping...\""].join("\n")},
+
+ {id:9,name:"A. Rooney, 23",mid:"NC-9918-5520",site:"Elm St",ren:"2027-01-21",dx:"Severe persistent asthma, uncontrolled",icd:"J45.52",
+  enc:"2 — incl. 1 ED 18 Oct 2026",tier:3,risk:640},
+
+ {id:10,name:"P. Delgado, 47",mid:"NC-4409-7712",site:"Burgaw",ren:"2027-01-28",dx:"Bipolar I disorder, recent manic episode",icd:"F31.13",
+  enc:"7 — incl. 1 inpatient psych 11 May 2026",tier:2,risk:2440,
+  rule:"NC-FRAIL-T2 §3(d) · serious mental illness",
+  encs:["11 May 2026 — Inpatient psychiatric admission, Oakwood, 7 days","24 Jun 2026 — Psychiatric med management, lithium level 0.7, CPT 99214","13 Nov 2026 — Therapy, CPT 90837, 9 sessions since Jun 2026"],
+  imp:"Mood instability with two episodes in the past year causes unpredictable gaps in daily functioning; patient needs a family member to manage finances and medication, and cannot reliably maintain a fixed schedule.",
+  dump:["PATIENT 4409-7712  DELGADO,P  DOB 1979-11-02  SITE=BURGAW","","DX_ROWS","  2026-11-13  F31.13  BIPOLAR I MANIC SEVERE     STATUS=A","  2026-06-24  F31.13  BIPOLAR I MANIC SEVERE     STATUS=A","  2026-05-11  F31.2   BIPOLAR I MANIC W PSYCH    STATUS=R","  2026-05-11  E66.9   OBESITY UNSPEC             STATUS=A","","ENC_ROWS","  2026-05-11  IP  DRG885  OAKWOOD-PSYCH  los=7d","  2026-06-24  OP  99214   CFCH-BGW       dur=25m","  2026-11-13  BH  90837 x9 since 06/26  CFCH-BGW","  2026-09-08  OP  99213   CFCH-BGW       dur=15m","","MED_LIST","  LITHIUM CARBONATE ER 900MG QHS   level 0.7 (06/24)","  QUETIAPINE 300MG QHS","  METFORMIN 500MG BID","","NOTE_FRAGMENT 2026-11-13 (LCSW)","  \"...2 episodes past 12mo incl. involuntary admission 5/11.","   sister manages bank account + pillbox. during elevated","   periods pt does not sleep, overspends. employer ended","   contract 6/2026...\""].join("\n")},
+
+ {id:11,name:"K. Freeman, 66",mid:"NC-3307-2218",site:"Riverside",ren:"2027-02-03",dx:"Hemiplegia following stroke (left dominant)",icd:"I69.351, G81.94",
+  enc:"6 — PT/OT + neurology",tier:1,risk:3540},
+
+ {id:12,name:"B. Santos, 39",mid:"NC-6651-9087",site:"Burgaw",ren:"2027-02-11",dx:"Chronic low back pain, no qualifying dx",icd:"M54.50",
+  enc:"1 — single office visit 14 Jul 2026",tier:3,risk:880}
+];
+
+var sentIds = {};
+var filter = "all";
+var sortAsc = true;
+
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];});}
+function fmtDate(iso){
+  var m=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  var p=iso.split("-"); return parseInt(p[2],10)+" "+m[parseInt(p[1],10)-1]+" "+p[0];
+}
+function tierChip(p){
+  if(sentIds[p.id]) return '<span class="chip tsent">Awaiting signature</span>';
+  if(p.tier===1) return '<span class="chip t1">Tier 1 — state data should match</span>';
+  if(p.tier===2) return '<span class="chip t2">Tier 2 — clinician report required</span>';
+  return '<span class="chip t3">No exemption path — needs hours evidence</span>';
+}
+function money(n){return "$"+n.toLocaleString("en-US");}
+
+function render(){
+  var list = P.slice().filter(function(p){ return filter==="all" || String(p.tier)===filter; });
+  list.sort(function(a,b){ return sortAsc ? a.ren.localeCompare(b.ren) : b.ren.localeCompare(a.ren); });
+  var tb = document.getElementById("rows");
+  tb.innerHTML = list.map(function(p){
+    return '<tr tabindex="0" role="button" data-id="'+p.id+'">'+
+      '<td class="pt">'+esc(p.name)+'<span class="sub">'+esc(p.site)+' clinic · '+esc(p.mid)+'</span></td>'+
+      '<td>'+fmtDate(p.ren)+'</td>'+
+      '<td>'+esc(p.dx)+'<span class="sub mono">'+esc(p.icd)+'</span></td>'+
+      '<td>'+esc(p.enc)+'</td>'+
+      '<td>'+tierChip(p)+'</td>'+
+      '<td class="money">'+money(p.risk)+'<span class="sub">annual visit revenue</span></td>'+
+      '<td class="cgo go">'+(p.tier===2?'›':'')+'</td></tr>';
+  }).join("");
+  document.getElementById("emptyState").classList.toggle("hide", list.length>0);
+  document.getElementById("navCount").textContent = list.length;
+  document.getElementById("navSent").textContent = Object.keys(sentIds).length;
+  renderPackets();
+}
+
+function renderPackets(){
+  var ids = Object.keys(sentIds);
+  var el = document.getElementById("packetList");
+  if(!ids.length){
+    el.innerHTML = '<div class="empty"><b>No packets yet</b>Open a Tier 2 patient on the worklist and send it to Dr. Patel. Packets appear here with their cure-window deadline.</div>';
+    return;
+  }
+  el.innerHTML = ids.map(function(id){
+    var p = P.filter(function(x){return x.id==id;})[0];
+    return '<div class="prow"><span class="pt">'+esc(p.name)+'<span class="sub">DSS-8209 · renewal '+fmtDate(p.ren)+' · cure window closes 14 Jan 2027</span></span>'+
+      '<span class="chip tsent">Awaiting signature</span><span class="money">'+money(p.risk)+'</span></div>';
+  }).join("");
+}
+
+document.getElementById("rows").addEventListener("click", function(e){
+  var tr = e.target.closest("tr"); if(tr) openRow(tr.getAttribute("data-id"));
+});
+document.getElementById("rows").addEventListener("keydown", function(e){
+  if(e.key!=="Enter" && e.key!==" ") return;
+  var tr = e.target.closest("tr"); if(tr){ e.preventDefault(); openRow(tr.getAttribute("data-id")); }
+});
+
+var current = null;
+function openRow(id){
+  var p = P.filter(function(x){return String(x.id)===String(id);})[0];
+  if(!p) return;
+  if(sentIds[p.id]){ toast("Already with Dr. Patel for signature"); return; }
+  if(p.tier===1){ toast("Tier 1 — no provider report needed. Frailty will verify against the state file."); return; }
+  if(p.tier===3){ toast("No exemption path on this evidence — route to the hours-reporting team."); return; }
+  current = p;
+  document.getElementById("sheetTitle").textContent = p.name + " · Tier 2 packet";
+  document.getElementById("dump").textContent = p.dump;
+  document.getElementById("fPat").textContent = p.name + " · " + p.site + " clinic";
+  document.getElementById("fMid").textContent = p.mid;
+  document.getElementById("fRen").textContent = fmtDate(p.ren) + " (renewal packet due to DSS)";
+  document.getElementById("fDx").innerHTML = esc(p.dx) + ' <span class="mono sub">' + esc(p.icd) + '</span>';
+  document.getElementById("fRule").textContent = p.rule;
+  document.getElementById("fEnc").innerHTML = p.encs.map(function(e){return "<li>"+esc(e)+"</li>";}).join("");
+  document.getElementById("fImp").textContent = p.imp;
+  document.getElementById("fSign").textContent = "Unsigned — routed to Dr. A. Patel, MD (attending)";
+  document.getElementById("cite").innerHTML = '<b>Rule:</b> NC Medicaid medical frailty Tier 2, provider report required ('+esc(p.rule)+'). Evidence auto-pulled from 3 of 4 matched EHR encounters. <b>Cure window closes 14 Jan 2027</b> — 43 days.';
+  var b = document.getElementById("sendBtn");
+  b.classList.remove("done"); b.disabled=false; b.textContent="Send to Dr. Patel for signature";
+  document.getElementById("sheet").classList.add("on");
+  document.getElementById("scrim").classList.add("on");
+}
+function closeSheet(){
+  document.getElementById("sheet").classList.remove("on");
+  document.getElementById("scrim").classList.remove("on");
+  current = null;
+}
+document.addEventListener("keydown", function(e){ if(e.key==="Escape") closeSheet(); });
+
+function sendForSig(){
+  if(!current){ toast("No packet open"); return; }
+  var p = current;
+  var b = document.getElementById("sendBtn");
+  b.disabled = true; b.classList.add("done"); b.textContent = "Sending…";
+  window.setTimeout(function(){
+    sentIds[p.id] = true;
+    closeSheet();
+    render();
+    toast("Packet sent to Dr. Patel · " + p.name + " now Awaiting signature");
+  }, 650);
+}
+
+function setFilter(f){
+  filter = f;
+  var btns = document.querySelectorAll(".toolbar .chipbtn[data-f]");
+  for(var i=0;i<btns.length;i++){
+    btns[i].setAttribute("aria-pressed", btns[i].getAttribute("data-f")===f ? "true":"false");
+  }
+  render();
+}
+function toggleSort(){
+  sortAsc = !sortAsc;
+  document.getElementById("sortBtn").textContent = "Sort: renewal " + (sortAsc?"↑":"↓");
+  render();
+}
+
+var tTimer=null;
+function toast(msg){
+  var t=document.getElementById("toast");
+  t.textContent=msg; t.classList.add("on");
+  if(tTimer) window.clearTimeout(tTimer);
+  tTimer = window.setTimeout(function(){ t.classList.remove("on"); }, 2600);
+}
+
+function go(v){
+  ["worklist","packets","rules"].forEach(function(k){
+    document.getElementById("view-"+k).classList.toggle("hide", k!==v);
+    document.getElementById("nav-"+k).setAttribute("aria-current", k===v ? "true":"false");
+  });
+}
+
+window.go=go; window.setFilter=setFilter; window.toggleSort=toggleSort;
+window.closeSheet=closeSheet; window.sendForSig=sendForSig; window.toast=toast;
+
+render();
+})();
+</script>
+</body>
+</html>
