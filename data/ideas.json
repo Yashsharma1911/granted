@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-01T20:40:17.049Z",
+  "updated": "2026-11-02T20:54:55.880Z",
   "ideas": [
     {
       "id": "2026-10-22-agentgauntlet",
@@ -548,6 +548,35 @@
       "one_liner": "Canon turns the 6,454 videos Hacker News has recommended over 20 years into a ranked, tickable canon: drop your Google Takeout watch history (or just tick by hand) and get \"you've seen 37 of the HN 250\", a shareable card, and one new talk waiting for you every Monday.",
       "prototype_url": "https://yashsharma1911.github.io/granted/ideas/2026-11-01-canon/",
       "sources_count": 13,
+      "superseded_by": null
+    },
+    {
+      "id": "2026-11-02-typecast",
+      "number": 21,
+      "date": "2026-11-02",
+      "track": "build",
+      "short_name": "Typecast",
+      "verdict": "dig_deeper",
+      "score": 8.2,
+      "scores": {
+        "wow": 9,
+        "shareability": 9,
+        "buildability": 7,
+        "freshness": 9,
+        "usefulness": 7
+      },
+      "effort": "a weekend",
+      "category": "Design tools",
+      "tags": [
+        "fonts",
+        "design",
+        "llm",
+        "open-source"
+      ],
+      "pain_type": "expressed",
+      "one_liner": "Paste your landing page URL (or one line about your product) and Typecast generates a one-of-a-kind display typeface for your headline — drawn as code, not picked from a list — shows your real hero text in it, and gives you a TTF plus a copy-paste @font-face snippet.",
+      "prototype_url": "https://yashsharma1911.github.io/granted/ideas/2026-11-02-typecast/",
+      "sources_count": 15,
       "superseded_by": null
     }
   ]

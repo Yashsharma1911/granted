@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Typecast — a one-of-a-kind display font for your landing page</title>
+<style>
+:root{
+  --bg:#0b0b0d; --fg:#f4f2ee; --muted:#9a968e; --line:#262629;
+  --card:#141416; --accent:#e8ff5a; --accent-fg:#111; --ok:#7ee787;
+}
+@media (prefers-color-scheme: light){
+  :root{ --bg:#faf8f4; --fg:#15150f; --muted:#6a665e; --line:#e2ded4;
+         --card:#ffffff; --accent:#1b1b1b; --accent-fg:#f6ff9d; --ok:#1a7f37; }
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--fg);
+  font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  -webkit-font-smoothing:antialiased; line-height:1.45;
+  min-height:100vh;
+}
+button,input{font:inherit;color:inherit}
+button{cursor:pointer;background:none;border:0}
+a{color:inherit}
+.wrap{max-width:1040px;margin:0 auto;padding:0 20px}
+
+/* header */
+header.top{position:sticky;top:0;z-index:30;background:color-mix(in srgb,var(--bg) 92%,transparent);
+  backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.topin{display:flex;align-items:center;gap:14px;min-height:56px}
+.brand{display:flex;align-items:center;gap:9px;font-weight:700;letter-spacing:-.02em}
+.mark{width:22px;height:22px;flex:none}
+.tag{color:var(--muted);font-size:12.5px;display:none}
+@media(min-width:720px){.tag{display:inline}}
+nav{margin-left:auto;display:flex;gap:4px}
+nav button{padding:9px 12px;border-radius:999px;font-size:13.5px;color:var(--muted);min-height:40px}
+nav button[aria-current="true"]{color:var(--fg);background:var(--card);border:1px solid var(--line)}
+
+/* screens */
+.screen{display:none;animation:fade .35s ease}
+.screen.on{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* screen 1 */
+.hero{padding:clamp(36px,9vw,96px) 0 40px}
+.kicker{font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin:0 0 18px}
+h1.big{font-size:clamp(30px,7.2vw,54px);line-height:1.04;letter-spacing:-.035em;margin:0 0 10px;font-weight:700;max-width:16ch}
+.sub{color:var(--muted);margin:0 0 30px;max-width:46ch;font-size:15.5px}
+.field{display:flex;flex-direction:column;gap:12px;max-width:620px}
+label.lbl{font-size:13px;color:var(--muted)}
+input[type=text]{
+  width:100%;padding:17px 18px;border-radius:14px;border:1px solid var(--line);
+  background:var(--card);font-size:17px;letter-spacing:-.01em;min-height:56px;outline:none;
+}
+input[type=text]:focus{border-color:var(--fg)}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.btn{background:var(--accent);color:var(--accent-fg);padding:15px 22px;border-radius:999px;font-weight:650;
+  font-size:16px;min-height:52px;letter-spacing:-.01em;transition:transform .12s ease,opacity .12s}
+.btn:active{transform:scale(.975)}
+.btn:disabled{opacity:.5;cursor:default}
+.btn.ghost{background:transparent;color:var(--fg);border:1px solid var(--line)}
+.linky{color:var(--muted);text-decoration:underline;text-underline-offset:3px;font-size:14px;padding:10px 2px;min-height:40px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
+.chip{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:9px 14px;font-size:13.5px;
+  color:var(--muted);min-height:40px}
+.chip:hover{color:var(--fg);border-color:var(--fg)}
+.micro{color:var(--muted);font-size:13px;margin-top:40px;padding-bottom:10px;border-top:1px solid var(--line);padding-top:22px}
+.err{color:#ff9a8a;font-size:13.5px;min-height:18px}
+@media (prefers-color-scheme: light){.err{color:#b4301c}}
+
+/* loading */
+#loading{position:fixed;inset:0;background:var(--bg);z-index:60;display:none;place-items:center;padding:24px}
+#loading.on{display:grid}
+.loadbox{width:100%;max-width:520px;text-align:center}
+.statuses{margin-top:26px;display:flex;flex-direction:column;gap:7px;align-items:center}
+.st{font-size:14px;color:#4a4a4e;transition:color .3s}
+@media (prefers-color-scheme: light){.st{color:#bdb9b0}}
+.st.active{color:var(--fg)}
+.st.done{color:var(--muted)}
+.bar{height:3px;background:var(--line);border-radius:3px;overflow:hidden;margin-top:26px}
+.bar i{display:block;height:100%;width:0;background:var(--accent);transition:width .25s linear}
+.draw path,.draw line{stroke:var(--fg);fill:none;stroke-width:7;stroke-linecap:round;stroke-linejoin:round}
+
+/* cards */
+.secthead{display:flex;flex-wrap:wrap;gap:10px;align-items:baseline;padding:26px 0 6px}
+.secthead h2{font-size:20px;margin:0;letter-spacing:-.02em}
+.secthead p{margin:0;color:var(--muted);font-size:13.5px}
+.cards{display:grid;gap:16px;padding:12px 0 36px}
+.card{border:1px solid var(--line);background:var(--card);border-radius:18px;padding:18px}
+.card h3{margin:0;font-size:16.5px;letter-spacing:-.01em}
+.card .desc{margin:3px 0 14px;color:var(--muted);font-size:13px}
+.specimen{width:100%;height:auto;display:block;overflow:visible}
+.alpha{margin-top:12px;opacity:.68}
+.cardfoot{display:flex;align-items:center;gap:10px;margin-top:14px;flex-wrap:wrap}
+.meta{color:var(--muted);font-size:12px}
+
+/* screen 3 */
+.browser{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--card);margin-top:14px}
+.bbar{display:flex;align-items:center;gap:7px;padding:10px 12px;border-bottom:1px solid var(--line)}
+.dot{width:10px;height:10px;border-radius:50%;background:var(--line)}
+.url{margin-left:8px;font-size:12px;color:var(--muted);background:var(--bg);border-radius:999px;padding:5px 12px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:60%}
+.bbody{padding:clamp(20px,5vw,44px) clamp(14px,4vw,34px)}
+pre{margin:0;padding:16px;background:var(--bg);border:1px solid var(--line);border-radius:12px;overflow-x:auto;
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px;line-height:1.6;color:var(--fg)}
+.grid2{display:grid;gap:16px;padding:18px 0 0}
+@media(min-width:860px){.grid2{grid-template-columns:1fr 1fr}}
+.sharecard{aspect-ratio:1/1;border:1px solid var(--line);border-radius:18px;background:var(--card);
+  display:flex;flex-direction:column;justify-content:space-between;padding:20px;max-width:420px}
+.postbox{border:1px dashed var(--line);border-radius:12px;padding:14px;font-size:13.5px;color:var(--muted);margin-top:12px;display:none}
+.postbox.on{display:block}
+
+/* foundry */
+.banner{border:1px solid var(--line);background:var(--card);border-radius:16px;padding:14px 16px;display:flex;
+  gap:12px;align-items:center;flex-wrap:wrap;margin-top:20px}
+.pulse{width:8px;height:8px;border-radius:50%;background:var(--accent);flex:none;box-shadow:0 0 0 0 var(--accent);animation:pl 2.2s infinite}
+@keyframes pl{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--accent) 60%,transparent)}70%{box-shadow:0 0 0 10px transparent}100%{box-shadow:0 0 0 0 transparent}}
+.shelf{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;padding:16px 0 40px}
+.tile{border:1px solid var(--line);background:var(--card);border-radius:14px;padding:14px;text-align:left;
+  display:flex;flex-direction:column;gap:6px;min-height:150px;transition:border-color .15s,transform .12s}
+.tile:hover{border-color:var(--fg)}
+.tile:active{transform:scale(.99)}
+.tile .nm{font-size:12.5px;font-weight:600}
+.tile .hl{font-size:11.5px;color:var(--muted);line-height:1.35}
+.tile .tm{font-size:11px;color:var(--muted);margin-top:auto}
+
+/* panel */
+.scrim{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:70;display:none;align-items:flex-end;justify-content:center}
+.scrim.on{display:flex}
+.panel{background:var(--bg);border:1px solid var(--line);border-radius:18px 18px 0 0;width:100%;max-width:560px;
+  padding:20px;animation:up .25s ease}
+@media(min-width:720px){.scrim{align-items:center}.panel{border-radius:18px}}
+@keyframes up{from{transform:translateY(24px);opacity:0}to{transform:none;opacity:1}}
+
+/* toast */
+#toast{position:fixed;left:50%;transform:translateX(-50%) translateY(20px);bottom:22px;z-index:90;
+  background:var(--fg);color:var(--bg);padding:13px 18px;border-radius:999px;font-size:14px;opacity:0;
+  transition:opacity .2s,transform .2s;pointer-events:none;max-width:92vw;text-align:center}
+#toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+
+footer{border-top:1px solid var(--line);color:var(--muted);font-size:12.5px;padding:20px 0 34px}
+.hidden{display:none}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap topin">
+    <div class="brand">
+      <svg class="mark" viewBox="0 0 24 24" aria-hidden="true"><rect x="1" y="1" width="22" height="22" rx="6" fill="none" stroke="currentColor" stroke-width="2"/><path d="M6 8h12M12 8v9" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg>
+      <span>Typecast</span>
+    </div>
+    <span class="tag">a one-of-a-kind display font for your landing page, in 30 seconds</span>
+    <nav>
+      <button id="navNew" onclick="go('s1')">New</button>
+      <button id="navRes" onclick="go('s2')">Result</button>
+      <button id="navFou" onclick="go('s4')">Foundry</button>
+    </nav>
+  </div>
+</header>
+
+<main>
+<!-- SCREEN 1 -->
+<section id="s1" class="screen on">
+  <div class="wrap hero">
+    <p class="kicker">Demo data · nothing leaves your phone</p>
+    <h1 class="big">A display face nobody else has.</h1>
+    <p class="sub">Paste your landing page. Typecast reads your headline and draws three brand-new typefaces for it.</p>
+    <div class="field">
+      <label class="lbl" for="url">Paste your landing page URL</label>
+      <input id="url" type="text" inputmode="url" autocomplete="off" spellcheck="false" placeholder="https://yourstartup.com">
+      <div class="err" id="err"></div>
+      <div class="row">
+        <button class="btn" id="goBtn" onclick="generate()">Draw me a typeface</button>
+        <button class="linky" onclick="describe()">or just describe your product</button>
+      </div>
+    </div>
+    <div class="chips" id="chips"></div>
+    <p class="micro">40 glyphs, drawn from scratch. ~2 cents of inference. Yours to keep.</p>
+  </div>
+</section>
+
+<!-- SCREEN 2 -->
+<section id="s2" class="screen">
+  <div class="wrap">
+    <div class="secthead">
+      <h2 id="s2site">Three directions</h2>
+      <p id="s2meta"></p>
+    </div>
+    <div class="cards" id="results"></div>
+    <button class="linky" onclick="go('s1')">← start over with another URL</button>
+    <div style="height:28px"></div>
+  </div>
+</section>
+
+<!-- SCREEN 3 -->
+<section id="s3" class="screen">
+  <div class="wrap">
+    <div class="secthead">
+      <h2 id="s3name">Your font</h2>
+      <p id="s3desc"></p>
+    </div>
+    <div class="browser">
+      <div class="bbar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="url" id="s3url">yourstartup.com</span></div>
+      <div class="bbody"><div id="s3hero"></div><div id="s3alpha" class="alpha"></div></div>
+    </div>
+
+    <div class="grid2">
+      <div class="card">
+        <h3>1 · Download</h3>
+        <p class="desc">TrueType, 40 glyphs, no licence strings.</p>
+        <button class="btn" id="dlBtn" onclick="downloadFont()"><span id="dlLabel">Download Typecast-LumenGrotesk.ttf</span></button>
+      </div>
+      <div class="card">
+        <h3>2 · Drop it in</h3>
+        <p class="desc">Self-host the file, paste this CSS.</p>
+        <pre id="code"></pre>
+        <div class="cardfoot"><button class="btn ghost" id="copyBtn" onclick="copyCode()">Copy</button><span class="meta">CSS snippet</span></div>
+      </div>
+    </div>
+
+    <div class="secthead"><h2>3 · Share your face</h2><p>A square card, ready to post.</p></div>
+    <div class="sharecard" id="shareCard"></div>
+    <div class="cardfoot" style="margin-bottom:6px">
+      <button class="btn ghost" onclick="toast('Card saved. 1080×1080 PNG.')">Download card</button>
+      <button class="btn ghost" onclick="showPost()">Post to X</button>
+    </div>
+    <div class="postbox" id="postbox"></div>
+    <div style="padding:22px 0 34px"><button class="linky" onclick="go('s2')">← Try another direction</button></div>
+  </div>
+</section>
+
+<!-- SCREEN 4 -->
+<section id="s4" class="screen">
+  <div class="wrap">
+    <div class="banner"><span class="pulse"></span><strong style="font-size:14px">This week's drop</strong>
+      <span class="meta">10 new faces every Monday · 36 open-sourced so far</span></div>
+    <div class="secthead"><h2>The Foundry</h2><p>Every face drawn here is one of one.</p></div>
+    <div class="shelf" id="shelf"></div>
+  </div>
+</section>
+</main>
+
+<div id="loading" aria-live="polite">
+  <div class="loadbox">
+    <svg class="draw" id="drawSvg" viewBox="0 0 560 160" width="100%" height="140" aria-hidden="true"></svg>
+    <div class="statuses" id="statuses"></div>
+    <div class="bar"><i id="barFill"></i></div>
+  </div>
+</div>
+
+<div class="scrim" id="scrim" onclick="if(event.target===this)closePanel()">
+  <div class="panel" id="panel" role="dialog" aria-modal="true"></div>
+</div>
+
+<div id="toast" role="status"></div>
+
+<footer><div class="wrap">Prototype by Granted, inspired by your bookmarks</div></footer>
+
+<script>
+/* ---------- demo data ---------- */
+const SITES = {
+  "lumen.dev":{h:"Ship your first agent before lunch.",d:"dev tools",f:"Inter"},
+  "paperlane.io":{h:"Every receipt, filed itself.",d:"fintech ops",f:"Inter"},
+  "forgedb.com":{h:"A database that survives your growth.",d:"infra",f:"Geist"},
+  "saltmarsh.studio":{h:"We make small, strange films.",d:"creative studio",f:"Helvetica"},
+  "tinyreactor.ai":{h:"Fusion math, in your browser.",d:"science",f:"Inter"}
+};
+const CHIPS = Object.keys(SITES);
+
+/* ---------- glyph systems: 3 hand-built alphabets on a 100x140 grid ---------- */
+/* A: Lumen Grotesk — heavy geometric, flat terminals, tight */
+const A_W = 100, CAP = 140;
+function G(d,w){return {d:d,w:(w===undefined?100:w)};}
+
+const LUMEN = {
+  adv:1.0, sw:0, fill:true, track:-6, slant:0, name:"Lumen Grotesk",
+  g:{
+  "A":G("M4 140 L40 0 L60 0 L96 140 L70 140 L64 112 L36 112 L30 140Z M41 90 L59 90 L50 48Z"),
+  "B":G("M10 0 H58 C84 0 94 16 94 34 C94 50 86 62 74 66 C88 70 96 82 96 102 C96 124 84 140 56 140 H10Z M36 24 V56 H54 C64 56 70 50 70 40 C70 30 64 24 54 24Z M36 80 V116 H54 C66 116 72 110 72 98 C72 86 66 80 54 80Z"),
+  "C":G("M92 104 C86 128 70 142 50 142 C22 142 6 118 6 70 C6 22 22 -2 50 -2 C70 -2 86 12 92 36 L68 42 C65 28 59 22 50 22 C38 22 32 36 32 70 C32 104 38 118 50 118 C59 118 65 112 68 98Z"),
+  "D":G("M10 0 H50 C82 0 96 22 96 70 C96 118 82 140 50 140 H10Z M36 24 V116 H48 C64 116 70 104 70 70 C70 36 64 24 48 24Z"),
+  "E":G("M12 0 H92 V24 H38 V56 H84 V80 H38 V116 H94 V140 H12Z"),
+  "F":G("M12 0 H92 V24 H38 V58 H84 V82 H38 V140 H12Z"),
+  "G":G("M94 70 V140 H74 V124 C68 136 60 142 48 142 C20 142 6 118 6 70 C6 22 22 -2 50 -2 C72 -2 86 12 92 36 L68 42 C65 28 59 22 50 22 C38 22 32 36 32 70 C32 104 38 118 50 118 C62 118 70 108 70 92 H48 V70Z"),
+  "H":G("M12 0 H38 V56 H66 V0 H92 V140 H66 V80 H38 V140 H12Z"),
+  "I":G("M14 0 H62 V24 H50 V116 H62 V140 H14 V116 H26 V24 H14Z",76),
+  "J":G("M44 0 H70 V96 C70 126 56 142 34 142 C14 142 2 130 -2 108 L22 100 C24 112 28 118 34 118 C40 118 44 112 44 98Z",82),
+  "K":G("M12 0 H38 V58 L76 0 H100 L62 60 L102 140 H74 L48 86 L38 102 V140 H12Z"),
+  "L":G("M12 0 H38 V116 H92 V140 H12Z"),
+  "M":G("M8 0 H38 L58 74 L78 0 H108 V140 H84 V44 L66 110 H50 L32 44 V140 H8Z",118),
+  "N":G("M12 0 H38 L70 78 V0 H94 V140 H68 L36 62 V140 H12Z",106),
+  "O":G("M50 -2 C78 -2 94 22 94 70 C94 118 78 142 50 142 C22 142 6 118 6 70 C6 22 22 -2 50 -2Z M50 22 C38 22 32 36 32 70 C32 104 38 118 50 118 C62 118 68 104 68 70 C68 36 62 22 50 22Z"),
+  "P":G("M10 0 H56 C84 0 96 18 96 44 C96 70 84 88 56 88 H36 V140 H10Z M36 24 V64 H52 C64 64 70 58 70 44 C70 30 64 24 52 24Z"),
+  "Q":G("M50 -2 C78 -2 94 22 94 70 C94 92 90 110 82 122 L96 140 H70 L64 132 C60 138 56 142 50 142 C22 142 6 118 6 70 C6 22 22 -2 50 -2Z M50 22 C38 22 32 36 32 70 C32 104 38 118 50 118 C62 118 68 104 68 70 C68 36 62 22 50 22Z"),
+  "R":G("M10 0 H56 C84 0 96 16 96 40 C96 58 88 72 74 78 L98 140 H70 L50 84 H36 V140 H10Z M36 24 V62 H52 C64 62 70 56 70 43 C70 30 64 24 52 24Z"),
+  "S":G("M50 -2 C76 -2 90 12 94 34 L70 40 C68 28 60 22 50 22 C40 22 34 28 34 38 C34 66 96 52 96 100 C96 126 78 142 50 142 C22 142 8 126 4 102 L28 96 C31 112 38 118 50 118 C62 118 70 112 70 102 C70 74 8 88 8 40 C8 14 26 -2 50 -2Z"),
+  "T":G("M2 0 H98 V24 H63 V140 H37 V24 H2Z"),
+  "U":G("M12 0 H38 V94 C38 110 44 118 52 118 C60 118 66 110 66 94 V0 H92 V96 C92 126 76 142 52 142 C28 142 12 126 12 96Z"),
+  "V":G("M2 0 H28 L50 102 L72 0 H98 L62 140 H38Z"),
+  "W":G("M0 0 H24 L38 94 L52 0 H72 L86 94 L100 0 H124 L98 140 H74 L62 60 L50 140 H26Z",132),
+  "X":G("M4 0 H32 L50 46 L68 0 H96 L64 68 L98 140 H70 L50 92 L30 140 H2 L36 68Z"),
+  "Y":G("M2 0 H30 L50 56 L70 0 H98 L63 84 V140 H37 V84Z"),
+  "Z":G("M6 0 H94 V22 L38 116 H94 V140 H4 V118 L60 24 H6Z"),
+  "0":G("M50 -2 C78 -2 92 22 92 70 C92 118 78 142 50 142 C22 142 8 118 8 70 C8 22 22 -2 50 -2Z M50 22 C40 22 34 36 34 70 C34 104 40 118 50 118 C60 118 66 104 66 70 C66 36 60 22 50 22Z"),
+  "1":G("M24 32 L58 0 H76 V140 H50 V36 L34 50Z",86),
+  "2":G("M8 36 C10 12 26 -2 50 -2 C76 -2 92 14 92 38 C92 76 44 94 36 116 H94 V140 H6 V122 C6 84 66 70 66 40 C66 28 60 22 50 22 C40 22 34 30 33 44Z"),
+  "3":G("M8 36 C11 12 27 -2 50 -2 C76 -2 92 12 92 34 C92 50 84 62 70 66 C86 70 96 82 96 100 C96 126 78 142 50 142 C24 142 8 128 5 104 L29 98 C31 112 38 118 50 118 C62 118 70 112 70 100 C70 86 62 80 44 80 H38 V58 H44 C60 58 68 52 68 40 C68 28 61 22 50 22 C40 22 34 30 32 42Z"),
+  "4":G("M58 0 H84 V86 H98 V110 H84 V140 H60 V110 H4 V88 L58 0Z M60 88 V38 L30 88Z"),
+  "5":G("M14 0 H90 V24 H36 V54 C42 48 50 46 58 46 C82 46 96 64 96 92 C96 122 78 142 50 142 C26 142 9 128 5 104 L29 98 C31 112 38 118 50 118 C62 118 70 108 70 92 C70 76 62 68 50 68 C42 68 36 72 32 80 L12 76Z"),
+  "6":G("M88 36 L64 42 C62 28 57 22 49 22 C38 22 32 34 31 60 C37 50 46 46 56 46 C80 46 94 64 94 92 C94 122 76 142 50 142 C20 142 6 118 6 70 C6 22 22 -2 50 -2 C72 -2 85 12 88 36Z M50 68 C40 68 32 78 32 94 C32 110 40 118 50 118 C60 118 68 110 68 94 C68 78 60 68 50 68Z"),
+  "7":G("M6 0 H94 V22 L50 140 H22 L66 24 H6Z"),
+  "8":G("M50 -2 C76 -2 92 12 92 32 C92 48 84 58 72 64 C88 70 96 82 96 100 C96 126 78 142 50 142 C22 142 4 126 4 100 C4 82 12 70 28 64 C16 58 8 48 8 32 C8 12 24 -2 50 -2Z M50 20 C40 20 33 26 33 36 C33 46 40 52 50 52 C60 52 67 46 67 36 C67 26 60 20 50 20Z M50 74 C38 74 30 82 30 96 C30 110 38 118 50 118 C62 118 70 110 70 96 C70 82 62 74 50 74Z"),
+  "9":G("M12 104 L36 98 C38 112 43 118 51 118 C62 118 68 106 69 80 C63 90 54 94 44 94 C20 94 6 76 6 48 C6 18 24 -2 50 -2 C80 -2 94 22 94 70 C94 118 78 142 50 142 C28 142 15 128 12 104Z M50 22 C40 22 32 30 32 46 C32 62 40 72 50 72 C60 72 68 62 68 46 C68 30 60 22 50 22Z"),
+  ".":G("M22 112 H54 V140 H22Z",70),
+  ",":G("M22 112 H54 V140 L36 162 H20 L32 140 H22Z",70),
+  "'":G("M24 0 H50 V44 H24Z",64),
+  "-":G("M10 62 H78 V86 H10Z",88),
+  "!":G("M34 0 H64 V92 H34Z M34 112 H64 V140 H34Z",84)
+}};
+
+/* B: Marsh Display — high contrast, flared stems, condensed */
+const MARSH = {
+  adv:0.78, sw:0, fill:true, track:-2, slant:0, name:"Marsh Display",
+  g:{
+  "A":G("M30 140 H4 L34 0 H56 L86 140 H58 L52 108 H36Z M40 86 H48 L44 50Z"),
+  "B":G("M12 0 H52 C74 0 84 14 84 32 C84 48 76 58 64 62 C80 66 88 78 88 96 C88 120 76 140 50 140 H12Z M38 20 V54 H48 C58 54 62 48 62 38 C62 26 58 20 48 20Z M38 76 V120 H46 C58 120 64 112 64 100 C64 86 58 76 46 76Z",94),
+  "C":G("M84 100 C78 128 64 142 46 142 C20 142 8 118 8 70 C8 22 20 -2 46 -2 C64 -2 78 10 84 38 L62 46 C59 28 54 20 46 20 C36 20 34 36 34 70 C34 104 36 120 46 120 C54 120 59 112 62 94Z",92),
+  "D":G("M12 0 H46 C76 0 88 22 88 70 C88 118 76 140 46 140 H12Z M38 20 V120 H44 C58 120 62 106 62 70 C62 34 58 20 44 20Z",96),
+  "E":G("M14 0 H82 V20 H40 V54 H74 V76 H40 V120 H84 V140 H14Z",92),
+  "F":G("M14 0 H82 V20 H40 V56 H74 V78 H40 V140 H14Z",90),
+  "G":G("M84 70 V140 H68 V126 C62 136 55 142 46 142 C20 142 8 118 8 70 C8 22 20 -2 46 -2 C66 -2 80 10 85 38 L63 46 C60 28 54 20 46 20 C36 20 34 36 34 70 C34 104 37 120 46 120 C56 120 62 110 62 92 H44 V70Z",94),
+  "H":G("M14 0 H40 V54 H60 V0 H86 V140 H60 V76 H40 V140 H14Z",96),
+  "I":G("M6 0 H64 V20 H48 V120 H64 V140 H6 V120 H22 V20 H6Z",70),
+  "J":G("M40 0 H66 V98 C66 126 54 142 34 142 C16 142 6 130 2 110 L22 102 C24 114 28 120 34 120 C38 120 40 114 40 100Z",76),
+  "K":G("M14 0 H40 V56 L70 0 H94 L62 58 L96 140 H70 L48 84 L40 98 V140 H14Z",100),
+  "L":G("M14 0 H40 V120 H84 V140 H14Z",90),
+  "M":G("M8 0 H34 L52 76 L70 0 H96 V140 H74 V48 L58 112 H44 L28 48 V140 H8Z",104),
+  "N":G("M12 0 H36 L64 80 V0 H86 V140 H62 L34 62 V140 H12Z",96),
+  "O":G("M48 -2 C74 -2 88 22 88 70 C88 118 74 142 48 142 C22 142 8 118 8 70 C8 22 22 -2 48 -2Z M48 20 C38 20 34 36 34 70 C34 104 38 120 48 120 C58 120 62 104 62 70 C62 36 58 20 48 20Z",96),
+  "P":G("M12 0 H52 C78 0 88 18 88 44 C88 70 78 86 52 86 H38 V140 H12Z M38 20 V64 H48 C58 64 62 58 62 42 C62 26 58 20 48 20Z",94),
+  "Q":G("M48 -2 C74 -2 88 22 88 70 C88 92 85 110 78 122 L92 140 H66 L61 132 C57 138 53 142 48 142 C22 142 8 118 8 70 C8 22 22 -2 48 -2Z M48 20 C38 20 34 36 34 70 C34 104 38 120 48 120 C58 120 62 104 62 70 C62 36 58 20 48 20Z",98),
+  "R":G("M12 0 H52 C78 0 88 16 88 40 C88 58 81 70 69 76 L92 140 H66 L48 82 H38 V140 H12Z M38 20 V62 H48 C58 62 62 56 62 41 C62 26 58 20 48 20Z",96),
+  "S":G("M48 -2 C72 -2 84 12 88 34 L66 42 C64 28 58 20 48 20 C40 20 36 26 36 36 C36 62 90 50 90 98 C90 124 74 142 48 142 C22 142 10 126 6 102 L28 94 C31 112 38 120 48 120 C58 120 64 112 64 102 C64 76 10 88 10 38 C10 14 26 -2 48 -2Z",98),
+  "T":G("M2 0 H90 V20 H58 V140 H34 V20 H2Z",92),
+  "U":G("M12 0 H38 V96 C38 112 42 120 50 120 C58 120 62 112 62 96 V0 H86 V98 C86 126 72 142 50 142 C28 142 12 126 12 98Z",96),
+  "V":G("M2 0 H28 L48 104 L68 0 H92 L60 140 H36Z",94),
+  "W":G("M0 0 H22 L34 96 L46 0 H64 L76 96 L88 0 H110 L88 140 H66 L55 62 L44 140 H22Z",116),
+  "X":G("M4 0 H30 L48 46 L66 0 H92 L62 68 L94 140 H68 L48 92 L28 140 H2 L34 68Z",98),
+  "Y":G("M2 0 H28 L48 58 L68 0 H94 L61 86 V140 H35 V86Z",98),
+  "Z":G("M6 0 H86 V20 L36 120 H88 V140 H4 V120 L54 20 H6Z",94),
+  "0":G("M48 -2 C74 -2 88 22 88 70 C88 118 74 142 48 142 C22 142 8 118 8 70 C8 22 22 -2 48 -2Z M48 20 C38 20 34 36 34 70 C34 104 38 120 48 120 C58 120 62 104 62 70 C62 36 58 20 48 20Z",96),
+  "1":G("M20 30 L52 0 H70 V140 H46 V34 L32 46Z",78),
+  "2":G("M8 34 C10 10 26 -2 48 -2 C72 -2 86 12 86 36 C86 74 42 92 34 120 H88 V140 H6 V124 C6 86 62 70 62 38 C62 26 57 20 48 20 C39 20 34 28 33 42Z",94),
+  "3":G("M8 34 C11 10 27 -2 48 -2 C72 -2 86 12 86 34 C86 50 78 60 66 64 C80 68 90 80 90 98 C90 124 74 142 48 142 C24 142 10 128 7 104 L29 96 C31 112 38 120 48 120 C58 120 64 112 64 100 C64 86 57 80 42 80 H36 V58 H42 C56 58 62 52 62 40 C62 28 56 20 48 20 C39 20 34 28 32 40Z",96),
+  "4":G("M54 0 H78 V86 H92 V108 H78 V140 H56 V108 H4 V88Z M56 88 V38 L28 88Z",96),
+  "5":G("M14 0 H84 V20 H36 V52 C42 46 48 44 56 44 C78 44 90 62 90 92 C90 122 74 142 48 142 C24 142 10 128 6 104 L28 96 C31 112 38 120 48 120 C58 120 64 110 64 92 C64 76 58 66 48 66 C40 66 35 70 32 78 L12 74Z",96),
+  "6":G("M82 34 L60 42 C58 28 54 20 46 20 C36 20 32 34 31 58 C36 48 44 44 54 44 C76 44 88 62 88 92 C88 122 72 142 48 142 C20 142 8 118 8 70 C8 22 22 -2 48 -2 C68 -2 79 12 82 34Z M48 66 C38 66 32 76 32 94 C32 110 38 120 48 120 C58 120 64 110 64 94 C64 76 58 66 48 66Z",94),
+  "7":G("M6 0 H88 V20 L48 140 H22 L62 20 H6Z",92),
+  "8":G("M48 -2 C72 -2 86 12 86 32 C86 48 78 58 66 64 C82 70 90 82 90 100 C90 126 74 142 48 142 C22 142 6 126 6 100 C6 82 14 70 30 64 C18 58 10 48 10 32 C10 12 24 -2 48 -2Z M48 18 C39 18 34 24 34 36 C34 46 39 52 48 52 C57 52 62 46 62 36 C62 24 57 18 48 18Z M48 74 C37 74 31 82 31 96 C31 110 37 120 48 120 C59 120 65 110 65 96 C65 82 59 74 48 74Z",96),
+  "9":G("M14 104 L36 96 C38 112 42 120 50 120 C60 120 64 106 65 80 C60 90 52 94 42 94 C20 94 8 76 8 48 C8 18 24 -2 48 -2 C76 -2 88 22 88 70 C88 118 74 142 48 142 C28 142 17 126 14 104Z M48 20 C38 20 32 30 32 46 C32 62 38 72 48 72 C58 72 64 62 64 46 C64 30 58 20 48 20Z",96),
+  ".":G("M20 116 H44 V140 H20Z",60),
+  ",":G("M20 116 H44 V140 L30 162 H16 L26 140 H20Z",60),
+  "'":G("M20 0 H42 V42 H20Z",56),
+  "-":G("M8 64 H64 V84 H8Z",74),
+  "!":G("M30 0 H56 V92 H30Z M30 114 H56 V140 H30Z",80)
+}};
+
+/* C: Reactor Mono Wide — stencil, gaps cut in strokes, wide tracking */
+const REACTOR = {
+  adv:1.12, sw:0, fill:true, track:16, slant:0, name:"Reactor Mono Wide",
+  g:{
+  "A":G("M6 140 L36 0 H64 L94 140 H70 L64 108 H36 L30 140Z M40 86 H60 L50 38Z M36 56 H64 V68 H36Z"),
+  "B":G("M10 0 H56 C80 0 90 14 90 34 C90 50 82 60 70 64 C84 68 92 80 92 98 C92 122 80 140 54 140 H10Z M34 20 V54 H52 C62 54 66 48 66 37 C66 26 62 20 52 20Z M34 78 V120 H52 C64 120 68 112 68 99 C68 86 64 78 52 78Z M10 62 H40 V76 H10Z"),
+  "C":G("M92 98 C86 126 70 142 50 142 C22 142 8 118 8 70 C8 22 22 -2 50 -2 C70 -2 86 12 92 40 L68 46 C64 28 58 20 50 20 C38 20 32 36 32 70 C32 104 38 120 50 120 C58 120 64 112 68 92Z M8 62 H34 V78 H8Z"),
+  "D":G("M10 0 H50 C82 0 94 22 94 70 C94 118 82 140 50 140 H10Z M34 20 V120 H48 C64 120 68 106 68 70 C68 34 64 20 48 20Z M10 60 H40 V78 H10Z"),
+  "E":G("M10 0 H92 V22 H34 V54 H82 V76 H34 V118 H94 V140 H10Z M10 62 H40 V74 H10Z"),
+  "F":G("M10 0 H92 V22 H34 V56 H82 V78 H34 V140 H10Z M10 62 H40 V74 H10Z"),
+  "G":G("M94 70 V140 H74 V124 C68 136 60 142 50 142 C22 142 8 118 8 70 C8 22 22 -2 50 -2 C72 -2 86 12 92 40 L68 46 C64 28 58 20 50 20 C38 20 32 36 32 70 C32 104 38 120 50 120 C62 120 68 110 68 90 H48 V70Z M8 60 H34 V78 H8Z"),
+  "H":G("M10 0 H34 V54 H66 V0 H90 V140 H66 V78 H34 V140 H10Z M10 62 H34 V78 H10Z M66 62 H90 V78 H66Z"),
+  "I":G("M8 0 H92 V22 H62 V118 H92 V140 H8 V118 H38 V22 H8Z M38 60 H62 V78 H38Z"),
+  "J":G("M62 0 H86 V98 C86 126 70 142 48 142 C26 142 12 128 8 106 L30 98 C33 114 40 120 48 120 C56 120 62 114 62 98Z M62 56 H86 V74 H62Z"),
+  "K":G("M10 0 H34 V56 L74 0 H100 L62 56 L102 140 H74 L48 82 L34 100 V140 H10Z M10 62 H34 V78 H10Z"),
+  "L":G("M10 0 H34 V118 H92 V140 H10Z M10 62 H34 V78 H10Z"),
+  "M":G("M6 0 H34 L55 72 L76 0 H104 V140 H82 V46 L64 112 H46 L28 46 V140 H6Z M6 60 H28 V76 H6Z M82 60 H104 V76 H82Z",112),
+  "N":G("M10 0 H34 L68 80 V0 H90 V140 H66 L32 60 V140 H10Z M10 62 H28 V78 H10Z M72 62 H90 V78 H72Z"),
+  "O":G("M50 -2 C78 -2 92 22 92 70 C92 118 78 142 50 142 C22 142 8 118 8 70 C8 22 22 -2 50 -2Z M50 20 C38 20 32 36 32 70 C32 104 38 120 50 120 C62 120 68 104 68 70 C68 36 62 20 50 20Z M8 62 H32 V78 H8Z M68 62 H92 V78 H68Z"),
+  "P":G("M10 0 H56 C84 0 94 18 94 44 C94 70 84 88 56 88 H34 V140 H10Z M34 20 V66 H52 C64 66 68 58 68 43 C68 28 64 20 52 20Z M10 56 H40 V72 H10Z"),
+  "Q":G("M50 -2 C78 -2 92 22 92 70 C92 92 88 110 80 122 L94 140 H68 L62 132 C58 138 54 142 50 142 C22 142 8 118 8 70 C8 22 22 -2 50 -2Z M50 20 C38 20 32 36 32 70 C32 104 38 120 50 120 C62 120 68 104 68 70 C68 36 62 20 50 20Z M8 62 H32 V78 H8Z"),
+  "R":G("M10 0 H56 C84 0 94 16 94 40 C94 58 86 70 74 76 L98 140 H70 L50 82 H34 V140 H10Z M34 20 V62 H52 C64 62 68 56 68 41 C68 26 64 20 52 20Z M10 54 H40 V70 H10Z"),
+  "S":G("M50 -2 C76 -2 88 12 92 34 L68 42 C66 28 59 20 50 20 C41 20 35 26 35 36 C35 62 94 50 94 98 C94 124 76 142 50 142 C24 142 8 126 4 102 L28 94 C31 112 38 120 50 120 C61 120 68 112 68 102 C68 76 10 88 10 38 C10 14 26 -2 50 -2Z M36 58 H66 V76 H36Z"),
+  "T":G("M2 0 H98 V22 H62 V140 H38 V22 H2Z M38 60 H62 V78 H38Z"),
+  "U":G("M10 0 H34 V96 C34 112 40 120 50 120 C60 120 66 112 66 96 V0 H90 V98 C90 126 74 142 50 142 C26 142 10 126 10 98Z M10 60 H34 V76 H10Z M66 60 H90 V76 H66Z"),
+  "V":G("M2 0 H28 L50 102 L72 0 H98 L64 140 H36Z M18 56 H38 V72 H18Z M62 56 H82 V72 H62Z"),
+  "W":G("M0 0 H22 L36 96 L50 0 H70 L84 96 L98 0 H120 L96 140 H72 L60 62 L48 140 H24Z M12 56 H30 V72 H12Z M90 56 H108 V72 H90Z",128),
+  "X":G("M4 0 H30 L50 46 L70 0 H96 L64 68 L98 140 H70 L50 92 L30 140 H2 L36 68Z M40 58 H60 V76 H40Z"),
+  "Y":G("M2 0 H28 L50 56 L72 0 H98 L62 84 V140 H38 V84Z M38 86 H62 V102 H38Z"),
+  "Z":G("M6 0 H94 V22 L38 118 H94 V140 H4 V118 L60 22 H6Z M36 60 H64 V78 H36Z"),
+  "0":G("M50 -2 C78 -2 92 22 92 70 C92 118 78 142 50 142 C22 142 8 118 8 70 C8 22 22 -2 50 -2Z M50 20 C38 20 32 36 32 70 C32 104 38 120 50 120 C62 120 68 104 68 70 C68 36 62 20 50 20Z M8 62 H32 V78 H8Z M68 62 H92 V78 H68Z"),
+  "1":G("M22 32 L56 0 H74 V140 H50 V36 L34 50Z M50 60 H74 V78 H50Z"),
+  "2":G("M8 36 C10 12 26 -2 50 -2 C76 -2 90 14 90 38 C90 76 42 94 34 118 H92 V140 H6 V122 C6 84 64 70 64 40 C64 28 59 20 50 20 C40 20 34 28 33 44Z M30 58 H58 V74 H30Z"),
+  "3":G("M8 36 C11 12 27 -2 50 -2 C74 -2 90 12 90 34 C90 50 82 60 70 64 C84 68 94 80 94 98 C94 124 78 142 50 142 C24 142 8 128 5 104 L29 96 C31 112 38 120 50 120 C62 120 68 112 68 100 C68 86 61 80 44 80 H38 V58 H44 C58 58 66 52 66 40 C66 28 59 20 50 20 C40 20 34 28 32 42Z"),
+  "4":G("M56 0 H80 V86 H94 V108 H80 V140 H58 V108 H4 V88Z M58 88 V38 L30 88Z"),
+  "5":G("M12 0 H88 V22 H34 V52 C40 46 48 44 56 44 C80 44 92 62 92 92 C92 122 76 142 50 142 C24 142 9 128 5 104 L29 96 C31 112 38 120 50 120 C62 120 68 110 68 92 C68 76 60 66 50 66 C42 66 36 70 32 78 L12 74Z"),
+  "6":G("M86 36 L62 42 C60 28 55 20 48 20 C37 20 32 34 31 58 C36 48 45 44 55 44 C78 44 90 62 90 92 C90 122 74 142 50 142 C20 142 8 118 8 70 C8 22 22 -2 50 -2 C71 -2 83 12 86 36Z M50 66 C40 66 32 76 32 94 C32 110 40 120 50 120 C60 120 66 110 66 94 C66 76 60 66 50 66Z"),
+  "7":G("M6 0 H94 V22 L50 140 H24 L66 22 H6Z M36 58 H66 V76 H36Z"),
+  "8":G("M50 -2 C76 -2 90 12 90 32 C90 48 82 58 70 64 C86 70 94 82 94 100 C94 126 78 142 50 142 C22 142 6 126 6 100 C6 82 14 70 30 64 C18 58 10 48 10 32 C10 12 24 -2 50 -2Z M50 18 C40 18 34 24 34 36 C34 46 40 52 50 52 C60 52 66 46 66 36 C66 24 60 18 50 18Z M50 74 C39 74 32 82 32 96 C32 110 39 120 50 120 C61 120 68 110 68 96 C68 82 61 74 50 74Z"),
+  "9":G("M14 104 L38 96 C40 112 44 120 52 120 C62 120 68 106 69 80 C64 90 55 94 45 94 C22 94 10 76 10 48 C10 18 26 -2 50 -2 C80 -2 92 22 92 70 C92 118 78 142 50 142 C29 142 17 126 14 104Z M50 20 C40 20 34 30 34 46 C34 62 40 72 50 72 C60 72 66 62 66 46 C66 30 60 20 50 20Z"),
+  ".":G("M26 114 H58 V140 H26Z",84),
+  ",":G("M26 114 H58 V140 L42 162 H26 L38 140 H26Z",84),
+  "'":G("M28 0 H54 V44 H28Z",82),
+  "-":G("M8 62 H52 V80 H8Z M58 62 H92 V80 H58Z"),
+  "!":G("M36 0 H64 V60 H36Z M36 72 H64 V96 H36Z M36 114 H64 V140 H36Z",92)
+}};
+
+const FACES = {lumen:LUMEN, marsh:MARSH, reactor:REACTOR};
+const DIRS = [
+  {key:"lumen", face:LUMEN, name:"Lumen Grotesk", desc:"geometric, confident, for infrastructure", file:"Typecast-LumenGrotesk.ttf"},
+  {key:"marsh", face:MARSH, name:"Marsh Display", desc:"high contrast, literary, for studios with taste", file:"Typecast-MarshDisplay.ttf"},
+  {key:"reactor", face:REACTOR, name:"Reactor Mono Wide", desc:"stencil-cut, technical, for things that compute", file:"Typecast-ReactorMonoWide.ttf"}
+];
+
+/* ---------- renderer ---------- */
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
+
+/* layout one line, returns {paths, width} in glyph units */
+function layoutLine(text, face, opt){
+  opt = opt||{};
+  const track = (opt.track!==undefined?opt.track:face.track);
+  const scaleX = opt.scaleX||face.adv;
+  let x=0, out="";
+  const chars = text.toUpperCase().split("");
+  for(const ch of chars){
+    if(ch===" "){ x += 46*scaleX + track; continue; }
+    const g = face.g[ch];
+    if(!g){ x += 46*scaleX + track; continue; }
+    out += '<path d="'+g.d+'" transform="translate('+x.toFixed(1)+',0)"/>';
+    x += g.w*scaleX + track;
+  }
+  return {paths:out, width:Math.max(x-track,1)};
+}
+
+/* wrap text into lines that fit maxUnits wide */
+function wrapWords(text, face, opt, maxUnits){
+  const words = text.split(/\s+/).filter(Boolean);
+  const lines=[]; let cur="";
+  for(const w of words){
+    const test = cur? cur+" "+w : w;
+    if(layoutLine(test,face,opt).width > maxUnits && cur){ lines.push(cur); cur=w; }
+    else cur=test;
+  }
+  if(cur) lines.push(cur);
+  return lines;
+}
+
+/* render a block of text; returns svg string */
+function renderText(text, face, o){
+  o = o||{};
+  const maxUnits = o.maxUnits || 900;
+  const lineGap = o.lineGap===undefined?40:o.lineGap;
+  const opt = {track:o.track, scaleX:o.scaleX};
+  const lines = wrapWords(text, face, opt, maxUnits);
+  let w=0, body="";
+  lines.forEach((ln,i)=>{
+    const L = layoutLine(ln, face, opt);
+    w = Math.max(w, L.width);
+    body += '<g transform="translate(0,'+(i*(CAP+lineGap))+')">'+L.paths+'</g>';
+  });
+  const h = lines.length*CAP + (lines.length-1)*lineGap;
+  const sl = o.slant? ' transform="skewX('+(-o.slant)+')"':'';
+  const extra = o.slant? Math.abs(Math.tan(o.slant*Math.PI/180)*h):0;
+  const stroke = o.weight? ' stroke="currentColor" stroke-width="'+o.weight+'" stroke-linejoin="round"':'';
+  return '<svg class="specimen" viewBox="'+(-4)+' -6 '+(w+extra+10)+' '+(h+16)+'" fill="currentColor" role="img" aria-label="'+esc(text)+'">'+
+    '<g'+sl+stroke+'>'+body+'</g></svg>';
+}
+
+function renderAlphabet(face,o){
+  o=Object.assign({maxUnits:1500,lineGap:34},o||{});
+  return renderText("ABCDEFGHIJKLM NOPQRSTUVWXYZ 0123456789", face, o);
+}
+
+/* ---------- state ---------- */
+let state={domain:"lumen.dev", site:SITES["lumen.dev"], chosen:DIRS[0], described:false};
+
+function go(id){
+  document.querySelectorAll(".screen").forEach(s=>s.classList.toggle("on", s.id===id));
+  navNew.setAttribute("aria-current", id==="s1");
+  navRes.setAttribute("aria-current", id==="s2"||id==="s3");
+  navFou.setAttribute("aria-current", id==="s4");
+  window.scrollTo({top:0,behavior:"instant"in window?"auto":"auto"});
+}
+const navNew=document.getElementById("navNew"),navRes=document.getElementById("navRes"),navFou=document.getElementById("navFou");
+go("s1");
+
+/* chips */
+const chipWrap=document.getElementById("chips");
+CHIPS.forEach(c=>{
+  const b=document.createElement("button");
+  b.className="chip"; b.type="button"; b.textContent=c;
+  b.onclick=()=>{document.getElementById("url").value=c; document.getElementById("err").textContent=""; };
+  chipWrap.appendChild(b);
+});
+
+function describe(){
+  const i=document.getElementById("url");
+  i.value="a calm app for filing receipts";
+  i.focus();
+  toast("Describe mode — we'll read the words instead of the page.");
+}
+
+function cleanDomain(raw){
+  let v=raw.trim().toLowerCase();
+  v=v.replace(/^https?:\/\//,"").replace(/^www\./,"").replace(/\/.*$/,"").trim();
+  return v;
+}
+
+/* ---------- loading ---------- */
+const STEPS=["reading {d}","choosing three directions","drawing 40 glyphs","assembling the font"];
+let busy=false;
+function generate(){
+  if(busy) return;
+  const raw=document.getElementById("url").value;
+  const errEl=document.getElementById("err");
+  if(!raw.trim()){ errEl.textContent="Pop a URL in first — or tap one of the examples below."; return; }
+  if(raw.trim().length>120){ errEl.textContent="That's a lot. Try just the domain, like lumen.dev"; return; }
+  errEl.textContent="";
+  let dom=cleanDomain(raw);
+  const described = !/\.[a-z]{2,}$/.test(dom);
+  if(described) dom = "your product";
+  const site = SITES[dom] || SITES["lumen.dev"];
+  state.domain = dom; state.site = site; state.described = described;
+  runLoading(dom);
+}
+
+function runLoading(dom){
+  busy=true;
+  const L=document.getElementById("loading");
+  const sts=document.getElementById("statuses");
+  const fill=document.getElementById("barFill");
+  sts.innerHTML=STEPS.map((s,i)=>'<div class="st" id="st'+i+'">'+esc(s.replace("{d}",dom))+'</div>').join("");
+  fill.style.width="0%";
+  // draw letterforms
+  const word="TYPE";
+  const face=LUMEN;
+  const Lo=layoutLine(word,face,{track:6});
+  const svg=document.getElementById("drawSvg");
+  svg.setAttribute("viewBox","-8 -10 "+(Lo.width+16)+" 160");
+  svg.innerHTML='<g fill="none">'+Lo.paths+'</g>';
+  const paths=svg.querySelectorAll("path");
+  paths.forEach((p,i)=>{
+    let len=400;
+    try{ len=p.getTotalLength()||400; }catch(e){}
+    p.style.strokeDasharray=len; p.style.strokeDashoffset=len;
+    p.style.transition="stroke-dashoffset 1.9s ease-in-out "+(i*0.18)+"s, fill .5s "+(1.6+i*0.1)+"s";
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{ p.style.strokeDashoffset=0; p.style.fill="currentColor"; }));
+  });
+  L.classList.add("on");
+  const total=2500, t0=performance.now();
+  let idx=-1;
+  function tick(now){
+    const p=Math.min((now-t0)/total,1);
+    fill.style.width=(p*100).toFixed(1)+"%";
+    const k=Math.min(Math.floor(p*4),3);
+    if(k!==idx){
+      idx=k;
+      STEPS.forEach((_,i)=>{
+        const el=document.getElementById("st"+i);
+        if(!el) return;
+        el.className="st"+(i<k?" done":i===k?" active":"");
+      });
+    }
+    if(p<1) requestAnimationFrame(tick);
+    else { L.classList.remove("on"); busy=false; buildResults(); go("s2"); }
+  }
+  requestAnimationFrame(tick);
+}
+
+/* ---------- screen 2 ---------- */
+function buildResults(){
+  const s=state.site;
+  document.getElementById("s2site").textContent="Three directions for "+state.domain;
+  document.getElementById("s2meta").textContent=s.d+" · currently set in "+s.f+" · drawn just now, demo data";
+  const box=document.getElementById("results");
+  box.innerHTML = DIRS.map((d,i)=>{
+    const hero=renderText(s.h, d.face, {maxUnits:980, lineGap:44});
+    const alpha=renderAlphabet(d.face);
+    return '<article class="card">'+
+      '<h3>'+esc(d.name)+'</h3><p class="desc">'+esc(d.desc)+'</p>'+
+      '<div style="max-height:190px;overflow:hidden">'+hero+'</div>'+
+      '<div class="alpha" style="max-height:64px;overflow:hidden">'+alpha+'</div>'+
+      '<div class="cardfoot"><button class="btn" data-i="'+i+'">Use this one</button>'+
+      '<span class="meta">40 glyphs · one of one</span></div></article>';
+  }).join("");
+  box.querySelectorAll("button[data-i]").forEach(b=>{
+    b.onclick=()=>{ state.chosen=DIRS[+b.dataset.i]; buildChosen(); go("s3"); };
+  });
+}
+
+/* ---------- screen 3 ---------- */
+function buildChosen(){
+  const d=state.chosen, s=state.site;
+  document.getElementById("s3name").textContent=d.name;
+  document.getElementById("s3desc").textContent=d.desc+" · yours alone";
+  document.getElementById("s3url").textContent=(state.described?"yourstartup.com":state.domain);
+  document.getElementById("s3hero").innerHTML=renderText(s.h,d.face,{maxUnits:900,lineGap:46});
+  document.getElementById("s3alpha").innerHTML=renderAlphabet(d.face);
+  const dl=document.getElementById("dlLabel"); dl.textContent="Download "+d.file;
+  document.getElementById("dlBtn").classList.remove("ghost");
+  const fam=d.name;
+  document.getElementById("code").textContent =
+"@font-face {\n  font-family: '"+fam+"';\n  src: url('/fonts/"+d.file+"') format('truetype');\n  font-display: swap;\n}\n\nh1 { font-family: '"+fam+"', sans-serif; }";
+  const cb=document.getElementById("copyBtn"); cb.textContent="Copy";
+  // share card
+  const sc=document.getElementById("shareCard");
+  sc.innerHTML =
+    '<div style="font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)">one of one</div>'+
+    '<div style="flex:1;display:flex;align-items:center;overflow:hidden">'+renderText(s.h,d.face,{maxUnits:760,lineGap:40})+'</div>'+
+    '<div style="opacity:.6;max-height:50px;overflow:hidden">'+renderAlphabet(d.face)+'</div>'+
+    '<div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;margin-top:10px">'+
+      '<strong>'+esc(d.name)+'</strong><span style="color:var(--muted)">typecast</span></div>';
+  document.getElementById("postbox").classList.remove("on");
+}
+
+function downloadFont(){
+  const b=document.getElementById("dlBtn");
+  document.getElementById("dlLabel").innerHTML='✓ '+esc(state.chosen.file);
+  b.disabled=true;
+  toast("Downloaded. 40 glyphs, yours to use anywhere.");
+  setTimeout(()=>{ b.disabled=false; document.getElementById("dlLabel").textContent="Download "+state.chosen.file; },4000);
+}
+
+function copyCode(){
+  const txt=document.getElementById("code").textContent;
+  const btn=document.getElementById("copyBtn");
+  const done=()=>{ btn.textContent="Copied"; toast("CSS copied to clipboard."); setTimeout(()=>btn.textContent="Copy",2200); };
+  const fallback=()=>{
+    try{
+      const ta=document.createElement("textarea");
+      ta.value=txt; ta.style.position="fixed"; ta.style.opacity="0";
+      document.body.appendChild(ta); ta.select(); document.execCommand("copy"); ta.remove(); done();
+    }catch(e){ toast("Couldn't copy — select the snippet manually."); }
+  };
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(txt).then(done).catch(fallback);
+  } else fallback();
+}
+
+function showPost(){
+  const p=document.getElementById("postbox");
+  const dom = state.described? "our site" : state.domain;
+  p.textContent="Just gave "+dom+" a display face that exists nowhere else. Drawn from scratch by @typecast — 40 glyphs, about 2 cents of inference. Meet "+state.chosen.name+". 🅣";
+  p.classList.add("on");
+  toast("Post text ready — copy it anywhere.");
+}
+
+/* ---------- toast ---------- */
+let tt;
+function toast(msg){
+  const t=document.getElementById("toast");
+  t.textContent=msg; t.classList.add("on");
+  clearTimeout(tt); tt=setTimeout(()=>t.classList.remove("on"),2600);
+}
+
+/* ---------- screen 4: foundry ---------- */
+const SHELF=[
+ {n:"Lumen Grotesk", w:"AGENT", h:"Ship your first agent before lunch.", t:"2h ago", f:"lumen", o:{}},
+ {n:"Marsh Display", w:"FILMS", h:"We make small, strange films.", t:"4h ago", f:"marsh", o:{}},
+ {n:"Reactor Mono Wide", w:"FUSION", h:"Fusion math, in your browser.", t:"6h ago", f:"reactor", o:{}},
+ {n:"Paperlane Sans", w:"FILED", h:"Every receipt, filed itself.", t:"9h ago", f:"lumen", o:{track:4,scaleX:0.9}},
+ {n:"Forge Stencil", w:"FORGE", h:"A database that survives your growth.", t:"11h ago", f:"reactor", o:{track:4,scaleX:0.95}},
+ {n:"Halyard Deck", w:"HARBOR", h:"Charter a boat like you book a cab.", t:"14h ago", f:"marsh", o:{slant:9}},
+ {n:"Ember Narrow", w:"EMBER", h:"Heat pumps, without the quote circus.", t:"18h ago", f:"marsh", o:{scaleX:0.66,track:-4}},
+ {n:"Quarry Slab", w:"QUARRY", h:"Rock-solid invoicing for builders.", t:"21h ago", f:"lumen", o:{weight:7,track:2}},
+ {n:"Tidebook", w:"TIDE", h:"Know the sea before you swim.", t:"1d ago", f:"marsh", o:{track:6,scaleX:0.85}},
+ {n:"Nocturne Grot", w:"NIGHT", h:"A journal that only opens after dark.", t:"1d ago", f:"lumen", o:{slant:-6}},
+ {n:"Pilot Wide", w:"PILOT", h:"Flight plans in plain language.", t:"2d ago", f:"lumen", o:{track:18,scaleX:1.05}},
+ {n:"Kiln Display", w:"KILN", h:"Sell your ceramics in one tap.", t:"2d ago", f:"reactor", o:{track:2,scaleX:0.82}}
+];
+const shelf=document.getElementById("shelf");
+shelf.innerHTML=SHELF.map((it,i)=>{
+  const face=FACES[it.f];
+  const sv=renderText(it.w, face, Object.assign({maxUnits:560,lineGap:20}, it.o));
+  return '<button class="tile" data-i="'+i+'">'+
+    '<div style="height:46px;display:flex;align-items:center;overflow:hidden">'+sv+'</div>'+
+    '<div class="nm">'+esc(it.n)+'</div>'+
+    '<div class="hl">'+esc(it.h)+'</div>'+
+    '<div class="tm">'+esc(it.t)+'</div></button>';
+}).join("");
+shelf.querySelectorAll(".tile").forEach(b=>b.onclick=()=>openPanel(+b.dataset.i));
+
+function openPanel(i){
+  const it=SHELF[i], face=FACES[it.f];
+  const p=document.getElementById("panel");
+  p.innerHTML='<div style="display:flex;align-items:start;gap:12px">'+
+    '<div><h3 style="margin:0;font-size:18px;letter-spacing:-.02em">'+esc(it.n)+'</h3>'+
+    '<p class="meta" style="margin:4px 0 0">'+esc(it.h)+' · '+esc(it.t)+'</p></div>'+
+    '<button class="chip" style="margin-left:auto" onclick="closePanel()">Close</button></div>'+
+    '<div style="margin:18px 0;max-height:120px;overflow:hidden">'+renderText(it.w,face,Object.assign({maxUnits:620,lineGap:24},it.o))+'</div>'+
+    '<div style="opacity:.65;max-height:90px;overflow:hidden">'+renderAlphabet(face,it.o)+'</div>'+
+    '<div class="cardfoot"><button class="btn" disabled>Download</button>'+
+    '<span class="meta">Opens Monday with the drop</span></div>';
+  document.getElementById("scrim").classList.add("on");
+}
+function closePanel(){ document.getElementById("scrim").classList.remove("on"); }
+document.addEventListener("keydown",e=>{ if(e.key==="Escape") closePanel(); });
+document.getElementById("url").addEventListener("keydown",e=>{ if(e.key==="Enter") generate(); });
+
+/* prime screens 2 & 3 so nav links are never empty */
+buildResults(); buildChosen();
+</script>
+</body>
+</html>
