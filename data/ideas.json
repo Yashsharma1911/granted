@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-02T20:54:55.880Z",
+  "updated": "2026-11-03T20:53:20.693Z",
   "ideas": [
     {
       "id": "2026-10-22-agentgauntlet",
@@ -578,6 +578,66 @@
       "prototype_url": "https://yashsharma1911.github.io/granted/ideas/2026-11-02-typecast/",
       "sources_count": 15,
       "superseded_by": null
+    },
+    {
+      "id": "2026-11-03-regretcheck",
+      "number": 22,
+      "date": "2026-11-03",
+      "track": "build",
+      "short_name": "Regretcheck",
+      "verdict": "dig_deeper",
+      "score": 8,
+      "scores": {
+        "wow": 8,
+        "shareability": 8,
+        "buildability": 9,
+        "freshness": 9,
+        "usefulness": 6
+      },
+      "effort": "a weekend",
+      "category": "Developer tools",
+      "tags": [
+        "devtools",
+        "hackernews",
+        "dependencies",
+        "public-data"
+      ],
+      "pain_type": "expressed",
+      "one_liner": "Drop your package.json (or paste a repo URL) and Regretcheck shows, dependency by dependency, what Hacker News actually says about each one — the \"we ripped this out and moved to X\" comments, a 0-100 regret score per package, a shareable Regret Report card for your whole stack, and a weekly re-check when the mood on a package turns.",
+      "prototype_url": "https://yashsharma1911.github.io/granted/ideas/2026-11-03-regretcheck/",
+      "sources_count": 13,
+      "superseded_by": null,
+      "sibling": "2026-11-03-shortfall"
+    },
+    {
+      "id": "2026-11-03-shortfall",
+      "number": 23,
+      "date": "2026-11-03",
+      "track": "venture",
+      "short_name": "Shortfall",
+      "verdict": "dig_deeper",
+      "score": 7.9,
+      "scores": {
+        "pain": 8,
+        "market_pull": 8,
+        "timing": 7.5,
+        "gap": 8,
+        "wedge": 8
+      },
+      "effort": "3+ months",
+      "category": "Back-office automation",
+      "tags": [
+        "insurance",
+        "reconciliation",
+        "agents",
+        "fintech ops"
+      ],
+      "pain_type": "expressed",
+      "one_liner": "For the owner or office manager of a 5-50 person independent P&C insurance agency, Shortfall ingests the month's PDF/Excel carrier commission statements plus a policy-book CSV export and returns a ranked \"money you are owed\" list — policies missing from a statement, renewals paid at the wrong rate, chargebacks never reversed after reinstatement — with a ready-to-send carrier dispute email for each.",
+      "prototype_url": "https://yashsharma1911.github.io/granted/ideas/2026-11-03-shortfall/",
+      "sources_count": 24,
+      "superseded_by": null,
+      "sibling": "2026-11-03-regretcheck"
     }
   ]
 }

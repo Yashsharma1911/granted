@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Regretcheck — the regret report for your dependencies</title>
+<style>
+:root{
+  --bg:#0b0d10; --panel:#12161b; --panel2:#171c22; --line:#232a33;
+  --txt:#e7edf3; --dim:#8b97a6; --accent:#7cf5c0; --accentd:#0b0d10;
+  --green:#39c07c; --amber:#e8b13c; --red:#f0584f; --chip:#1d242c;
+}
+@media (prefers-color-scheme: light){
+  :root{
+    --bg:#f6f7f9; --panel:#ffffff; --panel2:#f1f3f6; --line:#e0e4ea;
+    --txt:#131720; --dim:#5d6875; --accent:#0d7a52; --accentd:#ffffff;
+    --green:#1d8f58; --amber:#a87410; --red:#c6372e; --chip:#eceff3;
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--txt);
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+  font-size:15px; line-height:1.45; -webkit-text-size-adjust:100%;
+}
+.wrap{max-width:940px;margin:0 auto;padding:14px 14px 40px}
+header.top{display:flex;gap:10px;align-items:center;flex-wrap:wrap;
+  padding:10px 0 14px;border-bottom:1px solid var(--line);margin-bottom:18px}
+.logo{font-weight:700;letter-spacing:-.4px}
+.logo .dot{color:var(--accent)}
+.tag{color:var(--dim);font-size:13px}
+h1{font-size:26px;line-height:1.2;margin:18px 0 8px;letter-spacing:-.6px}
+@media(min-width:700px){h1{font-size:34px}}
+.sub{color:var(--dim);margin:0 0 20px;font-size:14px}
+.drop{
+  border:2px dashed var(--line); border-radius:14px; padding:30px 18px;
+  text-align:center; background:var(--panel); transition:.15s; cursor:pointer;
+}
+.drop:hover,.drop.over{border-color:var(--accent);background:var(--panel2)}
+.drop .big{font-size:16px;font-weight:600}
+.drop .sm{color:var(--dim);font-size:13px;margin-top:6px}
+.svgdrop{display:block;margin:0 auto 10px;opacity:.75}
+.row{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+button{font:inherit;cursor:pointer;border-radius:10px;border:1px solid var(--line);
+  background:var(--panel2);color:var(--txt);padding:13px 16px;min-height:48px;transition:.12s}
+button:hover{border-color:var(--accent)}
+button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.primary{background:var(--accent);color:var(--accentd);border-color:var(--accent);font-weight:700}
+.primary:hover{filter:brightness(1.08)}
+.link{background:none;border:none;color:var(--dim);text-decoration:underline;padding:12px 2px;min-height:44px}
+textarea{width:100%;min-height:130px;margin-top:12px;background:var(--panel);color:var(--txt);
+  border:1px solid var(--line);border-radius:12px;padding:12px;font:inherit;font-size:13px;resize:vertical}
+.hide{display:none !important}
+/* scan */
+.scan{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;margin-top:18px}
+.scanline{font-size:13px;color:var(--dim);height:20px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.scanline b{color:var(--accent);font-weight:600}
+.bar{height:6px;background:var(--panel2);border-radius:99px;overflow:hidden;margin-top:12px}
+.bar > i{display:block;height:100%;width:0;background:var(--accent);border-radius:99px;transition:width .1s linear}
+/* report */
+.scorewrap{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px}
+.scoretop{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap}
+.scoretop h2{font-size:17px;margin:0;font-weight:600}
+.scorenum{font-size:13px;color:var(--dim)}
+.gauge{position:relative;height:14px;border-radius:99px;margin-top:12px;overflow:hidden;
+  background:linear-gradient(90deg,var(--green) 0%,var(--green) 33%,var(--amber) 34%,var(--amber) 66%,var(--red) 67%,var(--red) 100%);
+  opacity:.9}
+.needle{position:absolute;top:-4px;width:3px;height:22px;background:var(--txt);border-radius:2px;
+  box-shadow:0 0 0 2px var(--panel);transition:left .8s cubic-bezier(.2,.9,.2,1)}
+.gaugelabels{display:flex;justify-content:space-between;color:var(--dim);font-size:11px;margin-top:6px}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+.watching{background:var(--accent);color:var(--accentd);border-color:var(--accent);font-weight:700}
+.changed{margin-top:12px;border:1px solid var(--accent);border-radius:12px;background:var(--panel2);padding:12px 14px}
+.changed h3{margin:0 0 8px;font-size:13px;letter-spacing:.4px;text-transform:uppercase;color:var(--accent)}
+.changed ul{margin:0;padding:0;list-style:none}
+.changed li{font-size:13px;padding:5px 0;border-top:1px dashed var(--line)}
+.changed li:first-child{border-top:none}
+.changed li b{color:var(--txt)}
+/* table */
+.tablewrap{background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.thead{display:grid;grid-template-columns:1.5fr 1.5fr .7fr;gap:8px;padding:10px 14px;
+  border-bottom:1px solid var(--line);background:var(--panel2);font-size:11px;letter-spacing:.5px;color:var(--dim);text-transform:uppercase}
+.thead button{all:unset;cursor:pointer;color:inherit;font:inherit;letter-spacing:.5px;
+  text-transform:uppercase;padding:6px 0;min-height:32px;display:inline-block}
+.thead button[aria-sort="true"]{color:var(--accent)}
+.thead .c3{text-align:right}
+@media(max-width:620px){.thead{grid-template-columns:1.4fr 1.2fr .8fr}}
+.dep{border-top:1px solid var(--line)}
+.dep:first-child{border-top:none}
+.deprow{display:grid;grid-template-columns:1.5fr 1.5fr .7fr;gap:8px;align-items:center;
+  width:100%;padding:12px 14px;background:none;border:none;border-radius:0;text-align:left;min-height:62px}
+@media(max-width:620px){.deprow{grid-template-columns:1.4fr 1.2fr .8fr;padding:12px 10px}}
+.deprow:hover{background:var(--panel2);border-color:transparent}
+.pkg{font-weight:600;overflow:hidden;text-overflow:ellipsis}
+.pkg span{display:block;color:var(--dim);font-weight:400;font-size:12px}
+.rbar{height:8px;border-radius:99px;background:var(--panel2);overflow:hidden;margin-top:5px}
+.rbar > i{display:block;height:100%;border-radius:99px}
+.rnum{font-size:12px;color:var(--dim)}
+.rnum b{font-size:14px;color:var(--txt)}
+.mentions{text-align:right;font-size:13px;color:var(--dim)}
+.mentions b{display:block;color:var(--txt);font-size:14px}
+.verdict{padding:0 14px 12px;color:var(--dim);font-size:12.5px;margin-top:-4px}
+.caret{display:inline-block;transition:transform .15s;color:var(--dim)}
+.dep.open .caret{transform:rotate(90deg)}
+.panel{padding:4px 14px 16px;background:var(--panel2);border-top:1px dashed var(--line)}
+.quote{border-left:2px solid var(--line);padding:8px 0 8px 12px;margin:10px 0;font-size:13.5px}
+.quote .meta{color:var(--dim);font-size:12px;margin-top:6px}
+.quote .meta a{color:var(--dim);text-decoration:underline;cursor:pointer}
+.chip{display:inline-block;background:var(--chip);border:1px solid var(--line);border-radius:99px;
+  padding:6px 12px;font-size:12.5px;margin-top:6px}
+.chip b{color:var(--accent)}
+.noq{color:var(--dim);font-size:12.5px;margin:10px 0}
+/* modal */
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.72);display:flex;align-items:center;
+  justify-content:center;padding:14px;z-index:40;overflow:auto}
+.modalbox{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px;max-width:660px;width:100%}
+.card{background:#0b0d10;color:#e7edf3;border-radius:12px;padding:20px;aspect-ratio:16/9;
+  display:flex;flex-direction:column;justify-content:space-between;overflow:hidden;border:1px solid #232a33}
+.card .kick{color:#7cf5c0;font-size:11px;letter-spacing:2px;text-transform:uppercase}
+.card .score{font-size:clamp(28px,8vw,56px);font-weight:700;letter-spacing:-2px;line-height:1}
+.card .stack{color:#8b97a6;font-size:clamp(10px,2.4vw,13px)}
+.mini{display:flex;gap:clamp(2px,.8vw,6px);align-items:flex-end;height:clamp(40px,11vw,70px)}
+.mini div{flex:1;border-radius:2px 2px 0 0;min-height:3px}
+.callouts{font-size:clamp(10px,2.5vw,13px);line-height:1.6}
+.callouts .drop1{color:#f0584f}
+.callouts .def{color:#39c07c}
+.wordmark{color:#8b97a6;font-size:10px;letter-spacing:2px;text-transform:uppercase}
+.toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);
+  background:var(--accent);color:var(--accentd);font-weight:700;padding:12px 20px;border-radius:99px;
+  opacity:0;pointer-events:none;transition:.2s;z-index:60;font-size:13px}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+footer{color:var(--dim);font-size:11.5px;margin-top:26px;border-top:1px solid var(--line);padding-top:12px}
+.err{color:var(--red);font-size:13px;margin-top:10px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="logo">regretcheck<span class="dot">.</span></div>
+    <div class="tag">— what 20 years of Hacker News thinks of every package you shipped</div>
+  </header>
+
+  <!-- SCREEN 1 -->
+  <section id="s1">
+    <h1>What does Hacker News actually think about your stack?</h1>
+    <p class="sub">Drop your package.json. 20 years of HN comments, one row per dependency.</p>
+
+    <div class="drop" id="dz" tabindex="0" role="button" aria-label="Drop your package.json">
+      <svg class="svgdrop" width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4"/><path d="m7 9 5-5 5 5"/><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg>
+      <div class="big">Drop package.json here</div>
+      <div class="sm">any file works in this demo — nothing leaves your browser</div>
+    </div>
+
+    <div class="row">
+      <button class="primary" id="sampleBtn">Try it with a sample stack</button>
+      <button class="link" id="pasteToggle">or paste instead</button>
+    </div>
+
+    <div id="pasteWrap" class="hide">
+      <textarea id="pasteArea" placeholder='{ "dependencies": { "next": "14.1.0", "prisma": "5.9.1" } }'></textarea>
+      <div class="row"><button id="pasteGo">Scan pasted manifest</button></div>
+      <div class="err hide" id="pasteErr"></div>
+    </div>
+
+    <div class="scan hide" id="scan">
+      <div class="scanline" id="scanline">Opening manifest…</div>
+      <div class="bar"><i id="scanbar"></i></div>
+    </div>
+  </section>
+
+  <!-- SCREEN 2 -->
+  <section id="s2" class="hide">
+    <div class="scorewrap">
+      <div class="scoretop">
+        <h2 id="stackTitle">Your stack: 12 dependencies · Regret score 61/100</h2>
+        <div class="scorenum">amber — “you’ll be fine, but three of these will cost you a quarter”</div>
+      </div>
+      <div class="gauge"><div class="needle" id="needle" style="left:0%"></div></div>
+      <div class="gaugelabels"><span>0 beloved</span><span>50</span><span>100 regret</span></div>
+      <div class="actions">
+        <button class="primary" id="shareBtn">Share this report</button>
+        <button id="watchBtn">Watch this stack weekly</button>
+        <button class="link" id="resetBtn">scan another</button>
+      </div>
+      <div class="changed hide" id="changed">
+        <h3>What changed since last week</h3>
+        <ul>
+          <li><b>prisma 71 → 74</b> — 3 new migration comments this week</li>
+          <li><b>bun</b> — first regret comment appeared (Oct 29)</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="tablewrap">
+      <div class="thead">
+        <div><button id="sortName" aria-sort="false">Package ▾</button></div>
+        <div><button id="sortRegret" aria-sort="true">Regret ▾</button></div>
+        <div class="c3"><button id="sortMentions" aria-sort="false">HN mentions ▾</button></div>
+      </div>
+      <div id="rows"></div>
+    </div>
+    <p class="sub" style="margin-top:10px;font-size:12px">Tap any row for the receipts. Demo data.</p>
+  </section>
+
+  <footer>
+    Quotes, usernames and dates are illustrative <b>sample data</b> — not real Hacker News comments. Demo data, no network calls.<br><br>
+    Prototype by Granted, inspired by your bookmarks
+  </footer>
+</div>
+
+<div class="toast" id="toast">copied</div>
+<div id="modalMount"></div>
+
+<script>
+(function(){
+  "use strict";
+  var DEPS = [
+    {n:"webpack",v:"5.89.0",r:84,m:412,ml:"412",
+     verdict:"Nearly everyone who mentions it is describing leaving it.",
+     rep:"Vite", repn:"named term 118 times",
+     q:[{t:"Spent two days on a webpack config that Vite did in nine lines. Never going back.",u:"dhh_fan",d:"Mar 2026"},
+        {t:"We still run webpack because nobody wants to touch the build. That's not an endorsement.",u:"jrockway",d:"Nov 2025"},
+        {t:"The plugin ecosystem is the only reason it survives.",u:"tptacek2",d:"Jan 2026"}]},
+    {n:"moment",v:"2.29.4",r:79,m:203,ml:"203",
+     verdict:"Deprecated by its own maintainers; HN keeps pointing this out.",
+     rep:"date-fns / Temporal", repn:"most named replacement", q:[]},
+    {n:"prisma",v:"5.9.1",r:71,m:356,ml:"356",
+     verdict:"Loved for DX, resented at scale.",
+     rep:"Drizzle", repn:"named 87 times",
+     q:[{t:"Prisma is wonderful until your query planner isn't.",u:"sandbags",d:"Jun 2026"},
+        {t:"Migrated off Prisma to Drizzle after the connection pooling bill.",u:"hn_lurker88",d:"Aug 2026"}]},
+    {n:"mongodb",v:"6.3.0",r:68,m:1204,ml:"1,204",
+     verdict:"The single most argued-about dependency in your file.",
+     rep:"Postgres", repn:"named 503 times", q:[]},
+    {n:"redux",v:"4.2.1",r:58,m:287,ml:"287",
+     verdict:"Still everywhere, still being migrated away from.",
+     rep:"Zustand", repn:"most named replacement", q:[]},
+    {n:"axios",v:"1.6.7",r:41,m:164,ml:"164",
+     verdict:"Mostly “fetch does this now”.", rep:"", repn:"", q:[]},
+    {n:"next",v:"14.1.0",r:39,m:2018,ml:"2,018",
+     verdict:"Violently split: “best DX in frontend” vs “you are renting your framework”.",
+     rep:"", repn:"", q:[]},
+    {n:"lodash",v:"4.17.21",r:22,m:341,ml:"341",
+     verdict:"Old, huge, and nobody is actually mad.", rep:"", repn:"", q:[]},
+    {n:"zod",v:"3.22.4",r:11,m:198,ml:"198",
+     verdict:"HN likes this one.", rep:"", repn:"",
+     q:[{t:"Zod is the rare dependency I've never regretted adding.",u:"ericbb",d:"Sep 2026"}]},
+    {n:"postgres",v:"3.4.3",r:9,m:1890,ml:"1,890",
+     verdict:"Defended more often than criticised, 14 years running.", rep:"", repn:"", q:[]},
+    {n:"sqlite3",v:"5.1.7",r:6,m:902,ml:"902", verdict:"Beloved.", rep:"", repn:"", q:[]},
+    {n:"esbuild",v:"0.20.0",r:5,m:244,ml:"244", verdict:"Beloved.", rep:"", repn:"", q:[]}
+  ];
+  var SCORE = 61;
+  var $ = function(id){ return document.getElementById(id); };
+
+  function col(r){ return r >= 67 ? "var(--red)" : (r >= 34 ? "var(--amber)" : "var(--green)"); }
+  function hexcol(r){ return r >= 67 ? "#f0584f" : (r >= 34 ? "#e8b13c" : "#39c07c"); }
+
+  var toastT = null;
+  function toast(msg){
+    var t = $("toast"); t.textContent = msg; t.classList.add("show");
+    if(toastT) clearTimeout(toastT);
+    toastT = setTimeout(function(){ t.classList.remove("show"); }, 1600);
+  }
+
+  /* ---------- SCREEN 1 ---------- */
+  var dz = $("dz");
+  ["dragenter","dragover"].forEach(function(e){
+    dz.addEventListener(e, function(ev){ ev.preventDefault(); dz.classList.add("over"); });
+  });
+  ["dragleave","dragend"].forEach(function(e){
+    dz.addEventListener(e, function(){ dz.classList.remove("over"); });
+  });
+  dz.addEventListener("drop", function(ev){
+    ev.preventDefault(); dz.classList.remove("over"); startScan();
+  });
+  dz.addEventListener("click", startScan);
+  dz.addEventListener("keydown", function(ev){
+    if(ev.key === "Enter" || ev.key === " "){ ev.preventDefault(); startScan(); }
+  });
+  document.addEventListener("dragover", function(e){ e.preventDefault(); });
+  document.addEventListener("drop", function(e){ e.preventDefault(); });
+
+  $("sampleBtn").addEventListener("click", startScan);
+  $("pasteToggle").addEventListener("click", function(){
+    var w = $("pasteWrap"); var hidden = w.classList.toggle("hide");
+    this.textContent = hidden ? "or paste instead" : "hide paste box";
+    if(!hidden) $("pasteArea").focus();
+  });
+  $("pasteArea").addEventListener("paste", function(){
+    setTimeout(function(){ startScan(); }, 120);
+  });
+  $("pasteGo").addEventListener("click", function(){
+    var txt = $("pasteArea").value.trim();
+    var err = $("pasteErr");
+    if(!txt){
+      err.textContent = "Nothing pasted yet — drop a file or hit “Try it with a sample stack”.";
+      err.classList.remove("hide");
+      return;
+    }
+    err.classList.add("hide");
+    startScan();
+  });
+
+  var scanning = false;
+  function startScan(){
+    if(scanning) return;
+    scanning = true;
+    $("scan").classList.remove("hide");
+    var line = $("scanline"), bar = $("scanbar");
+    var names = DEPS.map(function(d){ return d.n + "@" + d.v; });
+    var i = 0, start = Date.now(), DUR = 1500;
+    var tick = setInterval(function(){
+      var el = Date.now() - start;
+      var p = Math.min(1, el / DUR);
+      bar.style.width = (p * 100).toFixed(0) + "%";
+      var nm = names[i % names.length]; i++;
+      line.innerHTML = "scanning <b>" + nm + "</b> — " + (12400 + i * 937).toLocaleString() + " HN comments matched";
+      if(p >= 1){
+        clearInterval(tick);
+        line.innerHTML = "<b>done</b> — 12 dependencies, 43,118,204 comments indexed";
+        setTimeout(showReport, 220);
+      }
+    }, 110);
+  }
+
+  /* ---------- SCREEN 2 ---------- */
+  var sortKey = "r", sortDir = -1;
+
+  function showReport(){
+    scanning = false;
+    $("s1").classList.add("hide");
+    $("s2").classList.remove("hide");
+    render();
+    window.scrollTo(0, 0);
+    setTimeout(function(){ $("needle").style.left = SCORE + "%"; }, 60);
+  }
+
+  function esc(s){
+    return String(s).replace(/[&<>"]/g, function(c){
+      return ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c];
+    });
+  }
+
+  function render(){
+    var list = DEPS.slice().sort(function(a,b){
+      if(sortKey === "n") return a.n.localeCompare(b.n) * (sortDir === -1 ? 1 : -1);
+      return (a[sortKey] - b[sortKey]) * (sortDir === -1 ? -1 : 1);
+    });
+    var html = "";
+    list.forEach(function(d, idx){
+      html += '<div class="dep" data-i="' + idx + '">' +
+        '<button class="deprow" type="button" aria-expanded="false">' +
+          '<div class="pkg"><span class="caret">▸</span> ' + esc(d.n) + '<span>' + esc(d.v) + '</span></div>' +
+          '<div><div class="rnum"><b>' + d.r + '</b>/100 regret</div>' +
+            '<div class="rbar"><i style="width:' + d.r + '%;background:' + col(d.r) + '"></i></div></div>' +
+          '<div class="mentions"><b>' + d.ml + '</b>mentions</div>' +
+        '</button>' +
+        '<div class="verdict">' + esc(d.verdict) + '</div>' +
+        '<div class="panel hide">' + panelHTML(d) + '</div>' +
+      '</div>';
+    });
+    $("rows").innerHTML = html;
+
+    Array.prototype.forEach.call($("rows").querySelectorAll(".deprow"), function(btn, i){
+      btn.addEventListener("click", function(){
+        var dep = btn.parentNode;
+        var p = dep.querySelector(".panel");
+        var open = dep.classList.toggle("open");
+        p.classList.toggle("hide", !open);
+        btn.setAttribute("aria-expanded", open ? "true" : "false");
+      });
+    });
+
+    $("sortName").setAttribute("aria-sort", sortKey === "n" ? "true" : "false");
+    $("sortRegret").setAttribute("aria-sort", sortKey === "r" ? "true" : "false");
+    $("sortMentions").setAttribute("aria-sort", sortKey === "m" ? "true" : "false");
+  }
+
+  function panelHTML(d){
+    var h = "";
+    if(d.q.length){
+      d.q.forEach(function(q){
+        h += '<div class="quote">“' + esc(q.t) + '”' +
+          '<div class="meta">' + esc(q.u) + ' · ' + esc(q.d) +
+          ' · <a role="link" tabindex="0" class="hnlink">→ news.ycombinator.com</a></div></div>';
+      });
+    } else {
+      h += '<div class="noq">' + d.m.toLocaleString() + ' matching threads. Top quotes load in the full report — sample data in this demo.</div>';
+    }
+    if(d.rep){
+      h += '<div class="chip">most named replacement: <b>' + esc(d.rep) + '</b> · ' + esc(d.repn) + '</div>';
+    } else {
+      h += '<div class="chip">no replacement consensus — HN mostly argues with itself</div>';
+    }
+    return h;
+  }
+
+  document.addEventListener("click", function(e){
+    var t = e.target;
+    if(t && t.classList && t.classList.contains("hnlink")){
+      e.preventDefault(); e.stopPropagation();
+      toast("inert in prototype");
+    }
+  });
+
+  function setSort(k){
+    if(sortKey === k){ sortDir = -sortDir; } else { sortKey = k; sortDir = -1; }
+    render();
+  }
+  $("sortName").addEventListener("click", function(){ setSort("n"); });
+  $("sortRegret").addEventListener("click", function(){ setSort("r"); });
+  $("sortMentions").addEventListener("click", function(){ setSort("m"); });
+
+  $("resetBtn").addEventListener("click", function(){
+    $("s2").classList.add("hide");
+    $("s1").classList.remove("hide");
+    $("scan").classList.add("hide");
+    $("scanbar").style.width = "0%";
+    $("needle").style.left = "0%";
+    window.scrollTo(0, 0);
+  });
+
+  var watching = false;
+  $("watchBtn").addEventListener("click", function(){
+    watching = !watching;
+    if(watching){
+      this.textContent = "Watching · next check Monday";
+      this.classList.add("watching");
+      $("changed").classList.remove("hide");
+      toast("watching — we'll re-scan HN every Monday");
+    } else {
+      this.textContent = "Watch this stack weekly";
+      this.classList.remove("watching");
+      $("changed").classList.add("hide");
+    }
+  });
+
+  /* ---------- SCREEN 3 ---------- */
+  $("shareBtn").addEventListener("click", openModal);
+
+  function openModal(){
+    var bars = DEPS.slice().sort(function(a,b){ return b.r - a.r; }).map(function(d){
+      return '<div title="' + esc(d.n) + '" style="height:' + Math.max(6, d.r) + '%;background:' + hexcol(d.r) + '"></div>';
+    }).join("");
+
+    var m = document.createElement("div");
+    m.className = "modal";
+    m.innerHTML =
+      '<div class="modalbox" role="dialog" aria-label="Share report">' +
+        '<div class="card">' +
+          '<div>' +
+            '<div class="kick">regret report</div>' +
+            '<div class="score">REGRET SCORE 61</div>' +
+            '<div class="stack">my-saas-app · package.json · 12 dependencies · 43M HN comments</div>' +
+          '</div>' +
+          '<div class="mini">' + bars + '</div>' +
+          '<div>' +
+            '<div class="callouts">' +
+              '<div class="drop1">HN would most like you to drop: <b>webpack</b></div>' +
+              '<div class="def">HN would defend: <b>Postgres</b></div>' +
+            '</div>' +
+            '<div class="wordmark" style="margin-top:8px">regretcheck</div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="row">' +
+          '<button class="primary" id="copyImg">Copy image</button>' +
+          '<button id="copyTxt">Copy post text</button>' +
+          '<button class="link" id="closeM">close</button>' +
+        '</div>' +
+      '</div>';
+    $("modalMount").appendChild(m);
+
+    m.querySelector("#copyImg").addEventListener("click", function(){ toast("image copied"); });
+    m.querySelector("#copyTxt").addEventListener("click", function(){ toast("post text copied"); });
+    m.querySelector("#closeM").addEventListener("click", close);
+    m.addEventListener("click", function(e){ if(e.target === m) close(); });
+    function esckey(e){ if(e.key === "Escape") close(); }
+    document.addEventListener("keydown", esckey);
+    function close(){
+      document.removeEventListener("keydown", esckey);
+      if(m.parentNode) m.parentNode.removeChild(m);
+    }
+  }
+})();
+</script>
+</body>
+</html>

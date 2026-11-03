@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Shortfall — carrier commission recovery</title>
+<style>
+:root{
+--bg:#f5f6f8; --panel:#ffffff; --ink:#111827; --muted:#6b7280; --line:#e4e7ec;
+--accent:#0f5c4a; --accent2:#10b981; --red:#b42318; --redbg:#fef3f2; --amber:#b54708; --amberbg:#fffaeb;
+--chip:#f2f4f7; --shadow:0 1px 2px rgba(16,24,40,.06),0 8px 24px rgba(16,24,40,.06);
+}
+@media (prefers-color-scheme: dark){
+:root{
+--bg:#0c0f14; --panel:#141922; --ink:#e8ecf1; --muted:#95a1b2; --line:#232b38;
+--accent:#34d399; --accent2:#10b981; --red:#ff8a80; --redbg:#2a1614; --amber:#f5c26b; --amberbg:#2a2114;
+--chip:#1c2330; --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.35);
+}
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+background:var(--bg); color:var(--ink);
+font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+-webkit-text-size-adjust:100%;
+}
+.wrap{max-width:1080px;margin:0 auto;padding:0 14px 60px}
+header.top{position:sticky;top:0;z-index:40;background:var(--bg);border-bottom:1px solid var(--line)}
+.topin{max-width:1080px;margin:0 auto;padding:12px 14px 10px}
+.brand{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.logo{width:24px;height:24px;flex:0 0 auto}
+.brand h1{font-size:16px;margin:0;letter-spacing:-.2px}
+.brand .tag{color:var(--muted);font-size:13px}
+.steps{display:flex;gap:6px;margin-top:10px;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.step{flex:1 1 0;min-width:112px;display:flex;align-items:center;gap:7px;background:var(--panel);border:1px solid var(--line);
+border-radius:10px;padding:9px 10px;font-size:13px;color:var(--muted);cursor:pointer;white-space:nowrap}
+.step .n{width:20px;height:20px;border-radius:50%;background:var(--chip);color:var(--muted);display:grid;place-items:center;font-size:11px;font-weight:700;flex:0 0 auto}
+.step[aria-current="true"]{color:var(--ink);border-color:var(--accent);box-shadow:0 0 0 2px rgba(16,185,129,.13)}
+.step[aria-current="true"] .n{background:var(--accent);color:#fff}
+@media (prefers-color-scheme: dark){.step[aria-current="true"] .n{color:#06281f}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow)}
+section.view{display:none;padding-top:16px}
+section.view.active{display:block}
+h2{font-size:18px;margin:0 0 4px;letter-spacing:-.3px}
+.sub{color:var(--muted);font-size:13px;margin:0 0 14px}
+.panelhead{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:14px 14px 0;flex-wrap:wrap}
+.panelhead .t{font-weight:650;font-size:14px}
+.demo{font-size:11px;color:var(--muted);border:1px dashed var(--line);border-radius:999px;padding:2px 8px}
+.files{display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:10px;padding:14px}
+.file{display:flex;gap:9px;align-items:flex-start;border:1px solid var(--line);border-radius:10px;padding:10px;background:var(--bg)}
+.file .nm{font-size:12.5px;word-break:break-word;font-weight:560}
+.file .mt{font-size:11px;color:var(--muted);margin-top:2px}
+.ic{width:22px;height:26px;flex:0 0 auto}
+.bookcard{margin:0 14px 14px;border:1px solid var(--line);border-radius:10px;padding:12px;display:flex;gap:10px;align-items:center;background:linear-gradient(0deg,var(--chip),var(--chip))}
+.today{margin:0 14px 14px;color:var(--muted);font-size:13px;border-left:3px solid var(--line);padding:4px 0 4px 10px}
+.btn{appearance:none;border:0;border-radius:11px;padding:14px 18px;font-size:15px;font-weight:650;cursor:pointer;min-height:48px}
+.btn.primary{background:var(--accent);color:#fff;width:100%}
+@media (prefers-color-scheme: dark){.btn.primary{color:#06281f}}
+.btn.ghost{background:var(--chip);color:var(--ink);border:1px solid var(--line)}
+.btnrow{padding:0 14px 16px}
+/* section 2 */
+.runbox{padding:26px 16px 30px;text-align:center}
+.spin{width:46px;height:46px;margin:0 auto 14px;border-radius:50%;border:3px solid var(--line);border-top-color:var(--accent);animation:sp 1s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.bar{height:8px;background:var(--chip);border-radius:99px;overflow:hidden;margin:16px auto 6px;max-width:520px}
+.bar>i{display:block;height:100%;width:0%;background:var(--accent);border-radius:99px;transition:width .25s linear}
+.counts{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;max-width:520px;margin:18px auto 0}
+.count{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 6px}
+.count b{display:block;font-size:19px;font-variant-numeric:tabular-nums;letter-spacing:-.4px}
+.count span{font-size:11px;color:var(--muted)}
+.log{max-width:520px;margin:16px auto 0;text-align:left;font-size:12.5px;color:var(--muted);min-height:66px}
+.log div{padding:2px 0}
+/* section 3 */
+.hero{padding:16px 14px}
+.hero .big{font-size:26px;font-weight:720;letter-spacing:-.8px;line-height:1.15}
+.hero .big em{font-style:normal;color:var(--accent)}
+.hero .meta{color:var(--muted);font-size:13px;margin-top:6px}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:0 14px 12px}
+.chip{border:1px solid var(--line);background:var(--panel);color:var(--muted);border-radius:999px;padding:9px 12px;font-size:12.5px;cursor:pointer;min-height:40px}
+.chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+@media (prefers-color-scheme: dark){.chip[aria-pressed="true"]{color:#06281f}}
+.toggle{margin-left:auto;display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--muted);cursor:pointer;min-height:40px}
+.sw{width:42px;height:24px;border-radius:99px;background:var(--chip);border:1px solid var(--line);position:relative;transition:.15s}
+.sw i{position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:var(--muted);transition:.15s}
+.toggle[aria-pressed="true"] .sw{background:var(--accent);border-color:var(--accent)}
+.toggle[aria-pressed="true"] .sw i{left:21px;background:#fff}
+.tablewrap{overflow-x:auto;border-top:1px solid var(--line)}
+table{border-collapse:collapse;width:100%;min-width:720px;font-size:13px}
+th,td{padding:11px 12px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:11px;letter-spacing:.4px;text-transform:uppercase;color:var(--muted);cursor:pointer;white-space:nowrap;position:relative;user-select:none}
+th .ar{opacity:.45;font-size:10px}
+tbody tr{cursor:pointer}
+tbody tr:hover{background:var(--chip)}
+td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.var{color:var(--red);font-weight:680}
+.badge{display:inline-block;font-size:10.5px;font-weight:700;letter-spacing:.3px;padding:3px 7px;border-radius:6px;background:var(--redbg);color:var(--red);line-height:1.3}
+.badge.sm{background:var(--chip);color:var(--muted)}
+.conf{font-size:11px;font-weight:700;padding:3px 8px;border-radius:999px;background:rgba(16,185,129,.14);color:var(--accent)}
+.conf.med{background:var(--amberbg);color:var(--amber)}
+.who{font-weight:620}
+.lob{color:var(--muted);font-size:12px}
+.empty{padding:34px 16px;text-align:center;color:var(--muted);font-size:13.5px}
+.noise{margin:14px;border:1px solid var(--line);border-radius:12px;background:var(--chip)}
+.noise>button{width:100%;background:none;border:0;color:var(--muted);font:inherit;font-size:13px;text-align:left;padding:14px;cursor:pointer;display:flex;gap:8px;align-items:center;min-height:48px}
+.noise .body{display:none;padding:0 14px 12px}
+.noise.open .body{display:block}
+.noise table{min-width:560px;font-size:12.5px}
+.gw{padding:4px 14px 14px}
+.grp{border:1px solid var(--line);border-radius:12px;margin-bottom:10px;overflow:hidden}
+.grp h4{margin:0;padding:12px 14px;font-size:14px;background:var(--chip);display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.grp h4 small{font-weight:500;color:var(--muted)}
+.grp .lines{padding:6px 14px 12px}
+.pl{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px dashed var(--line);font-size:13px}
+.pl:last-child{border-bottom:0}
+.pl .r{font-variant-numeric:tabular-nums;white-space:nowrap}
+.plus{color:var(--accent);font-weight:680}
+/* drawer */
+.scrim{position:fixed;inset:0;background:rgba(10,14,20,.5);opacity:0;pointer-events:none;transition:.18s;z-index:50}
+.scrim.on{opacity:1;pointer-events:auto}
+.drawer{position:fixed;top:0;right:0;height:100%;width:min(460px,100%);background:var(--panel);z-index:60;
+transform:translateX(102%);transition:transform .22s ease;display:flex;flex-direction:column;box-shadow:-12px 0 40px rgba(0,0,0,.2)}
+.drawer.on{transform:none}
+.dhead{padding:14px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.dhead .ttl{font-weight:700;font-size:15px}
+.dhead .s{color:var(--muted);font-size:12.5px;margin-top:3px}
+.x{border:1px solid var(--line);background:var(--chip);border-radius:9px;width:40px;height:40px;font-size:17px;cursor:pointer;color:var(--ink);flex:0 0 auto}
+.dbody{overflow:auto;padding:14px;flex:1}
+.cmp{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media (max-width:420px){.cmp{grid-template-columns:1fr}}
+.box{border:1px solid var(--line);border-radius:10px;padding:10px;background:var(--bg)}
+.box h5{margin:0 0 7px;font-size:11px;letter-spacing:.4px;text-transform:uppercase;color:var(--muted)}
+.kv{display:flex;justify-content:space-between;gap:8px;font-size:12.5px;padding:3px 0}
+.kv span:first-child{color:var(--muted)}
+.kv span:last-child{text-align:right;font-variant-numeric:tabular-nums}
+.why{margin-top:12px;border-left:3px solid var(--accent);background:var(--chip);border-radius:0 10px 10px 0;padding:10px 12px;font-size:13.5px}
+.math{margin-top:10px;font-size:12.5px;color:var(--muted);font-family:ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px;white-space:pre-wrap;word-break:break-word}
+.dfoot{border-top:1px solid var(--line);padding:12px 14px;display:flex;gap:8px}
+.dfoot .btn{flex:1}
+.mail{margin-top:12px;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.mail .mh{background:var(--chip);padding:9px 11px;font-size:12px;color:var(--muted);border-bottom:1px solid var(--line)}
+.mail pre{margin:0;padding:11px;font:12.5px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace;white-space:pre-wrap;word-break:break-word}
+.toast{position:fixed;left:50%;bottom:22px;transform:translate(-50%,16px);background:var(--ink);color:var(--bg);padding:11px 16px;border-radius:10px;font-size:13px;opacity:0;pointer-events:none;transition:.2s;z-index:80}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+footer{text-align:center;color:var(--muted);font-size:12px;padding:26px 14px 10px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="topin">
+    <div class="brand">
+      <svg class="logo" viewBox="0 0 24 24" aria-hidden="true"><rect x="1" y="1" width="22" height="22" rx="6" fill="#0f5c4a"/><path d="M7 15.5l3.4-3.6 2.6 2.4L17.5 8" stroke="#34d399" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/><circle cx="17.6" cy="8" r="1.6" fill="#34d399"/></svg>
+      <h1>Shortfall</h1>
+      <span class="tag">— finds the commission your carriers didn't pay you.</span>
+    </div>
+    <nav class="steps" id="steps" aria-label="Steps">
+      <button class="step" data-go="1" aria-current="true"><span class="n">1</span>Statements</button>
+      <button class="step" data-go="2"><span class="n">2</span>Matching</button>
+      <button class="step" data-go="3"><span class="n">3</span>Money owed</button>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap">
+
+<!-- SECTION 1 -->
+<section class="view active" id="v1">
+  <h2>October close, the way it arrives</h2>
+  <p class="sub">Eight carrier statements, four formats, one policy book. Nothing is tied together yet.</p>
+  <div class="card">
+    <div class="panelhead"><div class="t">October statements — Harborline Insurance Group</div><div class="demo">Demo data</div></div>
+    <div class="files" id="files"></div>
+    <div class="bookcard">
+      <svg class="ic" viewBox="0 0 24 28" aria-hidden="true"><rect x="1" y="1" width="22" height="26" rx="3" fill="none" stroke="currentColor" stroke-opacity=".35"/><path d="M5 8h14M5 13h14M5 18h9" stroke="currentColor" stroke-opacity=".45" stroke-width="1.6" stroke-linecap="round"/></svg>
+      <div><div class="nm" style="font-size:13.5px;font-weight:600">policy_book_export.csv</div><div class="mt" style="font-size:12px;color:var(--muted)">1,284 policies · HawkSoft · exported Nov 1, 2026</div></div>
+    </div>
+    <div class="today">Today: bookkeeper reconciles ~34 hrs/month in Excel — totals only, line-level never checked.</div>
+    <div class="btnrow"><button class="btn primary" id="runBtn">Run reconciliation</button></div>
+  </div>
+</section>
+
+<!-- SECTION 2 -->
+<section class="view" id="v2">
+  <h2>Matching statement lines to your book</h2>
+  <p class="sub">Parsing PDFs and spreadsheets, matching on policy number, then on insured + effective date.</p>
+  <div class="card runbox">
+    <div class="spin" id="spin"></div>
+    <div style="font-weight:600" id="phase">Reading Travelers_Oct26.pdf…</div>
+    <div class="bar"><i id="bar"></i></div>
+    <div class="counts">
+      <div class="count"><b id="c1">0</b><span>statement lines read</span></div>
+      <div class="count"><b id="c2">0</b><span>policies matched</span></div>
+      <div class="count"><b id="c3">0</b><span>exceptions found</span></div>
+    </div>
+    <div class="log" id="log"></div>
+  </div>
+</section>
+
+<!-- SECTION 3 -->
+<section class="view" id="v3">
+  <h2 class="sr">Money owed</h2>
+  <div class="card">
+    <div class="hero">
+      <div class="big">You may be owed <em id="heroAmt">$14,870</em><br>across <span id="heroN">11</span> items</div>
+      <div class="meta">October 2026 · 3,142 lines read · 27 exceptions, 16 auto-dismissed as noise · <span class="demo" style="display:inline-block;margin-top:4px">Demo data</span></div>
+    </div>
+    <div class="toolbar" id="filters">
+      <button class="chip" data-f="all" aria-pressed="true">All 11</button>
+      <button class="chip" data-f="RATE VARIANCE" aria-pressed="false">Rate variance</button>
+      <button class="chip" data-f="MISSING FROM STATEMENT" aria-pressed="false">Missing</button>
+      <button class="chip" data-f="OTHER" aria-pressed="false">Other</button>
+      <button class="toggle" id="payoutToggle" aria-pressed="false"><span class="sw"><i></i></span>Producer payout impact</button>
+    </div>
+
+    <div id="tableView">
+      <div class="tablewrap">
+        <table id="tbl">
+          <thead><tr>
+            <th data-s="carrier">Carrier <span class="ar">↕</span></th>
+            <th data-s="insured">Policy / insured <span class="ar">↕</span></th>
+            <th data-s="expected" class="num">Expected <span class="ar">↕</span></th>
+            <th data-s="paid" class="num">Paid <span class="ar">↕</span></th>
+            <th data-s="variance" class="num">Variance <span class="ar">▼</span></th>
+            <th data-s="type">Exception <span class="ar">↕</span></th>
+            <th data-s="confidence">Conf. <span class="ar">↕</span></th>
+          </tr></thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+      <div class="empty" id="emptyState" style="display:none">No exceptions of this type this month. That's a good thing.</div>
+    </div>
+
+    <div class="gw" id="payoutView" style="display:none"></div>
+
+    <div class="noise" id="noise">
+      <button id="noiseBtn" aria-expanded="false"><span id="noiseCaret">▸</span> 9 differences explained and dismissed — timing (paid next cycle), legitimate cancellations, endorsement adjustments</button>
+      <div class="body">
+        <div class="tablewrap" style="border:0">
+          <table>
+            <thead><tr><th>Carrier</th><th>Policy</th><th class="num">Diff</th><th>Why it's not a shortfall</th></tr></thead>
+            <tbody id="noiseBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+  <p class="sub" style="margin:14px 2px 0">Tap any row to see the evidence Shortfall matched, and draft the dispute email.</p>
+</section>
+
+<footer>Prototype by Granted, inspired by your bookmarks</footer>
+</div>
+
+<div class="scrim" id="scrim"></div>
+<aside class="drawer" id="drawer" aria-hidden="true" aria-label="Exception evidence">
+  <div class="dhead">
+    <div><div class="ttl" id="dTitle">—</div><div class="s" id="dSub">—</div></div>
+    <button class="x" id="dClose" aria-label="Close">✕</button>
+  </div>
+  <div class="dbody" id="dBody"></div>
+  <div class="dfoot">
+    <button class="btn ghost" id="mailBtn" style="font-size:14px">Draft dispute email</button>
+    <button class="btn primary" id="copyBtn" style="display:none;font-size:14px">Copy email</button>
+  </div>
+</aside>
+<div class="toast" id="toast">Copied</div>
+
+<script>
+(function(){
+"use strict";
+var $=function(s){return document.querySelector(s)};
+
+/* ---------- data ---------- */
+var FILES=[
+ {n:"Travelers_Oct26.pdf",m:"PDF · 14 pages · 612 lines"},
+ {n:"Progressive_DirectBill_Oct.xlsx",m:"Excel · 2 sheets · 488 lines"},
+ {n:"Nationwide_commission_1026.pdf",m:"PDF · 9 pages · 377 lines"},
+ {n:"Safeco_stmt.pdf",m:"PDF · 21 pages · 540 lines"},
+ {n:"Hartford_Oct2026.pdf",m:"PDF · 11 pages · 402 lines"},
+ {n:"Chubb_comm_oct.pdf",m:"PDF · 6 pages · 188 lines"},
+ {n:"Liberty_Mutual_Oct.pdf",m:"PDF · 13 pages · 320 lines"},
+ {n:"Encova_1026.xlsx",m:"Excel · 1 sheet · 215 lines"}
+];
+
+var ROWS=[
+ {id:1,carrier:"Travelers",policy:"BA-7741209",insured:"Delgado Landscaping LLC",lob:"Commercial Auto",expected:1842,paid:1228,type:"RATE VARIANCE",typeFull:"RATE VARIANCE (paid 10%, contract 15%)",confidence:"High",producer:"Dana R.",split:50,
+  prem:12280,stmtRate:"10.0%",ctrRate:"15.0%",eff:"2026-03-01",term:"Annual",billed:"2026-10-04",stmtLine:"BA7741209 DELGADO LANDSCAPING  PREM 12,280.00  RATE 10.00  COMM 1,228.00",
+  why:"Travelers paid this at the 10% direct-bill rate. Your 2025 commercial auto schedule puts fleet accounts at 15%. The 5-point gap on a $12,280 premium is $614.",
+  math:"Premium          $12,280.00\nContract rate        15.00%  (Agency agreement §4b, Commercial Auto)\nExpected          $ 1,842.00\nStatement rate       10.00%\nPaid              $ 1,228.00\nVariance          -$  614.00"},
+ {id:2,carrier:"Safeco",policy:"HO-3391884",insured:"M. Okonkwo",lob:"Homeowners",expected:186,paid:0,type:"MISSING FROM STATEMENT",typeFull:"MISSING FROM STATEMENT",confidence:"High",producer:"Mike T.",split:100,
+  prem:1240,stmtRate:"—",ctrRate:"15.0%",eff:"2026-10-09",term:"Annual",billed:"2026-10-09",stmtLine:"— no line found for HO-3391884 in Safeco_stmt.pdf —",
+  why:"New business bound Oct 9 and showing as active, paid-in-full in your book, but no commission line appears on the October Safeco statement. Not found in September either.",
+  math:"Premium           $1,240.00\nContract rate        15.00%  (New business, Homeowners)\nExpected          $  186.00\nPaid              $    0.00\nVariance          -$  186.00"},
+ {id:3,carrier:"Nationwide",policy:"CP-5520177",insured:"Ridgeview Dental PC",lob:"BOP",expected:1104,paid:0,type:"CHARGEBACK NOT REVERSED AFTER REINSTATEMENT",typeFull:"CHARGEBACK NOT REVERSED AFTER REINSTATEMENT",confidence:"High",producer:"Dana R.",split:100,
+  prem:9200,stmtRate:"12.0%",ctrRate:"12.0%",eff:"2026-02-15",term:"Annual",billed:"2026-08-30",stmtLine:"CP5520177 RIDGEVIEW DENTAL  CHARGEBACK -1,104.00 (CANCEL NONPAY 08/30)",
+  why:"Policy was cancelled for non-payment in August and the commission charged back. It was reinstated Sept 12 with no lapse — your book shows it in force — but the chargeback was never reversed.",
+  math:"Premium           $9,200.00\nContract rate        12.00%\nOriginal commission $ 1,104.00\nChargeback 08/30   -$ 1,104.00\nReinstated 09/12    (no lapse, book confirms in force)\nReversal expected   $ 1,104.00\nReversal received   $     0.00\nVariance           -$ 1,104.00"},
+ {id:4,carrier:"Hartford",policy:"WC-8812330",insured:"Blue Harbor Fabrication",lob:"Workers Comp",expected:2960,paid:1480,type:"PRODUCER CODE INACTIVE",typeFull:"PRODUCER CODE INACTIVE",confidence:"Medium",producer:"Mike T.",split:50,
+  prem:37000,stmtRate:"4.0%",ctrRate:"8.0%",eff:"2026-01-01",term:"Annual",billed:"2026-10-01",stmtLine:"WC8812330 BLUE HARBOR FAB  PREM 37,000.00  CODE HB-0441 (INACTIVE)  COMM 1,480.00",
+  why:"Paid against retired producer code HB-0441, which carries the default 4% rate. Your active code HB-0907 is contracted at 8% for workers comp. Hartford confirmed the code change in March but never repointed this account.",
+  math:"Premium          $37,000.00\nContract rate         8.00%  (code HB-0907, active)\nExpected          $ 2,960.00\nPaid at 4.00%     $ 1,480.00  (code HB-0441, retired)\nVariance          -$ 1,480.00"},
+ {id:5,carrier:"Progressive",policy:"PA-2240918",insured:"R. Castellanos",lob:"Personal Auto",expected:94,paid:71,type:"RATE VARIANCE",typeFull:"RATE VARIANCE",confidence:"High",producer:"House",split:100,
+  prem:940,stmtRate:"7.5%",ctrRate:"10.0%",eff:"2026-06-21",term:"6-month",billed:"2026-10-02",stmtLine:"PA2240918 CASTELLANOS R  PREM 940.00  RATE 7.50  COMM 70.50",
+  why:"Renewal rate of 7.5% applied to a policy still inside its first term. Your schedule holds 10% through the first full year.",
+  math:"Premium             $940.00\nContract rate        10.00%\nExpected             $ 94.00\nPaid at 7.50%        $ 70.50\nVariance            -$ 23.00  (rounded)"},
+ {id:6,carrier:"Chubb",policy:"HO-7781204",insured:"Winslow Family Trust",lob:"Homeowners",expected:1620,paid:0,type:"MISSING FROM STATEMENT",typeFull:"MISSING FROM STATEMENT",confidence:"Medium",producer:"Dana R.",split:100,
+  prem:10800,stmtRate:"—",ctrRate:"15.0%",eff:"2026-10-01",term:"Annual",billed:"2026-10-18",stmtLine:"— no line found for HO-7781204 in Chubb_comm_oct.pdf —",
+  why:"High-value homeowners renewal effective Oct 1. Premium billed Oct 18, which may fall after Chubb's cutoff — flagged Medium because it could land on the November statement. Worth watching, not yet disputing hard.",
+  math:"Premium          $10,800.00\nContract rate        15.00%\nExpected          $ 1,620.00\nPaid              $     0.00\nVariance          -$ 1,620.00\nNote: billed 10/18, Chubb cutoff ~10/15"},
+ {id:7,carrier:"Liberty Mutual",policy:"GL-3390712",insured:"Pinecrest Childcare",lob:"General Liability",expected:880,paid:660,type:"RATE VARIANCE",typeFull:"RATE VARIANCE",confidence:"High",producer:"Mike T.",split:100,
+  prem:8800,stmtRate:"7.5%",ctrRate:"10.0%",eff:"2026-04-12",term:"Annual",billed:"2026-10-05",stmtLine:"GL3390712 PINECREST CHILDCARE  PREM 8,800.00  RATE 7.50  COMM 660.00",
+  why:"Paid at the small-commercial 7.5% tier. Pinecrest sits in your program business schedule at 10% for general liability.",
+  math:"Premium           $8,800.00\nContract rate        10.00%  (Program business addendum)\nExpected          $  880.00\nPaid at 7.50%     $  660.00\nVariance          -$  220.00"},
+ {id:8,carrier:"Encova",policy:"CP-1192045",insured:"Alvarez Auto Body",lob:"BOP",expected:745,paid:0,type:"MISSING FROM STATEMENT",typeFull:"MISSING FROM STATEMENT",confidence:"High",producer:"House",split:100,
+  prem:6208,stmtRate:"—",ctrRate:"12.0%",eff:"2026-10-05",term:"Annual",billed:"2026-10-05",stmtLine:"— no line found for CP-1192045 in Encova_1026.xlsx —",
+  why:"Policy appears on the Encova premium register for October but is absent from the commission sheet. Classic split-file gap — the money was collected, the commission never paid.",
+  math:"Premium           $6,208.00\nContract rate        12.00%\nExpected          $  745.00\nPaid              $    0.00\nVariance          -$  745.00"},
+ {id:9,carrier:"Travelers",policy:"UM-4410338",insured:"Kettleman Logistics",lob:"Umbrella",expected:3300,paid:1650,type:"SPLIT PAID AT 50%",typeFull:"SPLIT PAID AT 50%",confidence:"Medium",producer:"Dana R.",split:100,
+  prem:22000,stmtRate:"15.0% × 50%",ctrRate:"15.0% × 100%",eff:"2026-05-01",term:"Annual",billed:"2026-10-03",stmtLine:"UM4410338 KETTLEMAN LOGISTICS  PREM 22,000.00  COMM 3,300.00  SPLIT 50% AGY  NET 1,650.00",
+  why:"Statement applies a 50% co-broker split. The co-broker agreement with Marlin Risk ended June 30, 2026 and your book records Harborline at 100% on this account from the May renewal forward.",
+  math:"Premium          $22,000.00\nCommission at 15% $ 3,300.00\nSplit applied          50%  (Marlin Risk — agreement ended 06/30/26)\nPaid              $ 1,650.00\nExpected split        100%\nVariance          -$ 1,650.00"},
+ {id:10,carrier:"Hartford",policy:"CA-6620114",insured:"Northbay Plumbing",lob:"Commercial Auto",expected:1210,paid:0,type:"MISSING FROM STATEMENT",typeFull:"MISSING FROM STATEMENT",confidence:"High",producer:"Mike T.",split:100,
+  prem:12100,stmtRate:"—",ctrRate:"10.0%",eff:"2026-10-01",term:"Annual",billed:"2026-10-02",stmtLine:"— no line found for CA-6620114 in Hartford_Oct2026.pdf —",
+  why:"Renewal processed Oct 1 under the new fleet endorsement. Premium posted, commission line absent. The expiring policy did appear on last October's statement.",
+  math:"Premium          $12,100.00\nContract rate        10.00%\nExpected          $ 1,210.00\nPaid              $     0.00\nVariance          -$ 1,210.00"},
+ {id:11,carrier:"Safeco",policy:"PA-9920441",insured:"J. Pham",lob:"Personal Auto",expected:128,paid:0,type:"MISSING FROM STATEMENT",typeFull:"MISSING FROM STATEMENT",confidence:"Medium",producer:"House",split:100,
+  prem:1280,stmtRate:"—",ctrRate:"10.0%",eff:"2026-09-28",term:"6-month",billed:"2026-10-01",stmtLine:"— no line found for PA-9920441 in Safeco_stmt.pdf —",
+  why:"Bound Sept 28, first payment taken Oct 1. No commission line in October. Medium because very-new business sometimes lags one cycle at Safeco.",
+  math:"Premium           $1,280.00\nContract rate        10.00%\nExpected          $  128.00\nPaid              $    0.00\nVariance          -$  128.00"}
+];
+ROWS.forEach(function(r){r.variance=r.paid-r.expected;});
+
+var NOISE=[
+ {c:"Progressive",p:"PA-1180422",d:"-$38",w:"Mid-term endorsement reduced premium; commission adjusted correctly."},
+ {c:"Nationwide",p:"HO-2290615",d:"-$204",w:"Policy cancelled flat 10/06 at insured request. Chargeback is valid."},
+ {c:"Travelers",p:"BA-5510903",d:"-$412",w:"Bound 10/29. Paid on the November statement — timing only."},
+ {c:"Liberty Mutual",p:"GL-7740188",d:"-$61",w:"Audit return premium; matching commission reversal is contractual."}
+];
+
+var PRODUCERS=[
+ {name:"Dana R.",base:8420},
+ {name:"Mike T.",base:7260},
+ {name:"House",base:5110}
+];
+
+/* ---------- helpers ---------- */
+function money(n){var s=Math.abs(Math.round(n)).toLocaleString("en-US");return (n<0?"-$":"$")+s;}
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];});}
+
+/* ---------- section 1 ---------- */
+(function(){
+ var html="";
+ FILES.forEach(function(f){
+   var xls=/\.xlsx$/.test(f.n);
+   html+='<div class="file"><svg class="ic" viewBox="0 0 24 28" aria-hidden="true">'+
+   '<path d="M3 1h12l6 6v20H3z" fill="none" stroke="currentColor" stroke-opacity=".35"/>'+
+   '<path d="M15 1v6h6" fill="none" stroke="currentColor" stroke-opacity=".35"/>'+
+   (xls?'<path d="M7 14l5 7M12 14l-5 7" stroke="#0f8a5f" stroke-width="1.8" stroke-linecap="round"/>'
+       :'<path d="M7 15h8M7 19h6" stroke="#b42318" stroke-width="1.8" stroke-linecap="round"/>')+
+   '</svg><div><div class="nm">'+esc(f.n)+'</div><div class="mt">'+esc(f.m)+'</div></div></div>';
+ });
+ $("#files").innerHTML=html;
+})();
+
+/* ---------- navigation ---------- */
+var runTimers=[];
+function clearTimers(){runTimers.forEach(clearTimeout);runTimers=[];}
+function go(n,opts){
+  clearTimers();
+  [1,2,3].forEach(function(i){
+    var v=document.getElementById("v"+i);
+    if(v) v.classList.toggle("active",i===n);
+  });
+  Array.prototype.forEach.call(document.querySelectorAll(".step"),function(b){
+    b.setAttribute("aria-current",String(Number(b.dataset.go)===n));
+  });
+  window.scrollTo(0,0);
+  if(n===2) runSequence(!(opts&&opts.manual===false));
+}
+Array.prototype.forEach.call(document.querySelectorAll(".step"),function(b){
+  b.addEventListener("click",function(){go(Number(b.dataset.go));});
+});
+$("#runBtn").addEventListener("click",function(){go(2);});
+
+/* ---------- section 2 animation ---------- */
+var LOGS=[
+ "Parsed Travelers_Oct26.pdf — 612 lines",
+ "Parsed Progressive_DirectBill_Oct.xlsx — 488 lines",
+ "Parsed Nationwide, Safeco, Hartford — 1,319 lines",
+ "Parsed Chubb, Liberty Mutual, Encova — 723 lines",
+ "Matched on policy number: 1,241 · fuzzy insured match: 43",
+ "Applied 11 contract rate schedules",
+ "Suppressed 16 timing / cancellation differences",
+ "27 exceptions · 11 recoverable"
+];
+function runSequence(){
+  var bar=$("#bar"),c1=$("#c1"),c2=$("#c2"),c3=$("#c3"),log=$("#log"),phase=$("#phase"),spin=$("#spin");
+  bar.style.width="0%";log.innerHTML="";spin.style.display="block";
+  var T=3000,start=null,ids=null;
+  function frame(ts){
+    if(start===null)start=ts;
+    var p=Math.min(1,(ts-start)/T);
+    var e=1-Math.pow(1-p,2);
+    bar.style.width=(p*100).toFixed(1)+"%";
+    c1.textContent=Math.round(3142*e).toLocaleString("en-US");
+    c2.textContent=Math.round(1284*e).toLocaleString("en-US");
+    c3.textContent=Math.round(27*e).toString();
+    if(p<1){ids=requestAnimationFrame(frame);}
+    else{
+      c1.textContent="3,142";c2.textContent="1,284";c3.textContent="27";
+      phase.textContent="Done — 11 recoverable exceptions";
+      spin.style.display="none";
+      runTimers.push(setTimeout(function(){go(3);},520));
+    }
+  }
+  requestAnimationFrame(frame);
+  LOGS.forEach(function(t,i){
+    runTimers.push(setTimeout(function(){
+      phase.textContent=i<4?("Reading "+FILES[Math.min(i*2,7)].n+"…"):"Matching against policy_book_export.csv…";
+      var d=document.createElement("div");d.textContent="✓ "+t;log.appendChild(d);
+      log.scrollTop=log.scrollHeight;
+    },180+i*340));
+  });
+}
+
+/* ---------- section 3 table ---------- */
+var sortKey="variance",sortDir=1,filter="all";
+function visible(){
+  return ROWS.filter(function(r){
+    if(filter==="all")return true;
+    if(filter==="OTHER")return r.type!=="RATE VARIANCE"&&r.type!=="MISSING FROM STATEMENT";
+    return r.type===filter;
+  });
+}
+function render(){
+  var rows=visible().slice().sort(function(a,b){
+    var x=a[sortKey],y=b[sortKey];
+    if(typeof x==="string")return x.localeCompare(y)*sortDir;
+    return (x-y)*sortDir;
+  });
+  var tb=$("#tbody"),html="";
+  rows.forEach(function(r){
+    html+='<tr tabindex="0" data-id="'+r.id+'">'+
+     '<td class="who">'+esc(r.carrier)+'</td>'+
+     '<td><div class="who">'+esc(r.insured)+'</div><div class="lob">'+esc(r.policy)+' · '+esc(r.lob)+'</div></td>'+
+     '<td class="num">'+money(r.expected)+'</td>'+
+     '<td class="num">'+money(r.paid)+'</td>'+
+     '<td class="num var">'+money(r.variance)+'</td>'+
+     '<td><span class="badge">'+esc(r.typeFull)+'</span></td>'+
+     '<td><span class="conf'+(r.confidence==="Medium"?" med":"")+'">'+r.confidence+'</span></td></tr>';
+  });
+  tb.innerHTML=html;
+  $("#emptyState").style.display=rows.length?"none":"block";
+  document.querySelector("#tbl").style.display=rows.length?"":"none";
+
+  var total=rows.reduce(function(s,r){return s+r.variance;},0);
+  $("#heroAmt").textContent=money(Math.abs(total));
+  $("#heroN").textContent=String(rows.length);
+  Array.prototype.forEach.call(document.querySelectorAll("#tbl th"),function(th){
+    var a=th.querySelector(".ar");
+    a.textContent = th.dataset.s===sortKey ? (sortDir===1?"▲":"▼") : "↕";
+  });
+}
+Array.prototype.forEach.call(document.querySelectorAll("#tbl th"),function(th){
+  th.addEventListener("click",function(){
+    var k=th.dataset.s;
+    if(k===sortKey)sortDir=-sortDir; else {sortKey=k;sortDir=(k==="variance"?1:1);}
+    render();
+  });
+});
+$("#filters").addEventListener("click",function(e){
+  var b=e.target.closest(".chip");if(!b)return;
+  filter=b.dataset.f;
+  Array.prototype.forEach.call(document.querySelectorAll(".chip"),function(c){
+    c.setAttribute("aria-pressed",String(c===b));
+  });
+  render();
+});
+$("#tbody").addEventListener("click",function(e){
+  var tr=e.target.closest("tr");if(tr)openDrawer(Number(tr.dataset.id));
+});
+$("#tbody").addEventListener("keydown",function(e){
+  if(e.key!=="Enter"&&e.key!==" ")return;
+  var tr=e.target.closest("tr");if(tr){e.preventDefault();openDrawer(Number(tr.dataset.id));}
+});
+
+/* noise */
+(function(){
+  var h="";
+  NOISE.forEach(function(n){
+    h+='<tr><td>'+esc(n.c)+'</td><td>'+esc(n.p)+'</td><td class="num">'+esc(n.d)+'</td><td style="color:var(--muted)">'+esc(n.w)+'</td></tr>';
+  });
+  h+='<tr><td colspan="4" style="color:var(--muted)">+ 5 more similar differences</td></tr>';
+  $("#noiseBody").innerHTML=h;
+  $("#noiseBtn").addEventListener("click",function(){
+    var open=$("#noise").classList.toggle("open");
+    this.setAttribute("aria-expanded",String(open));
+    $("#noiseCaret").textContent=open?"▾":"▸";
+  });
+})();
+
+/* producer payout */
+$("#payoutToggle").addEventListener("click",function(){
+  var on=this.getAttribute("aria-pressed")!=="true";
+  this.setAttribute("aria-pressed",String(on));
+  $("#tableView").style.display=on?"none":"";
+  $("#payoutView").style.display=on?"":"none";
+  if(on)renderPayout();
+});
+function renderPayout(){
+  var h='<p class="sub" style="margin:2px 0 12px">October producer payouts as booked, and after the recovered variances are credited at each producer\'s split.</p>';
+  PRODUCERS.forEach(function(p){
+    var mine=ROWS.filter(function(r){return r.producer===p.name;});
+    var add=mine.reduce(function(s,r){return s+Math.abs(r.variance)*(r.split/100)*0.5;},0);
+    add=Math.round(add);
+    var lines="";
+    mine.forEach(function(r){
+      var amt=Math.round(Math.abs(r.variance)*(r.split/100)*0.5);
+      lines+='<div class="pl"><span>'+esc(r.insured)+' <span class="lob">· '+esc(r.policy)+'</span></span>'+
+      '<span class="r plus">+'+money(amt)+'</span></div>';
+    });
+    if(!mine.length) lines='<div class="pl"><span class="lob">No open variances</span><span class="r">—</span></div>';
+    h+='<div class="grp"><h4><span>'+esc(p.name)+'</span><small>'+money(p.base)+' booked → <b style="color:var(--accent)">'+money(p.base+add)+'</b> after recovery ('+(add?"+"+money(add):"no change")+')</small></h4><div class="lines">'+lines+'</div></div>';
+  });
+  h+='<p class="sub" style="margin:4px 2px 0">Producer credit shown at the standard 50% commission split on recovered dollars. Demo data.</p>';
+  $("#payoutView").innerHTML=h;
+}
+
+/* ---------- drawer ---------- */
+var current=null,emailOpen=false;
+function emailText(r){
+  var amt=money(Math.abs(r.variance));
+  return "To: commissions@"+r.carrier.toLowerCase().replace(/[^a-z]/g,"")+".com\n"+
+  "From: accounting@harborlineins.com\n"+
+  "Subject: Commission discrepancy — policy "+r.policy+" ("+r.insured+"), October 2026 statement\n\n"+
+  "Hello,\n\n"+
+  "We are reviewing the October 2026 commission statement for Harborline Insurance Group (agency code HB-0907) and have identified a discrepancy on the following policy:\n\n"+
+  "  Policy:        "+r.policy+"\n"+
+  "  Insured:       "+r.insured+"\n"+
+  "  Line:          "+r.lob+"\n"+
+  "  Statement:     October 2026\n"+
+  "  Premium:       "+money(r.prem)+"\n"+
+  "  Contract rate: "+r.ctrRate+"\n"+
+  "  Expected:      "+money(r.expected)+"\n"+
+  "  Paid:          "+money(r.paid)+"\n"+
+  "  Shortfall:     "+amt+"\n\n"+
+  "Issue: "+r.typeFull+".\n"+
+  r.why+"\n\n"+
+  "Please review and advise whether an adjustment of "+amt+" will appear on the November cycle. Our commission schedule and the policy record are attached for reference.\n\n"+
+  "Thank you,\nPriya Raman\nOperations Manager, Harborline Insurance Group\n(207) 555-0148";
+}
+function openDrawer(id){
+  var r=ROWS.filter(function(x){return x.id===id;})[0];
+  if(!r){return;}
+  current=r;emailOpen=false;
+  $("#dTitle").textContent=r.insured;
+  $("#dSub").textContent=r.carrier+" · "+r.policy+" · "+r.lob;
+  $("#dBody").innerHTML=
+   '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px">'+
+     '<span class="badge">'+esc(r.typeFull)+'</span>'+
+     '<span class="conf'+(r.confidence==="Medium"?" med":"")+'">'+r.confidence+' confidence</span>'+
+     '<span style="margin-left:auto;font-size:19px;font-weight:720" class="var">'+money(r.variance)+'</span>'+
+   '</div>'+
+   '<div class="cmp">'+
+     '<div class="box"><h5>Statement line, as parsed</h5>'+
+       '<div style="font:11.5px/1.5 ui-monospace,Menlo,monospace;word-break:break-word;color:var(--muted)">'+esc(r.stmtLine)+'</div>'+
+       '<div class="kv" style="margin-top:8px"><span>Rate on statement</span><span>'+esc(r.stmtRate)+'</span></div>'+
+       '<div class="kv"><span>Paid</span><span>'+money(r.paid)+'</span></div>'+
+     '</div>'+
+     '<div class="box"><h5>Policy record (HawkSoft)</h5>'+
+       '<div class="kv"><span>Policy</span><span>'+esc(r.policy)+'</span></div>'+
+       '<div class="kv"><span>Effective</span><span>'+esc(r.eff)+'</span></div>'+
+       '<div class="kv"><span>Term</span><span>'+esc(r.term)+'</span></div>'+
+       '<div class="kv"><span>Premium billed</span><span>'+money(r.prem)+'</span></div>'+
+       '<div class="kv"><span>Billed date</span><span>'+esc(r.billed)+'</span></div>'+
+       '<div class="kv"><span>Producer</span><span>'+esc(r.producer)+'</span></div>'+
+     '</div>'+
+   '</div>'+
+   '<div class="why"><b>Why this is flagged.</b> '+esc(r.why)+'</div>'+
+   '<div class="math">'+esc(r.math)+'</div>'+
+   '<div id="mailSlot"></div>';
+  $("#mailBtn").textContent="Draft dispute email";
+  $("#copyBtn").style.display="none";
+  $("#scrim").classList.add("on");
+  $("#drawer").classList.add("on");
+  $("#drawer").setAttribute("aria-hidden","false");
+  $("#dClose").focus();
+}
+function closeDrawer(){
+  $("#scrim").classList.remove("on");
+  $("#drawer").classList.remove("on");
+  $("#drawer").setAttribute("aria-hidden","true");
+}
+$("#dClose").addEventListener("click",closeDrawer);
+$("#scrim").addEventListener("click",closeDrawer);
+document.addEventListener("keydown",function(e){if(e.key==="Escape")closeDrawer();});
+
+$("#mailBtn").addEventListener("click",function(){
+  if(!current)return;
+  if(emailOpen){
+    $("#mailSlot").innerHTML="";emailOpen=false;
+    this.textContent="Draft dispute email";
+    $("#copyBtn").style.display="none";
+    return;
+  }
+  var slot=$("#mailSlot");
+  slot.innerHTML='<div class="mail"><div class="mh">Drafting…</div><pre style="color:var(--muted)">Pulling contract rate, policy record and statement line…</pre></div>';
+  var btn=this;
+  setTimeout(function(){
+    if(!current)return;
+    slot.innerHTML='<div class="mail"><div class="mh">Draft — review before sending</div><pre id="mailBody">'+esc(emailText(current))+'</pre></div>';
+    emailOpen=true;
+    btn.textContent="Hide draft";
+    $("#copyBtn").style.display="";
+    slot.scrollIntoView({behavior:"smooth",block:"nearest"});
+  },620);
+});
+$("#copyBtn").addEventListener("click",function(){
+  if(!current)return;
+  var txt=emailText(current),ok=false;
+  try{
+    var ta=document.createElement("textarea");
+    ta.value=txt;ta.setAttribute("readonly","");
+    ta.style.position="fixed";ta.style.top="-1000px";
+    document.body.appendChild(ta);ta.select();
+    ok=document.execCommand("copy");
+    document.body.removeChild(ta);
+  }catch(err){ok=false;}
+  if(!ok&&navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(txt).then(function(){toast("Email copied");},function(){toast("Select the text above to copy");});
+    return;
+  }
+  toast(ok?"Email copied":"Select the text above to copy");
+});
+var tt;
+function toast(m){
+  var t=$("#toast");t.textContent=m;t.classList.add("on");
+  clearTimeout(tt);tt=setTimeout(function(){t.classList.remove("on");},1700);
+}
+
+render();
+})();
+</script>
+</body>
+</html>
