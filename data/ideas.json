@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-03T20:53:20.693Z",
+  "updated": "2026-11-04T20:51:38.748Z",
   "ideas": [
     {
       "id": "2026-10-22-agentgauntlet",
@@ -638,6 +638,66 @@
       "sources_count": 24,
       "superseded_by": null,
       "sibling": "2026-11-03-regretcheck"
+    },
+    {
+      "id": "2026-11-04-strangers",
+      "number": 24,
+      "date": "2026-11-04",
+      "track": "build",
+      "short_name": "Strangers",
+      "verdict": "dig_deeper",
+      "score": 8,
+      "scores": {
+        "wow": 8,
+        "shareability": 8,
+        "buildability": 8,
+        "freshness": 8,
+        "usefulness": 8
+      },
+      "effort": "a weekend",
+      "category": "Developer tools",
+      "tags": [
+        "npm",
+        "security",
+        "supply-chain",
+        "devtools"
+      ],
+      "pain_type": "expressed",
+      "one_liner": "Drop your package-lock.json into a web page and Strangers tells you, in one big number, how many separate human beings can push code that runs on your machine tonight — with the named list, the ones who published while you slept, and a shareable card.",
+      "prototype_url": "https://yashsharma1911.github.io/granted/ideas/2026-11-04-strangers/",
+      "sources_count": 19,
+      "superseded_by": null,
+      "sibling": "2026-11-04-outbound"
+    },
+    {
+      "id": "2026-11-04-outbound",
+      "number": 25,
+      "date": "2026-11-04",
+      "track": "venture",
+      "short_name": "Outbound",
+      "verdict": "dig_deeper",
+      "score": 7.8,
+      "scores": {
+        "pain": 8,
+        "market_pull": 7.5,
+        "timing": 8,
+        "gap": 8,
+        "wedge": 7.5
+      },
+      "effort": "3+ months",
+      "category": "Back-office automation",
+      "tags": [
+        "manufacturing",
+        "agents",
+        "compliance",
+        "supply chain"
+      ],
+      "pain_type": "expressed",
+      "one_liner": "For the buyer/quality manager at a 10-80 person precision machine shop, Outbound owns the parts that leave the building: it builds each heat-treat/plating/anodize vendor PO with the exact spec revision and quality clauses flowed down from the customer PO, chases the processor by email for a promised date, and checks the returned certificate against what was required before the job is released to ship.",
+      "prototype_url": "https://yashsharma1911.github.io/granted/ideas/2026-11-04-outbound/",
+      "sources_count": 24,
+      "superseded_by": null,
+      "sibling": "2026-11-04-strangers"
     }
   ]
 }

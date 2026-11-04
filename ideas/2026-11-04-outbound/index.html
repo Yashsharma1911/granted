@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Outbound — outside-processing control tower</title>
+<style>
+:root{
+  --bg:#ffffff; --panel:#ffffff; --ink:#15181d; --muted:#656d78; --line:#e2e6ec;
+  --soft:#f5f7fa; --accent:#1d4ed8; --red:#c62828; --redbg:#fdecec;
+  --amber:#8a5a00; --amberbg:#fff5e0; --green:#1b6b3a; --greenbg:#e8f6ec;
+  --shadow:0 10px 30px rgba(15,25,45,.14);
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --bg:#0e1116; --panel:#141922; --ink:#e8ecf2; --muted:#9aa5b4; --line:#263040;
+    --soft:#1a212c; --accent:#7aa2ff; --red:#ff7b7b; --redbg:#361a1c;
+    --amber:#ffc46b; --amberbg:#3a2c10; --green:#6fdc96; --greenbg:#10301e;
+    --shadow:0 10px 30px rgba(0,0,0,.5);
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  font-size:15px; line-height:1.45; -webkit-text-size-adjust:100%;
+}
+.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace}
+header.top{
+  position:sticky; top:0; z-index:40; background:var(--panel);
+  border-bottom:1px solid var(--line); padding:10px 14px;
+  display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+}
+.logo{font-weight:800; letter-spacing:-.3px; font-size:17px}
+.logo span{color:var(--accent)}
+.tagline{color:var(--muted); font-size:12.5px}
+.topright{margin-left:auto; display:flex; align-items:center; gap:8px}
+.chipdemo{font-size:11px; color:var(--muted); border:1px solid var(--line); border-radius:999px; padding:3px 9px}
+.layout{display:flex; min-height:calc(100vh - 110px)}
+nav.side{
+  width:208px; flex:0 0 208px; border-right:1px solid var(--line);
+  padding:14px 10px; background:var(--panel);
+}
+nav.side .navlabel{font-size:11px; letter-spacing:.09em; text-transform:uppercase; color:var(--muted); padding:0 8px 8px}
+.navbtn{
+  display:flex; align-items:center; gap:9px; width:100%; text-align:left;
+  background:none; border:0; color:var(--ink); font:inherit; font-size:14.5px;
+  padding:12px 10px; border-radius:9px; cursor:pointer; min-height:46px;
+}
+.navbtn:hover{background:var(--soft)}
+.navbtn.active{background:var(--soft); font-weight:700; box-shadow:inset 3px 0 0 var(--accent)}
+.navbtn .cnt{margin-left:auto; font-size:11.5px; color:var(--muted)}
+main{flex:1; padding:16px; min-width:0}
+h2.screen{margin:0 0 2px; font-size:19px; letter-spacing:-.3px}
+.sub{color:var(--muted); font-size:13px; margin-bottom:14px}
+.card{background:var(--panel); border:1px solid var(--line); border-radius:12px}
+.pill{display:inline-block; font-size:11px; font-weight:700; letter-spacing:.04em; padding:3px 8px; border-radius:999px; white-space:nowrap}
+.p-red{background:var(--redbg); color:var(--red)}
+.p-amb{background:var(--amberbg); color:var(--amber)}
+.p-grn{background:var(--greenbg); color:var(--green)}
+.p-bck{background:var(--soft); color:var(--muted); border:1px solid var(--line)}
+button.btn{
+  font:inherit; font-weight:600; border-radius:9px; padding:11px 14px; min-height:44px;
+  border:1px solid var(--line); background:var(--panel); color:var(--ink); cursor:pointer;
+}
+button.btn:hover{background:var(--soft)}
+button.primary{background:var(--accent); border-color:var(--accent); color:#fff}
+@media (prefers-color-scheme:dark){button.primary{color:#0e1116}}
+button.primary:hover{filter:brightness(1.07); background:var(--accent)}
+button.danger{background:var(--redbg); color:var(--red); border-color:transparent}
+.toggleStrip{margin-bottom:14px}
+.stripHead{display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:8px}
+.stripHead .lbl{font-size:12.5px; color:var(--muted)}
+.whiteboard{
+  background:#f3f1e7; color:#20201c; border:1px solid #d8d4c2; border-radius:12px;
+  padding:14px; font-family:"Bradley Hand","Segoe Script","Comic Sans MS",cursive;
+  box-shadow:inset 0 0 40px rgba(120,110,80,.18);
+}
+.whiteboard h4{margin:0 0 10px; font-size:17px; text-decoration:underline}
+.wbrow{display:flex; gap:12px; flex-wrap:wrap; border-bottom:1px dashed #b9b4a0; padding:6px 0; font-size:15px}
+.wbrow b{font-weight:700}
+.strike{text-decoration:line-through; color:#9b3a3a}
+.wbnote{color:#b03030; transform:rotate(-2deg); display:inline-block; font-weight:700}
+.wbfoot{margin-top:10px; font-size:14px; color:#6a6450}
+.tablewrap{overflow-x:auto; -webkit-overflow-scrolling:touch}
+table{border-collapse:collapse; width:100%; min-width:880px; font-size:13.5px}
+th{
+  text-align:left; font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted);
+  padding:9px 10px; border-bottom:1px solid var(--line); position:sticky; top:0; background:var(--panel);
+}
+td{padding:11px 10px; border-bottom:1px solid var(--line); vertical-align:top}
+tr.row{cursor:pointer}
+tr.row:hover td{background:var(--soft)}
+tr.flash td{animation:flash 1.3s ease}
+@keyframes flash{0%{background:var(--amberbg)}100%{background:transparent}}
+.sm{font-size:11.5px; color:var(--muted); display:block; margin-top:2px}
+.overlay{position:fixed; inset:0; background:rgba(8,12,20,.45); opacity:0; pointer-events:none; transition:opacity .22s; z-index:50}
+.overlay.on{opacity:1; pointer-events:auto}
+.slideover{
+  position:fixed; top:0; right:0; height:100%; width:min(470px,100%); background:var(--panel);
+  border-left:1px solid var(--line); transform:translateX(102%); transition:transform .26s ease;
+  z-index:60; display:flex; flex-direction:column; box-shadow:var(--shadow);
+}
+.slideover.on{transform:translateX(0)}
+.soHead{padding:14px; border-bottom:1px solid var(--line); display:flex; gap:10px; align-items:flex-start}
+.soBody{padding:14px; overflow:auto; flex:1}
+.soFoot{padding:12px 14px; border-top:1px solid var(--line); display:flex; gap:8px; flex-wrap:wrap}
+.xbtn{margin-left:auto; border:1px solid var(--line); background:var(--panel); color:var(--ink); border-radius:9px; width:40px; height:40px; font-size:18px; cursor:pointer}
+.mail{border:1px solid var(--line); border-radius:10px; padding:11px; margin-bottom:10px; background:var(--soft)}
+.mail .mh{font-size:11.5px; color:var(--muted); margin-bottom:6px}
+.mail.in{background:var(--greenbg); border-color:transparent}
+.mail p{margin:5px 0; font-size:13.5px}
+.spinner{display:inline-block; width:15px; height:15px; border:2px solid var(--line); border-top-color:var(--accent); border-radius:50%; animation:spin .8s linear infinite; vertical-align:-3px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.toast{
+  position:fixed; left:50%; bottom:18px; transform:translate(-50%,24px); z-index:80;
+  background:#10151e; color:#fff; padding:12px 16px; border-radius:10px; font-size:13.5px;
+  max-width:min(92vw,460px); opacity:0; transition:all .25s; box-shadow:var(--shadow);
+}
+.toast.on{opacity:1; transform:translate(-50%,0)}
+.panes{display:grid; grid-template-columns:1fr 1fr; gap:14px}
+.pane{padding:14px}
+.paneTitle{font-size:12px; text-transform:uppercase; letter-spacing:.07em; color:var(--muted); margin-bottom:10px}
+.clause{display:flex; gap:9px; padding:9px; border-radius:9px; border:1px solid transparent; font-size:13.5px}
+.clause:nth-child(odd){background:var(--soft)}
+.clause.hl{border-color:var(--accent)}
+.cid{font-weight:700; min-width:52px}
+.genline{
+  opacity:0; transform:translateY(5px); animation:rise .32s forwards;
+  border-bottom:1px dashed var(--line); padding:9px 0; font-size:13.5px;
+}
+@keyframes rise{to{opacity:1; transform:none}}
+.why{
+  font-size:10.5px; border:1px solid var(--line); border-radius:999px; padding:2px 7px;
+  color:var(--muted); cursor:help; margin-left:6px; white-space:nowrap; display:inline-block;
+}
+.why:hover{border-color:var(--accent); color:var(--accent)}
+.warnline{background:var(--amberbg); color:var(--amber); border-radius:9px; padding:10px; font-size:13px; font-weight:600}
+.empty{border:1px dashed var(--line); border-radius:10px; padding:26px 14px; text-align:center; color:var(--muted); font-size:13.5px}
+.certlist{display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:12px}
+.certcard{padding:12px; cursor:pointer; display:flex; gap:11px; align-items:flex-start}
+.certcard:hover{background:var(--soft)}
+.thumb{
+  flex:0 0 52px; height:66px; border:1px solid var(--line); border-radius:4px; background:var(--soft);
+  padding:5px; overflow:hidden;
+}
+.thumb div{height:3px; background:var(--line); margin-bottom:3px; border-radius:2px}
+.thumb div:nth-child(1){height:7px; width:70%; background:var(--muted); opacity:.6}
+.thumb div:nth-child(5){width:45%}
+.scan{
+  background:#fcfbf7; color:#1a1a18; border:1px solid #ded9cc; border-radius:6px; padding:16px;
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:12.5px; line-height:1.6;
+  box-shadow:inset 0 0 30px rgba(140,130,100,.12);
+}
+.scan .lh{display:flex; justify-content:space-between; border-bottom:2px solid #1a1a18; padding-bottom:7px; margin-bottom:10px; font-weight:700; font-size:13px}
+.scan .sig{margin-top:14px; border-top:1px dashed #b5ae9c; padding-top:9px; font-style:italic}
+.scan .missing{color:#b03030; font-weight:700}
+.chk{display:flex; gap:9px; padding:9px 0; border-bottom:1px solid var(--line); font-size:13.5px}
+.ok{color:var(--green); font-weight:800}
+.no{color:var(--red); font-weight:800}
+.banner{background:var(--redbg); color:var(--red); border-radius:10px; padding:13px; font-weight:800; margin-bottom:12px; letter-spacing:.02em}
+.banner.good{background:var(--greenbg); color:var(--green)}
+.cards{display:grid; grid-template-columns:repeat(auto-fill,minmax(310px,1fr)); gap:14px}
+.opline{display:flex; gap:9px; align-items:center; padding:8px 0; border-bottom:1px solid var(--line); font-size:13.5px}
+.opline:last-child{border-bottom:0}
+.bar{height:7px; background:var(--soft); border-radius:4px; overflow:hidden; margin-top:8px}
+.bar i{display:block; height:100%; background:var(--green)}
+.bar i.part{background:var(--amber)}
+footer{padding:16px; text-align:center; color:var(--muted); font-size:11.5px; border-top:1px solid var(--line)}
+.hidden{display:none !important}
+@media (max-width:860px){
+  .panes{grid-template-columns:1fr}
+  .layout{flex-direction:column}
+  nav.side{width:100%; flex:none; border-right:0; border-bottom:1px solid var(--line); display:flex; gap:6px; overflow-x:auto; padding:8px}
+  nav.side .navlabel{display:none}
+  .navbtn{width:auto; white-space:nowrap; padding:10px 12px}
+  .navbtn .cnt{margin-left:6px}
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <div>
+    <div class="logo">Out<span>bound</span></div>
+    <div class="tagline">Keystone Precision — 11 lots at outside processors</div>
+  </div>
+  <div class="topright"><span class="chipdemo">Demo data</span></div>
+</header>
+
+<div class="layout">
+  <nav class="side" id="nav">
+    <div class="navlabel">Control tower</div>
+    <button class="navbtn active" data-screen="parts">Parts Out <span class="cnt" id="navCnt">11</span></button>
+    <button class="navbtn" data-screen="flow">Flowdown <span class="cnt">1</span></button>
+    <button class="navbtn" data-screen="certs">Certs <span class="cnt" id="navCert">2</span></button>
+    <button class="navbtn" data-screen="ship">Ship-Ready <span class="cnt">4</span></button>
+  </nav>
+
+  <main>
+    <!-- SCREEN 1 -->
+    <section id="s-parts">
+      <h2 class="screen">Parts Out</h2>
+      <div class="sub">Every lot sitting at an outside processor, with the one thing you actually need to know.</div>
+
+      <div class="toggleStrip">
+        <div class="stripHead">
+          <span class="lbl" id="stripLbl">How this shop tracked it last month</span>
+          <button class="btn primary" id="toggleBtn">Show Outbound</button>
+        </div>
+        <div id="whiteboard" class="whiteboard">
+          <h4>OUTSIDE PROC — WHITEBOARD (wk of Oct 20)</h4>
+          <div class="wbrow"><b>J-4412</b> brackets → Valley anod. <span class="strike">due 10/28</span> <span class="strike">10/30?</span> <span class="wbnote">call Dave??</span></div>
+          <div class="wbrow"><b>J-4418</b> shafts → Metlab HT <span class="strike">11/3</span> they said 11/6 maybe</div>
+          <div class="wbrow"><b>J-4421</b> housings → Pacific chem film — ok</div>
+          <div class="wbrow"><b>J-4399</b> brackets → BACK but cert looks wrong?? ask QC</div>
+          <div class="wbrow"><b>J-4430</b> ni plate → ??? who picked these up</div>
+          <div class="wbrow">+ 6 more on the other board / in Sheet2</div>
+          <div class="wbfoot">Last updated by someone on Thursday. Probably.</div>
+        </div>
+        <div id="cleanWrap" class="card hidden">
+          <div class="tablewrap">
+            <table>
+              <thead><tr>
+                <th>Job</th><th>Part</th><th>Customer</th><th>Process</th><th>Processor</th>
+                <th>Qty</th><th>Sent</th><th>Promised</th><th>Status</th>
+              </tr></thead>
+              <tbody id="lotBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SCREEN 2 -->
+    <section id="s-flow" class="hidden">
+      <h2 class="screen">Flowdown — J-4412 · Collins Aerospace PO 88-4412</h2>
+      <div class="sub">Customer quality clauses → processor purchase order. Nothing is ever sent automatically.</div>
+      <div class="panes">
+        <div class="card pane">
+          <div class="paneTitle">Customer PO excerpt (Collins Aerospace)</div>
+          <div id="clauses"></div>
+          <button class="btn primary" id="flowBtn" style="margin-top:12px;width:100%">Flow down to processor PO</button>
+        </div>
+        <div class="card pane">
+          <div class="paneTitle">Generated PO body — Valley Anodizing</div>
+          <div id="genOut"><div class="empty">No PO drafted yet.<br>Press “Flow down to processor PO”.</div></div>
+          <div id="flowFoot" class="hidden" style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn primary" id="copyBtn">Approve &amp; copy</button>
+            <button class="btn" id="editBtn">Edit</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SCREEN 3 -->
+    <section id="s-certs" class="hidden">
+      <h2 class="screen">Certs</h2>
+      <div class="sub">Returned certificates checked line by line against the PO that bought them.</div>
+      <div id="certIndex" class="certlist"></div>
+      <div id="certDetail" class="hidden"></div>
+    </section>
+
+    <!-- SCREEN 4 -->
+    <section id="s-ship" class="hidden">
+      <h2 class="screen">Ship-Ready</h2>
+      <div class="sub">Which customer POs can go out the door today.</div>
+      <div id="shipCards" class="cards"></div>
+    </section>
+  </main>
+</div>
+
+<footer>Prototype by Granted, inspired by your bookmarks</footer>
+
+<div class="overlay" id="overlay"></div>
+<aside class="slideover" id="slideover" aria-hidden="true">
+  <div class="soHead">
+    <div>
+      <div style="font-weight:700" id="soTitle">J-4412</div>
+      <div class="sm" id="soSub">—</div>
+    </div>
+    <button class="xbtn" id="soClose" aria-label="Close">×</button>
+  </div>
+  <div class="soBody" id="soBody"></div>
+  <div class="soFoot" id="soFoot"></div>
+</aside>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+(function(){
+"use strict";
+var $=function(s){return document.querySelector(s);};
+var esc=function(t){return String(t).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];});};
+
+/* ---------- data ---------- */
+var lots=[
+ {job:"J-4412",part:"7821-03 Bracket",cust:"Collins Aerospace",proc:"Hard anodize AMS 2469 Rev H",vendor:"Valley Anodizing",qty:250,sent:"Oct 22",prom:"Oct 28",st:"RED",note:"4 days late — no reply to 2 emails"},
+ {job:"J-4418",part:"5512-01 Shaft",cust:"Moog",proc:"Heat treat AMS 2759/1 Rev E",vendor:"Metlab Heat Treating",qty:60,sent:"Oct 27",prom:"Nov 3",st:"AMBER",note:"processor pushed to Nov 6"},
+ {job:"J-4421",part:"9004-07 Housing",cust:"Parker",proc:"Chem film MIL-DTL-5541 Type I",vendor:"Pacific Finishing",qty:400,sent:"Oct 29",prom:"Nov 5",st:"GREEN",note:"on schedule"},
+ {job:"J-4399",part:"7821-04 Bracket",cust:"Collins",proc:"Hard anodize AMS 2469 Rev H",vendor:"Valley Anodizing",qty:180,sent:"Oct 15",prom:"Oct 22",st:"BACK",note:"cert mismatch"},
+ {job:"J-4430",part:"6210-02 Pin",cust:"Honeywell",proc:"Nickel plate AMS 2403",vendor:"Trident Plating",qty:1200,sent:"Oct 24",prom:"Nov 1",st:"RED",note:"3 days late — voicemail left Nov 2"},
+ {job:"J-4433",part:"4188-11 Manifold",cust:"Parker",proc:"Passivation AMS 2700 Method 1",vendor:"Pacific Finishing",qty:95,sent:"Oct 30",prom:"Nov 4",st:"AMBER",note:"no confirmation of receipt"},
+ {job:"J-4408",part:"3302-06 Cover",cust:"Moog",proc:"Black oxide MIL-DTL-13924 Cl 1",vendor:"Ironclad Coatings",qty:520,sent:"Oct 20",prom:"Oct 27",st:"BACK",note:"received Oct 26 — cert OK"},
+ {job:"J-4436",part:"7750-01 Link",cust:"Collins Aerospace",proc:"Shot peen AMS 2430 Rev T",vendor:"Peen-Tech Services",qty:140,sent:"Nov 1",prom:"Nov 7",st:"GREEN",note:"in transit — picked up Nov 1"},
+ {job:"J-4437",part:"5512-04 Shaft",cust:"Moog",proc:"NDT FPI AMS 2644 Level 3",vendor:"Argon NDT Labs",qty:60,sent:"Nov 2",prom:"Nov 6",st:"GREEN",note:"in transit — courier manifest 7741"},
+ {job:"J-4425",part:"9004-09 Housing",cust:"Parker",proc:"Hard anodize AMS 2469 Rev H",vendor:"Valley Anodizing",qty:310,sent:"Oct 28",prom:"Nov 5",st:"AMBER",note:"Valley backlog — watch"},
+ {job:"J-4441",part:"6210-05 Pin",cust:"Honeywell",proc:"Passivation AMS 2700 Method 2",vendor:"Trident Plating",qty:800,sent:"Nov 3",prom:"Nov 10",st:"GREEN",note:"on schedule"}
+];
+var pillClass={RED:"p-red",AMBER:"p-amb",GREEN:"p-grn",BACK:"p-bck"};
+var pillText={RED:"LATE",AMBER:"AT RISK",GREEN:"ON TRACK",BACK:"BACK IN HOUSE"};
+
+function renderLots(flashJob){
+  var b=$("#lotBody"); if(!b) return;
+  b.innerHTML=lots.map(function(l){
+    return '<tr class="row'+(flashJob===l.job?" flash":"")+'" data-job="'+l.job+'">'+
+      '<td class="mono"><b>'+esc(l.job)+'</b></td>'+
+      '<td class="mono">'+esc(l.part)+'</td>'+
+      '<td>'+esc(l.cust)+'</td>'+
+      '<td class="mono" style="font-size:12.5px">'+esc(l.proc)+'</td>'+
+      '<td>'+esc(l.vendor)+'</td>'+
+      '<td class="mono">'+l.qty+'</td>'+
+      '<td class="mono">'+esc(l.sent)+'</td>'+
+      '<td class="mono"><b>'+esc(l.prom)+'</b></td>'+
+      '<td><span class="pill '+pillClass[l.st]+'">'+pillText[l.st]+'</span><span class="sm">'+esc(l.note)+'</span></td>'+
+    '</tr>';
+  }).join("");
+}
+
+/* ---------- nav ---------- */
+var screens={parts:"#s-parts",flow:"#s-flow",certs:"#s-certs",ship:"#s-ship"};
+document.getElementById("nav").addEventListener("click",function(e){
+  var btn=e.target.closest(".navbtn"); if(!btn) return;
+  Array.prototype.forEach.call(document.querySelectorAll(".navbtn"),function(b){b.classList.remove("active");});
+  btn.classList.add("active");
+  for(var k in screens){ $(screens[k]).classList.toggle("hidden", k!==btn.dataset.screen); }
+  window.scrollTo(0,0);
+});
+
+/* ---------- toast ---------- */
+var tTimer=null;
+function toast(msg){
+  var t=$("#toast"); t.textContent=msg; t.classList.add("on");
+  clearTimeout(tTimer); tTimer=setTimeout(function(){t.classList.remove("on");},3600);
+}
+
+/* ---------- before/after toggle ---------- */
+var showingClean=false;
+$("#toggleBtn").addEventListener("click",function(){
+  showingClean=!showingClean;
+  $("#whiteboard").classList.toggle("hidden",showingClean);
+  $("#cleanWrap").classList.toggle("hidden",!showingClean);
+  this.textContent=showingClean?"Show the old whiteboard":"Show Outbound";
+  $("#stripLbl").textContent=showingClean
+    ? "Outbound — same 11 lots, live status"
+    : "How this shop tracked it last month";
+});
+renderLots();
+
+/* ---------- slide-over ---------- */
+function openSO(){ $("#overlay").classList.add("on"); $("#slideover").classList.add("on"); $("#slideover").setAttribute("aria-hidden","false"); }
+function closeSO(){ $("#overlay").classList.remove("on"); $("#slideover").classList.remove("on"); $("#slideover").setAttribute("aria-hidden","true"); }
+$("#overlay").addEventListener("click",closeSO);
+$("#soClose").addEventListener("click",closeSO);
+document.addEventListener("keydown",function(e){ if(e.key==="Escape") closeSO(); });
+
+var chaseDone=false;
+function lotByJob(j){ for(var i=0;i<lots.length;i++){ if(lots[i].job===j) return lots[i]; } return null; }
+
+$("#lotBody").addEventListener("click",function(e){
+  var tr=e.target.closest("tr.row"); if(!tr) return;
+  var l=lotByJob(tr.dataset.job); if(!l) return;
+  $("#soTitle").textContent=l.job+" · "+l.part;
+  $("#soSub").textContent=l.vendor+" — "+l.proc;
+  var body="";
+  if(l.job==="J-4412"){
+    body+='<div class="pill '+pillClass[l.st]+'" style="margin-bottom:10px">'+pillText[l.st]+' — '+esc(l.note)+'</div>';
+    body+='<div class="mail"><div class="mh">Sent Oct 29, 08:14 · buyer@keystoneprecision.com → scheduling@valleyanodizing.com</div><p><b>J-4412 / 7821-03 — status?</b></p><p>Hi Dave, 250 brackets dropped Oct 22, promised Oct 28. Need a status today — Collins ship date is Nov 9.</p></div>';
+    body+='<div class="mail"><div class="mh">Sent Nov 2, 16:40 · follow-up</div><p><b>Re: J-4412 / 7821-03 — status?</b></p><p>Following up again. No reply to Oct 29. Please confirm run date and ship date.</p></div>';
+    body+='<div class="empty" id="noReply">No reply received. 2 emails sent, 0 responses.</div>';
+    if(chaseDone) body+=replyHTML();
+  } else {
+    body+='<div class="pill '+pillClass[l.st]+'" style="margin-bottom:10px">'+pillText[l.st]+'</div>';
+    body+='<div class="mail"><div class="mh">Latest signal</div><p>'+esc(l.note)+'</p></div>';
+    body+='<div class="mail"><div class="mh">Lot</div><p class="mono">Qty '+l.qty+' · sent '+esc(l.sent)+' · promised '+esc(l.prom)+'</p><p class="mono">'+esc(l.proc)+'</p></div>';
+  }
+  $("#soBody").innerHTML=body;
+  var foot=$("#soFoot");
+  if(l.job==="J-4412" && !chaseDone){
+    foot.innerHTML='<button class="btn primary" id="chaseBtn" style="flex:1">Send chase email</button>';
+    $("#chaseBtn").addEventListener("click",runChase);
+  } else {
+    foot.innerHTML='<button class="btn" id="soCloseB" style="flex:1">Close</button>';
+    $("#soCloseB").addEventListener("click",closeSO);
+  }
+  openSO();
+});
+
+function replyHTML(){
+  return '<div class="mail in"><div class="mh">Received Nov 4, 09:02 · dave.k@valleyanodizing.com</div>'+
+         '<p><b>Re: J-4412 / 7821-03 — status?</b></p>'+
+         '<p>Sorry — tank down, your parts run tomorrow, ship Nov 6.</p></div>'+
+         '<div class="warnline" style="margin-top:8px">Promised date updated Oct 28 → Nov 6. Collins ship date Nov 9 still at risk by 1 day.</div>';
+}
+
+function runChase(){
+  var foot=$("#soFoot");
+  foot.innerHTML='<div style="flex:1;color:var(--muted);font-size:13.5px"><span class="spinner"></span> Agent emailing Valley Anodizing…</div>';
+  setTimeout(function(){
+    chaseDone=true;
+    var l=lotByJob("J-4412");
+    l.prom="Nov 6"; l.st="AMBER"; l.note="processor replied — tank down, ships Nov 6";
+    var nr=$("#noReply"); if(nr) nr.remove();
+    $("#soBody").insertAdjacentHTML("beforeend",replyHTML());
+    $("#soBody").scrollTop=$("#soBody").scrollHeight;
+    foot.innerHTML='<button class="btn" id="soCloseB" style="flex:1">Close</button>';
+    $("#soCloseB").addEventListener("click",closeSO);
+    renderLots("J-4412");
+    if(!showingClean){ $("#toggleBtn").click(); }
+    toast("Promised date updated. Customer ship date Nov 9 still at risk by 1 day.");
+  },1500);
+}
+
+/* ---------- flowdown ---------- */
+var clauses=[
+ {id:"QC-07",t:"First Article Inspection per AS9102 required on first production lot."},
+ {id:"QC-12",t:"Chemical processing by Nadcap-approved source only."},
+ {id:"QC-19",t:"Certificate of conformance stating specification and revision."},
+ {id:"QC-23",t:"Lot traceability to raw material heat number."},
+ {id:"QC-31",t:"Right of access for Collins, its customers and regulatory authorities."}
+];
+$("#clauses").innerHTML=
+  '<div class="mono" style="font-size:12.5px;margin-bottom:8px">PO 88-4412 · line 1 · P/N 7821-03 · Qty 250</div>'+
+  clauses.map(function(c){return '<div class="clause" data-cid="'+c.id+'"><span class="cid mono">'+c.id+'</span><span>'+esc(c.t)+'</span></div>';}).join("");
+
+var genLines=[
+ {t:'Part: <span class="mono">7821-03 Bracket</span> · Lot: <span class="mono">J-4412</span> · Qty: <span class="mono">250</span>',why:null},
+ {t:'Process to <span class="mono">AMS 2469 Rev H</span> (revision invoked by customer PO 88-4412 line 1)',why:"QC-19"},
+ {t:'Nadcap-approved chemical processing required — Valley Anodizing CP accreditation verified',why:"QC-12"},
+ {t:'Certificate must state spec + revision, lot ID, thickness readings, authorized signature',why:"QC-19 / QC-23"},
+ {t:'First Article Inspection per AS9102 on first article of this lot',why:"QC-07"},
+ {t:'Retain records 7 years; right of access granted to Collins and regulatory authorities',why:"QC-31"}
+];
+var flowDrawn=false;
+$("#flowBtn").addEventListener("click",function(){
+  var out=$("#genOut");
+  out.innerHTML='<div style="color:var(--muted);font-size:13.5px"><span class="spinner"></span> Reading clauses…</div>';
+  $("#flowFoot").classList.add("hidden");
+  setTimeout(function(){
+    out.innerHTML="";
+    genLines.forEach(function(g,i){
+      var d=document.createElement("div");
+      d.className="genline"; d.style.animationDelay=(i*300)+"ms";
+      d.innerHTML=g.t+(g.why?'<span class="why" data-cid="'+g.why.split(" ")[0]+'" title="From customer clause '+g.why+'">why · '+g.why+'</span>':"");
+      out.appendChild(d);
+    });
+    setTimeout(function(){
+      var w=document.createElement("div");
+      w.className="genline warnline"; w.style.animationDelay="0ms";
+      w.textContent="Customer drawing rev F references AMS 2469 Rev G — PO invokes Rev H. Confirm before release.";
+      out.appendChild(w);
+      $("#flowFoot").classList.remove("hidden");
+    }, genLines.length*300+200);
+    flowDrawn=true;
+  },500);
+});
+$("#genOut").addEventListener("mouseover",function(e){
+  var chip=e.target.closest(".why"); if(!chip) return;
+  Array.prototype.forEach.call(document.querySelectorAll(".clause"),function(c){
+    c.classList.toggle("hl", c.dataset.cid===chip.dataset.cid);
+  });
+});
+$("#genOut").addEventListener("mouseout",function(){
+  Array.prototype.forEach.call(document.querySelectorAll(".clause"),function(c){c.classList.remove("hl");});
+});
+$("#copyBtn").addEventListener("click",function(){ toast("Copied — paste into your PO"); });
+$("#editBtn").addEventListener("click",function(){ toast("Edit mode — lines are editable before release. Nothing is ever auto-sent."); });
+
+/* ---------- certs ---------- */
+var certs=[
+ {id:"c1",job:"J-4399",vendor:"Valley Anodizing",proc:"Hard anodize AMS 2469",verdict:"FAIL",msg:"2 requirements unmet"},
+ {id:"c2",job:"J-4408",vendor:"Ironclad Coatings",proc:"Black oxide MIL-DTL-13924",verdict:"PASS",msg:"All 6 requirements met"},
+ {id:"c3",job:"J-4421",vendor:"Pacific Finishing",proc:"Chem film MIL-DTL-5541",verdict:"PASS",msg:"All 6 requirements met"},
+ {id:"c4",job:"J-4418",vendor:"Metlab Heat Treating",proc:"Heat treat AMS 2759/1",verdict:"PASS",msg:"All 5 requirements met"},
+ {id:"c5",job:"J-4430",vendor:"Trident Plating",proc:"Nickel plate AMS 2403",verdict:"PASS",msg:"All 6 requirements met"},
+ {id:"c6",job:"J-4433",vendor:"Pacific Finishing",proc:"Passivation AMS 2700",verdict:"REVIEW",msg:"Signature block illegible — human review"}
+];
+var vClass={FAIL:"p-red",PASS:"p-grn",REVIEW:"p-amb"};
+$("#certIndex").innerHTML=certs.map(function(c){
+  return '<div class="card certcard" data-cert="'+c.id+'">'+
+    '<div class="thumb"><div></div><div></div><div></div><div></div><div></div><div></div></div>'+
+    '<div style="min-width:0"><div class="mono" style="font-weight:700">'+c.job+'</div>'+
+    '<div class="sm" style="margin:0">'+esc(c.vendor)+'</div>'+
+    '<div class="mono sm">'+esc(c.proc)+'</div>'+
+    '<div style="margin-top:7px"><span class="pill '+vClass[c.verdict]+'">'+c.verdict+'</span></div>'+
+    '<div class="sm">'+esc(c.msg)+'</div></div></div>';
+}).join("");
+
+$("#certIndex").addEventListener("click",function(e){
+  var card=e.target.closest("[data-cert]"); if(!card) return;
+  var id=card.dataset.cert, c=null;
+  certs.forEach(function(x){ if(x.id===id) c=x; });
+  if(!c) return;
+  if(c.verdict!=="FAIL"){
+    toast(c.job+" · "+c.vendor+" — "+c.msg+(c.verdict==="REVIEW"?". Queued for QC.":"."));
+    return;
+  }
+  showCertDetail();
+});
+
+function showCertDetail(){
+  $("#certIndex").classList.add("hidden");
+  var d=$("#certDetail"); d.classList.remove("hidden");
+  d.innerHTML=
+   '<button class="btn" id="backCerts" style="margin-bottom:12px">← All certificates</button>'+
+   '<div class="banner">DO NOT SHIP — 2 requirements unmet.</div>'+
+   '<div class="panes">'+
+    '<div class="card pane"><div class="paneTitle">Scanned certificate (as received)</div>'+
+     '<div class="scan">'+
+      '<div class="lh"><span>VALLEY ANODIZING, INC.</span><span>CERT 11-0241</span></div>'+
+      'Certificate of Conformance<br>Date: Oct 21, 2025<br><br>'+
+      'Customer ....... Keystone Precision Machining<br>'+
+      'PO ............. KP-10-4399<br>'+
+      'Part Number .... 7821-04<br>'+
+      'Quantity ....... 180 pcs<br>'+
+      'Lot Number ..... <span class="missing">[blank]</span><br>'+
+      'Processed per <b>AMS 2469 Rev G</b><br>'+
+      'Coating thickness .... 0.0007 in (spec 0.0006–0.0010)<br>'+
+      'Seal ................. DI water, 20 min<br>'+
+      '<div class="sig">Authorized signature: <i>D. Karras</i> — QA Manager</div>'+
+     '</div></div>'+
+    '<div class="card pane"><div class="paneTitle">Checked against PO 88-4412 requirements</div>'+
+     '<div class="chk"><span class="ok">✓</span><span>Part number matches — <span class="mono">7821-04</span></span></div>'+
+     '<div class="chk"><span class="ok">✓</span><span>Qty matches — <span class="mono">180</span></span></div>'+
+     '<div class="chk"><span class="no">✗</span><span><b>Spec revision</b> — cert says <span class="mono">Rev G</span>, PO invoked <span class="mono">Rev H</span></span></div>'+
+     '<div class="chk"><span class="no">✗</span><span><b>Lot traceability number absent</b> (QC-23)</span></div>'+
+     '<div class="chk"><span class="ok">✓</span><span>Thickness within range — <span class="mono">0.0007"</span></span></div>'+
+     '<div class="chk"><span class="ok">✓</span><span>Authorized signature present</span></div>'+
+     '<button class="btn primary" id="draftBtn" style="margin-top:12px;width:100%">Draft request to processor</button>'+
+     '<div id="draftOut"></div>'+
+    '</div>'+
+   '</div>';
+  $("#backCerts").addEventListener("click",function(){
+    d.classList.add("hidden"); $("#certIndex").classList.remove("hidden");
+  });
+  $("#draftBtn").addEventListener("click",function(){
+    this.disabled=true; this.textContent="Draft ready — review before sending";
+    $("#draftOut").innerHTML='<div class="mail" style="margin-top:12px"><div class="mh">Draft · to qa@valleyanodizing.com · not sent</div>'+
+      '<p><b>Corrected C of C required — J-4399 / 7821-04 (your cert 11-0241)</b></p>'+
+      '<p>Dave — we can\'t accept cert 11-0241 as written. Two items:</p>'+
+      '<p>1. Cert states AMS 2469 Rev G. Our PO KP-10-4399 invokes <b>Rev H</b> per Collins PO 88-4412. Please confirm parts were processed to Rev H and reissue.</p>'+
+      '<p>2. Lot number field is blank. Collins clause QC-23 requires lot traceability. Please add our lot J-4399.</p>'+
+      '<p>Parts are on hold in receiving inspection. Need the corrected cert by Nov 6 to hold the Nov 9 ship date.</p>'+
+      '<p>— Keystone Precision, Quality</p></div>';
+    toast("Draft created. Nothing sent — review and send from your mail client.");
+  });
+}
+
+/* ---------- ship-ready ---------- */
+var pos=[
+ {po:"Collins PO 88-4412",cust:"Collins Aerospace",part:"7821-03 Bracket",ship:"Nov 9",docs:"3 of 4 documents collected",ready:false,
+  ops:[["Machining complete","ok"],["Deburr / inspect","ok"],["Hard anodize AMS 2469 Rev H — at Valley, ships Nov 6","no"],["Final inspection","ok"]]},
+ {po:"Parker PO 55-9004",cust:"Parker",part:"9004-07 Housing",ship:"Nov 7",docs:"4 of 4 documents collected",ready:true,
+  ops:[["Machining complete","ok"],["Chem film MIL-DTL-5541 Type I","ok"],["C of C received & verified","ok"],["Final inspection","ok"]]},
+ {po:"Moog PO 21-3302",cust:"Moog",part:"3302-06 Cover",ship:"Nov 6",docs:"4 of 4 documents collected",ready:true,
+  ops:[["Machining complete","ok"],["Black oxide MIL-DTL-13924 Cl 1","ok"],["C of C received & verified","ok"],["Final inspection","ok"]]},
+ {po:"Honeywell PO 70-6210",cust:"Honeywell",part:"6210-02 Pin",ship:"Nov 12",docs:"2 of 4 documents collected",ready:false,
+  ops:[["Machining complete","ok"],["Nickel plate AMS 2403 — 3 days late at Trident","no"],["C of C","wait"],["Final inspection","wait"]]}
+];
+var mark={ok:'<span class="ok">✓</span>',no:'<span class="no">✗</span>',wait:'<span style="color:var(--muted);font-weight:800">○</span>'};
+$("#shipCards").innerHTML=pos.map(function(p){
+  var okc=0; p.ops.forEach(function(o){ if(o[1]==="ok") okc++; });
+  var pct=Math.round(okc/p.ops.length*100);
+  return '<div class="card" style="padding:14px">'+
+   '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">'+
+    '<b class="mono">'+esc(p.po)+'</b>'+
+    '<span class="pill '+(p.ready?"p-grn":"p-red")+'" style="margin-left:auto">'+(p.ready?"SHIP TODAY":"BLOCKED")+'</span></div>'+
+   '<div class="sm" style="margin-bottom:8px">'+esc(p.cust)+' · <span class="mono">'+esc(p.part)+'</span> · due '+esc(p.ship)+'</div>'+
+   p.ops.map(function(o){return '<div class="opline">'+mark[o[1]]+'<span>'+esc(o[0])+'</span></div>';}).join("")+
+   '<div class="bar"><i class="'+(p.ready?"":"part")+'" style="width:'+pct+'%"></i></div>'+
+   '<div class="sm">'+esc(p.docs)+'</div>'+
+  '</div>';
+}).join("");
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Strangers — how many strangers can run code on your laptop</title>
+<style>
+:root{
+  --bg:#07090c; --panel:#0e1218; --panel2:#131924; --line:#1e2733;
+  --text:#e8edf4; --dim:#8b97a8; --accent:#5ef2a0; --warn:#ffb648; --hot:#ff6b6b;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+}
+@media (prefers-color-scheme: light){
+  :root{ --bg:#f6f7f9; --panel:#ffffff; --panel2:#f0f2f6; --line:#dde2ea;
+  --text:#101620; --dim:#5d6878; --accent:#0a8f52; --warn:#9a6200; --hot:#c0392b;}
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--text);
+  font-family:var(--mono);
+  -webkit-font-smoothing:antialiased;
+  line-height:1.45;
+  padding-bottom:40px;
+}
+.wrap{max-width:720px;margin:0 auto;padding:0 16px}
+header.top{border-bottom:1px solid var(--line);padding:14px 0;margin-bottom:22px}
+header.top .wrap{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+.brand{font-weight:700;letter-spacing:-.02em;font-size:17px}
+.brand .dot{color:var(--accent)}
+.tag{color:var(--dim);font-size:13px}
+h1{font-size:30px;line-height:1.15;letter-spacing:-.03em;margin:8px 0 10px}
+@media(min-width:620px){h1{font-size:40px}}
+.sub{color:var(--dim);font-size:15px;margin:0 0 22px}
+.drop{
+  border:2px dashed var(--line);border-radius:14px;background:var(--panel);
+  padding:38px 18px;text-align:center;cursor:pointer;transition:.15s;
+}
+.drop:hover,.drop.over{border-color:var(--accent);background:var(--panel2)}
+.drop svg{display:block;margin:0 auto 12px}
+.drop .d1{font-size:16px;font-weight:600}
+.drop .d2{color:var(--dim);font-size:13px;margin-top:6px}
+.samples{margin-top:18px}
+.samples .lbl{color:var(--dim);font-size:13px;margin-bottom:8px}
+.btnrow{display:flex;gap:8px;flex-wrap:wrap}
+button{font-family:var(--mono);font-size:14px;cursor:pointer}
+.chip{
+  background:var(--panel);border:1px solid var(--line);color:var(--text);
+  border-radius:999px;padding:12px 16px;min-height:46px;
+}
+.chip:hover{border-color:var(--accent);color:var(--accent)}
+.note{color:var(--dim);font-size:12px;margin-top:18px}
+.demo{display:inline-block;border:1px solid var(--line);border-radius:4px;padding:1px 6px;font-size:11px;color:var(--dim)}
+/* scan */
+#scan{text-align:center;padding:60px 0}
+.count{font-size:54px;font-weight:700;letter-spacing:-.04em}
+.scanline{color:var(--dim);font-size:13px;height:20px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.bar{height:6px;background:var(--panel2);border-radius:6px;overflow:hidden;margin:18px auto 0;max-width:420px}
+.bar i{display:block;height:100%;width:0;background:var(--accent);transition:width .12s linear}
+/* result */
+.hero{text-align:center;padding:16px 0 6px}
+.big{font-size:62px;line-height:1;font-weight:800;letter-spacing:-.045em;color:var(--accent)}
+@media(min-width:620px){.big{font-size:92px}}
+.big small{display:block;font-size:.26em;letter-spacing:0;color:var(--text);font-weight:600;margin-top:10px}
+.herosub{color:var(--dim);font-size:14px;max-width:420px;margin:12px auto 0}
+.repo{color:var(--dim);font-size:12px;margin-top:10px}
+.tiles{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:24px 0}
+@media(min-width:620px){.tiles{grid-template-columns:repeat(4,1fr)}}
+.tile{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px}
+.tile b{display:block;font-size:22px;letter-spacing:-.02em}
+.tile span{color:var(--dim);font-size:12px;display:block;margin-top:2px}
+.tbar{height:4px;border-radius:4px;background:var(--panel2);margin-top:9px;overflow:hidden}
+.tbar i{display:block;height:100%;background:var(--accent)}
+.tbar.w i{background:var(--warn)}.tbar.h i{background:var(--hot)}
+/* tabs */
+.tabs{display:flex;gap:6px;overflow-x:auto;border-bottom:1px solid var(--line);padding-bottom:0;-webkit-overflow-scrolling:touch}
+.tab{background:none;border:none;border-bottom:2px solid transparent;color:var(--dim);padding:12px 10px;min-height:46px;white-space:nowrap;font-size:13px;letter-spacing:.02em}
+.tab[aria-selected="true"]{color:var(--text);border-bottom-color:var(--accent)}
+.tab b{color:var(--dim);font-weight:400}
+ul.list{list-style:none;margin:10px 0 0;padding:0}
+li.row{border:1px solid var(--line);border-radius:12px;background:var(--panel);margin-bottom:8px;overflow:hidden}
+.rowhead{display:flex;align-items:center;gap:10px;width:100%;background:none;border:none;color:var(--text);text-align:left;padding:14px;min-height:56px}
+.rowhead:hover{background:var(--panel2)}
+.pkg{flex:1;min-width:0}
+.pkg .n{font-size:15px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pkg .m{color:var(--dim);font-size:12px;margin-top:2px}
+.flags{display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end}
+.f{font-size:10px;border-radius:999px;padding:3px 7px;border:1px solid var(--line);color:var(--dim)}
+.f.fresh{color:var(--warn);border-color:var(--warn)}
+.f.script{color:var(--hot);border-color:var(--hot)}
+.f.noprov{color:var(--dim)}
+.chev{color:var(--dim);transition:.15s;flex:0 0 auto}
+li.row.open .chev{transform:rotate(90deg)}
+.detail{display:none;padding:0 14px 14px;border-top:1px solid var(--line);margin-top:0}
+li.row.open .detail{display:block}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-size:13px;padding-top:12px}
+.kv dt{color:var(--dim)}.kv dd{margin:0}
+.risk{margin-top:12px;border-left:2px solid var(--warn);padding:6px 0 6px 10px;font-size:13px;color:var(--text)}
+.empty{text-align:center;color:var(--dim);padding:34px 10px;font-size:14px;border:1px dashed var(--line);border-radius:12px;margin-top:10px}
+/* panels */
+.card{border:1px solid var(--line);background:var(--panel);border-radius:14px;padding:16px;margin-top:18px}
+.cardhead{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.cardhead h2{font-size:15px;margin:0;letter-spacing:-.01em}
+.cardhead p{margin:4px 0 0;color:var(--dim);font-size:12px}
+.switch{position:relative;width:52px;height:30px;flex:0 0 auto;border-radius:999px;background:var(--panel2);border:1px solid var(--line);cursor:pointer;padding:0}
+.switch i{position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:var(--dim);transition:.18s}
+.switch[aria-checked="true"]{background:rgba(94,242,160,.18);border-color:var(--accent)}
+.switch[aria-checked="true"] i{left:25px;background:var(--accent)}
+.badge{display:inline-block;background:rgba(255,107,107,.14);color:var(--hot);border:1px solid var(--hot);border-radius:999px;font-size:11px;padding:3px 9px;margin:14px 0 8px}
+ul.delta{list-style:none;margin:0;padding:0}
+ul.delta li{display:flex;gap:10px;padding:10px 0;border-top:1px solid var(--line);font-size:13px}
+ul.delta li span.i{color:var(--warn)}
+.hidden{display:none}
+pre{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:12px;overflow-x:auto;font-size:12.5px;margin:12px 0 0;white-space:pre}
+.cmt{color:var(--dim)}
+.drops{list-style:none;padding:0;margin:12px 0 0;font-size:13px}
+.drops li{padding:7px 0;border-top:1px solid var(--line);display:flex;gap:8px}
+.drops li em{color:var(--dim);font-style:normal}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:18px}
+.primary{background:var(--accent);color:#04120a;border:none;border-radius:10px;padding:14px 18px;min-height:50px;font-weight:700;flex:1}
+@media (prefers-color-scheme: light){.primary{color:#fff}}
+.ghost{background:var(--panel);border:1px solid var(--line);color:var(--text);border-radius:10px;padding:14px 18px;min-height:50px;flex:1}
+.ghost:hover{border-color:var(--accent)}
+/* modal */
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.72);display:flex;align-items:center;justify-content:center;padding:16px;z-index:40;overflow:auto}
+.modal .inner{max-width:560px;width:100%}
+.sharecard{aspect-ratio:1200/630;background:linear-gradient(145deg,#0b1017,#141c27);border:1px solid var(--line);border-radius:14px;padding:5%;display:flex;flex-direction:column;justify-content:space-between;color:#e8edf4}
+.sharecard .sc-top{font-size:3.2vw;color:#8b97a8;letter-spacing:.04em}
+.sharecard .sc-big{font-size:11vw;font-weight:800;letter-spacing:-.04em;color:#5ef2a0;line-height:1}
+.sharecard .sc-sub{font-size:3vw;color:#c3ccd8;margin-top:1%}
+.sharecard .sc-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:2%;font-size:2.5vw;color:#8b97a8}
+.sharecard .sc-stats b{display:block;color:#e8edf4;font-size:3.6vw}
+.sharecard .sc-foot{display:flex;justify-content:space-between;font-size:2.4vw;color:#6f7b8c}
+@media(min-width:580px){
+ .sharecard .sc-top{font-size:15px}.sharecard .sc-big{font-size:62px}.sharecard .sc-sub{font-size:15px}
+ .sharecard .sc-stats{font-size:12px}.sharecard .sc-stats b{font-size:19px}.sharecard .sc-foot{font-size:12px}
+}
+.modal h3{margin:0 0 10px;font-size:14px;color:var(--text)}
+.toast{position:fixed;left:50%;bottom:22px;transform:translate(-50%,20px);background:var(--accent);color:#04120a;border-radius:10px;padding:11px 16px;font-size:13px;font-weight:700;opacity:0;transition:.2s;z-index:60;pointer-events:none;max-width:90vw;text-align:center}
+@media (prefers-color-scheme: light){.toast{color:#fff}}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+footer{color:var(--dim);font-size:12px;text-align:center;margin-top:34px;padding-top:16px;border-top:1px solid var(--line)}
+.fade{animation:fade .35s ease both}
+@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <span class="brand">strangers<span class="dot">_</span></span>
+  <span class="tag">counts the people who can run code on your laptop at <code>npm install</code></span>
+</div></header>
+
+<main class="wrap">
+
+<!-- SCREEN 1 -->
+<section id="screen1">
+  <h1>How many strangers can run code on your laptop?</h1>
+  <p class="sub">Drop your <strong>package-lock.json</strong>. Nothing leaves your browser.</p>
+
+  <div class="drop" id="drop" tabindex="0" role="button" aria-label="Drop a package-lock.json file or press to pick a sample">
+    <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4"/><path d="m7 9 5-5 5 5"/><path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>
+    <div class="d1">Drop package-lock.json here</div>
+    <div class="d2">parsed locally &middot; never uploaded &middot; nothing is stored</div>
+  </div>
+
+  <div class="samples">
+    <div class="lbl">or try a sample lockfile</div>
+    <div class="btnrow">
+      <button class="chip" data-sample="next-app">next-app</button>
+      <button class="chip" data-sample="vite-react">vite-react</button>
+      <button class="chip" data-sample="express-api">express-api</button>
+    </div>
+  </div>
+  <p class="note"><span class="demo">Demo data</span> &nbsp;This prototype always scans a hard-coded sample tree. Your real file is ignored and never read.</p>
+</section>
+
+<!-- SCAN -->
+<section id="scan" class="hidden" aria-live="polite">
+  <div class="count" id="scanCount">0</div>
+  <div class="sub" style="margin:4px 0 0">packages resolved</div>
+  <div class="scanline" id="scanLine">&nbsp;</div>
+  <div class="bar"><i id="scanBar"></i></div>
+</section>
+
+<!-- SCREEN 2 -->
+<section id="screen2" class="hidden">
+  <div class="hero">
+    <div class="big"><span id="bigNum">287</span> strangers
+      <small>can publish code that runs on your machine when you run <code>npm install</code></small>
+    </div>
+    <div class="repo" id="repoLine">acme/next-app &middot; package-lock.json &middot; scanned just now &middot; <span class="demo">Demo data</span></div>
+  </div>
+
+  <div class="tiles">
+    <div class="tile"><b>1,142</b><span>packages in your tree</span><div class="tbar"><i style="width:100%"></i></div></div>
+    <div class="tile"><b>19</b><span>published in the last 7 days</span><div class="tbar w"><i style="width:28%"></i></div></div>
+    <div class="tile"><b>44</b><span>run install scripts</span><div class="tbar h"><i style="width:46%"></i></div></div>
+    <div class="tile"><b>61%</b><span>have no provenance</span><div class="tbar h"><i style="width:61%"></i></div></div>
+  </div>
+
+  <div class="tabs" role="tablist" aria-label="Filter packages">
+    <button class="tab" role="tab" data-f="people" aria-selected="true">PEOPLE <b id="c-people"></b></button>
+    <button class="tab" role="tab" data-f="fresh" aria-selected="false">FRESH <b id="c-fresh"></b></button>
+    <button class="tab" role="tab" data-f="scripts" aria-selected="false">INSTALL SCRIPTS <b id="c-scripts"></b></button>
+    <button class="tab" role="tab" data-f="noprov" aria-selected="false">NO PROVENANCE <b id="c-noprov"></b></button>
+  </div>
+  <ul class="list" id="list"></ul>
+
+  <!-- watch -->
+  <div class="card">
+    <div class="cardhead">
+      <div>
+        <h2>Watch this lockfile</h2>
+        <p>Simulate what lands in your tree over the next 7 days.</p>
+      </div>
+      <button class="switch" id="watch" role="switch" aria-checked="false" aria-label="Watch this lockfile"><i></i></button>
+    </div>
+    <div id="watchPanel" class="hidden">
+      <div class="badge" id="deltaBadge">3 changes since your last scan</div>
+      <div style="color:var(--dim);font-size:12px;margin-bottom:2px">WHAT CHANGED &middot; 7 days later</div>
+      <ul class="delta">
+        <li><span class="i">&#9679;</span><div><strong>esbuild &rarr; 0.25.12</strong><div style="color:var(--dim)">published 2 days ago by @evanw &middot; install script</div></div></li>
+        <li><span class="i">&#9679;</span><div><strong>ws gained a new maintainer: @mholt-ops</strong><div style="color:var(--dim)">publish rights granted 4 days ago &middot; 0 prior releases</div></div></li>
+        <li><span class="i">&#9679;</span><div><strong>sharp &rarr; 0.34.5</strong><div style="color:var(--dim)">install script &middot; 1 day old &middot; downloads a prebuilt binary</div></div></li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- fix -->
+  <div class="card">
+    <div class="cardhead">
+      <div><h2>Fix it</h2><p>Add a cooldown so brand-new releases can't reach your machine.</p></div>
+      <button class="ghost" id="fixBtn" aria-expanded="false" style="flex:0 0 auto">Fix it</button>
+    </div>
+    <div id="fixPanel" class="hidden">
+      <pre id="fixCode"><span class="cmt"># npm (>=11.5) — wait 7 days before installing a release</span>
+npm config set minimum-release-age 10080
+
+<span class="cmt"># pnpm (>=10.16)</span>
+pnpm config set minimumReleaseAge 10080
+
+<span class="cmt"># bun</span>
+bun pm config set minimumReleaseAge 10080
+
+<span class="cmt"># and stop arbitrary install scripts entirely</span>
+npm config set ignore-scripts true</pre>
+      <button class="ghost" id="copyFix" style="margin-top:10px;flex:0 0 auto">Copy config</button>
+      <div style="color:var(--dim);font-size:12px;margin-top:18px">THE 5 PACKAGES TO DROP FIRST</div>
+      <ul class="drops">
+        <li>1. <strong>tar-fs</strong> <em>&mdash; install script + 3 maintainers, replace with native tar</em></li>
+        <li>2. <strong>node-gyp</strong> <em>&mdash; only needed for native rebuilds, pin or vendor it</em></li>
+        <li>3. <strong>sharp</strong> <em>&mdash; 1-day-old release, pin exact version or use @squoosh</em></li>
+        <li>4. <strong>esbuild</strong> <em>&mdash; downloads a binary at install, use ignore-scripts + manual bin</em></li>
+        <li>5. <strong>picomatch</strong> <em>&mdash; transitive-only, dedupe to one copy</em></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button class="primary" id="shareBtn">Share card</button>
+    <button class="ghost" id="again">Scan another lockfile</button>
+  </div>
+</section>
+
+<footer>Prototype by Granted, inspired by your bookmarks</footer>
+</main>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<div class="modal hidden" id="modal" role="dialog" aria-modal="true" aria-label="Share card">
+  <div class="inner">
+    <h3>Share card &nbsp;<span class="demo">1200&times;630</span></h3>
+    <div class="sharecard">
+      <div class="sc-top">STRANGERS &mdash; SUPPLY CHAIN HEADCOUNT</div>
+      <div>
+        <div class="sc-big"><span id="scNum">287</span> strangers</div>
+        <div class="sc-sub">can run code on my laptop at <code>npm install</code></div>
+      </div>
+      <div class="sc-stats">
+        <div><b>1,142</b>packages</div>
+        <div><b>19</b>new this week</div>
+        <div><b>44</b>install scripts</div>
+        <div><b>61%</b>no provenance</div>
+      </div>
+      <div class="sc-foot"><span id="scRepo">acme/next-app</span><span>scanned with Strangers</span></div>
+    </div>
+    <div class="actions">
+      <button class="primary" id="copyImg">Copy image</button>
+      <button class="ghost" id="postX">Post to X</button>
+      <button class="ghost" id="closeModal">Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+var PKGS=[
+ {name:"esbuild",v:"0.25.11",days:3,ts:"2026-11-01 09:14 UTC",pub:"@evanw",maint:2,dl:"62M/wk",script:true,prov:false,note:"Runs a binary download at install time, 3 days old."},
+ {name:"sharp",v:"0.34.4",days:2,ts:"2026-11-02 17:40 UTC",pub:"@lovell",maint:3,dl:"11M/wk",script:true,prov:false,note:"Install script fetches a prebuilt libvips binary from a third-party host."},
+ {name:"@swc/core",v:"1.13.8",days:5,ts:"2026-10-30 06:22 UTC",pub:"@kdy1",maint:6,dl:"29M/wk",script:true,prov:false,note:"Native binary resolved at install, 6 people can publish it."},
+ {name:"node-gyp",v:"11.4.2",days:34,ts:"2026-10-01 12:03 UTC",pub:"@cclauss",maint:5,dl:"48M/wk",script:true,prov:false,note:"Compiles native code on your machine with full shell access."},
+ {name:"tar-fs",v:"3.1.1",days:21,ts:"2026-10-14 08:55 UTC",pub:"@mafintosh",maint:3,dl:"26M/wk",script:true,prov:false,note:"Writes to the filesystem at install; past path-traversal CVEs."},
+ {name:"ws",v:"8.18.3",days:12,ts:"2026-10-23 15:31 UTC",pub:"@lpinca",maint:4,dl:"82M/wk",script:false,prov:false,note:"No provenance attestation; 4 maintainers with publish rights."},
+ {name:"undici",v:"7.16.0",days:9,ts:"2026-10-26 11:08 UTC",pub:"@mcollina",maint:7,dl:"41M/wk",script:false,prov:true,note:"Signed build, but 7 humans can cut a release at any time."},
+ {name:"chalk",v:"5.6.4",days:46,ts:"2026-09-19 10:12 UTC",pub:"@sindresorhus",maint:1,dl:"310M/wk",script:false,prov:true,note:"Single maintainer, single point of failure for 310M installs/wk."},
+ {name:"semver",v:"7.7.3",days:63,ts:"2026-09-02 19:47 UTC",pub:"@npm-cli-ops",maint:4,dl:"290M/wk",script:false,prov:true,note:"Org-owned bot account publishes; token compromise is the risk."},
+ {name:"postcss",v:"8.5.6",days:27,ts:"2026-10-08 07:19 UTC",pub:"@ai",maint:2,dl:"96M/wk",script:false,prov:false,note:"No provenance; runs inside your build, not just at install."},
+ {name:"lru-cache",v:"11.2.2",days:40,ts:"2026-09-25 13:02 UTC",pub:"@isaacs",maint:1,dl:"230M/wk",script:false,prov:false,note:"One maintainer, pulled in by 38 other packages in your tree."},
+ {name:"picomatch",v:"4.0.3",days:58,ts:"2026-09-07 20:36 UTC",pub:"@jonschlinkert",maint:2,dl:"180M/wk",script:false,prov:false,note:"Deep transitive dep, 3 duplicate copies resolved in your tree."}
+];
+var SAMPLES={
+ "next-app":{repo:"acme/next-app",n:287,pk:"1,142"},
+ "vite-react":{repo:"acme/vite-react",n:287,pk:"1,142"},
+ "express-api":{repo:"acme/express-api",n:287,pk:"1,142"}
+};
+var $=function(id){return document.getElementById(id);};
+var current="next-app", filter="people", openRow=null;
+
+function toast(msg){
+  var t=$("toast"); t.textContent=msg; t.classList.add("show");
+  clearTimeout(toast._t); toast._t=setTimeout(function(){t.classList.remove("show");},1900);
+}
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c];});}
+
+function filtered(){
+  if(filter==="fresh") return PKGS.filter(function(p){return p.days<=7;});
+  if(filter==="scripts") return PKGS.filter(function(p){return p.script;});
+  if(filter==="noprov") return PKGS.filter(function(p){return !p.prov;});
+  return PKGS.slice().sort(function(a,b){return b.maint-a.maint;});
+}
+function render(){
+  var items=filtered(), ul=$("list");
+  ul.innerHTML="";
+  if(!items.length){
+    ul.innerHTML='<li class="empty">Nothing matches this filter — that is the good outcome.</li>';
+    return;
+  }
+  items.forEach(function(p,i){
+    var li=document.createElement("li");
+    li.className="row fade";
+    li.style.animationDelay=(i*18)+"ms";
+    var flags="";
+    if(p.days<=7) flags+='<span class="f fresh">'+p.days+'d old</span>';
+    if(p.script) flags+='<span class="f script">install script</span>';
+    if(!p.prov) flags+='<span class="f noprov">no provenance</span>';
+    li.innerHTML=
+      '<button class="rowhead" aria-expanded="false">'+
+why_placeholder+
+      '</button>'+
+      '<div class="detail">'+
+        '<dl class="kv">'+
+          '<dt>publisher</dt><dd>'+esc(p.pub)+'</dd>'+
+          '<dt>maintainers</dt><dd>'+p.maint+' with publish rights</dd>'+
+          '<dt>published</dt><dd>'+esc(p.ts)+' ('+p.days+' days ago)</dd>'+
+          '<dt>downloads</dt><dd>'+esc(p.dl)+'</dd>'+
+          '<dt>provenance</dt><dd>'+(p.prov?"signed build attestation":"none")+'</dd>'+
+        '</dl>'+
+        '<div class="risk">'+esc(p.note)+'</div>'+
+      '</div>';
+    ul.appendChild(li);
+  });
+}
+render();
+})();
+</script>
+</body>
+</html>
