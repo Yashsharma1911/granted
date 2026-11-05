@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-04T20:51:38.748Z",
+  "updated": "2026-11-05T20:46:26.636Z",
   "ideas": [
     {
       "id": "2026-10-22-agentgauntlet",
@@ -698,6 +698,35 @@
       "sources_count": 24,
       "superseded_by": null,
       "sibling": "2026-11-04-strangers"
+    },
+    {
+      "id": "2026-11-05-promiseline",
+      "number": 26,
+      "date": "2026-11-05",
+      "track": "venture",
+      "short_name": "Promiseline",
+      "verdict": "dig_deeper",
+      "score": 7.8,
+      "scores": {
+        "pain": 8,
+        "market_pull": 8,
+        "timing": 8,
+        "gap": 7.5,
+        "wedge": 7.5
+      },
+      "effort": "2-4 weeks",
+      "category": "Back-office automation",
+      "tags": [
+        "procurement",
+        "hardware",
+        "agents",
+        "manufacturing"
+      ],
+      "pain_type": "expressed",
+      "one_liner": "For the mechanical/ops lead at a 20-150 person hardware startup (robotics, space, defense, devices) buying custom machined and fabricated parts from 10-40 independent shops, Promiseline forwards-and-chases: you BCC your POs to it, and an agent emails each shop on a cadence, reads the replies, maintains a confidence-scored promise date per line, and tells you which build or test milestone is now at risk — with no ERP, no supplier portal and no supplier login.",
+      "prototype_url": "https://yashsharma1911.github.io/granted/ideas/2026-11-05-promiseline/",
+      "sources_count": 27,
+      "superseded_by": null
     }
   ]
 }
