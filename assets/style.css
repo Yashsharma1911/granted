@@ -262,8 +262,9 @@ main { outline: none; }
 .bookcase { --wood: #b48a5a; --wood-2: #8f6a42; padding: 8px 0 0; }
 :root[data-theme="dark"] .bookcase { --wood: #5b4630; --wood-2: #3e2f20; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .bookcase { --wood: #5b4630; --wood-2: #3e2f20; } }
-/* the shelf scrolls sideways, which also clips upwards: leave headroom for the hover lift */
-.books { display: flex; align-items: flex-end; gap: 0; min-height: 300px; padding: 30px 18px 0; overflow-x: auto; overflow-y: hidden; scrollbar-width: thin; }
+/* one row of books per shelf; headroom above the tallest book leaves space for the hover lift */
+.shelf-row + .shelf-row { margin-top: 22px; }
+.books { display: flex; align-items: flex-end; gap: 0; min-height: 300px; padding: 30px 18px 0; }
 .book-group { display: flex; align-items: flex-end; gap: 3px; }
 .bookend { width: 12px; height: 96px; margin: 0 14px; border-radius: 3px 3px 0 0; background: var(--line-2); flex: none; }
 .spine {

@@ -206,8 +206,8 @@ function booksView(list) {
   };
   const groups = byCategory(list);
   return `<div class="bookcase">
-    <div class="books" role="list">${groups.map(([cat, items]) => `<div class="book-group" role="listitem">${items.map(spine).join("")}</div>`).join(`<span class="bookend" aria-hidden="true"></span>`)}</div>
-    <div class="plank" aria-hidden="true"></div>
+    <div class="shelves"><div class="shelf-row"><div class="books" role="list">${groups.map(([cat, items]) => `<div class="book-group" role="listitem" data-group="${esc(cat)}">${items.map(spine).join("")}</div>`).join(`<span class="bookend" aria-hidden="true"></span>`)}</div>
+    <div class="plank" aria-hidden="true"></div></div></div>
     <div class="shelf-labels">${groups.map(([cat, items]) => `<span style="${catVars(cat)}"><i></i>${esc(cat)} <em>${items.length}</em></span>`).join("")}</div>
     <p class="shelf-hint">Click a spine to take it down. Arrow keys walk the shelf.</p>
   </div>`;
@@ -776,9 +776,49 @@ function focusSpine(s) {
   setTimeout(() => { if (document.activeElement === s) showTip(s); }, 220);
 }
 
+// Books that don't fit on one shelf go onto a new shelf below, instead of the shelf scrolling sideways.
+const BOOK_GAP = 3, BOOKEND = 40, SHELF_PAD = 36;
+function stackShelves() {
+  const shelves = document.querySelector(".shelves");
+  if (!shelves) return;
+  const room = shelves.clientWidth - SHELF_PAD;
+  if (room <= 0 || room === stackShelves.room) return;
+  stackShelves.room = room;
+  const spines = [...shelves.querySelectorAll("[data-book]")];
+  const rows = [];
+  let row = null, used = 0, last = null;
+  for (const s of spines) {
+    const group = s.parentElement.dataset.group;
+    const w = parseFloat(s.style.width) + BOOK_GAP;
+    let end = row && group !== last ? BOOKEND : 0;
+    if (!row || used + end + w > room) { row = []; rows.push(row); used = 0; last = null; end = 0; }
+    if (group !== last) row.push({ group, books: [] });
+    row.at(-1).books.push(s);
+    used += end + w;
+    last = group;
+  }
+  shelves.replaceChildren(...rows.map((groups) => {
+    const r = document.createElement("div");
+    r.className = "shelf-row";
+    r.innerHTML = `<div class="books" role="list"></div><div class="plank" aria-hidden="true"></div>`;
+    groups.forEach((g, n) => {
+      if (n) r.firstChild.insertAdjacentHTML("beforeend", `<span class="bookend" aria-hidden="true"></span>`);
+      const el = document.createElement("div");
+      el.className = "book-group";
+      el.setAttribute("role", "listitem");
+      el.dataset.group = g.group;
+      el.append(...g.books);
+      r.firstChild.append(el);
+    });
+    return r;
+  }));
+}
+addEventListener("resize", () => { clearTimeout(stackShelves.t); stackShelves.t = setTimeout(stackShelves, 120); });
+
 function bindShelfStyles() {
+  stackShelves.room = 0;
+  stackShelves();
   const spines = [...document.querySelectorAll("[data-book]")];
-  document.querySelector(".books")?.addEventListener("scroll", hideTipOnScroll, { passive: true });
   spines.forEach((s, n) => {
     s.addEventListener("pointerenter", () => showTip(s));
     s.addEventListener("pointerleave", hideTip);
