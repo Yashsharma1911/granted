@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sidecar — outside-processing quote desk</title>
+<style>
+:root{
+  --bg:#ffffff; --panel:#ffffff; --ink:#15191e; --muted:#5d6874; --line:#e2e6eb;
+  --accent:#1d5fd1; --accent-soft:#eaf1fd;
+  --good:#117a46; --good-bg:#e9f7ef; --warn:#8a5a00; --warn-bg:#fdf3e0; --bad:#b3261e; --bad-bg:#fdeceb;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --bg:#101317; --panel:#171b21; --ink:#e8ecf1; --muted:#9aa5b1; --line:#2a313a;
+    --accent:#6fa0ff; --accent-soft:#1a2234;
+    --good:#4ad28c; --good-bg:#12291f; --warn:#e8b351; --warn-bg:#2b2213; --bad:#ff8d85; --bad-bg:#2c1716;
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--ink);
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  font-size:15px; line-height:1.45; -webkit-text-size-adjust:100%;
+}
+.wrap{max-width:1080px;margin:0 auto;padding:0 16px 48px}
+header.top{border-bottom:1px solid var(--line);background:var(--panel);position:sticky;top:0;z-index:5}
+.top-in{max-width:1080px;margin:0 auto;padding:12px 16px}
+h1{font-size:16px;margin:0;letter-spacing:-.01em}
+h1 .dot{color:var(--accent)}
+.sub{font-family:var(--mono);font-size:12px;color:var(--muted);margin-top:3px}
+.band{margin-top:28px}
+.band-head{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.band-no{font-family:var(--mono);font-size:11px;color:#fff;background:var(--accent);border-radius:4px;padding:2px 7px}
+@media (prefers-color-scheme:dark){.band-no{color:#0d1117}}
+h2{font-size:17px;margin:0;letter-spacing:-.01em}
+.demo-tag{font-size:11px;color:var(--muted);border:1px solid var(--line);border-radius:99px;padding:1px 8px}
+.grid{display:grid;gap:14px}
+@media(min-width:860px){.g3{grid-template-columns:1.1fr 1fr .85fr}.g2{grid-template-columns:1fr 1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px}
+.card h3{margin:0 0 8px;font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.mail-meta{font-family:var(--mono);font-size:12px;color:var(--muted);line-height:1.7}
+.mail-meta b{color:var(--ink);font-weight:600}
+.mail-body{margin-top:10px;padding-top:10px;border-top:1px dashed var(--line);font-size:14px}
+.print{font-family:var(--mono);font-size:11.5px;background:var(--accent-soft);border:1px solid var(--line);border-radius:6px;padding:10px;overflow:auto}
+.title-block{display:grid;grid-template-columns:1fr 1fr;gap:4px 10px;border-bottom:1px solid var(--line);padding-bottom:8px;margin-bottom:8px}
+.print ol{margin:6px 0 0;padding-left:18px}
+.print li{margin:3px 0}
+.danger{background:var(--bad-bg);border-color:transparent}
+.danger h3{color:var(--bad)}
+.danger p{margin:6px 0;font-size:14px}
+.btn{
+  font:inherit;font-weight:600;border-radius:8px;border:1px solid var(--accent);
+  background:var(--accent);color:#fff;padding:14px 20px;cursor:pointer;min-height:48px;
+}
+@media (prefers-color-scheme:dark){.btn{color:#0d1117}}
+.btn:disabled{opacity:.55;cursor:default}
+.btn.ghost{background:transparent;color:var(--accent)}
+.btn.sm{padding:10px 14px;font-size:13.5px;min-height:44px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1px solid var(--line);border-radius:8px;padding:8px 10px;min-width:150px;flex:1 1 170px;background:var(--bg)}
+.chip .k{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.chip .v{font-family:var(--mono);font-size:12.5px;margin:2px 0 4px;word-break:break-word}
+.chip .src{font-size:11px;color:var(--muted)}
+.chip.amber{background:var(--warn-bg);border-color:var(--warn)}
+.badge{font-size:10.5px;font-weight:700;border-radius:99px;padding:1px 7px;display:inline-block}
+.b-good{background:var(--good-bg);color:var(--good)}
+.b-warn{background:var(--warn-bg);color:var(--warn)}
+.b-bad{background:var(--bad-bg);color:var(--bad)}
+.b-info{background:var(--accent-soft);color:var(--accent)}
+.vlist{list-style:none;margin:0;padding:0}
+.vlist li{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--line);opacity:0;transform:translateY(4px);transition:.3s}
+.vlist li.in{opacity:1;transform:none}
+.vlist li:last-child{border-bottom:0}
+.vname{font-weight:600;font-size:14px}
+.vtime{font-family:var(--mono);font-size:11px;color:var(--muted)}
+.empty{color:var(--muted);font-size:13.5px;padding:10px 0}
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--panel)}
+table{border-collapse:collapse;width:100%;min-width:820px;font-size:13.5px}
+th,td{padding:11px 10px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
+th{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);background:var(--bg);position:sticky;top:0}
+tr.row{cursor:pointer}
+tr.row:hover td{background:var(--accent-soft)}
+tr.best td{background:var(--good-bg)}
+tr.best:hover td{background:var(--good-bg)}
+tr.stale td{background:var(--warn-bg)}
+tr.dim td{opacity:.42}
+td.num{font-family:var(--mono)}
+.vcell{font-weight:600}
+.caret{display:inline-block;width:12px;color:var(--muted);font-family:var(--mono)}
+tr.detail td{white-space:normal;background:var(--bg)}
+.reply{font-family:var(--mono);font-size:12px;white-space:pre-wrap;border-left:3px solid var(--accent);padding:8px 0 8px 12px;margin:0;color:var(--ink)}
+.parsenote{font-size:12px;color:var(--warn);margin-top:8px}
+.strip{margin-top:14px;border:1px solid var(--line);border-left:4px solid var(--good);border-radius:10px;padding:14px;background:var(--good-bg)}
+.strip .big{font-size:16px;font-weight:700;letter-spacing:-.01em}
+.strip .sm{font-size:13.5px;color:var(--ink);margin-top:6px}
+.lowline{margin-top:10px;padding:10px 12px;border-radius:8px;background:var(--bad-bg);color:var(--bad);font-size:13.5px;font-weight:600}
+.controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:12px 0}
+.switch{display:inline-flex;align-items:center;gap:9px;border:1px solid var(--line);border-radius:999px;padding:9px 14px;cursor:pointer;min-height:44px;background:var(--panel);font-size:13.5px}
+.switch input{position:absolute;opacity:0;width:0;height:0}
+.track{width:38px;height:22px;border-radius:99px;background:var(--line);position:relative;transition:.2s;flex:0 0 auto}
+.knob{position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:#fff;transition:.2s;box-shadow:0 1px 2px rgba(0,0,0,.3)}
+.switch input:checked + .track{background:var(--accent)}
+.switch input:checked + .track .knob{left:18px}
+.switch input:focus-visible + .track{outline:2px solid var(--accent);outline-offset:2px}
+.toast{position:fixed;left:50%;transform:translateX(-50%) translateY(20px);bottom:18px;background:var(--ink);color:var(--bg);padding:11px 16px;border-radius:8px;font-size:13.5px;opacity:0;pointer-events:none;transition:.25s;z-index:20;max-width:92vw}
+.toast.show{opacity:1;transform:translateX(-50%)}
+.steps{font-family:var(--mono);font-size:12px;color:var(--muted);margin-top:10px;min-height:18px}
+.hr{height:1px;background:var(--line);border:0;margin:26px 0 0}
+footer{margin-top:26px;font-size:12px;color:var(--muted);text-align:center}
+.confirm-box{margin-top:12px;border:1px dashed var(--accent);border-radius:8px;padding:12px;background:var(--accent-soft);display:none}
+.confirm-box.on{display:block}
+.confirm-box.done{border-style:solid;border-color:var(--good);background:var(--good-bg)}
+.cb-row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+.legend{font-size:12px;color:var(--muted);margin-top:8px}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="top-in">
+    <h1>Sidecar <span class="dot">—</span> outside-processing quote desk</h1>
+    <div class="sub">RFQ 24-1187 · Bracket, 6061-T6 · 250 pcs · due to customer Friday</div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- BAND 1 -->
+  <section class="band">
+    <div class="band-head"><span class="band-no">1</span><h2>What landed in your inbox</h2><span class="demo-tag">Demo data</span></div>
+    <div class="grid g3">
+      <div class="card">
+        <h3>Forwarded email</h3>
+        <div class="mail-meta">
+          From: <b>jmalone@orbitalaero.com</b><br>
+          To: estimating@yourshop.com<br>
+          Subject: <b>RFQ 24-1187 — qty 250 bracket, need pricing by Thu</b><br>
+          Date: Mon 2 Nov 2026, 4:51 PM
+        </div>
+        <div class="mail-body">
+          Hi — quoting a bracket for the Q1 build. Please see attached print rev C, 250 pcs, 6061-T6 plate.
+          Anodize per print, AS9100 cert required. Need your number by Thursday so I can get the package out Friday.<br><br>
+          Thanks,<br>Jim
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>41-2207_revC.pdf — page 1</h3>
+        <div class="print">
+          <div class="title-block">
+            <div>PART 41-2207 REV C</div><div>SCALE 1:2</div>
+            <div>MATL 6061-T6 PLATE</div><div>SHEET 1 OF 2</div>
+          </div>
+          NOTES:
+          <ol>
+            <li>ANODIZE PER MIL-A-8625 TYPE II CLASS 2, COLOR BLACK.</li>
+            <li>MASK ALL THREADED HOLES.</li>
+            <li>BREAK ALL SHARP EDGES .005-.015.</li>
+            <li>CERT OF CONFORMANCE REQUIRED WITH SHIPMENT.</li>
+            <li>NO SUBSTITUTIONS WITHOUT BUYER APPROVAL.</li>
+          </ol>
+        </div>
+      </div>
+
+      <div class="card danger">
+        <h3>Your options today</h3>
+        <p>Email 3 anodizers and wait <b>3–5 days</b>.</p>
+        <p>Or guess <b>$1.85/pc</b> from a 2024 job.</p>
+        <p style="font-weight:700">Quote due Thursday.</p>
+      </div>
+    </div>
+  </section>
+
+  <hr class="hr">
+
+  <!-- BAND 2 -->
+  <section class="band">
+    <div class="band-head"><span class="band-no">2</span><h2>Sidecar reads the print and runs the RFQ</h2></div>
+    <button class="btn" id="runBtn">Read the print and send vendor RFQs</button>
+    <div class="steps" id="steps"></div>
+
+    <div class="grid g2" style="margin-top:14px">
+      <div class="card">
+        <h3>Extracted from print &amp; email</h3>
+        <div class="chips" id="chips"><div class="empty">Nothing extracted yet — run the step above.</div></div>
+        <div class="confirm-box" id="confirmBox">
+          <div class="cb-row">
+            <div style="font-size:13.5px"><b>1 item needs a human:</b> surface area is estimated from the print geometry. Confirm before vendors are contacted.</div>
+            <button class="btn sm" id="confirmBtn">Confirm &amp; send</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Vendors contacted</h3>
+        <ul class="vlist" id="vlist"></ul>
+        <div class="empty" id="vEmpty">No RFQs sent yet.</div>
+        <div class="legend">RFQs include print notes 1–4, qty, material and cert requirement. Chase sent automatically at 48h.</div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="hr">
+
+  <!-- BAND 3 -->
+  <section class="band">
+    <div class="band-head"><span class="band-no">3</span><h2>Decision-ready comparison</h2><span class="demo-tag">Tap any row for the raw reply</span></div>
+
+    <div class="controls">
+      <label class="switch"><input type="checkbox" id="hideStale"><span class="track"><span class="knob"></span></span>Hide stale prices</label>
+      <label class="switch"><input type="checkbox" id="guessLow"><span class="track"><span class="knob"></span></span>What if you'd guessed low</label>
+      <button class="btn sm ghost" id="copyBtn">Copy quote line</button>
+    </div>
+
+    <div class="tablewrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Vendor</th><th>$/pc</th><th>Lot minimum</th><th>Setup/rack</th><th>Freight</th>
+            <th>Lead time</th><th>Certs</th><th>Quoted on</th><th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+
+    <div class="strip">
+      <div class="big">Landed cost for 250 pcs: $389.00 ($1.56/pc all-in) — Precision Anodizing, 4 days.</div>
+      <div class="sm">Your 2024 guess of $1.85/pc would have overpriced this line by <b>$72</b> and lost the bid.</div>
+      <div class="lowline" id="lowLine" hidden>A $1.15/pc guess ignores the $450 minimum — you'd have eaten $261 of margin.</div>
+    </div>
+  </section>
+
+  <footer>Prototype by Granted, inspired by your bookmarks</footer>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ---------- demo data ---------- */
+  var CHIPS = [
+    {k:"Process", v:"Anodize", c:"high", src:"found on: Note 1"},
+    {k:"Spec", v:"MIL-A-8625 Type II Class 2", c:"high", src:"found on: Note 1"},
+    {k:"Colour", v:"Black", c:"high", src:"found on: Note 1"},
+    {k:"Material", v:"6061-T6 plate", c:"high", src:"found on: title block"},
+    {k:"Qty", v:"250 pcs", c:"high", src:"found on: email subject"},
+    {k:"Masking", v:"Threaded holes", c:"high", src:"found on: Note 2"},
+    {k:"Certs", v:"C of C required", c:"high", src:"found on: Note 4"},
+    {k:"Revision", v:"C", c:"high", src:"found on: title block"},
+    {k:"Surface area", v:"\u2248 38 in\u00b2/pc", c:"amber", src:"estimated from print \u2014 confirm"}
+  ];
+
+  var VENDORS = [
+    {n:"Precision Anodizing Co.", t:"Mon 5:02 PM", end:"Replied", cls:"b-good"},
+    {n:"Midwest Finishing LLC",  t:"Mon 5:02 PM", end:"Replied", cls:"b-good"},
+    {n:"Apex Coatings",          t:"Mon 5:03 PM", end:"Replied", cls:"b-good"},
+    {n:"Lakeside Plating",       t:"Mon 5:03 PM", end:"No reply", cls:"b-bad"}
+  ];
+
+  var ROWS = [
+    {id:"p", v:"Precision Anodizing Co.", pc:"$1.42", min:"$185", set:"$0", fr:"$34", lt:"4 days", cert:"C of C incl.", q:"6 Nov 2026",
+     st:"Replied — BEST TOTAL", cls:"best",
+     email:"From: s.vance@precisionanodizing.com\nSubject: RE: RFQ 24-1187 \u2014 anodize 250 pcs\n\nSteve here. We can run this.\n\n$1.42/pc at 250. Lot minimum $185 (you clear it).\nNo rack charge on this part geometry. Freight out $34.\n4 business days from receipt. C of C included at no charge,\nAS9100 on file, expires 03/2028.\n\nMasking of the 1/4-20 holes is included.",
+     note:"Parsed cleanly: every term was in a named field."},
+    {id:"m", v:"Midwest Finishing LLC", pc:"$1.15", min:"$450", set:"$75", fr:"$48", lt:"7 days", cert:"C of C +$40", q:"6 Nov 2026",
+     st:"Replied — cheapest per pc but minimum bites", cls:"",
+     email:"From: quotes@midwestfinishing.com\nSubject: Re: your anodize inquiry\n\nThanks for the print. We'd be at $1.15 each on Type II Class 2 black,\n7 working days. We do ask that orders land above our usual four fifty\nper lot before we schedule a tank, and there's a $75 rack/setup on\nfirst articles. Freight $48 to your dock. Certs of conformance run\nan extra $40 per shipment.",
+     note:"Parsing matters: the $450 lot minimum was buried in prose (\u201cabove our usual four fifty per lot\u201d), not a field. At 250 pcs \u00d7 $1.15 = $287.50, the minimum applies \u2014 real landed cost $573."},
+    {id:"a", v:"Apex Coatings", pc:"$1.88", min:"$120", set:"$0", fr:"$29", lt:"2 days", cert:"C of C incl.", q:"5 Nov 2026",
+     st:"Replied — expedite option", cls:"",
+     email:"From: dana@apexcoatings.net\nSubject: RFQ 24-1187 \u2014 quote attached in body\n\n$1.88/pc, 250 pcs, MIL-A-8625 Ty II Cl 2 black, masked threads.\nMinimum $120. Freight $29. C of C included.\n\n2 day turn if the parts are here by 10am Tuesday \u2014 we hold\ntank time for aerospace work. Keep us in mind if Friday slips.",
+     note:"Flagged as the schedule hedge: 2 days vs 4, +$115 on the lot."},
+    {id:"l", v:"Lakeside Plating", pc:"\u2014", min:"\u2014", set:"\u2014", fr:"\u2014", lt:"\u2014", cert:"\u2014", q:"\u2014",
+     st:"No reply after 2 chases", cls:"",
+     email:null,
+     note:"RFQ sent Mon 5:03 PM. Chased Wed 9:00 AM and Fri 9:00 AM. No response \u2014 excluded from the comparison."},
+    {id:"g", v:"Great Lakes Metal Treating", pc:"$1.61", min:"$200", set:"$0", fr:"$41", lt:"5 days", cert:"C of C incl.", q:"14 Aug 2026",
+     st:"From your rate book — 84 days old", cls:"stale", stale:true,
+     email:null,
+     note:"Not a live quote. Pulled from your rate book, last confirmed 14 Aug 2026 (84 days ago). Anodize pricing has moved with aluminium and labour since then \u2014 re-confirm before you rely on it."}
+  ];
+
+  /* ---------- helpers ---------- */
+  function el(tag, cls, text){ var e=document.createElement(tag); if(cls)e.className=cls; if(text!=null)e.textContent=text; return e; }
+  var toastEl = document.getElementById("toast"), toastTimer=null;
+  function toast(msg){
+    toastEl.textContent = msg; toastEl.classList.add("show");
+    if(toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){ toastEl.classList.remove("show"); }, 2600);
+  }
+
+  /* ---------- build table ---------- */
+  var tbody = document.getElementById("tbody");
+  function buildTable(){
+    tbody.textContent = "";
+    ROWS.forEach(function(r){
+      var tr = el("tr", "row " + (r.cls||""));
+      tr.setAttribute("tabindex","0");
+      tr.setAttribute("role","button");
+      tr.dataset.id = r.id;
+
+      var tdv = el("td","vcell");
+      var caret = el("span","caret","\u25b8"); caret.dataset.caret="1";
+      tdv.appendChild(caret);
+      tdv.appendChild(document.createTextNode(" " + r.v));
+      if(r.stale){ var tg = el("span","badge b-warn"," stale "); tg.style.marginLeft="6px"; tg.textContent="stale"; tdv.appendChild(tg); }
+      tr.appendChild(tdv);
+
+      ["pc","min","set","fr","lt"].forEach(function(k){ tr.appendChild(el("td","num",r[k])); });
+      tr.appendChild(el("td",null,r.cert));
+      tr.appendChild(el("td","num",r.q));
+
+      var tds = el("td");
+      var cls = r.cls==="best" ? "b-good" : (r.stale ? "b-warn" : (r.pc==="\u2014" ? "b-bad" : "b-info"));
+      tds.appendChild(el("span","badge "+cls, r.st));
+      tr.appendChild(tds);
+
+      var det = el("tr","detail"); det.hidden = true; det.dataset.for = r.id;
+      var dtd = el("td"); dtd.colSpan = 9;
+      if(r.email){ dtd.appendChild(el("pre","reply", r.email)); }
+      dtd.appendChild(el("div","parsenote", r.note));
+      det.appendChild(dtd);
+
+      tbody.appendChild(tr); tbody.appendChild(det);
+
+      function toggle(){
+        det.hidden = !det.hidden;
+        caret.textContent = det.hidden ? "\u25b8" : "\u25be";
+      }
+      tr.addEventListener("click", toggle);
+      tr.addEventListener("keydown", function(ev){
+        if(ev.key==="Enter" || ev.key===" "){ ev.preventDefault(); toggle(); }
+      });
+    });
+  }
+  buildTable();
+
+  /* ---------- toggles ---------- */
+  document.getElementById("hideStale").addEventListener("change", function(e){
+    var on = e.target.checked;
+    var rows = tbody.querySelectorAll("tr.stale, tr.detail[data-for='g']");
+    for(var i=0;i<rows.length;i++){ rows[i].classList.toggle("dim", on); }
+    toast(on ? "Stale rate-book prices greyed out" : "Stale prices shown again");
+  });
+
+  document.getElementById("guessLow").addEventListener("change", function(e){
+    document.getElementById("lowLine").hidden = !e.target.checked;
+  });
+
+  /* ---------- copy ---------- */
+  var QUOTE_LINE = "OSP: Anodize MIL-A-8625 TyII Cl2 blk \u2014 $389.00 / 250 pc \u2014 4 days \u2014 Precision Anodizing (qtd 6 Nov 26)";
+  document.getElementById("copyBtn").addEventListener("click", function(){
+    var ok = false;
+    try{
+      var ta = document.createElement("textarea");
+      ta.value = QUOTE_LINE;
+      ta.setAttribute("readonly","");
+      ta.style.position="fixed"; ta.style.top="-1000px"; ta.style.opacity="0";
+      document.body.appendChild(ta);
+      ta.select(); ta.setSelectionRange(0, QUOTE_LINE.length);
+      ok = document.execCommand("copy");
+      document.body.removeChild(ta);
+    }catch(err){ ok = false; }
+    if(!ok && navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(QUOTE_LINE).then(function(){
+        toast("Copied: " + QUOTE_LINE);
+      }, function(){
+        toast("Couldn't copy automatically — select the line: " + QUOTE_LINE);
+      });
+      return;
+    }
+    toast(ok ? ("Copied: " + QUOTE_LINE) : ("Couldn't copy automatically — select the line: " + QUOTE_LINE));
+  });
+
+  /* ---------- band 2 run ---------- */
+  var runBtn = document.getElementById("runBtn"),
+      chipsEl = document.getElementById("chips"),
+      stepsEl = document.getElementById("steps"),
+      confirmBox = document.getElementById("confirmBox"),
+      confirmBtn = document.getElementById("confirmBtn"),
+      vlist = document.getElementById("vlist"),
+      vEmpty = document.getElementById("vEmpty");
+  var timers = [];
+  function later(fn, ms){ timers.push(setTimeout(fn, ms)); }
+
+  function addChip(c){
+    var d = el("div","chip" + (c.c==="amber" ? " amber" : ""));
+    var head = el("div","k", c.k);
+    d.appendChild(head);
+    d.appendChild(el("div","v", c.v));
+    var b = el("span","badge " + (c.c==="amber" ? "b-warn" : "b-good"), c.c==="amber" ? "needs confirm" : "high confidence");
+    d.appendChild(b);
+    d.appendChild(el("div","src", c.src));
+    chipsEl.appendChild(d);
+  }
+
+  function sendVendors(){
+    vEmpty.hidden = true;
+    vlist.textContent = "";
+    VENDORS.forEach(function(v, i){
+      var li = el("li");
+      var left = el("div");
+      left.appendChild(el("div","vname", v.n));
+      left.appendChild(el("div","vtime", "RFQ sent " + v.t));
+      var pill = el("span","badge b-info","Sent");
+      li.appendChild(left); li.appendChild(pill);
+      vlist.appendChild(li);
+      later(function(){ li.classList.add("in"); }, 120 * i);
+      later(function(){
+        pill.textContent = "Chased 48h"; pill.className = "badge b-warn";
+      }, 1000 + 120*i);
+      later(function(){
+        pill.textContent = v.end; pill.className = "badge " + v.cls;
+        left.lastChild.textContent = v.end === "Replied"
+          ? "RFQ sent " + v.t + " · replied 6 Nov"
+          : "RFQ sent " + v.t + " · 2 chases, silent";
+        if(i === VENDORS.length - 1){
+          stepsEl.textContent = "3 of 4 vendors replied · comparison ready below \u2193";
+          runBtn.textContent = "Done — see comparison below";
+        }
+      }, 1900 + 200*i);
+    });
+  }
+
+  confirmBtn.addEventListener("click", function(){
+    confirmBtn.disabled = true;
+    confirmBox.classList.add("done");
+    confirmBox.querySelector("div > div").innerHTML = "<b>Confirmed by you.</b> 38 in\u00b2/pc locked \u2014 sending RFQ packets to 4 qualified anodizers.";
+    stepsEl.textContent = "Sending RFQs\u2026";
+    sendVendors();
+  });
+
+  runBtn.addEventListener("click", function(){
+    if(runBtn.disabled) return;
+    runBtn.disabled = true;
+    timers.forEach(clearTimeout); timers = [];
+    chipsEl.textContent = "";
+    vlist.textContent = ""; vEmpty.hidden = false; vEmpty.textContent = "No RFQs sent yet.";
+    confirmBox.classList.remove("on","done");
+    confirmBtn.disabled = false;
+    stepsEl.textContent = "Reading 41-2207_revC.pdf \u2026";
+
+    CHIPS.forEach(function(c, i){
+      later(function(){
+        addChip(c);
+        if(i === 3) stepsEl.textContent = "Matching notes to finishing specs \u2026";
+        if(i === CHIPS.length - 1){
+          stepsEl.textContent = "8 fields extracted, 1 needs your confirmation.";
+          confirmBox.classList.add("on");
+          runBtn.textContent = "Re-run extraction";
+          runBtn.disabled = false;
+        }
+      }, 220 + 180*i);
+    });
+  });
+})();
+</script>
+</body>
+</html>

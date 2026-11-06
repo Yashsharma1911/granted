@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-05T20:46:26.636Z",
+  "updated": "2026-11-06T20:52:20.081Z",
   "ideas": [
     {
       "id": "2026-10-22-agentgauntlet",
@@ -727,6 +727,66 @@
       "prototype_url": "https://yashsharma1911.github.io/granted/ideas/2026-11-05-promiseline/",
       "sources_count": 27,
       "superseded_by": null
+    },
+    {
+      "id": "2026-11-06-sidecar",
+      "number": 27,
+      "date": "2026-11-06",
+      "track": "venture",
+      "short_name": "Sidecar",
+      "verdict": "dig_deeper",
+      "score": 8.1,
+      "scores": {
+        "pain": 7.5,
+        "market_pull": 8,
+        "timing": 8.5,
+        "gap": 8,
+        "wedge": 8.5
+      },
+      "effort": "2-4 weeks",
+      "category": "Back-office automation",
+      "tags": [
+        "manufacturing",
+        "agents",
+        "quoting",
+        "procurement"
+      ],
+      "pain_type": "expressed",
+      "one_liner": "For the estimator or buyer at a 10-80 person CNC/fab job shop, Sidecar is an email agent that gets the outside-processing price (heat treat, anodize, plating, coating) before the customer quote goes out: it reads the print, builds a spec-correct vendor RFQ, emails every approved processor, chases them on a cadence, and returns a dated, side-by-side price/lead-time/minimum card the estimator can drop straight into the quote.",
+      "prototype_url": "https://yashsharma1911.github.io/granted/ideas/2026-11-06-sidecar/",
+      "sources_count": 22,
+      "superseded_by": null,
+      "sibling": "2026-11-06-freshline"
+    },
+    {
+      "id": "2026-11-06-freshline",
+      "number": 28,
+      "date": "2026-11-06",
+      "track": "build",
+      "short_name": "Freshline",
+      "verdict": "dig_deeper",
+      "score": 7.8,
+      "scores": {
+        "wow": 8,
+        "shareability": 8,
+        "buildability": 8,
+        "freshness": 8,
+        "usefulness": 7
+      },
+      "effort": "a weekend",
+      "category": "Developer tools",
+      "tags": [
+        "supply-chain",
+        "npm",
+        "security",
+        "dataviz"
+      ],
+      "pain_type": "expressed",
+      "one_liner": "Drop your package-lock.json into a web page and Freshline draws every dependency version in your build on one time axis — with a red \"hot zone\" for anything published in the last 7 days, the exact packages that would be blocked by a cooldown, the one-line .npmrc fix, and a shareable \"build age\" card you can re-run after every install.",
+      "prototype_url": "https://yashsharma1911.github.io/granted/ideas/2026-11-06-freshline/",
+      "sources_count": 11,
+      "superseded_by": null,
+      "sibling": "2026-11-06-sidecar"
     }
   ]
 }
