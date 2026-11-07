@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Slotkeeper — release-to-manufacture clock</title>
+<style>
+:root{
+  --bg:#f6f6f4; --panel:#fff; --ink:#15181c; --mute:#6b7280; --line:#dcdcd6;
+  --red:#b3261e; --redbg:#fdecea; --amber:#9a6200; --amberbg:#fdf3e0; --green:#1d6b3f; --greenbg:#e9f4ed;
+  --accent:#1f2937; --chip:#eceae5;
+}
+@media (prefers-color-scheme: dark){
+  :root{ --bg:#0e1013; --panel:#16191e; --ink:#e7e9ec; --mute:#9aa2ad; --line:#2a2f37;
+    --red:#ff6b5e; --redbg:#2a1512; --amber:#f0a832; --amberbg:#2a2110; --green:#56c285; --greenbg:#10231a;
+    --accent:#e7e9ec; --chip:#222730; }
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-text-size-adjust:100%}
+.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-variant-numeric:tabular-nums}
+header.top{position:sticky;top:0;z-index:30;background:var(--panel);border-bottom:1px solid var(--line);padding:10px 14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.logo{font-weight:700;letter-spacing:-.02em}
+.logo span{color:var(--mute);font-weight:400;letter-spacing:0}
+.demo{margin-left:auto;font-size:11px;color:var(--mute);border:1px solid var(--line);border-radius:999px;padding:3px 8px;text-transform:uppercase;letter-spacing:.06em}
+main{max-width:1040px;margin:0 auto;padding:14px 12px 60px}
+h1{font-size:17px;margin:14px 0 2px;letter-spacing:-.01em}
+.sub{color:var(--mute);font-size:13px;margin:0 0 12px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px}
+.pad{padding:12px}
+button{font:inherit;cursor:pointer}
+.btn{background:var(--accent);color:var(--panel);border:1px solid var(--accent);border-radius:8px;padding:12px 16px;min-height:44px;font-weight:600}
+.btn.alt{background:transparent;color:var(--ink);border-color:var(--line);font-weight:500}
+.btn.danger{background:var(--red);border-color:var(--red);color:#fff}
+.btn.sm{padding:8px 10px;min-height:38px;font-size:13px;border-radius:7px}
+.btn:focus-visible{outline:2px solid #4f8cff;outline-offset:2px}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+/* SCREEN 1 */
+.sheetwrap{overflow-x:auto;border:1px solid var(--line);border-radius:8px;background:var(--panel)}
+table{border-collapse:collapse;width:100%;min-width:760px;font-size:12.5px}
+th,td{border:1px solid var(--line);padding:6px 8px;text-align:left;white-space:nowrap}
+th{background:var(--chip);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--mute);position:sticky;top:0}
+td.stale{background:var(--redbg);color:var(--red);font-weight:600}
+.inbox{margin-top:14px}
+.inbox li{list-style:none;border-bottom:1px solid var(--line);padding:9px 2px;font-size:13px;display:flex;gap:8px;align-items:baseline}
+.inbox ul{margin:0;padding:0}
+.inbox .dot{width:7px;height:7px;border-radius:50%;background:var(--mute);flex:none}
+.inbox .when{margin-left:auto;color:var(--mute);font-size:11px;white-space:nowrap}
+.caption{margin:12px 0;padding:10px 12px;border-left:3px solid var(--red);background:var(--redbg);color:var(--red);font-size:13.5px;border-radius:0 8px 8px 0}
+/* parse */
+.parse{margin-top:10px}
+.fileline{display:flex;gap:8px;align-items:center;font-size:12.5px;padding:5px 0;border-bottom:1px dashed var(--line);opacity:.35;transition:opacity .2s}
+.fileline.on{opacity:1}
+.tick{width:16px;height:16px;flex:none}
+.bar{height:6px;background:var(--chip);border-radius:4px;overflow:hidden;margin-top:10px}
+.bar>i{display:block;height:100%;width:0;background:var(--accent);transition:width .15s linear}
+/* SCREEN 2 */
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0 14px}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:9px 10px}
+.kpi b{display:block;font-size:20px;letter-spacing:-.02em}
+.kpi small{color:var(--mute);font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;line-height:1.25;display:block}
+.pkg{margin-bottom:9px;overflow:hidden}
+.pkghead{display:grid;grid-template-columns:1fr auto;gap:10px;padding:11px 12px;cursor:pointer;align-items:start}
+.pkghead:hover{background:var(--chip)}
+.nm{font-weight:650;font-size:14.5px;letter-spacing:-.01em}
+.vd{color:var(--mute);font-size:12.5px;margin-top:2px}
+.badges{margin-top:7px;display:flex;gap:6px;flex-wrap:wrap}
+.b{font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;padding:3px 7px;border-radius:5px;background:var(--chip);color:var(--mute);border:1px solid var(--line);font-weight:600}
+.b.red{background:var(--redbg);color:var(--red);border-color:transparent}
+.bigdate{text-align:right;min-width:120px}
+.bigdate small{display:block;font-size:9.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--mute);line-height:1.2}
+.bigdate b{font-size:21px;letter-spacing:-.03em;display:block;margin-top:2px}
+.floatwrap{padding:0 12px 11px}
+.fbar{height:9px;border-radius:5px;background:var(--chip);overflow:hidden;position:relative}
+.fbar>i{display:block;height:100%;border-radius:5px}
+.fmeta{display:flex;gap:8px;align-items:baseline;margin-top:7px;font-size:12.5px;flex-wrap:wrap}
+.fnum{font-weight:700;font-size:13px}
+.holder{color:var(--mute)}
+.r{color:var(--red)} .a{color:var(--amber)} .g{color:var(--green)}
+.bg-r{background:var(--red)} .bg-a{background:var(--amber)} .bg-g{background:var(--green)}
+.edge-r{border-left:4px solid var(--red)} .edge-a{border-left:4px solid var(--amber)} .edge-g{border-left:4px solid var(--green)}
+.status{font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:3px 7px;border-radius:5px;background:var(--amberbg);color:var(--amber)}
+.detail{border-top:1px solid var(--line);background:var(--bg);padding:12px;display:none}
+.detail.open{display:block}
+.srch{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--mute);margin:0 0 8px;font-weight:700}
+.snip{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px;margin-bottom:8px}
+.snip .fn{font-size:11.5px;color:var(--mute);display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.snip q{display:block;margin:6px 0 8px;font-size:13px;line-height:1.45}
+.snip .ctl{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.ok{color:var(--green);font-size:12px;font-weight:600}
+input[type=date],input[type=text],textarea{font:inherit;background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:7px;padding:9px;width:100%;max-width:100%}
+textarea{min-height:190px;resize:vertical;font-size:13px;line-height:1.5}
+.modalbg{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:50;display:none;overflow-y:auto;padding:14px}
+.modalbg.open{display:block}
+.modal{background:var(--panel);border:1px solid var(--line);border-radius:12px;max-width:620px;margin:20px auto;padding:14px}
+.modal h2{font-size:15px;margin:0 0 2px}
+.mclose{position:absolute;top:0;right:0}
+.mhead{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;margin-bottom:10px}
+.field{margin-bottom:9px}
+.field label{display:block;font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--mute);margin-bottom:3px;font-weight:700}
+/* digest */
+.sheet{background:#fff;color:#15181c;border-radius:6px;padding:16px;border:1px solid #d7d7d0}
+@media (prefers-color-scheme: dark){ .sheet{background:#f4f4f0;color:#15181c;border-color:#444} }
+.sheet h3{margin:0 0 2px;font-size:16px}
+.sheet .meta{font-size:11px;color:#6b7280;margin-bottom:12px}
+.sheet .block{border-top:1px solid #ddd;padding:9px 0}
+.sheet .big{font-size:26px;font-weight:700;letter-spacing:-.03em}
+.sheet li{font-size:12.5px;margin:4px 0}
+.sheet ul{margin:6px 0 0;padding-left:18px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:16px;background:var(--accent);color:var(--panel);padding:11px 15px;border-radius:9px;font-size:13px;z-index:70;opacity:0;pointer-events:none;transition:opacity .2s;max-width:92vw;text-align:center}
+.toast.on{opacity:1}
+footer{color:var(--mute);font-size:11.5px;text-align:center;padding:18px 10px 30px;border-top:1px solid var(--line);margin-top:22px}
+.hide{display:none}
+.stickybar{position:sticky;bottom:0;background:var(--panel);border-top:1px solid var(--line);padding:9px 12px;display:flex;gap:8px;z-index:20;margin:0 -12px}
+@media(max-width:520px){.kpis{grid-template-columns:1fr 1fr}.bigdate b{font-size:19px}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="logo">Slotkeeper <span>· the release-to-manufacture clock for long-lead power equipment</span></div>
+  <div class="demo">Demo data</div>
+</header>
+
+<main>
+  <!-- SCREEN 1 -->
+  <section id="s1">
+    <h1>Hyperion DC-2 · 96MW · OFE long-lead tracker</h1>
+    <p class="sub">Shared Smartsheet · owner-furnished equipment · last full review 7 weeks ago</p>
+    <div class="sheetwrap">
+      <table id="sheet"><thead><tr>
+        <th>Package</th><th>Vendor</th><th>PO #</th><th>Quoted Lead Time</th><th>Promised Ship Date</th><th>Status</th><th>Last Updated</th>
+      </tr></thead><tbody></tbody></table>
+    </div>
+
+    <div class="inbox card pad">
+      <p class="srch">Inbox · procurement@hyperion-dc2 (6 unread)</p>
+      <ul id="inbox"></ul>
+    </div>
+
+    <p class="caption">Ship dates, no approval clock. Nobody knows which slot expires first.</p>
+
+    <div class="card pad" id="dropzone">
+      <div class="row" style="align-items:center">
+        <button class="btn" id="dropBtn">Drop the vendor PDFs into Slotkeeper →</button>
+        <span class="sub" style="margin:0">9 files · quotes, selling policies, slot confirmations</span>
+      </div>
+      <div class="parse hide" id="parse">
+        <div id="files"></div>
+        <div class="bar"><i id="pbar"></i></div>
+        <p class="sub mono" id="pmsg" style="margin:8px 0 0">Reading lead-time basis clauses…</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- SCREEN 2 -->
+  <section id="s2" class="hide">
+    <h1>Release-to-manufacture clock · 12 packages</h1>
+    <p class="sub">Ranked by float remaining against each vendor's contractual approval window. Today: Mon 09 Nov 2026.</p>
+    <div class="kpis">
+      <div class="kpi"><b class="r mono">2</b><small>past safe approval date</small></div>
+      <div class="kpi"><b class="a mono">3</b><small>within 10 days</small></div>
+      <div class="kpi"><b class="r mono">−19d</b><small>float lost this week</small></div>
+    </div>
+    <div id="list"></div>
+    <div class="stickybar">
+      <button class="btn alt sm" id="digestBtn">Weekly digest ▸</button>
+      <button class="btn alt sm" id="backBtn">◂ Before view</button>
+    </div>
+  </section>
+</main>
+
+<div class="modalbg" id="mail"><div class="modal"><div class="mhead"><div><h2 id="mailTitle">Draft chase</h2><p class="sub" style="margin:0" id="mailSub"></p></div><button class="btn alt sm" data-close="mail">Close</button></div>
+  <div class="field"><label>To</label><input type="text" id="mTo"></div>
+  <div class="field"><label>Cc</label><input type="text" id="mCc"></div>
+  <div class="field"><label>Subject</label><input type="text" id="mSubj"></div>
+  <div class="field"><label>Body · editable</label><textarea id="mBody"></textarea></div>
+  <div class="row"><button class="btn" id="mSend">Send</button><button class="btn danger" id="mSendEsc">Send + escalate now</button></div>
+  <p class="sub" style="margin-top:8px">Nothing is sent in this prototype.</p>
+</div></div>
+
+<div class="modalbg" id="dig"><div class="modal"><div class="mhead"><div><h2>Weekly digest</h2><p class="sub" style="margin:0">One page for the construction director</p></div><button class="btn alt sm" data-close="dig">Close</button></div>
+  <div class="sheet">
+    <h3>Hyperion DC-2 · release-to-manufacture status</h3>
+    <div class="meta">Week ending Fri 13 Nov 2026 · prepared by Slotkeeper · for J. Vance, Construction Director</div>
+    <div class="block"><div class="big" style="color:#b3261e">−19 days</div><div style="font-size:12px;color:#6b7280">Total float lost across the OFE package this week</div></div>
+    <div class="block"><strong style="color:#b3261e">2 packages past safe approval date</strong>
+      <ul><li>Unit Substation US-3 · ABB · <b>−11 d</b> · held by D. Okafor, EOR – Kestrel MEP (41 days)</li>
+      <li>115kV/34.5kV GSU Transformer T-201 · Hitachi Energy · <b>−4 d</b> · held by D. Okafor, EOR – Kestrel MEP (32 days)</li></ul></div>
+    <div class="block"><strong style="color:#9a6200">3 packages within 10 days</strong>
+      <ul><li>15kV MV Switchgear Lineup A · Eaton · +3 d · Owner Engineering – M. Ruiz</li>
+      <li>1.2MW UPS modules ×8 · Vertiv · +7 d · GC – Hollis Construction</li>
+      <li>Generator paralleling switchgear · Russelectric · +19 d · Owner Engineering – M. Ruiz</li></ul></div>
+    <div class="block"><strong>Who is holding what</strong>
+      <ul><li>D. Okafor, EOR – Kestrel MEP — 2 packages, 73 reviewer-days</li>
+      <li>Owner Engineering – M. Ruiz — 2 packages, 31 reviewer-days</li>
+      <li>GC – Hollis Construction — 1 package, 12 reviewer-days</li></ul></div>
+    <div class="block" style="font-size:11.5px;color:#6b7280">Slot exposure if T-201 and US-3 slip one production cycle: energisation date moves from 2029-06-01 to Q4 2029.</div>
+  </div>
+  <div class="row" style="margin-top:10px"><button class="btn alt sm" data-close="dig">Close</button><button class="btn sm" id="digSend">Send to J. Vance</button></div>
+</div></div>
+
+<div class="toast" id="toast"></div>
+<footer>Prototype by Granted, inspired by your bookmarks</footer>
+
+<script>
+(function(){
+"use strict";
+var TODAY = new Date(2026,10,9);
+
+var PKGS = [
+ {id:'us3', name:'Unit Substation US-3', vendor:'ABB', po:'PO-4471', lead:'52 weeks ARO', slot:'2028-11-06', ship:'2028-11-20',
+  basis:'approved drawings', window:'2-week customer approval term', windowDays:14, issued:'2026-09-29',
+  holder:'D. Okafor, EOR – Kestrel MEP', waiting:41, float:-11, safe:'2026-10-29', status:'Awaiting drawing comments', updated:61,
+  snips:[
+   {f:'ABB_OA_US-3.pdf', p:'p.2', q:'Lead time subject to prior sale; customer drawing approval required within two weeks to maintain schedule.'},
+   {f:'ABB_OA_US-3.pdf', p:'p.5', q:'Approval drawings transmitted 29 SEP 2026. Manufacturing release held pending receipt of approved-for-construction set.'},
+   {f:'Slot_Confirmation_ABB_US3.pdf', p:'p.1', q:'Factory slot reserved: week of 06 NOV 2028, Alamo TX plant. Reservation lapses without release.'}]},
+
+ {id:'t201', name:'115kV/34.5kV GSU Transformer T-201', vendor:'Hitachi Energy', po:'PO-4402', lead:'118 weeks ARO', slot:'2029-03-12', ship:'2029-04-02',
+  basis:'approved drawings', window:'30-day return window', windowDays:30, issued:'2026-10-02',
+  holder:'D. Okafor, EOR – Kestrel MEP', waiting:32, float:-4, safe:'2026-11-01', status:'Drawings in review', updated:47,
+  snips:[
+   {f:'Slot_Confirmation_Hitachi.pdf', p:'p.1', q:'Production slot held: 12 MAR 2029 (Varennes works). Slot release requires approved drawings in hand.'},
+   {f:'Hitachi_Quote_T201_rev2.pdf', p:'p.7', q:'Lead time of 118 weeks commences upon receipt of approved outline and nameplate drawings, not upon purchase order.'},
+   {f:'Hitachi_TransmittalLog.pdf', p:'p.3', q:'Approval drawing package issued to customer 02 OCT 2026; thirty (30) calendar days allowed for return.'}]},
+
+ {id:'swgA', name:'15kV MV Switchgear Lineup A', vendor:'Eaton', po:'PO-4418', lead:'64 weeks ARO', slot:'2028-05-01', ship:'2028-05-15',
+  basis:'approved drawings', window:'30-day return window', windowDays:30, issued:'2026-10-15',
+  holder:'Owner Engineering – M. Ruiz', waiting:19, float:3, safe:'2026-11-12', status:'Rev C comments open', updated:24,
+  snips:[
+   {f:'Eaton_SellingPolicy_excerpt.pdf', p:'p.4', q:'Approval drawings to be returned within thirty (30) days; delays beyond this period may require slot re-reservation.'},
+   {f:'Eaton_Quote_LineupA.pdf', p:'p.2', q:'Confirmed factory slot 01 MAY 2028, Pittsburgh. Release-to-manufacture upon approved submittal.'},
+   {f:'Email_Eaton_11-02.pdf', p:'p.1', q:'Schedule holds if rev C comments are returned by 12 NOV; otherwise next available slot is AUG 2028.'}]},
+
+ {id:'ups', name:'1.2MW UPS modules ×8', vendor:'Vertiv', po:'PO-4435', lead:'44 weeks ARO', slot:'2028-02-14', ship:'2028-02-28',
+  basis:'approved drawings', window:'21-day return window', windowDays:21, issued:'2026-10-28',
+  holder:'GC – Hollis Construction', waiting:12, float:7, safe:'2026-11-16', status:'Awaiting GC sign-off', updated:31,
+  snips:[
+   {f:'Vertiv_UPS_Quote.pdf', p:'p.6', q:'Submittal approval required within twenty-one (21) days of transmittal to hold the stated build slot.'},
+   {f:'Slot_Confirmation_Vertiv.pdf', p:'p.1', q:'Build slot: 14 FEB 2028, Delaware OH.'},
+   {f:'Vertiv_TransmittalLog.pdf', p:'p.2', q:'Approval set issued 28 OCT 2026 to Hollis Construction, attn. project engineering.'}]},
+
+ {id:'gps', name:'Generator paralleling switchgear', vendor:'Russelectric', po:'PO-4456', lead:'58 weeks ARO', slot:'2028-07-10', ship:'2028-07-24',
+  basis:'approved drawings', window:'30-day return window', windowDays:30, issued:'2026-11-02',
+  holder:'Owner Engineering – M. Ruiz', waiting:12, float:19, safe:'2026-11-28', status:'One-line in review', updated:9,
+  snips:[
+   {f:'Russelectric_Quote.pdf', p:'p.3', q:'Thirty (30) days allowed for return of approval drawings; manufacturing release follows approval.'},
+   {f:'Slot_Confirmation_Russ.pdf', p:'p.1', q:'Assembly slot reserved 10 JUL 2028, Hingham MA.'},
+   {f:'Russ_Transmittal.pdf', p:'p.1', q:'Approval one-lines issued 02 NOV 2026.'}]},
+
+ {id:'swgB', name:'15kV MV Switchgear Lineup B', vendor:'Powell', po:'PO-4419', lead:'60 weeks ARO', slot:'2028-06-19', ship:'2028-07-03',
+  basis:'approved drawings', window:'45-day return window', windowDays:45, issued:'2026-11-04',
+  holder:'Owner Engineering – M. Ruiz', waiting:5, float:41, safe:'2026-12-20', status:'Submittal received', updated:6,
+  snips:[
+   {f:'Powell_Quote_LineupB.pdf', p:'p.5', q:'Customer approval of general arrangement drawings within forty-five (45) days of issue.'},
+   {f:'Slot_Confirmation_Powell.pdf', p:'p.1', q:'Production slot: 19 JUN 2028, Houston North plant.'},
+   {f:'Powell_Transmittal.pdf', p:'p.1', q:'GA drawings issued 04 NOV 2026.'}]},
+
+ {id:'busway', name:'Busway 4000A', vendor:'Schneider Electric', po:'PO-4441', lead:'38 weeks ARO', slot:'2028-01-24', ship:'2028-02-07',
+  basis:'approved drawings', window:'60-day return window', windowDays:60, issued:'2026-11-02',
+  holder:'GC – Hollis Construction', waiting:7, float:55, safe:'2027-01-03', status:'Routing coordination', updated:11,
+  snips:[
+   {f:'Schneider_Busway_Quote.pdf', p:'p.4', q:'Approved routing drawings required within sixty (60) days of submittal issue.'},
+   {f:'Slot_Confirmation_Schneider.pdf', p:'p.1', q:'Fabrication slot: 24 JAN 2028.'},
+   {f:'Schneider_Transmittal.pdf', p:'p.1', q:'Routing submittal issued 02 NOV 2026.'}]},
+
+ {id:'pdu', name:'PDUs ×24', vendor:'Vertiv', po:'PO-4436', lead:'34 weeks ARO', slot:'2027-12-06', ship:'2027-12-20',
+  basis:'PO', window:'clock runs from PO acknowledgement', windowDays:0, issued:'2026-08-11',
+  holder:'No open approval — vendor build queue', waiting:0, float:64, safe:'2027-01-12', status:'Released', updated:14,
+  snips:[
+   {f:'Vertiv_PDU_Quote.pdf', p:'p.2', q:'Lead time 34 weeks after receipt of order; no customer approval milestone gates release.'},
+   {f:'Vertiv_PO_Ack_4436.pdf', p:'p.1', q:'Order acknowledged 11 AUG 2026, build queue position confirmed.'},
+   {f:'Slot_Confirmation_Vertiv_PDU.pdf', p:'p.1', q:'Build slot: 06 DEC 2027.'}]},
+
+ {id:'gen', name:'2.5MW Diesel Genset ×6', vendor:'Caterpillar', po:'PO-4408', lead:'76 weeks ARO', slot:'2028-04-17', ship:'2028-05-08',
+  basis:'PO', window:'clock runs from PO acknowledgement', windowDays:0, issued:'2026-07-22',
+  holder:'No open approval — vendor build queue', waiting:0, float:88, safe:'2027-02-05', status:'Released', updated:18,
+  snips:[
+   {f:'CAT_Quote_Gensets.pdf', p:'p.9', q:'Seventy-six (76) weeks from receipt of executed order; drawing approval does not gate manufacturing release.'},
+   {f:'CAT_PO_Ack_4408.pdf', p:'p.1', q:'Order acknowledged 22 JUL 2026. Engine slot allocated.'},
+   {f:'Slot_Confirmation_CAT.pdf', p:'p.1', q:'Package slot: 17 APR 2028, Lafayette IN.'}]},
+
+ {id:'cdu', name:'Cooling distribution units ×12', vendor:'Boyd', po:'PO-4463', lead:'40 weeks ARO', slot:'2028-03-20', ship:'2028-04-03',
+  basis:'approved drawings', window:'90-day return window', windowDays:90, issued:'2026-11-05',
+  holder:'Owner Engineering – M. Ruiz', waiting:4, float:96, safe:'2027-02-13', status:'Submittal issued', updated:4,
+  snips:[
+   {f:'Boyd_CDU_Quote.pdf', p:'p.3', q:'Customer approval of fabrication drawings within ninety (90) days of transmittal.'},
+   {f:'Slot_Confirmation_Boyd.pdf', p:'p.1', q:'Fabrication slot: 20 MAR 2028.'},
+   {f:'Boyd_Transmittal.pdf', p:'p.1', q:'Fabrication drawings issued 05 NOV 2026.'}]},
+
+ {id:'chill', name:'Chillers 1200-ton ×4', vendor:'Trane', po:'PO-4428', lead:'48 weeks ARO', slot:'2028-06-05', ship:'2028-06-19',
+  basis:'approved drawings', window:'120-day return window', windowDays:120, issued:'2026-11-06',
+  holder:'Owner Engineering – M. Ruiz', waiting:3, float:120, safe:'2027-03-09', status:'Submittal issued', updated:5,
+  snips:[
+   {f:'Trane_Chiller_Quote.pdf', p:'p.6', q:'Approval submittal to be returned within one hundred twenty (120) days of issue.'},
+   {f:'Slot_Confirmation_Trane.pdf', p:'p.1', q:'Production slot: 05 JUN 2028, Pueblo CO.'},
+   {f:'Trane_Transmittal.pdf', p:'p.1', q:'Submittal issued 06 NOV 2026.'}]},
+
+ {id:'cable', name:'MV cable (35kV, 42,000 ft)', vendor:'Southwire', po:'PO-4472', lead:'30 weeks ARO', slot:'2028-02-28', ship:'2028-03-13',
+  basis:'PO', window:'clock runs from PO acknowledgement', windowDays:0, issued:'2026-10-20',
+  holder:'No open approval — vendor build queue', waiting:0, float:130, safe:'2027-03-19', status:'Released', updated:12,
+  snips:[
+   {f:'Southwire_Quote_MVcable.pdf', p:'p.2', q:'Thirty (30) weeks after receipt of order; reel schedule confirmed at order entry.'},
+   {f:'Southwire_PO_Ack.pdf', p:'p.1', q:'Order acknowledged 20 OCT 2026.'},
+   {f:'Slot_Confirmation_Southwire.pdf', p:'p.1', q:'Extrusion slot: 28 FEB 2028.'}]}
+];
+
+var SHEET_ORDER = ['t201','swgA','swgB','gen','ups','busway','us3','chill','pdu','gps','cable','cdu'];
+var INBOX = [
+ ['RE: Approval drawings – GSU Transformer T-201','14 days ago'],
+ ['ABB: schedule holds if drawings returned by 11/18','9 days ago'],
+ ['FW: FW: switchgear lineup comments – rev C','6 days ago'],
+ ['Vertiv UPS submittal – any word from Hollis?','5 days ago'],
+ ['RE: RE: US-3 unit sub — who has the markups?','3 days ago'],
+ ['Powell GA drawings issued (no action yet)','1 day ago']];
+var FILES = ['Hitachi_Quote_T201_rev2.pdf','Slot_Confirmation_Hitachi.pdf','Eaton_SellingPolicy_excerpt.pdf','ABB_OA_US-3.pdf','Vertiv_UPS_Quote.pdf','Powell_Quote_LineupB.pdf','CAT_Quote_Gensets.pdf','Schneider_Busway_Quote.pdf','Russelectric_Quote.pdf'];
+
+function byId(id){ for(var i=0;i<PKGS.length;i++){ if(PKGS[i].id===id) return PKGS[i]; } return null; }
+function esc(s){ return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+function fmt(d){ try{ var p=d.split('-'); var mn=['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+  return p[2]+' '+mn[parseInt(p[1],10)-1]+' '+p[0]; }catch(e){ return d; } }
+function tone(f){ return f<0?'r':(f<=10?'a':'g'); }
+
+// ---- Screen 1 render
+var tb=document.querySelector('#sheet tbody');
+SHEET_ORDER.forEach(function(id){
+  var p=byId(id); if(!p) return;
+  var tr=document.createElement('tr');
+  var stale=p.updated>=24;
+  tr.innerHTML='<td>'+esc(p.name)+'</td><td>'+esc(p.vendor)+'</td><td class="mono">'+esc(p.po)+'</td><td>'+esc(p.lead)+
+   '</td><td class="mono">'+p.ship+'</td><td>'+esc(p.status)+'</td><td class="mono'+(stale?' stale':'')+'">'+p.updated+' days ago</td>';
+  tb.appendChild(tr);
+});
+var ib=document.getElementById('inbox');
+INBOX.forEach(function(e){
+  var li=document.createElement('li');
+  li.innerHTML='<span class="dot"></span><span>'+esc(e[0])+'</span><span class="when">'+esc(e[1])+'</span>';
+  ib.appendChild(li);
+});
+
+// ---- parse animation
+var parsing=false;
+document.getElementById('dropBtn').addEventListener('click',function(){
+  if(parsing) return; parsing=true;
+  var box=document.getElementById('parse'), fw=document.getElementById('files');
+  box.classList.remove('hide'); fw.innerHTML='';
+  FILES.forEach(function(f){
+    var d=document.createElement('div'); d.className='fileline';
+    d.innerHTML='<svg class="tick" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3 3 7-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="mono">'+esc(f)+'</span>';
+    fw.appendChild(d);
+  });
+  var rows=fw.querySelectorAll('.fileline'), bar=document.getElementById('pbar'), msg=document.getElementById('pmsg');
+  var msgs=['Reading lead-time basis clauses…','Matching slot confirmations to POs…','Computing latest safe approval dates…'];
+  var i=0, total=FILES.length, dur=2000, step=dur/total;
+  var t=setInterval(function(){
+    if(i<total){ rows[i].classList.add('on'); i++; bar.style.width=Math.round(i/total*100)+'%'; msg.textContent=msgs[Math.min(2,Math.floor(i/total*3))]; }
+    if(i>=total){ clearInterval(t); setTimeout(showAfter,320); }
+  }, step);
+});
+function showAfter(){
+  parsing=false;
+  document.getElementById('s1').classList.add('hide');
+  document.getElementById('s2').classList.remove('hide');
+  window.scrollTo(0,0);
+  toast('9 PDFs parsed · 12 packages clocked · 2 slots already past safe approval');
+}
+document.getElementById('backBtn').addEventListener('click',function(){
+  document.getElementById('s2').classList.add('hide');
+  document.getElementById('s1').classList.remove('hide');
+  document.getElementById('parse').classList.add('hide');
+  document.getElementById('pbar').style.width='0';
+  window.scrollTo(0,0);
+});
+
+// ---- Screen 2 render
+var list=document.getElementById('list');
+var sorted=PKGS.slice().sort(function(a,b){ return a.float-b.float; });
+var maxF=130;
+sorted.forEach(function(p){
+  var t=tone(p.float);
+  var pct = p.float<0 ? 100 : Math.max(6, Math.round(p.float/maxF*100));
+  var el=document.createElement('div');
+  el.className='card pkg edge-'+t;
+  el.innerHTML =
+   '<div class="pkghead" role="button" tabindex="0" aria-expanded="false" data-tog="'+p.id+'">'+
+     '<div><div class="nm">'+esc(p.name)+'</div>'+
+     '<div class="vd">'+esc(p.vendor)+' · PO '+esc(p.po)+' · factory slot <span class="mono">'+fmt(p.slot)+'</span></div>'+
+     '<div class="badges"><span class="b '+(p.basis==='approved drawings'?'red':'')+'">clock starts: '+(p.basis==='approved drawings'?'APPROVED DRAWINGS':'PO')+'</span>'+
+       '<span class="b">'+esc(p.window)+'</span>'+
+       '<span class="status" id="st-'+p.id+'" style="display:none"></span></div></div>'+
+     '<div class="bigdate"><small>Latest safe<br>approval date</small><b class="mono '+t+'">'+fmt(p.safe)+'</b></div>'+
+   '</div>'+
+   '<div class="floatwrap"><div class="fbar"><i class="bg-'+t+'" style="width:'+pct+'%"></i></div>'+
+     '<div class="fmeta"><span class="fnum mono '+t+'">'+(p.float<0?'−'+Math.abs(p.float):'+'+p.float)+' days float</span>'+
+     '<span class="holder">Holding it: '+esc(p.holder)+(p.waiting?' · waiting '+p.waiting+' days':'')+'</span></div></div>'+
+   '<div class="detail" id="d-'+p.id+'"></div>';
+  list.appendChild(el);
+});
+
+function buildDetail(p){
+  var box=document.getElementById('d-'+p.id);
+  if(box.getAttribute('data-built')==='1') return;
+  var h='<p class="srch">Where this came from · 3 sources</p>';
+  p.snips.forEach(function(s,i){
+    h+='<div class="snip" data-s="'+p.id+'-'+i+'">'+
+      '<div class="fn"><svg width="13" height="13" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 1h5l3 3v11H4z" fill="none" stroke="currentColor"/><path d="M9 1v3h3" fill="none" stroke="currentColor"/></svg>'+
+      '<span class="mono">'+esc(s.f)+'</span> <span>'+esc(s.p)+'</span></div>'+
+      '<q>'+esc(s.q)+'</q>'+
+      '<div class="ctl"><button class="btn alt sm" data-act="confirm">Confirm</button>'+
+      '<button class="btn alt sm" data-act="fix">Fix</button>'+
+      '<span class="fixwrap hide" style="display:none"></span><span class="res"></span></div></div>';
+  });
+  if(p.float<0){
+    h+='<div class="row" style="margin-top:4px"><button class="btn danger sm" data-chase="'+p.id+'">Draft chase →</button>'+
+       '<button class="btn alt sm" data-noop="1">Re-reserve slot with vendor</button></div>';
+  } else if(p.float<=10){
+    h+='<div class="row" style="margin-top:4px"><button class="btn alt sm" data-chase="'+p.id+'">Draft reminder →</button></div>';
+  }
+  box.innerHTML=h;
+  box.setAttribute('data-built','1');
+}
+
+list.addEventListener('click',function(ev){
+  var head=ev.target.closest ? ev.target.closest('[data-tog]') : null;
+  var btn=ev.target.closest ? ev.target.closest('button') : null;
+  if(btn){
+    if(btn.hasAttribute('data-chase')){ ev.stopPropagation(); openMail(byId(btn.getAttribute('data-chase'))); return; }
+    if(btn.hasAttribute('data-noop')){ ev.stopPropagation(); toast('Slot re-reservation request queued (demo).'); return; }
+    var act=btn.getAttribute('data-act');
+    if(act){
+      ev.stopPropagation();
+      var snip=btn.closest('.snip'); if(!snip) return;
+      var res=snip.querySelector('.res'), fixw=snip.querySelector('.fixwrap');
+      if(act==='confirm'){
+        if(fixw){ fixw.style.display='none'; fixw.innerHTML=''; }
+        res.innerHTML='<span class="ok">✓ Confirmed by you · locked</span>';
+      } else {
+        res.innerHTML='';
+        fixw.style.display='block';
+        fixw.innerHTML='<div style="margin-top:6px"><label style="font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--mute);font-weight:700">Corrected date</label>'+
+          '<div class="row" style="margin-top:4px"><input type="date" class="fixdate" style="flex:1 1 150px"><button class="btn sm" data-act="save">Save</button></div>'+
+          '<span class="err sub" style="display:block;margin-top:4px"></span></div>';
+      }
+      return;
+    }
+    if(btn.getAttribute('data-act')===null && btn.textContent==='Save'){ return; }
+  }
+  if(head){
+    var id=head.getAttribute('data-tog'), p=byId(id);
+    buildDetail(p);
+    var d=document.getElementById('d-'+id);
+    var open=d.classList.toggle('open');
+    head.setAttribute('aria-expanded', open?'true':'false');
+  }
+});
+// save handler (delegated separately to catch dynamically added Save buttons)
+list.addEventListener('click',function(ev){
+  var b=ev.target.closest?ev.target.closest('button[data-act="save"]'):null;
+  if(!b) return;
+  ev.stopPropagation();
+  var wrap=b.closest('.fixwrap'), inp=wrap.querySelector('.fixdate'), err=wrap.querySelector('.err');
+  var v=inp.value;
+  if(!v){ err.textContent='Enter a date first — e.g. the date printed on the vendor letter.'; err.style.color='var(--red)'; return; }
+  var d=new Date(v);
+  if(isNaN(d.getTime())){ err.textContent="That date doesn't look valid. Try again."; err.style.color='var(--red)'; return; }
+  if(d.getFullYear()<2026||d.getFullYear()>2032){ err.textContent='Date outside the project window (2026–2032). Check the source page.'; err.style.color='var(--red)'; return; }
+  var snip=b.closest('.snip');
+  wrap.style.display='none'; wrap.innerHTML='';
+  snip.querySelector('.res').innerHTML='<span class="ok">✓ Corrected to '+esc(fmt(v))+' · clock recalculated</span>';
+  toast('Source corrected — float recalculated for this package.');
+});
+list.addEventListener('keydown',function(ev){
+  if(ev.key!=='Enter'&&ev.key!==' ') return;
+  var head=ev.target.closest?ev.target.closest('[data-tog]'):null;
+  if(!head) return;
+  ev.preventDefault(); head.click();
+});
+
+// ---- mail
+var curMail=null;
+function openMail(p){
+  if(!p) return;
+  curMail=p;
+  var lost=fmt(p.safe);
+  var dl='Fri '+ (p.float<0?'13 Nov 2026':'20 Nov 2026');
+  document.getElementById('mailTitle').textContent = p.float<0 ? 'Draft chase' : 'Draft reminder';
+  document.getElementById('mailSub').textContent = p.name+' · '+p.vendor;
+  document.getElementById('mTo').value = p.holder;
+  document.getElementById('mCc').value = 'procurement@hyperion-dc2; '+(p.float<0?'J. Vance, Construction Director (Monday escalation)':'project controls');
+  document.getElementById('mSubj').value = 'Action by Fri: '+p.name+' approval drawings — slot at risk';
+  document.getElementById('mBody').value =
+    'Hi '+p.holder.split(',')[0]+',\n\n'+
+    p.name+' ('+p.vendor+', PO '+p.po+') is the binding item on the Hyperion DC-2 energisation date.\n\n'+
+    '• '+p.vendor+"'s contract term: "+p.window+'. Approval drawings were issued '+fmt(p.issued)+' and have been with you '+p.waiting+' days.\n'+
+    '• Latest safe approval date to hold the confirmed factory slot of '+fmt(p.slot)+' was '+lost+'.\n'+
+    '• Current float: '+(p.float<0?'−'+Math.abs(p.float):'+'+p.float)+' days. '+(p.float<0?'We are already past the window; the vendor can release our slot at any time.':'The window closes in '+p.float+' days.')+'\n\n'+
+    'Please return the approved-for-construction set, or a comment set we can transmit, by '+dl+'. If comments are not substantive, an "approved as noted" return is sufficient to release manufacturing.\n\n'+
+    'If the set is not returned, I will be copying J. Vance, Construction Director, Monday and asking '+p.vendor+' to quote the cost of a re-reserved slot.\n\n'+
+    'Thanks,\nProcurement — Hyperion DC-2';
+  open_('mail');
+}
+function markChasing(p, esc_){
+  var st=document.getElementById('st-'+p.id);
+  if(st){ st.style.display='inline-block'; st.textContent = esc_ ? 'chasing · escalated to J. Vance' : 'chasing · 1st notice sent, next escalation Mon'; }
+}
+document.getElementById('mSend').addEventListener('click',function(){
+  if(!curMail) return; markChasing(curMail,false); close_('mail');
+  toast('Chase logged on '+curMail.name+' · 1st notice sent (demo, nothing left this browser)');
+});
+document.getElementById('mSendEsc').addEventListener('click',function(){
+  if(!curMail) return; markChasing(curMail,true); close_('mail');
+  toast('Sent + escalated to J. Vance, Construction Director (demo)');
+});
+document.getElementById('digestBtn').addEventListener('click',function(){ open_('dig'); });
+document.getElementById('digSend').addEventListener('click',function(){ close_('dig'); toast('Digest queued for J. Vance (demo)'); });
+
+function open_(id){ document.getElementById(id).classList.add('open'); document.body.style.overflow='hidden'; }
+function close_(id){ document.getElementById(id).classList.remove('open'); document.body.style.overflow=''; }
+Array.prototype.forEach.call(document.querySelectorAll('[data-close]'),function(b){
+  b.addEventListener('click',function(){ close_(b.getAttribute('data-close')); });
+});
+Array.prototype.forEach.call(document.querySelectorAll('.modalbg'),function(m){
+  m.addEventListener('click',function(e){ if(e.target===m) close_(m.id); });
+});
+document.addEventListener('keydown',function(e){ if(e.key==='Escape'){ close_('mail'); close_('dig'); } });
+
+var tTimer=null;
+function toast(msg){
+  var t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('on');
+  if(tTimer) clearTimeout(tTimer);
+  tTimer=setTimeout(function(){ t.classList.remove('on'); },3200);
+}
+})();
+</script>
+</body>
+</html>

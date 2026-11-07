@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-06T20:52:20.081Z",
+  "updated": "2026-11-07T20:53:00.193Z",
   "ideas": [
     {
       "id": "2026-10-22-agentgauntlet",
@@ -787,6 +787,66 @@
       "sources_count": 11,
       "superseded_by": null,
       "sibling": "2026-11-06-sidecar"
+    },
+    {
+      "id": "2026-11-07-ghostwritten",
+      "number": 29,
+      "date": "2026-11-07",
+      "track": "build",
+      "short_name": "Ghostwritten",
+      "verdict": "dig_deeper",
+      "score": 7.8,
+      "scores": {
+        "wow": 8,
+        "shareability": 8.5,
+        "buildability": 8,
+        "freshness": 8.5,
+        "usefulness": 6
+      },
+      "effort": "a weekend",
+      "category": "Developer tools",
+      "tags": [
+        "github",
+        "agents",
+        "code-health",
+        "shareable"
+      ],
+      "pain_type": "expressed",
+      "one_liner": "Paste any public GitHub repo (or drop a `git log` dump) and Ghostwritten shows what share of it was written by coding agents — which agent, which files, how the share moved month by month — plus a five-question \"can you explain your own code?\" quiz on the three hottest ghostwritten files and a shareable authorship card.",
+      "prototype_url": "https://yashsharma1911.github.io/granted/ideas/2026-11-07-ghostwritten/",
+      "sources_count": 20,
+      "superseded_by": null,
+      "sibling": "2026-11-07-slotkeeper"
+    },
+    {
+      "id": "2026-11-07-slotkeeper",
+      "number": 30,
+      "date": "2026-11-07",
+      "track": "venture",
+      "short_name": "Slotkeeper",
+      "verdict": "dig_deeper",
+      "score": 7.8,
+      "scores": {
+        "pain": 8,
+        "market_pull": 8,
+        "timing": 9,
+        "gap": 7,
+        "wedge": 7
+      },
+      "effort": "3+ months",
+      "category": "Back-office automation",
+      "tags": [
+        "procurement",
+        "datacenters",
+        "agents",
+        "construction"
+      ],
+      "pain_type": "expressed",
+      "one_liner": "For the owner-furnished-equipment (OFE) procurement manager at a data center developer or neocloud, Slotkeeper is the release-to-manufacture clock: it reads each switchgear/transformer/genset vendor's order acknowledgment and milestone schedule, computes the latest safe approval date backwards from the confirmed factory slot, and chases the named reviewer (EOR, owner, GC) by email until the approval drawing is returned — so a two-week internal review never costs a 30-month factory slot.",
+      "prototype_url": "https://yashsharma1911.github.io/granted/ideas/2026-11-07-slotkeeper/",
+      "sources_count": 23,
+      "superseded_by": null,
+      "sibling": "2026-11-07-ghostwritten"
     }
   ]
 }

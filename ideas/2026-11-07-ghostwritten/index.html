@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ghostwritten — the AI-authorship x-ray for any repo</title>
+<style>
+:root{
+  --bg:#0b0d10; --panel:#12151a; --panel2:#171b21; --line:#242a33;
+  --fg:#e6e9ee; --mut:#8b95a5; --dim:#5d6878;
+  --acc:#4ade80; --accdim:#1d3b2a; --red:#ff6b6b; --redbg:#2a1416;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+}
+@media (prefers-color-scheme: light){
+  :root{
+    --bg:#f6f7f9; --panel:#ffffff; --panel2:#f1f3f6; --line:#e1e5ea;
+    --fg:#10141a; --mut:#5d6878; --dim:#8b95a5;
+    --acc:#0f9d58; --accdim:#d8f3e3; --red:#c0392b; --redbg:#fdecea;
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--fg);
+  font-family:var(--mono);
+  -webkit-text-size-adjust:100%;
+  line-height:1.45;
+}
+.wrap{max-width:860px;margin:0 auto;padding:16px 16px 48px}
+header.top{
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+  padding:12px 4px;border-bottom:1px solid var(--line);margin-bottom:24px;
+}
+.logo{display:flex;align-items:center;gap:8px;font-weight:700;letter-spacing:-.3px}
+.logo svg{display:block}
+.tagline{color:var(--mut);font-size:12.5px}
+.sep{color:var(--dim)}
+button{font-family:inherit}
+.btn{
+  background:var(--acc);color:#07120c;border:0;border-radius:10px;
+  padding:14px 18px;font-size:15px;font-weight:700;cursor:pointer;min-height:48px;
+}
+@media (prefers-color-scheme: light){.btn{color:#fff}}
+.btn:active{transform:translateY(1px)}
+.btn.ghost{background:transparent;color:var(--fg);border:1px solid var(--line)}
+.btn.sm{padding:11px 14px;font-size:13px;min-height:44px}
+.hide{display:none !important}
+
+/* screen 1 */
+.s1{padding:8vh 0 0;text-align:center}
+.s1 h1{font-size:clamp(34px,10vw,56px);margin:0 0 10px;letter-spacing:-1.5px}
+.s1 .sub{color:var(--mut);margin:0 0 32px;font-size:15px}
+.inputrow{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;max-width:520px;margin:0 auto}
+input[type=text]{
+  flex:1 1 260px;min-width:0;background:var(--panel);border:1px solid var(--line);
+  color:var(--fg);border-radius:10px;padding:14px 14px;font-size:15px;font-family:inherit;min-height:48px;
+}
+input[type=text]:focus{outline:2px solid var(--acc);outline-offset:1px}
+.chips{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:18px}
+.chip{
+  background:var(--panel);border:1px solid var(--line);color:var(--mut);
+  border-radius:999px;padding:10px 14px;font-size:13px;cursor:pointer;min-height:42px;
+}
+.chip:hover,.chip:focus-visible{border-color:var(--acc);color:var(--fg)}
+.err{color:var(--red);font-size:13px;margin-top:12px;min-height:18px}
+.demo{color:var(--dim);font-size:11.5px;margin-top:28px;letter-spacing:.5px;text-transform:uppercase}
+
+/* scan */
+.scan{padding:12vh 0;text-align:center}
+.scanlines{text-align:left;max-width:420px;margin:0 auto;font-size:14px;color:var(--mut)}
+.scanlines div{padding:5px 0;opacity:0;animation:fade .25s forwards}
+.scanlines div b{color:var(--acc);font-weight:400}
+@keyframes fade{to{opacity:1}}
+.bar-load{height:3px;background:var(--line);border-radius:2px;max-width:420px;margin:22px auto 0;overflow:hidden}
+.bar-load i{display:block;height:100%;width:0;background:var(--acc);animation:grow 1.2s linear forwards}
+@keyframes grow{to{width:100%}}
+
+/* results */
+.hero{text-align:center;padding:10px 0 4px}
+.repo{color:var(--mut);font-size:13px;word-break:break-all}
+.big{font-size:clamp(72px,22vw,128px);line-height:1;font-weight:800;letter-spacing:-5px;color:var(--acc);margin:6px 0 4px}
+.biglabel{font-size:15px;max-width:360px;margin:0 auto}
+.note{color:var(--dim);font-size:11.5px;margin-top:8px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;margin-top:16px}
+.card h2{font-size:11.5px;letter-spacing:1.4px;text-transform:uppercase;color:var(--mut);margin:0 0 14px;font-weight:600}
+.stack{display:flex;height:26px;border-radius:7px;overflow:hidden;background:var(--panel2)}
+.stack span{display:block;height:100%}
+.legend{display:flex;flex-wrap:wrap;gap:10px 18px;margin-top:14px;font-size:13px}
+.legend div{display:flex;align-items:center;gap:7px}
+.dot{width:10px;height:10px;border-radius:3px;flex:none}
+.legend .pc{color:var(--mut)}
+
+/* chart */
+.chartbox{position:relative}
+.chart{display:flex;align-items:flex-end;gap:2px;height:120px}
+.cb{flex:1;background:var(--accdim);border-radius:3px 3px 0 0;position:relative;cursor:pointer;min-width:0;transition:background .12s}
+.cb i{position:absolute;left:0;right:0;bottom:0;background:var(--acc);border-radius:3px 3px 0 0;display:block}
+.cb:hover,.cb.on{background:var(--line)}
+.xlab{display:flex;gap:2px;margin-top:6px;font-size:10px;color:var(--dim)}
+.xlab span{flex:1;text-align:center;min-width:0;overflow:hidden}
+.tip{
+  position:absolute;top:-6px;left:50%;transform:translate(-50%,-100%);
+  background:var(--panel2);border:1px solid var(--line);color:var(--fg);
+  padding:7px 10px;border-radius:8px;font-size:12px;white-space:nowrap;pointer-events:none;
+  box-shadow:0 6px 20px rgba(0,0,0,.35);z-index:5;
+}
+
+/* files */
+table{width:100%;border-collapse:collapse;font-size:13px}
+td{padding:10px 4px;border-top:1px solid var(--line);vertical-align:middle}
+tr:first-child td{border-top:0}
+.path{word-break:break-all;display:block}
+.tag{
+  display:inline-block;margin-top:4px;background:var(--redbg);color:var(--red);
+  border:1px solid rgba(255,107,107,.25);border-radius:6px;padding:2px 7px;font-size:10.5px;
+}
+.fshare{text-align:right;white-space:nowrap;color:var(--mut)}
+.fshare b{color:var(--fg)}
+.minibar{width:68px;height:7px;background:var(--panel2);border-radius:4px;overflow:hidden}
+.minibar i{display:block;height:100%;background:var(--acc)}
+td.mb{width:72px}
+tr.hl td{background:var(--redbg)}
+tr.hl td:first-child{box-shadow:inset 3px 0 0 var(--red)}
+
+/* toggle */
+.row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.sw{position:relative;width:52px;height:30px;flex:none;border-radius:999px;background:var(--line);border:0;cursor:pointer;padding:0}
+.sw i{position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:var(--fg);transition:.16s}
+.sw.on{background:var(--acc)}
+.sw.on i{left:25px;background:#07120c}
+.confirm{margin-top:12px;font-size:13px;color:var(--mut);border-left:2px solid var(--acc);padding-left:10px}
+.delta{margin-top:10px;font-size:15px;color:var(--acc);font-weight:700}
+
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+.actions .btn{flex:1 1 200px}
+
+/* modal */
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.72);display:flex;align-items:center;justify-content:center;padding:14px;z-index:50}
+.modal{background:var(--panel);border:1px solid var(--line);border-radius:16px;max-width:520px;width:100%;padding:20px;max-height:92vh;overflow:auto}
+.dots{display:flex;gap:6px;margin-bottom:16px}
+.dots i{width:100%;height:4px;border-radius:2px;background:var(--line)}
+.dots i.done{background:var(--acc)}
+.dots i.bad{background:var(--red)}
+.qfile{font-size:12px;color:var(--acc);word-break:break-all}
+.q{font-size:17px;margin:8px 0 16px;line-height:1.4}
+.opt{
+  display:block;width:100%;text-align:left;background:var(--panel2);border:1px solid var(--line);
+  color:var(--fg);border-radius:10px;padding:14px;margin-bottom:9px;font-size:14px;cursor:pointer;min-height:50px;
+}
+.opt:hover:not(:disabled){border-color:var(--acc)}
+.opt:disabled{cursor:default;opacity:.75}
+.opt.ok{border-color:var(--acc);background:var(--accdim);opacity:1}
+.opt.no{border-color:var(--red);background:var(--redbg);opacity:1}
+.exp{font-size:13px;color:var(--mut);border-left:2px solid var(--line);padding-left:10px;margin:4px 0 14px}
+.score{text-align:center;padding:8px 0}
+.score .n{font-size:48px;font-weight:800;letter-spacing:-2px}
+.verdict{color:var(--mut);margin:6px 0 20px;font-size:14px}
+
+/* share card */
+.shot{
+  aspect-ratio:1200/630;width:100%;background:linear-gradient(145deg,#0e1115,#171c23);
+  border:1px solid var(--line);border-radius:14px;padding:4.2%;display:flex;flex-direction:column;
+  justify-content:space-between;color:#e6e9ee;overflow:hidden;container-type:inline-size;
+}
+.shot .srepo{font-size:3.2cqw;color:#8b95a5;word-break:break-all}
+.shot .sbig{font-size:17cqw;font-weight:800;letter-spacing:-0.06em;line-height:.95;color:var(--acc)}
+.shot .slab{font-size:3cqw;color:#c3cad4}
+.shot .sstack{display:flex;height:2.4cqw;border-radius:2px;overflow:hidden;margin:1.6cqw 0}
+.shot .sleg{display:flex;gap:2.4cqw;flex-wrap:wrap;font-size:2.5cqw;color:#8b95a5}
+.shot .sleg span b{color:#e6e9ee;font-weight:600}
+.shot .sbot{display:flex;align-items:flex-end;justify-content:space-between;gap:3cqw}
+.shot .spark{display:flex;align-items:flex-end;gap:0.5cqw;height:9cqw;flex:1}
+.shot .spark i{flex:1;background:var(--acc);border-radius:1px;opacity:.85}
+.shot .quiz{font-size:3cqw;color:#c3cad4;white-space:nowrap}
+.shot .quiz b{color:var(--red)}
+.shot .mark{font-size:3.4cqw;font-weight:700;letter-spacing:-.02em;white-space:nowrap}
+.toast{
+  position:fixed;left:50%;bottom:22px;transform:translateX(-50%);
+  background:var(--fg);color:var(--bg);padding:12px 18px;border-radius:999px;font-size:13.5px;
+  z-index:80;box-shadow:0 8px 28px rgba(0,0,0,.4);
+}
+footer{margin-top:34px;text-align:center;color:var(--dim);font-size:11.5px}
+.backlink{background:none;border:0;color:var(--mut);font-size:13px;cursor:pointer;padding:10px 4px;min-height:44px}
+.backlink:hover{color:var(--fg)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <span class="logo">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2a7 7 0 0 0-7 7v13l3-2 2 2 2-2 2 2 3-2V9a7 7 0 0 0-5-7z"/><circle cx="9.5" cy="10" r="1"/><circle cx="14.5" cy="10" r="1"/></svg>
+      Ghostwritten
+    </span>
+    <span class="sep">·</span>
+    <span class="tagline">the AI-authorship x-ray for any repo</span>
+  </header>
+
+  <!-- SCREEN 1 -->
+  <section id="s1" class="s1">
+    <h1>Ghostwritten</h1>
+    <p class="sub">What share of your repo did an agent write?</p>
+    <div class="inputrow">
+      <input type="text" id="repoInput" placeholder="github.com/owner/repo" autocomplete="off" spellcheck="false" aria-label="Repository URL">
+      <button class="btn" id="scanBtn">Scan</button>
+    </div>
+    <div class="err" id="err" role="status"></div>
+    <div class="chips" id="chips">
+      <button class="chip" data-key="next">vercel/next.js</button>
+      <button class="chip" data-key="side">my-side-project</button>
+      <button class="chip" data-key="pay">acme/payments-api</button>
+    </div>
+    <p class="demo">Demo data — nothing leaves your browser</p>
+  </section>
+
+  <!-- SCAN -->
+  <section id="scan" class="scan hide">
+    <div class="scanlines" id="scanlines"></div>
+    <div class="bar-load"><i></i></div>
+  </section>
+
+  <!-- SCREEN 2 -->
+  <section id="s2" class="hide">
+    <button class="backlink" id="backBtn">← scan another repo</button>
+    <div class="hero">
+      <div class="repo" id="rRepo"></div>
+      <div class="big" id="rBig"></div>
+      <div class="biglabel" id="rLabel"></div>
+      <div class="note">lower bound — only commits with a signature are counted</div>
+    </div>
+
+    <div class="card">
+      <h2>Agents</h2>
+      <div class="stack" id="rStack"></div>
+      <div class="legend" id="rLegend"></div>
+    </div>
+
+    <div class="card">
+      <h2>Over time — monthly agent share</h2>
+      <div class="chartbox">
+        <div class="chart" id="rChart"></div>
+        <div class="xlab" id="rXlab"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Hottest ghostwritten files</h2>
+      <table><tbody id="rFiles"></tbody></table>
+    </div>
+
+    <div class="card">
+      <div class="row">
+        <div>
+          <strong style="font-size:14px">Weekly re-scan</strong>
+          <div style="color:var(--mut);font-size:12.5px">Track the drift instead of guessing.</div>
+        </div>
+        <button class="sw" id="sw" role="switch" aria-checked="false" aria-label="Weekly re-scan"><i></i></button>
+      </div>
+      <div id="swOut"></div>
+    </div>
+
+    <div class="actions">
+      <button class="btn" id="quizBtn">Can you explain your own code? Take the 5-question quiz</button>
+      <button class="btn ghost" id="shareBtn">Share</button>
+    </div>
+
+    <!-- SCREEN 4 -->
+    <div id="s4" class="hide">
+      <div class="card">
+        <h2>Share card — 1200 × 630</h2>
+        <div class="shot" id="shot"></div>
+        <div class="actions">
+          <button class="btn ghost" id="copyBtn">Copy post text</button>
+          <button class="btn ghost" id="dlBtn">Download card</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>Prototype by Granted, inspired by your bookmarks</footer>
+</div>
+
+<div id="modalRoot"></div>
+<div id="toastRoot"></div>
+
+<script>
+(function(){
+"use strict";
+var MONTHS=["Dec","Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov"];
+var YEARS =[2025,2026,2026,2026,2026,2026,2026,2026,2026,2026,2026,2026];
+
+var DATA={
+  side:{
+    repo:"github.com/you/my-side-project", name:"my-side-project",
+    pct:61, commits:1000, agentsFound:3,
+    agents:[{n:"Claude Code",v:44,c:"#4ade80"},{n:"Codex",v:11,c:"#38bdf8"},{n:"Copilot CLI",v:6,c:"#c084fc"},{n:"Human",v:39,c:"#3f4753"}],
+    series:[4,7,9,15,22,28,31,40,47,52,58,61],
+    totals:[62,71,66,80,74,69,77,88,81,90,84,79],
+    files:[
+      {p:"src/api/webhooks.ts",s:100,c:23,tag:1},
+      {p:"src/lib/retry.ts",s:96,c:14,tag:1},
+      {p:"src/db/migrations/0012_orders.sql",s:94,c:6},
+      {p:"src/components/CheckoutForm.tsx",s:88,c:31},
+      {p:"src/lib/auth/session.ts",s:84,c:19,tag:1},
+      {p:"scripts/seed.ts",s:80,c:5},
+      {p:"src/api/stripe.ts",s:77,c:27},
+      {p:"src/hooks/useCart.ts",s:71,c:12},
+      {p:"src/lib/email.ts",s:64,c:9},
+      {p:"src/utils/format.ts",s:52,c:8}
+    ]
+  },
+  next:{
+    repo:"github.com/vercel/next.js", name:"vercel/next.js",
+    pct:9, commits:1000, agentsFound:2,
+    agents:[{n:"Copilot CLI",v:6,c:"#c084fc"},{n:"Claude Code",v:3,c:"#4ade80"},{n:"Human",v:91,c:"#3f4753"}],
+    series:[2,3,3,4,5,5,6,7,7,8,8,9],
+    totals:[310,288,341,355,302,330,298,361,344,320,315,307],
+    files:[
+      {p:"test/e2e/app-dir/rsc-basic.test.ts",s:41,c:12},
+      {p:"docs/02-app/api-reference/config.mdx",s:38,c:21},
+      {p:"packages/next/src/lib/typescript/diag.ts",s:29,c:7},
+      {p:"test/unit/image-optimizer.test.ts",s:24,c:9},
+      {p:"packages/create-next-app/templates/app.ts",s:19,c:6},
+      {p:"packages/next/src/client/link.tsx",s:14,c:18},
+      {p:"packages/eslint-plugin-next/rules/no-img.ts",s:12,c:5},
+      {p:"packages/next/src/server/web/adapter.ts",s:9,c:23},
+      {p:"packages/next/src/build/webpack-config.ts",s:5,c:44},
+      {p:"packages/next/src/server/next-server.ts",s:3,c:38}
+    ]
+  },
+  pay:{
+    repo:"github.com/acme/payments-api", name:"acme/payments-api",
+    pct:38, commits:1000, agentsFound:3,
+    agents:[{n:"Claude Code",v:21,c:"#4ade80"},{n:"Codex",v:12,c:"#38bdf8"},{n:"Copilot CLI",v:5,c:"#c084fc"},{n:"Human",v:62,c:"#3f4753"}],
+    series:[6,8,11,13,17,19,24,26,29,33,35,38],
+    totals:[95,102,88,110,97,104,91,118,106,99,112,108],
+    files:[
+      {p:"src/ledger/reconcile.ts",s:91,c:18},
+      {p:"src/webhooks/adyen.ts",s:85,c:11},
+      {p:"src/db/migrations/0044_refunds.sql",s:78,c:4},
+      {p:"src/risk/rules.ts",s:70,c:22},
+      {p:"src/api/payouts.ts",s:63,c:16},
+      {p:"src/lib/idempotency.ts",s:58,c:13},
+      {p:"tests/fixtures/charges.ts",s:54,c:7},
+      {p:"src/api/disputes.ts",s:47,c:20},
+      {p:"src/lib/currency.ts",s:33,c:9},
+      {p:"src/utils/logger.ts",s:21,c:6}
+    ]
+  }
+};
+
+var QUIZ=[
+  {f:"src/lib/retry.ts",
+   q:"retry.ts retries failed requests. After how many attempts does it stop?",
+   o:["3 attempts","5 attempts","It never stops"],a:2,
+   e:"The while(true) loop only breaks on a 2xx. Any 5xx retries forever with a 2s cap — a hung upstream pins a worker."},
+  {f:"src/api/webhooks.ts",
+   q:"webhooks.ts verifies the Stripe signature — what happens if the stripe-signature header is missing?",
+   o:["Returns 400","Processes the event anyway","Throws an uncaught error"],a:1,
+   e:"The verify step is inside `if (sig)`. No header means no check, and the handler falls straight through to processing."},
+  {f:"src/lib/auth/session.ts",
+   q:"How long is a session valid before it is rejected?",
+   o:["24 hours","30 days","Forever"],a:1,
+   e:"MAX_AGE = 60 * 60 * 24 * 30. Thirty days, and there is no server-side revocation list."},
+  {f:"src/lib/retry.ts",
+   q:"Which errors does retry.ts treat as retryable?",
+   o:["Only network timeouts","Any status >= 500, plus 429","Everything except 404"],a:1,
+   e:"isRetryable() checks `s >= 500 || s === 429`. A 409 conflict is surfaced immediately — by design, though nothing documents it."},
+  {f:"src/api/webhooks.ts",
+   q:"The same Stripe event is delivered twice. What does the handler do?",
+   o:["Skips it — the event id is stored","Processes it twice","Returns 409"],a:1,
+   e:"There is no idempotency key or seen-event table. Duplicate delivery means the order is fulfilled twice."}
+];
+
+var $=function(id){return document.getElementById(id);};
+var cur=null, quizScore=null, highlightOn=false, timers=[];
+
+function clearTimers(){timers.forEach(clearTimeout);timers=[];}
+function esc(s){return String(s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
+
+function toast(msg){
+  var r=$("toastRoot"); r.innerHTML="";
+  var d=document.createElement("div"); d.className="toast"; d.textContent=msg; d.setAttribute("role","status");
+  r.appendChild(d);
+  setTimeout(function(){ if(d.parentNode) d.parentNode.removeChild(d); },2200);
+}
+
+/* ---------- scan ---------- */
+function startScan(key){
+  var d=DATA[key]; if(!d) return;
+  cur=d; quizScore=null; highlightOn=false;
+  $("err").textContent="";
+  $("s1").classList.add("hide");
+  $("s2").classList.add("hide");
+  $("s4").classList.add("hide");
+  $("scan").classList.remove("hide");
+  var lines=[
+    "reading 1,000 commits…",
+    "parsing Co-authored-by trailers…",
+    "matching agent signatures…",
+    "found "+d.agentsFound+" agent"+(d.agentsFound===1?"":"s")+"…",
+    "attributing "+d.files.length+" hot files…"
+  ];
+  var box=$("scanlines"); box.innerHTML="";
+  clearTimers();
+  lines.forEach(function(t,i){
+    timers.push(setTimeout(function(){
+      var el=document.createElement("div");
+      el.innerHTML="<b>›</b> "+esc(t);
+      box.appendChild(el);
+    }, i*210));
+  });
+  timers.push(setTimeout(function(){
+    $("scan").classList.add("hide");
+    render(d);
+    $("s2").classList.remove("hide");
+    window.scrollTo(0,0);
+  },1200));
+}
+
+/* ---------- render ---------- */
+function render(d){
+  $("rRepo").textContent=d.repo;
+  $("rBig").textContent=d.pct+"%";
+  $("rLabel").textContent="of the last "+d.commits.toLocaleString("en-US")+" commits were agent-authored";
+
+  // stacked bar
+  var st=$("rStack"); st.innerHTML="";
+  var lg=$("rLegend"); lg.innerHTML="";
+  d.agents.forEach(function(a){
+    var s=document.createElement("span");
+    s.style.width=a.v+"%"; s.style.background=a.c;
+    s.title=a.n+" "+a.v+"%";
+    st.appendChild(s);
+    var l=document.createElement("div");
+    l.innerHTML='<i class="dot" style="background:'+a.c+'"></i>'+esc(a.n)+' <span class="pc">'+a.v+'%</span>';
+    lg.appendChild(l);
+  });
+
+  // chart
+  var ch=$("rChart"); ch.innerHTML="";
+  var xl=$("rXlab"); xl.innerHTML="";
+  var max=Math.max.apply(null,d.series);
+  d.series.forEach(function(v,i){
+    var b=document.createElement("div");
+    b.className="cb"; b.setAttribute("tabindex","0"); b.setAttribute("role","button");
+    var h=Math.max(4, Math.round(v/max*100));
+    var n=Math.round(d.totals[i]*v/100);
+    var lab=MONTHS[i]+" "+YEARS[i]+" — "+v+"% ("+n+" of "+d.totals[i]+" commits)";
+    b.setAttribute("aria-label",lab);
+    b.innerHTML='<i style="height:'+h+'%"></i>';
+    b.addEventListener("mouseenter",function(){showTip(b,lab);});
+    b.addEventListener("focus",function(){showTip(b,lab);});
+    b.addEventListener("mouseleave",hideTip);
+    b.addEventListener("blur",hideTip);
+    b.addEventListener("click",function(){showTip(b,lab);});
+    ch.appendChild(b);
+    var s=document.createElement("span"); s.textContent=MONTHS[i]; xl.appendChild(s);
+  });
+
+  renderFiles();
+
+  // reset toggle
+  var sw=$("sw"); sw.classList.remove("on"); sw.setAttribute("aria-checked","false");
+  $("swOut").innerHTML="";
+  $("s4").classList.add("hide");
+}
+
+function renderFiles(){
+  var tb=$("rFiles"); tb.innerHTML="";
+  cur.files.forEach(function(f){
+    var tr=document.createElement("tr");
+    if(highlightOn && f.tag) tr.className="hl";
+    var tag=f.tag?'<span class="tag">you merged this, never commented on it</span>':'';
+    tr.innerHTML=
+      '<td><span class="path">'+esc(f.p)+'</span>'+tag+'</td>'+
+      '<td class="mb"><span class="minibar"><i style="width:'+f.s+'%"></i></span></td>'+
+      '<td class="fshare"><b>'+f.s+'%</b> · '+f.c+'</td>';
+    tb.appendChild(tr);
+  });
+}
+
+var tipEl=null;
+function showTip(target,text){
+  hideTip();
+  tipEl=document.createElement("div");
+  tipEl.className="tip"; tipEl.textContent=text;
+  var box=target.parentNode.parentNode; // .chartbox
+  box.appendChild(tipEl);
+  var bl=box.getBoundingClientRect(), tl=target.getBoundingClientRect();
+  var cx=tl.left-bl.left+tl.width/2;
+  tipEl.style.left=cx+"px";
+  tipEl.style.top=(tl.top-bl.top)+"px";
+  var tr=tipEl.getBoundingClientRect();
+  if(tr.left<bl.left+4) tipEl.style.left=(cx+(bl.left+4-tr.left))+"px";
+  if(tr.right>bl.right-4) tipEl.style.left=(cx-(tr.right-bl.right+4))+"px";
+}
+function hideTip(){ if(tipEl&&tipEl.parentNode){tipEl.parentNode.removeChild(tipEl);} tipEl=null; }
+
+/* ---------- quiz ---------- */
+function openQuiz(){
+  var i=0, score=0, results=[];
+  var root=$("modalRoot");
+  var ov=document.createElement("div"); ov.className="ov";
+  var m=document.createElement("div"); m.className="modal"; m.setAttribute("role","dialog"); m.setAttribute("aria-modal","true");
+  ov.appendChild(m); root.appendChild(ov);
+
+  function close(){ if(ov.parentNode) ov.parentNode.removeChild(ov); }
+  ov.addEventListener("click",function(e){ if(e.target===ov) close(); });
+
+  function dots(){
+    var h='<div class="dots">';
+    for(var k=0;k<QUIZ.length;k++){
+      var c = results[k]===undefined ? "" : (results[k]?" done":" bad");
+      h+='<i class="'+c.trim()+'"></i>';
+    }
+    return h+'</div>';
+  }
+
+  function question(){
+    var q=QUIZ[i];
+    m.innerHTML=dots()+
+      '<div class="qfile">'+esc(q.f)+'</div>'+
+      '<div class="q">'+esc(q.q)+'</div>'+
+      '<div id="opts"></div>'+
+      '<div id="after"></div>';
+    var box=m.querySelector("#opts");
+    q.o.forEach(function(opt,oi){
+      var b=document.createElement("button");
+      b.className="opt"; b.textContent=opt;
+      b.addEventListener("click",function(){answer(oi);});
+      box.appendChild(b);
+    });
+  }
+
+  function answer(oi){
+    var q=QUIZ[i], ok=(oi===q.a);
+    results[i]=ok; if(ok) score++;
+    var btns=m.querySelectorAll(".opt");
+    for(var k=0;k<btns.length;k++){
+      btns[k].disabled=true;
+      if(k===q.a) btns[k].classList.add("ok");
+      else if(k===oi) btns[k].classList.add("no");
+    }
+    m.querySelector(".dots").outerHTML=dots();
+    var after=m.querySelector("#after");
+    after.innerHTML='<div class="exp"><strong style="color:'+(ok?'var(--acc)':'var(--red)')+'">'+
+      (ok?'Correct':'Not quite')+'.</strong> '+esc(q.e)+'</div>';
+    var nb=document.createElement("button");
+    nb.className="btn"; nb.style.width="100%";
+    nb.textContent = (i===QUIZ.length-1)?"See your score":"Next question";
+    nb.addEventListener("click",function(){
+      i++;
+      if(i>=QUIZ.length) finish(); else question();
+    });
+    after.appendChild(nb);
+  }
+
+  function finish(){
+    quizScore=score;
+    var pct=Math.round(score/QUIZ.length*100);
+    var verdicts={0:"You shipped it. You can't explain it.",1:"You shipped it. You can't explain it.",
+      2:"You shipped it. You can't explain it.",3:"Half-read. Cognitive debt is accruing.",
+      4:"Mostly in your head. Keep it that way.",5:"You actually read the diffs. Rare."};
+    m.innerHTML=dots()+
+      '<div class="score"><div class="n">'+score+' / 5</div>'+
+      '<div style="color:var(--mut);font-size:13px">Comprehension: '+pct+'%</div>'+
+      '<div class="verdict">'+esc(verdicts[score])+'</div></div>';
+    var b1=document.createElement("button");
+    b1.className="btn"; b1.style.width="100%"; b1.textContent="See the 3 files to read first";
+    b1.addEventListener("click",function(){
+      highlightOn=true; renderFiles(); close();
+      var tb=$("rFiles"); var hl=tb.querySelector("tr.hl");
+      if(hl) hl.scrollIntoView({behavior:"smooth",block:"center"});
+      toast("3 files flagged — start with webhooks.ts");
+    });
+    var b2=document.createElement("button");
+    b2.className="btn ghost"; b2.style.width="100%"; b2.style.marginTop="10px"; b2.textContent="Close";
+    b2.addEventListener("click",close);
+    m.appendChild(b1); m.appendChild(b2);
+  }
+
+  question();
+}
+
+/* ---------- share card ---------- */
+function buildCard(){
+  var d=cur;
+  var max=Math.max.apply(null,d.series);
+  var spark=d.series.map(function(v){
+    return '<i style="height:'+Math.max(6,Math.round(v/max*100))+'%"></i>';
+  }).join("");
+  var stack=d.agents.map(function(a){
+    return '<span style="width:'+a.v+'%;background:'+a.c+'"></span>';
+  }).join("");
+  var leg=d.agents.filter(function(a){return a.n!=="Human";}).map(function(a){
+    return '<span><b>'+esc(a.n)+'</b> '+a.v+'%</span>';
+  }).join("");
+  var qs = quizScore===null ? "not taken" : quizScore+"/5";
+  $("shot").innerHTML=
+    '<div>'+
+      '<div class="srepo">'+esc(d.repo)+'</div>'+
+      '<div class="sbig">'+d.pct+'%</div>'+
+      '<div class="slab">of the last 1,000 commits were agent-authored</div>'+
+    '</div>'+
+    '<div>'+
+      '<div class="sstack">'+stack+'</div>'+
+      '<div class="sleg">'+leg+'<span><b>Human</b> '+(100-d.pct)+'%</span></div>'+
+    '</div>'+
+    '<div class="sbot">'+
+      '<div class="spark">'+spark+'</div>'+
+      '<div class="quiz">quiz: <b>'+qs+'</b></div>'+
+      '<div class="mark">ghostwritten.dev</div>'+
+    '</div>';
+}
+
+function postText(){
+  var d=cur;
+  var qs = quizScore===null ? "" : " Then I scored "+quizScore+"/5 on a quiz about my own files.";
+  return "Ran Ghostwritten on "+d.name+": "+d.pct+"% of the last 1,000 commits were agent-authored."+
+    qs+" Shipping speed is up. Comprehension is not. ghostwritten.dev";
+}
+
+function copyText(t){
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(t).then(function(){toast("Post text copied");},fallback);
+  } else { fallback(); }
+  function fallback(){
+    try{
+      var ta=document.createElement("textarea");
+      ta.value=t; ta.setAttribute("readonly","");
+      ta.style.position="fixed"; ta.style.top="-1000px";
+      document.body.appendChild(ta); ta.select();
+      document.execCommand("copy");
+      document.body.removeChild(ta);
+      toast("Post text copied");
+    }catch(e){ toast("Couldn't copy — select the text manually"); }
+  }
+}
+
+/* ---------- wiring ---------- */
+$("scanBtn").addEventListener("click",function(){
+  var v=$("repoInput").value.trim();
+  if(!v){ $("err").textContent="Enter a repo URL, or tap an example below."; $("repoInput").focus(); return; }
+  if(v.length<3){ $("err").textContent="That doesn't look like a repo. Try github.com/owner/repo."; return; }
+  startScan("side");
+});
+$("repoInput").addEventListener("keydown",function(e){ if(e.key==="Enter") $("scanBtn").click(); });
+$("repoInput").addEventListener("input",function(){ $("err").textContent=""; });
+
+var chipEls=$("chips").querySelectorAll(".chip");
+for(var ci=0;ci<chipEls.length;ci++){
+  (function(el){ el.addEventListener("click",function(){ startScan(el.getAttribute("data-key")); }); })(chipEls[ci]);
+}
+
+$("backBtn").addEventListener("click",function(){
+  clearTimers(); hideTip();
+  $("s2").classList.add("hide");
+  $("scan").classList.add("hide");
+  $("s1").classList.remove("hide");
+  $("repoInput").value=""; $("err").textContent="";
+  window.scrollTo(0,0);
+});
+
+$("sw").addEventListener("click",function(){
+  var on=!this.classList.contains("on");
+  this.classList.toggle("on",on);
+  this.setAttribute("aria-checked",on?"true":"false");
+  $("swOut").innerHTML = on
+    ? '<div class="confirm">We\'ll re-scan every Monday and show you the delta.</div><div class="delta">+4 points since last week</div>'
+    : '';
+});
+
+$("quizBtn").addEventListener("click",openQuiz);
+
+$("shareBtn").addEventListener("click",function(){
+  buildCard();
+  $("s4").classList.remove("hide");
+  $("s4").scrollIntoView({behavior:"smooth",block:"start"});
+});
+
+$("copyBtn").addEventListener("click",function(){ copyText(postText()); });
+$("dlBtn").addEventListener("click",function(){ toast("PNG export — in the real build"); });
+
+document.addEventListener("keydown",function(e){
+  if(e.key==="Escape"){
+    var ov=document.querySelector(".ov");
+    if(ov&&ov.parentNode) ov.parentNode.removeChild(ov);
+  }
+});
+})();
+</script>
+</body>
+</html>
