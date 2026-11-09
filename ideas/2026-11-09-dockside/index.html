@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dockside — receiving dock verdict</title>
+<style>
+:root{
+  --bg:#f6f7f8; --panel:#ffffff; --ink:#15181c; --muted:#5d6670; --line:#e1e4e8;
+  --red:#b3261e; --redbg:#fdecea; --amber:#8a5a00; --amberbg:#fdf3e0; --green:#1b6b3a; --greenbg:#e8f5ec;
+  --hl:#ffe98a; --accent:#15181c;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#111417; --panel:#181c20; --ink:#e9ecef; --muted:#9aa4ae; --line:#2a3036;
+    --red:#ff8a80; --redbg:#36201e; --amber:#ffc46b; --amberbg:#332814; --green:#7fd6a0; --greenbg:#15291d;
+    --hl:#7a6410; --accent:#e9ecef;
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--ink);
+  font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  -webkit-text-size-adjust:100%;
+}
+.wrap{max-width:1180px;margin:0 auto;padding:0 14px 60px}
+header.top{
+  position:sticky;top:0;z-index:40;background:var(--panel);border-bottom:1px solid var(--line);
+  padding:12px 14px;display:flex;gap:10px;align-items:baseline;flex-wrap:wrap
+}
+header.top h1{font-size:16px;margin:0;letter-spacing:-.01em}
+header.top p{margin:0;font-size:13px;color:var(--muted)}
+.demotag{margin-left:auto;font-size:11px;color:var(--muted);border:1px solid var(--line);border-radius:99px;padding:2px 8px}
+section{margin-top:18px}
+.sechead{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:0 0 8px}
+
+/* BEFORE strip */
+.before{background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden;opacity:.92}
+.mailbar{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid var(--line);background:linear-gradient(0deg,rgba(125,125,125,.06),rgba(125,125,125,.06))}
+.mailbar b{font-size:13px;font-weight:600}
+.mailbar span{font-size:12px;color:var(--muted)}
+.mail{display:flex;gap:10px;padding:9px 12px;border-bottom:1px solid var(--line);font-size:13px;color:var(--muted);filter:grayscale(1)}
+.mail:last-child{border-bottom:0}
+.mail .dot{width:7px;height:7px;border-radius:99px;background:var(--muted);margin-top:7px;flex:0 0 auto}
+.mail .from{width:150px;flex:0 0 auto;color:var(--ink);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mail .subj{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mail .clip{flex:0 0 auto;font-size:11px}
+.caption{font-size:13px;color:var(--muted);margin:8px 2px 0}
+.runrow{margin-top:10px}
+button{font:inherit;cursor:pointer}
+.btn{
+  background:var(--accent);color:var(--bg);border:1px solid var(--accent);border-radius:8px;
+  padding:12px 16px;font-size:14px;font-weight:600;min-height:44px
+}
+.btn.ghost{background:transparent;color:var(--ink);border-color:var(--line)}
+.btn:active{transform:translateY(1px)}
+
+/* layout */
+.cols{display:flex;gap:16px;align-items:flex-start}
+.queue{flex:0 0 31%;display:flex;flex-direction:column;gap:8px}
+.verdict{flex:1;min-width:0}
+@media (max-width:860px){ .cols{flex-direction:column} .queue{flex:1 1 auto;width:100%} .verdict{width:100%} }
+
+.card{
+  width:100%;text-align:left;background:var(--panel);border:1px solid var(--line);border-left:4px solid var(--line);
+  border-radius:9px;padding:11px 12px;color:var(--ink);display:block;min-height:44px
+}
+.card.sel{border-color:var(--accent);border-left-color:var(--accent);box-shadow:0 1px 0 rgba(0,0,0,.04)}
+.card.hold{border-left-color:var(--red)} .card.release{border-left-color:var(--green)} .card.chase{border-left-color:var(--amber)}
+.card .r1{display:flex;justify-content:space-between;gap:8px;align-items:center}
+.card .po{font-weight:700;font-size:13px;letter-spacing:.01em}
+.card .sup{font-size:13px;color:var(--ink);margin-top:2px}
+.card .pn{font-size:12px;color:var(--muted);margin-top:2px}
+.card .docs{font-size:11px;color:var(--muted);margin-top:6px}
+.pill{font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;padding:3px 8px;border-radius:99px;white-space:nowrap}
+.pill.hold{background:var(--redbg);color:var(--red)}
+.pill.release{background:var(--greenbg);color:var(--green)}
+.pill.chase{background:var(--amberbg);color:var(--amber)}
+.pill.big{font-size:14px;padding:7px 14px;letter-spacing:.1em}
+
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px}
+.vhead{display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap;border-bottom:1px solid var(--line);padding-bottom:14px}
+.vhead h2{margin:6px 0 2px;font-size:19px;letter-spacing:-.01em}
+.vhead .meta{font-size:13px;color:var(--muted)}
+.vhead .right{margin-left:auto;text-align:right;font-size:13px;color:var(--muted)}
+.summary{font-size:13px;margin:12px 0 4px;color:var(--ink)}
+
+.req{border-bottom:1px solid var(--line)}
+.req:last-of-type{border-bottom:0}
+.reqbtn{
+  width:100%;background:transparent;border:0;text-align:left;padding:12px 2px;display:flex;gap:10px;align-items:flex-start;
+  color:var(--ink);min-height:44px
+}
+.reqbtn[aria-disabled="true"]{cursor:default}
+.mark{flex:0 0 auto;width:20px;height:20px;border-radius:99px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;margin-top:1px}
+.mark.ok{background:var(--greenbg);color:var(--green)}
+.mark.bad{background:var(--redbg);color:var(--red)}
+.mark.warn{background:var(--amberbg);color:var(--amber)}
+.reqtxt{flex:1;min-width:0}
+.reqtxt .name{font-size:14px;font-weight:600}
+.reqtxt .found{font-size:13px;color:var(--muted);margin-top:2px}
+.reqtxt .found em{font-style:normal;font-weight:600}
+.reqtxt .found.bad em{color:var(--red)} .reqtxt .found.warn em{color:var(--amber)}
+.tag{display:inline-block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:2px 7px;border-radius:5px;margin-top:6px}
+.tag.bad{background:var(--redbg);color:var(--red)} .tag.warn{background:var(--amberbg);color:var(--amber)}
+.chev{flex:0 0 auto;color:var(--muted);font-size:12px;margin-top:3px}
+.cite{display:none;padding:0 2px 14px}
+.cite.open{display:block}
+.panes{display:flex;gap:10px}
+@media (max-width:700px){ .panes{flex-direction:column} }
+.pane{flex:1;min-width:0;border:1px solid var(--line);border-radius:8px;background:linear-gradient(0deg,rgba(125,125,125,.04),rgba(125,125,125,.04));padding:10px 12px}
+.pane h4{margin:0 0 6px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.pane .src{font-size:11px;color:var(--muted);margin-bottom:6px}
+.doc{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px;line-height:1.65;white-space:pre-wrap;word-break:break-word;margin:0}
+mark{background:var(--hl);color:#15181c;padding:0 2px;border-radius:2px;font-weight:700}
+@media (prefers-color-scheme: dark){ mark{color:#fff3c4} }
+
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
+.statbar{margin-top:12px;font-size:12px;color:var(--muted);background:linear-gradient(0deg,rgba(125,125,125,.05),rgba(125,125,125,.05));border:1px solid var(--line);border-radius:8px;padding:9px 12px}
+
+/* modal */
+.scrim{position:fixed;inset:0;background:rgba(10,12,14,.55);display:none;align-items:flex-end;justify-content:center;z-index:60;padding:0}
+.scrim.open{display:flex}
+@media (min-width:700px){ .scrim{align-items:center;padding:20px} }
+.modal{background:var(--panel);border:1px solid var(--line);border-radius:12px 12px 0 0;width:100%;max-width:640px;max-height:92vh;overflow:auto;padding:16px}
+@media (min-width:700px){ .modal{border-radius:12px} }
+.modal h3{margin:0 0 4px;font-size:16px}
+.modal p.sub{margin:0 0 12px;font-size:13px;color:var(--muted)}
+textarea,input[type=text]{
+  width:100%;font:13.5px/1.6 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--ink);background:var(--bg);
+  border:1px solid var(--line);border-radius:8px;padding:10px;resize:vertical
+}
+input[type=text]{font-family:inherit;font-size:15px;min-height:44px}
+.err{color:var(--red);font-size:13px;margin:8px 0 0;display:none}
+.err.show{display:block}
+.mrow{display:flex;gap:10px;justify-content:flex-end;margin-top:14px;flex-wrap:wrap}
+.toast{
+  position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(20px);opacity:0;pointer-events:none;
+  background:var(--accent);color:var(--bg);padding:12px 16px;border-radius:9px;font-size:13.5px;max-width:92vw;text-align:center;
+  transition:opacity .22s,transform .22s;z-index:80
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.logged{margin-top:12px;border:1px solid var(--line);border-radius:8px;padding:10px 12px;background:var(--greenbg);color:var(--green);font-size:13px;display:none}
+.logged.show{display:block}
+footer{margin-top:26px;text-align:center;font-size:12px;color:var(--muted)}
+.hide{display:none}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <h1>Dockside</h1>
+  <p>Reads incoming supplier paperwork and tells your dock what can ship.</p>
+  <span class="demotag">Demo data</span>
+</header>
+
+<div class="wrap">
+
+  <section id="before">
+    <p class="sechead">Before — shared inbox</p>
+    <div class="before">
+      <div class="mailbar"><b>quality@aerovant.com</b><span>· 6 unread</span></div>
+      <div class="mail"><span class="dot"></span><span class="from">Meridian Precision</span><span class="subj">RE: PO-4471 shipment — certs attached</span><span class="clip">📎 4</span></div>
+      <div class="mail"><span class="dot"></span><span class="from">Caldera Machine</span><span class="subj">PO-4468 parts shipped</span><span class="clip">📎 4</span></div>
+      <div class="mail"><span class="dot"></span><span class="from">Northline Fab</span><span class="subj">Re: Re: FWD: material cert?</span><span class="clip">📎 2</span></div>
+      <div class="mail"><span class="dot"></span><span class="from">Blackrock Tool</span><span class="subj">PO-4455 // Ti landing leg — docs pkg (rev 2)</span><span class="clip">📎 6</span></div>
+      <div class="mail"><span class="dot"></span><span class="from">Summit Anodizing</span><span class="subj">anodize certs for 2207-011 (scan)</span><span class="clip">📎 3</span></div>
+      <div class="mail"><span class="dot"></span><span class="from">Xometry</span><span class="subj">Order 1042-007 — inspection report attached</span><span class="clip">📎 2</span></div>
+    </div>
+    <p class="caption">Today: 6 threads, 19 PDFs, one engineer opening each one.</p>
+    <p class="runrow"><button class="btn" id="runBtn">Run Dockside →</button></p>
+  </section>
+
+  <section id="after">
+    <p class="sechead">After — receiving dock verdicts</p>
+    <div class="cols">
+      <div class="queue" id="queue"></div>
+      <div class="verdict">
+        <div class="panel" id="verdict"></div>
+      </div>
+    </div>
+  </section>
+
+  <footer>Prototype by Granted, inspired by your bookmarks</footer>
+</div>
+
+<!-- chase modal -->
+<div class="scrim" id="chaseScrim" role="dialog" aria-modal="true" aria-labelledby="chaseTitle">
+  <div class="modal">
+    <h3 id="chaseTitle">Draft chase email</h3>
+    <p class="sub" id="chaseSub">Drafted from the PO clauses that failed. Edit before sending.</p>
+    <textarea id="chaseBody" rows="16" spellcheck="false"></textarea>
+    <p class="err" id="chaseErr">The email body can’t be empty — add a note or cancel.</p>
+    <div class="mrow">
+      <button class="btn ghost" data-close="chaseScrim">Cancel</button>
+      <button class="btn" id="chaseSend">Send to supplier</button>
+    </div>
+  </div>
+</div>
+
+<!-- release modal -->
+<div class="scrim" id="relScrim" role="dialog" aria-modal="true" aria-labelledby="relTitle">
+  <div class="modal">
+    <h3 id="relTitle">Release anyway</h3>
+    <p class="sub" id="relSub">This overrides a HOLD. A reason is required and is written to the audit trail.</p>
+    <input type="text" id="relReason" placeholder="Reason for documented exception (min 10 characters)" autocomplete="off">
+    <p class="err" id="relErr">Please type a reason of at least 10 characters.</p>
+    <div class="logged" id="relLogged"></div>
+    <div class="mrow">
+      <button class="btn ghost" data-close="relScrim">Cancel</button>
+      <button class="btn" id="relConfirm">Log exception &amp; release</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function(){
+"use strict";
+
+var TEMPLATE_CITE_LEFT = {
+  title:"Purchase order clause",
+  src:"PO-4471 · Quality Clauses, page 3"
+};
+
+function cite(poSrc, poText, docSrc, docText){
+  return {poSrc:poSrc, poText:poText, docSrc:docSrc, docText:docText};
+}
+
+var SHIPMENTS = [
+ {po:"PO-4471", sup:"Meridian Precision", pn:"1042-003", rev:"C", name:"Gimbal yoke, 7075-T6", docs:5, req:6, status:"hold", key:"4471"},
+ {po:"PO-4468", sup:"Caldera Machine", pn:"2207-011", rev:"B", name:"Motor mount bracket", docs:4, req:4, status:"release", key:"4468"},
+ {po:"PO-4463", sup:"Northline Fab", pn:"3310-002", rev:"A", name:"Battery tray weldment", docs:3, req:4, status:"chase", key:"4463"},
+ {po:"PO-4459", sup:"Xometry", pn:"1042-007", rev:"D", name:"Sensor housing", docs:2, req:3, status:"chase", key:"tplChase"},
+ {po:"PO-4455", sup:"Blackrock Tool", pn:"5501-001", rev:"F", name:"Landing leg, Ti-6Al-4V", docs:6, req:7, status:"hold", key:"tplHold"},
+ {po:"PO-4450", sup:"Meridian Precision", pn:"1042-003", rev:"C", name:"Gimbal yoke, 7075-T6", docs:5, req:5, status:"release", key:"tplRelease"},
+ {po:"PO-4447", sup:"Summit Anodizing", pn:"2207-011", rev:"B", name:"Bracket, Type II anodize", docs:3, req:3, status:"release", key:"tplRelease"},
+ {po:"PO-4441", sup:"Caldera Machine", pn:"4120-009", rev:"B", name:"Encoder plate", docs:4, req:5, status:"hold", key:"tplHold"}
+];
+
+var CHECKS = {
+ "4471":[
+  {state:"ok", name:"Certificate of Conformance", exp:"required",
+   found:"FOUND — CoC-88213, part 1042-003 Rev C, signed 04 Nov 2026"},
+  {state:"bad", name:"Material test report, AMS-QQ-A-250/12", exp:"required", tag:"mismatch",
+   found:"FOUND, but spec reads <em>AMS 4027</em>",
+   cite:cite("PO-4471 · Quality clause QC-14",
+     "QC-14: Supplier shall furnish chemical and physical test reports traceable to heat lot for all raw material per AMS-QQ-A-250/12.",
+     "Meridian_MTR_H77241.pdf · page 1, header block",
+     "MATERIAL TEST REPORT\nAlloy/Temper : 7075-T651 plate\nSpecification: ⟦AMS 4027⟧\nHeat lot    : H-77241\nThickness   : 1.000 in")},
+  {state:"bad", name:"Mill cert heat number matches CoC", exp:"H-77214", tag:"transposed digits",
+   found:"CoC says <em>H-77214</em>, MTR says <em>H-77241</em>",
+   cite:cite("PO-4471 · Quality clause QC-09",
+     "QC-09: Heat/lot identification on the mill certification shall match the Certificate of Conformance and shall be legible on the raw material tag.",
+     "CoC-88213.pdf p.1  ·  Meridian_MTR_H77241.pdf p.1",
+     "CoC-88213 — Material heat lot: ⟦H-77214⟧\n\n— — — — — — — — — — — — — —\n\nMTR header  — Heat lot      : ⟦H-77241⟧\nMTR tensile — Heat lot      : ⟦H-77241⟧")},
+  {state:"bad", name:"Anodize cert, MIL-A-8625 Type II Class 2", exp:"required", tag:"missing",
+   found:"<em>MISSING</em> — no anodize certification in this package",
+   cite:cite("PO-4471 · Quality clause QC-22",
+     "QC-22: Chemical film / anodize processing shall be certified to MIL-A-8625 Type II Class 2. Processor name, tank log and date required.",
+     "Package contents, PO-4471 (5 documents)",
+     "1. CoC-88213.pdf\n2. Meridian_MTR_H77241.pdf\n3. DimReport_1042-003.pdf\n4. InspectionReport_1042003.pdf\n5. PackingSlip_4471.pdf\n\n⟦No document matching: anodize / MIL-A-8625 / Type II⟧")},
+  {state:"warn", name:"Dimensional report, 4 critical characteristics", exp:"required", tag:"out of tolerance — route to engineering, Dockside does not disposition",
+   found:"FOUND, 4 of 4 reported. Char #3 reads <em>12.07</em> against 12.00 ±0.05",
+   cite:cite("PO-4471 · Drawing 1042-003 Rev C, note 4",
+     "NOTE 4: Characteristics marked ◇ are critical. 100% inspection and a dimensional report are required. CHAR 3 — Ø12.00 ±0.05 bore, datum B.",
+     "DimReport_1042-003.pdf · page 2, results table",
+     "CHAR  NOMINAL   TOL      ACTUAL   RESULT\n 1    42.000   ±0.10    42.013    PASS\n 2     8.500   ±0.05     8.478    PASS\n 3    12.000   ±0.05    ⟦12.070⟧  ——\n 4     3.200   ±0.10     3.191    PASS")},
+  {state:"bad", name:"Drawing revision on all docs matches PO", exp:"Rev C", tag:"revision conflict",
+   found:"4 of 5 docs say Rev C. Inspection report says <em>Rev B</em>",
+   cite:cite("PO-4471 · Line item 1",
+     "LINE 1 — P/N 1042-003 REV C, Gimbal yoke, 7075-T6, qty 40. All submitted documentation shall reference the revision shown on this line.",
+     "InspectionReport_1042003.pdf · page 1, title block",
+     "FINAL INSPECTION REPORT\nPart number : 1042-003\nRevision    : ⟦B⟧\nQuantity    : 40\nInspector   : R. Vance   Date: 03 Nov 2026")}
+ ],
+ "4468":[
+  {state:"ok", name:"Certificate of Conformance", exp:"required", found:"FOUND — CoC-5590, part 2207-011 Rev B, signed 06 Nov 2026"},
+  {state:"ok", name:"Material test report, AMS-QQ-A-250/11", exp:"required", found:"FOUND — spec matches, heat lot C-20418"},
+  {state:"ok", name:"Mill cert heat number matches CoC", exp:"C-20418", found:"FOUND — CoC and MTR both read C-20418"},
+  {state:"ok", name:"Dimensional report, 3 critical characteristics", exp:"required", found:"FOUND — 3 of 3 reported, all within tolerance"},
+  {state:"ok", name:"Drawing revision on all docs matches PO", exp:"Rev B", found:"FOUND — 4 of 4 docs say Rev B"}
+ ],
+ "4463":[
+  {state:"ok", name:"Certificate of Conformance", exp:"required", found:"FOUND — CoC-NF-3302, part 3310-002 Rev A"},
+  {state:"ok", name:"Material test report, AMS-QQ-A-250/4", exp:"required", found:"FOUND — spec matches, heat lot N-5513"},
+  {state:"bad", name:"Welder qualification record, AWS D17.1", exp:"required", tag:"missing",
+   found:"<em>MISSING</em> — no welder or procedure qualification supplied",
+   cite:cite("PO-4463 · Quality clause QC-31",
+     "QC-31: Welding shall be performed per AWS D17.1 by qualified personnel. Supplier shall submit welder qualification records and the applicable WPS with each shipment.",
+     "Package contents, PO-4463 (3 documents)",
+     "1. CoC-NF-3302.pdf\n2. Northline_MTR_N5513.pdf\n3. FAI_3310-002.pdf\n\n⟦No document matching: WPS / welder qualification / AWS D17.1⟧")},
+  {state:"warn", name:"First article inspection, AS9102 forms 1–3", exp:"forms 1, 2, 3", tag:"incomplete — chase supplier",
+   found:"FOUND forms 1 and 2. <em>Form 3 absent</em>",
+   cite:cite("PO-4463 · Quality clause QC-18",
+     "QC-18: First article inspection per AS9102 Rev C. Forms 1, 2 and 3 shall be submitted in full for the first production lot.",
+     "FAI_3310-002.pdf · bookmark list",
+     "Form 1 — Part Number Accountability ....... p.1\nForm 2 — Product Accountability .......... p.2\n⟦Form 3 — Characteristic Accountability — not present⟧")}
+ ],
+ "tplHold":[
+  {state:"ok", name:"Certificate of Conformance", exp:"required", found:"FOUND — signed and legible"},
+  {state:"bad", name:"Material test report traceable to heat lot", exp:"required", tag:"missing",
+   found:"<em>MISSING</em> — heat lot referenced on CoC has no supporting MTR",
+   cite:cite("Quality clause QC-14",
+     "QC-14: Supplier shall furnish chemical and physical test reports traceable to heat lot for all raw material per AMS-QQ-A-250/12.",
+     "Package contents",
+     "CoC .......... present\nPacking slip . present\n⟦MTR ......... not present⟧")},
+  {state:"warn", name:"Dimensional report, critical characteristics", exp:"required", tag:"review — route to engineering",
+   found:"FOUND, one characteristic reported <em>at the tolerance limit</em>"},
+  {state:"ok", name:"Drawing revision on all docs matches PO", exp:"matches", found:"FOUND — all documents agree"}
+ ],
+ "tplChase":[
+  {state:"ok", name:"Certificate of Conformance", exp:"required", found:"FOUND — signed and legible"},
+  {state:"warn", name:"Dimensional report, critical characteristics", exp:"required", tag:"incomplete — chase supplier",
+   found:"FOUND, but <em>2 of 3 characteristics</em> reported",
+   cite:cite("Quality clause QC-07",
+     "QC-07: A dimensional report covering 100% of characteristics identified as critical on the drawing shall accompany each shipment.",
+     "Inspection report · results table",
+     "CHAR  NOMINAL   ACTUAL  RESULT\n 1    20.000   19.996   PASS\n 2     6.350    6.344   PASS\n⟦CHAR 3 — not reported⟧")},
+  {state:"ok", name:"Drawing revision on all docs matches PO", exp:"matches", found:"FOUND — all documents agree"}
+ ],
+ "tplRelease":[
+  {state:"ok", name:"Certificate of Conformance", exp:"required", found:"FOUND — signed and legible"},
+  {state:"ok", name:"Material test report traceable to heat lot", exp:"required", found:"FOUND — spec and heat lot match the CoC"},
+  {state:"ok", name:"Dimensional report, critical characteristics", exp:"required", found:"FOUND — all characteristics within tolerance"},
+  {state:"ok", name:"Drawing revision on all docs matches PO", exp:"matches", found:"FOUND — all documents agree"}
+ ]
+};
+
+var CHASE = {
+ "4471":"To: quality@meridianprecision.com\nCc: j.okafor@aerovant.com\nSubject: PO-4471 / P/N 1042-003 Rev C — 3 blocking documentation items\n\nHi Dana,\n\nThe shipment against PO-4471 (gimbal yoke, 1042-003 Rev C, qty 40) is on receiving hold. Three items block release:\n\n1. Material test report — spec mismatch (clause QC-14)\n   MTR header reads AMS 4027; PO requires AMS-QQ-A-250/12. Please send the correct MTR or written equivalency.\n\n2. Heat lot conflict (clause QC-09)\n   CoC-88213 states heat lot H-77214; the MTR states H-77241. Please confirm the true heat lot and reissue the incorrect document.\n\n3. Anodize certification missing (clause QC-22)\n   No certification to MIL-A-8625 Type II Class 2 was in the package. Processor name, tank log and date required.\n\nSeparately, dimensional char #3 reads 12.07 against 12.00 +/-0.05. That is going to our engineering team for disposition — no action needed from you yet.\n\nPlease respond with the corrected documents by Thursday 12 Nov 2026 so we can book the parts in before the build kit closes.\n\nThanks,\nJ. Okafor\nQuality — Aerovant",
+ "4463":"To: quality@northlinefab.com\nCc: j.okafor@aerovant.com\nSubject: PO-4463 / P/N 3310-002 Rev A — 2 outstanding documents\n\nHi Marco,\n\nThe battery tray weldments against PO-4463 arrived with 3 of 4 required documents. Outstanding:\n\n1. Welder qualification records + WPS (clause QC-31)\n   Welding per AWS D17.1 requires qualification records with each shipment. Nothing was supplied.\n\n2. AS9102 Form 3 (clause QC-18)\n   Forms 1 and 2 were received; Form 3, Characteristic Accountability, is absent.\n\nThe CoC and MTR are both good — heat lot N-5513 matches.\n\nPlease send both by Wednesday 11 Nov 2026 and we will release the lot on receipt.\n\nThanks,\nJ. Okafor\nQuality — Aerovant",
+ "default":"To: supplier quality\nCc: j.okafor@aerovant.com\nSubject: [[PO]] / P/N [[PN]] — outstanding documentation\n\nHello,\n\nThe shipment against [[PO]] ([[NAME]]) is held at receiving pending the documentation items listed on our verdict sheet, referenced to the quality clauses on the purchase order.\n\nPlease respond with the corrected or missing documents by Thursday 12 Nov 2026.\n\nThanks,\nJ. Okafor\nQuality — Aerovant"
+};
+
+var STATUS_LABEL = {hold:"HOLD", release:"RELEASE", chase:"CHASE"};
+var LINE = {
+  hold:"Do not book in. Blocking documentation defects found.",
+  release:"Paperwork complete and consistent. Clear to book in.",
+  chase:"Not blocking yet — documents missing or incomplete."
+};
+
+var selected = 0;
+var openCite = null;
+var qEl = document.getElementById("queue");
+var vEl = document.getElementById("verdict");
+
+function esc(s){
+  return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+}
+function escHL(s){
+  return esc(s).replace(/⟦/g,"<mark>").replace(/⟧/g,"</mark>");
+}
+
+function renderQueue(){
+  var h = "";
+  for(var i=0;i<SHIPMENTS.length;i++){
+    var s = SHIPMENTS[i];
+    h += '<button class="card '+s.status+(i===selected?" sel":"")+'" data-i="'+i+'" aria-pressed="'+(i===selected)+'">'+
+      '<span class="r1"><span class="po">'+esc(s.po)+'</span><span class="pill '+s.status+'">'+STATUS_LABEL[s.status]+'</span></span>'+
+      '<span class="sup">'+esc(s.sup)+'</span>'+
+      '<span class="pn">'+esc(s.pn)+' Rev '+esc(s.rev)+' · '+esc(s.name)+'</span>'+
+      '<span class="docs">'+s.docs+' documents received</span>'+
+      '</button>';
+  }
+  qEl.innerHTML = h;
+}
+
+function renderVerdict(){
+  var s = SHIPMENTS[selected];
+  var checks = CHECKS[s.key] || CHECKS.tplRelease;
+  var bad = 0, warn = 0;
+  for(var i=0;i<checks.length;i++){ if(checks[i].state==="bad") bad++; if(checks[i].state==="warn") warn++; }
+
+  var h = '<div class="vhead">'+
+    '<div><span class="pill big '+s.status+'">'+STATUS_LABEL[s.status]+'</span>'+
+    '<h2>'+esc(s.sup)+' · '+esc(s.po)+'</h2>'+
+    '<div class="meta">'+esc(s.pn)+' Rev '+esc(s.rev)+' — '+esc(s.name)+'</div></div>'+
+    '<div class="right">'+s.docs+' documents received, '+s.req+' required<br>'+
+    (bad? bad+' blocking · ' : '')+(warn? warn+' to review · ' : '')+(checks.length-bad-warn)+' clear</div>'+
+    '</div>'+
+    '<p class="summary">'+esc(LINE[s.status])+'</p><div id="checks">';
+
+  for(var j=0;j<checks.length;j++){
+    var c = checks[j];
+    var mk = c.state==="ok" ? '<span class="mark ok">✓</span>' : (c.state==="bad" ? '<span class="mark bad">✗</span>' : '<span class="mark warn">!</span>');
+    var hasCite = !!c.cite;
+    h += '<div class="req">'+
+      '<button class="reqbtn" '+(hasCite?('data-c="'+j+'" aria-expanded="false"'):'aria-disabled="true" tabindex="-1"')+'>'+
+      mk+'<span class="reqtxt"><span class="name">'+esc(c.name)+'</span>'+
+      '<span class="found '+c.state+'">Expected: '+esc(c.exp)+' · '+c.found+'</span>'+
+      (c.tag?('<span class="tag '+(c.state==="bad"?"bad":"warn")+'">'+esc(c.tag)+'</span>'):'')+
+      '</span>'+
+      (hasCite?'<span class="chev" data-chev="'+j+'">Show source ▾</span>':'')+
+      '</button>';
+    if(hasCite){
+      h += '<div class="cite" id="cite-'+j+'"><div class="panes">'+
+        '<div class="pane"><h4>Purchase order says</h4><div class="src">'+esc(c.cite.poSrc)+'</div><p class="doc">'+escHL(c.cite.poText)+'</p></div>'+
+        '<div class="pane"><h4>Supplier document says</h4><div class="src">'+esc(c.cite.docSrc)+'</div><p class="doc">'+escHL(c.cite.docText)+'</p></div>'+
+        '</div></div>';
+    }
+    h += '</div>';
+  }
+
+  h += '</div><div class="actions">'+
+    '<button class="btn" id="chaseBtn">Draft chase email</button>'+
+    '<button class="btn ghost" id="relBtn">Release anyway</button>'+
+    '</div>'+
+    '<div class="statbar">Illustrative — This week: 23 shipments, 7 held, 14 chase emails sent, est. 9.5 hours of PDF review avoided.</div>';
+
+  vEl.innerHTML = h;
+  openCite = null;
+}
+
+function toggleCite(idx, btn){
+  var el = document.getElementById("cite-"+idx);
+  if(!el) return;
+  var chev = btn.querySelector("[data-chev]");
+  var isOpen = el.classList.contains("open");
+  if(openCite !== null && openCite !== idx){
+    var prev = document.getElementById("cite-"+openCite);
+    if(prev){ prev.classList.remove("open"); }
+    var pbtn = vEl.querySelector('.reqbtn[data-c="'+openCite+'"]');
+    if(pbtn){ pbtn.setAttribute("aria-expanded","false"); var pc=pbtn.querySelector("[data-chev]"); if(pc) pc.textContent="Show source ▾"; }
+  }
+  if(isOpen){
+    el.classList.remove("open"); btn.setAttribute("aria-expanded","false");
+    if(chev) chev.textContent = "Show source ▾";
+    openCite = null;
+  } else {
+    el.classList.add("open"); btn.setAttribute("aria-expanded","true");
+    if(chev) chev.textContent = "Hide source ▴";
+    openCite = idx;
+  }
+}
+
+var toastEl = document.getElementById("toast");
+var toastT = null;
+function toast(msg){
+  toastEl.textContent = msg;
+  toastEl.classList.add("show");
+  if(toastT) clearTimeout(toastT);
+  toastT = setTimeout(function(){ toastEl.classList.remove("show"); }, 3200);
+}
+
+function openModal(id){ document.getElementById(id).classList.add("open"); }
+function closeModal(id){ document.getElementById(id).classList.remove("open"); }
+
+// queue clicks
+qEl.addEventListener("click", function(e){
+  var b = e.target.closest ? e.target.closest(".card") : null;
+  if(!b) return;
+  var i = parseInt(b.getAttribute("data-i"),10);
+  if(isNaN(i)) return;
+  selected = i;
+  renderQueue();
+  renderVerdict();
+  if(window.innerWidth < 860){
+    var v = document.getElementById("verdict");
+    if(v && v.scrollIntoView) v.scrollIntoView({behavior:"smooth", block:"start"});
+  }
+});
+
+// verdict clicks
+vEl.addEventListener("click", function(e){
+  var t = e.target;
+  var rb = t.closest ? t.closest(".reqbtn") : null;
+  if(rb && rb.hasAttribute("data-c")){
+    toggleCite(parseInt(rb.getAttribute("data-c"),10), rb);
+    return;
+  }
+  if(t.id === "chaseBtn"){ doChase(); return; }
+  if(t.id === "relBtn"){ doRelease(); return; }
+});
+
+function doChase(){
+  var s = SHIPMENTS[selected];
+  var body = CHASE[s.key];
+  if(!body){
+    body = CHASE["default"].replace(/\[\[PO\]\]/g, s.po).replace(/\[\[PN\]\]/g, s.pn+" Rev "+s.rev).replace(/\[\[NAME\]\]/g, s.name);
+  }
+  document.getElementById("chaseBody").value = body;
+  document.getElementById("chaseSub").textContent = "Drafted from the PO clauses that failed on "+s.po+". Edit before sending.";
+  document.getElementById("chaseErr").classList.remove("show");
+  openModal("chaseScrim");
+}
+
+function doRelease(){
+  var s = SHIPMENTS[selected];
+  document.getElementById("relSub").textContent = "Overrides the "+STATUS_LABEL[s.status]+" on "+s.po+". A reason is required and is written to the audit trail.";
+  document.getElementById("relReason").value = "";
+  document.getElementById("relErr").classList.remove("show");
+  document.getElementById("relLogged").classList.remove("show");
+  openModal("relScrim");
+}
+
+document.getElementById("chaseSend").addEventListener("click", function(){
+  var ta = document.getElementById("chaseBody");
+  var err = document.getElementById("chaseErr");
+  if(!ta.value.trim()){
+    err.classList.add("show");
+    ta.focus();
+    return;
+  }
+  err.classList.remove("show");
+  closeModal("chaseScrim");
+  toast("Chase email queued to "+SHIPMENTS[selected].sup+" · reply tracked against "+SHIPMENTS[selected].po);
+});
+
+document.getElementById("relConfirm").addEventListener("click", function(){
+  var inp = document.getElementById("relReason");
+  var err = document.getElementById("relErr");
+  var val = inp.value.trim();
+  if(val.length < 10){
+    err.classList.add("show");
+    inp.focus();
+    return;
+  }
+  err.classList.remove("show");
+  var logged = document.getElementById("relLogged");
+  logged.textContent = "Logged: released with documented exception by J. Okafor, 09 Nov 2026 — “"+val+"” ("+SHIPMENTS[selected].po+")";
+  logged.classList.add("show");
+  setTimeout(function(){
+    closeModal("relScrim");
+    toast("Exception logged to the audit trail for "+SHIPMENTS[selected].po);
+  }, 1600);
+});
+
+var closers = document.querySelectorAll("[data-close]");
+for(var k=0;k<closers.length;k++){
+  closers[k].addEventListener("click", function(){ closeModal(this.getAttribute("data-close")); });
+}
+var scrims = document.querySelectorAll(".scrim");
+for(var m=0;m<scrims.length;m++){
+  scrims[m].addEventListener("click", function(e){ if(e.target === this) this.classList.remove("open"); });
+}
+document.addEventListener("keydown", function(e){
+  if(e.key === "Escape"){
+    closeModal("chaseScrim"); closeModal("relScrim");
+  }
+});
+
+document.getElementById("runBtn").addEventListener("click", function(){
+  var btn = this;
+  btn.disabled = true;
+  btn.textContent = "Reading 19 PDFs…";
+  setTimeout(function(){
+    btn.textContent = "Matching against PO clauses…";
+  }, 650);
+  setTimeout(function(){
+    btn.disabled = false;
+    btn.textContent = "Run Dockside →";
+    var el = document.getElementById("after");
+    if(el && el.scrollIntoView) el.scrollIntoView({behavior:"smooth", block:"start"});
+    toast("8 shipments triaged · 3 held, 2 to chase, 3 clear to book in");
+  }, 1400);
+});
+
+renderQueue();
+renderVerdict();
+})();
+</script>
+</body>
+</html>

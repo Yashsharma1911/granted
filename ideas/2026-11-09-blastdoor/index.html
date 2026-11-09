@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Blastdoor — what your editor extensions can actually do</title>
+<style>
+:root{
+  --bg:#0b0d10; --bg2:#12151a; --card:#14181e; --line:#242a33;
+  --tx:#e8ecf2; --dim:#8b95a5; --acc:#5ad1a8; --red:#ff5f56; --amber:#ffb340;
+  --blue:#6aa8ff; --purple:#b388ff;
+}
+@media (prefers-color-scheme: light){
+  :root{ --bg:#f5f6f8; --bg2:#ffffff; --card:#ffffff; --line:#e2e6ec;
+         --tx:#12161c; --dim:#5d6878; --acc:#0f8f6b; --red:#d13b31; --amber:#9a6200;
+         --blue:#1f62c9; --purple:#6b3fd4; }
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--tx);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  -webkit-font-smoothing:antialiased; line-height:1.45;
+  padding-bottom:env(safe-area-inset-bottom);
+}
+code,.mono,textarea{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace}
+.wrap{max-width:900px;margin:0 auto;padding:16px}
+header.top{
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  padding:12px 16px;border-bottom:1px solid var(--line);
+  position:sticky;top:0;background:var(--bg);z-index:30;
+}
+.mark{display:flex;align-items:center;gap:8px;font-weight:800;letter-spacing:-.02em}
+.mark svg{display:block}
+.tagline{color:var(--dim);font-size:13px}
+.screen{display:none}
+.screen.on{display:block}
+
+/* SCREEN 1 */
+.paste{min-height:72vh;display:flex;flex-direction:column;justify-content:center;gap:16px;padding:28px 0}
+h1{font-size:clamp(26px,6.5vw,44px);line-height:1.08;margin:0;letter-spacing:-.03em}
+.sub{color:var(--dim);font-size:15px;margin:0}
+.sub code{background:var(--bg2);border:1px solid var(--line);padding:2px 6px;border-radius:6px;font-size:13px}
+textarea{
+  width:100%;min-height:190px;background:var(--bg2);color:var(--tx);
+  border:1px solid var(--line);border-radius:12px;padding:14px;font-size:13px;
+  resize:vertical;line-height:1.7;
+}
+textarea:focus{outline:2px solid var(--acc);outline-offset:1px}
+.row{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+button{
+  font:inherit;cursor:pointer;border-radius:11px;border:1px solid transparent;
+  min-height:46px;padding:0 18px;font-weight:650;
+}
+.btn-primary{background:var(--acc);color:#07120e;}
+@media (prefers-color-scheme: light){.btn-primary{color:#fff}}
+.btn-primary:active{transform:translateY(1px)}
+.btn-ghost{background:transparent;color:var(--tx);border:1px solid var(--line)}
+.linkish{background:none;border:none;color:var(--acc);text-decoration:underline;padding:10px 4px;min-height:44px;font-size:14px}
+.note-small{color:var(--dim);font-size:12.5px;margin:0}
+.err{color:var(--red);font-size:13.5px;min-height:18px;margin:0}
+
+/* loading */
+.loading{padding:60px 0;text-align:center;color:var(--dim)}
+.bar{height:4px;background:var(--line);border-radius:4px;overflow:hidden;max-width:320px;margin:16px auto 0}
+.bar i{display:block;height:100%;width:0;background:var(--acc);animation:fill .8s ease forwards}
+@keyframes fill{to{width:100%}}
+
+/* SCREEN 2 */
+.band{padding:22px 0 8px}
+.band h2{font-size:clamp(22px,5.4vw,34px);line-height:1.2;margin:0;letter-spacing:-.025em;font-weight:800}
+.band h2 b{color:var(--red)}
+.band h2 .n{font-variant-numeric:tabular-nums}
+.alert{
+  display:flex;gap:12px;align-items:flex-start;border-radius:12px;padding:13px 14px;
+  margin-top:12px;border:1px solid;font-size:14px;flex-wrap:wrap;
+}
+.alert .txt{flex:1 1 220px;min-width:0}
+.a-red{background:rgba(255,95,86,.10);border-color:rgba(255,95,86,.45)}
+.a-amber{background:rgba(255,179,64,.10);border-color:rgba(255,179,64,.45)}
+.a-red strong{color:var(--red)}
+.a-amber strong{color:var(--amber)}
+.dotico{width:10px;height:10px;border-radius:50%;margin-top:6px;flex:0 0 auto}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin:20px 0 10px}
+.chip{
+  background:var(--bg2);border:1px solid var(--line);color:var(--dim);
+  border-radius:999px;padding:0 14px;min-height:40px;font-size:13.5px;font-weight:600;
+}
+.chip.sel{background:var(--tx);color:var(--bg);border-color:var(--tx)}
+.grid{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--card)}
+.ghead,.grow{display:grid;grid-template-columns:minmax(0,1fr) 34px 34px 34px 34px 72px 76px;gap:6px;align-items:center}
+.ghead{padding:10px 14px;background:var(--bg2);border-bottom:1px solid var(--line);
+  font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--dim);font-weight:700}
+.ghead span{text-align:center}
+.ghead span:first-child{text-align:left}
+.grow{padding:12px 14px;border-bottom:1px solid var(--line);cursor:pointer;width:100%;background:none;
+  color:inherit;text-align:left;border-left:0;border-right:0;border-top:0;font:inherit;min-height:58px;border-radius:0}
+.grow:hover{background:var(--bg2)}
+.rowwrap:last-child .grow{border-bottom:none}
+.rowwrap{opacity:0;transform:translateY(6px);animation:in .32s ease forwards}
+@keyframes in{to{opacity:1;transform:none}}
+.idcell{min-width:0}
+.idname{font-size:13.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.idmeta{font-size:11px;color:var(--dim);margin-top:3px;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.pill{border-radius:999px;padding:1px 7px;font-size:10px;font-weight:700;letter-spacing:.03em;border:1px solid}
+.p-ver{color:var(--acc);border-color:rgba(90,209,168,.45)}
+.p-unv{color:var(--amber);border-color:rgba(255,179,64,.5)}
+.dot{width:13px;height:13px;border-radius:50%;margin:0 auto;display:block;box-sizing:border-box}
+.d-off{border:1.5px solid var(--line);background:transparent}
+.pub{font-size:11.5px;color:var(--dim);text-align:center;font-variant-numeric:tabular-nums}
+.pub.hot{color:var(--red);font-weight:700}
+.st{font-size:10px;font-weight:800;letter-spacing:.05em;text-align:center}
+.st-a{color:var(--dim)}
+.st-r{color:var(--red)}
+.exp{padding:0 14px 16px;border-bottom:1px solid var(--line);background:var(--bg2)}
+.exp p{margin:0 0 10px;font-size:14px}
+.exp .cap{font-size:10.5px;text-transform:uppercase;letter-spacing:.09em;color:var(--dim);margin:12px 0 6px;font-weight:700}
+pre{margin:0;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:12px;
+  overflow:auto;font-size:11.5px;line-height:1.6;color:var(--dim)}
+pre b{color:var(--blue);font-weight:600}
+pre u{color:var(--purple);text-decoration:none}
+.empty{padding:34px 16px;text-align:center;color:var(--dim);font-size:14px}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin:20px 0 6px}
+
+/* SCREEN 3 */
+.sharecard{
+  background:#0e1116;color:#e8ecf2;border:1px solid #242a33;border-radius:18px;
+  padding:22px;margin-top:16px;
+}
+.sharecard h3{margin:14px 0 4px;font-size:clamp(21px,5.2vw,30px);line-height:1.18;letter-spacing:-.02em}
+.sharecard .big{color:#ff5f56}
+.capbar{margin-top:12px}
+.capbar .lbl{display:flex;justify-content:space-between;font-size:12px;color:#8b95a5;margin-bottom:4px}
+.track{height:8px;border-radius:6px;background:#1d222a;overflow:hidden}
+.track i{display:block;height:100%;border-radius:6px;transition:width .7s cubic-bezier(.2,.8,.2,1)}
+.sharefoot{margin-top:18px;padding-top:14px;border-top:1px solid #242a33;display:flex;
+  justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;font-size:12px;color:#8b95a5}
+.toast{
+  position:fixed;left:50%;bottom:24px;transform:translate(-50%,20px);
+  background:var(--tx);color:var(--bg);padding:12px 18px;border-radius:999px;
+  font-size:13.5px;font-weight:650;opacity:0;pointer-events:none;transition:.25s;z-index:60;
+  max-width:92vw;text-align:center;
+}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+footer{color:var(--dim);font-size:12px;text-align:center;padding:32px 16px 28px}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:11px;color:var(--dim);margin:10px 2px 0}
+.legend span{display:flex;align-items:center;gap:5px}
+@media (max-width:560px){
+  .ghead,.grow{grid-template-columns:minmax(0,1fr) 26px 26px 26px 26px 54px;gap:4px}
+  .ghead span:nth-child(7),.grow .st{display:none}
+  .grow{padding:11px 10px}.ghead{padding:9px 10px}.exp{padding:0 10px 14px}
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="mark">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M12 2.5 4 6v6c0 5 3.4 8.4 8 9.5 4.6-1.1 8-4.5 8-9.5V6l-8-3.5Z" stroke="#5ad1a8" stroke-width="1.8" stroke-linejoin="round"/>
+      <circle cx="12" cy="12" r="2.6" fill="#5ad1a8"/>
+    </svg>
+    Blastdoor
+  </div>
+  <div class="tagline">what your editor extensions can actually do · <span class="mono">Demo data</span></div>
+</header>
+
+<main class="wrap">
+
+<!-- SCREEN 1 -->
+<section id="s1" class="screen on">
+  <div class="paste">
+    <h1>What can your editor extensions actually&nbsp;do?</h1>
+    <p class="sub">Paste <code>code --list-extensions --show-versions</code>. Nothing leaves your browser.</p>
+    <textarea id="input" spellcheck="false" aria-label="Extension list"
+placeholder="ms-python.python@2024.18.0
+esbenp.prettier-vscode@11.0.0
+dbaeumer.vscode-eslint@3.0.10
+eamodio.gitlens@15.6.0
+..."></textarea>
+    <p class="err" id="err"></p>
+    <div class="row">
+      <button class="btn-primary" id="scan">Scan</button>
+      <button class="linkish" id="sample">use sample list</button>
+    </div>
+    <p class="note-small">Analysis runs on a hard-coded capability index of 12 popular extensions. No registry lookup, no login, no telemetry.</p>
+  </div>
+</section>
+
+<!-- LOADING -->
+<section id="sload" class="screen">
+  <div class="loading">
+    <div>Reading manifests · resolving publishers · checking registry snapshot…</div>
+    <div class="bar"><i></i></div>
+  </div>
+</section>
+
+<!-- SCREEN 2 -->
+<section id="s2" class="screen">
+  <div class="band">
+    <h2 id="headline"></h2>
+  </div>
+  <div class="alert a-red">
+    <span class="dotico" style="background:var(--red)"></span>
+    <span class="txt"><strong>1 extension you have installed was REMOVED from the registry 3 days ago:</strong>
+      <span class="mono">claudecode.claude-vscode-helper</span></span>
+    <button class="btn-ghost" id="copyUninstall">Uninstall command</button>
+  </div>
+  <div class="alert a-amber">
+    <span class="dotico" style="background:var(--amber)"></span>
+    <span class="txt"><strong>3 extensions published a new version in the last 7 days.</strong>
+      Updates ship new code with the same permissions.</span>
+  </div>
+
+  <div class="chips" id="chips"></div>
+
+  <div class="grid">
+    <div class="ghead">
+      <span>Extension</span><span>Sh</span><span>Fi</span><span>Net</span><span>Sec</span><span>Published</span><span>Status</span>
+    </div>
+    <div id="rows"></div>
+  </div>
+  <div class="legend">
+    <span><i class="dot" style="background:var(--red)"></i> shell</span>
+    <span><i class="dot" style="background:var(--amber)"></i> files</span>
+    <span><i class="dot" style="background:var(--blue)"></i> network</span>
+    <span><i class="dot" style="background:var(--purple)"></i> secrets</span>
+    <span><i class="dot d-off"></i> no access</span>
+    <span>Tap a row for the manifest</span>
+  </div>
+
+  <div class="actions">
+    <button class="btn-primary" id="goShare">Share your blast radius</button>
+    <button class="btn-ghost" id="recheck">Re-check next week</button>
+    <button class="btn-ghost" id="back1">Scan another list</button>
+  </div>
+</section>
+
+<!-- SCREEN 3 -->
+<section id="s3" class="screen">
+  <div class="band"><h2>Share your blast radius</h2></div>
+  <p class="note-small">Nothing is uploaded. The card is rendered locally from your scan.</p>
+  <div class="sharecard" id="card">
+    <div style="display:flex;align-items:center;gap:8px;font-weight:800;color:#e8ecf2">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M12 2.5 4 6v6c0 5 3.4 8.4 8 9.5 4.6-1.1 8-4.5 8-9.5V6l-8-3.5Z" stroke="#5ad1a8" stroke-width="1.8" stroke-linejoin="round"/>
+        <circle cx="12" cy="12" r="2.6" fill="#5ad1a8"/>
+      </svg> Blastdoor
+    </div>
+    <h3><span class="big" id="cardNum">7 of my 12</span> editor extensions can run a shell</h3>
+    <div id="bars"></div>
+    <div class="sharefoot">
+      <span class="mono">blastdoor.dev — paste your own list</span>
+      <span class="mono" id="cardDate"></span>
+    </div>
+  </div>
+  <div class="actions">
+    <button class="btn-primary" id="png">Download PNG</button>
+    <button class="btn-ghost" id="back2">Back to results</button>
+  </div>
+</section>
+
+<footer>Prototype by Granted, inspired by your bookmarks</footer>
+</main>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function(){
+"use strict";
+
+var DATA = [
+ {id:"ms-python.python",pub:"ms-python",ver:true,iv:"2024.18.0",lv:"2024.18.0",days:21,shell:true,files:"all",net:true,sec:false,status:"ACTIVE",note:"Runs interpreters and debug adapters as subprocesses.",act:["onLanguage:python","onDebugResolve:python","workspaceContains:**/*.py"],contrib:"debuggers, tasks, terminal, commands",main:"./out/client/extension.js"},
+ {id:"esbenp.prettier-vscode",pub:"esbenp",ver:true,iv:"11.0.0",lv:"11.0.0",days:64,shell:false,files:"workspace",net:false,sec:false,status:"ACTIVE",note:"Formats files in the workspace.",act:["onStartupFinished"],contrib:"configuration, formatters",main:"./dist/extension.js"},
+ {id:"anysphere.cursorpyright",pub:"anysphere",ver:true,iv:"1.0.9",lv:"1.0.12",days:2,shell:true,files:"all",net:true,sec:false,status:"ACTIVE",note:"New version published 2 days ago — you are 3 behind.",act:["onLanguage:python","onStartupFinished"],contrib:"languages, commands, configuration",main:"./dist/extension.js"},
+ {id:"dbaeumer.vscode-eslint",pub:"dbaeumer",ver:true,iv:"3.0.10",lv:"3.0.10",days:40,shell:true,files:"workspace",net:false,sec:false,status:"ACTIVE",note:"Executes node from your workspace, including local plugins.",act:["onStartupFinished","workspaceContains:.eslintrc"],contrib:"commands, configuration, taskDefinitions",main:"./client/out/extension.js"},
+ {id:"rangav.vscode-thunder-client",pub:"rangav",ver:false,iv:"2.33.1",lv:"2.33.1",days:110,shell:false,files:"all",net:true,sec:true,status:"ACTIVE",note:"Stores API tokens and makes arbitrary outbound requests.",act:["onStartupFinished","onView:thunder-client"],contrib:"views, viewsContainers, commands, secretStorage",main:"./dist/extension.js"},
+ {id:"ritwickdey.liveserver",pub:"ritwickdey",ver:false,iv:"5.7.9",lv:"5.7.9",days:300,shell:false,files:"workspace",net:true,sec:false,status:"ACTIVE",note:"Opens a local server on activation.",act:["*"],contrib:"commands, configuration",main:"./out/extension.js"},
+ {id:"claudecode.claude-vscode-helper",pub:"claudecode",ver:false,iv:"1.2.4",lv:"—",days:11,shell:true,files:"all",net:true,sec:true,status:"REMOVED",note:"REMOVED from the registry 3 days ago — still installed on your machine.",act:["*","onStartupFinished"],contrib:"commands, terminal, authentication, secretStorage",main:"./dist/bundle.min.js"},
+ {id:"github.copilot",pub:"github",ver:true,iv:"1.260.0",lv:"1.262.0",days:1,shell:false,files:"all",net:true,sec:true,status:"ACTIVE",note:"New version published yesterday.",act:["onStartupFinished"],contrib:"authentication, chatParticipants, commands",main:"./dist/extension.js"},
+ {id:"eamodio.gitlens",pub:"eamodio",ver:true,iv:"15.6.0",lv:"15.6.0",days:33,shell:true,files:"all",net:true,sec:true,status:"ACTIVE",note:"Runs git and reads your credential helper.",act:["onStartupFinished","onFileSystem:gitlens"],contrib:"views, commands, authentication, secretStorage",main:"./dist/gitlens.js"},
+ {id:"pkief.material-icon-theme",pub:"pkief",ver:true,iv:"5.14.1",lv:"5.14.1",days:88,shell:false,files:"no",net:false,sec:false,status:"ACTIVE",note:"Icons only.",act:["onStartupFinished"],contrib:"iconThemes",main:"./dist/extension.js"},
+ {id:"formulahendry.code-runner",pub:"formulahendry",ver:false,iv:"0.12.2",lv:"0.12.2",days:420,shell:true,files:"all",net:false,sec:false,status:"ACTIVE",note:"Activates on `*` and executes arbitrary commands.",act:["*"],contrib:"commands, menus, configuration, terminal",main:"./out/src/extension.js"},
+ {id:"tabnine.tabnine-vscode",pub:"tabnine",ver:false,iv:"3.280.0",lv:"3.281.0",days:4,shell:true,files:"all",net:true,sec:false,status:"ACTIVE",note:"Ships a native binary, new version 4 days ago.",act:["*"],contrib:"commands, views, statusBar",main:"./out/extension.js"}
+];
+
+var SAMPLE = DATA.map(function(d){return d.id+"@"+d.iv;}).join("\n");
+
+var $ = function(s){return document.querySelector(s);};
+var screens = {s1:$("#s1"), sload:$("#sload"), s2:$("#s2"), s3:$("#s3")};
+function show(k){ for(var n in screens){ screens[n].classList.toggle("on", n===k); } window.scrollTo(0,0); }
+
+var toastT=null;
+function toast(msg){
+  var t=$("#toast"); t.textContent=msg; t.classList.add("on");
+  if(toastT) clearTimeout(toastT);
+  toastT=setTimeout(function(){t.classList.remove("on");},2200);
+}
+
+function esc(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+
+var filter="all";
+var expanded={};
+
+function filtered(){
+  return DATA.filter(function(d){
+    if(filter==="shell") return d.shell;
+    if(filter==="unverified") return !d.ver;
+    if(filter==="week") return d.days<=7 || d.status==="REMOVED";
+    return true;
+  });
+}
+
+function power(d){
+  var p=0;
+  if(d.status==="REMOVED") p+=100;
+  if(d.shell) p+=8;
+  if(d.sec) p+=6;
+  if(d.files==="all") p+=5; else if(d.files==="workspace") p+=2;
+  if(d.net) p+=3;
+  if(!d.ver) p+=2;
+  if(d.days<=7) p+=1;
+  return p;
+}
+
+function dot(on,color){
+  return '<i class="dot '+(on?'':'d-off')+'" '+(on?'style="background:'+color+'"':'')+'></i>';
+}
+
+function manifest(d){
+  var acts = d.act.map(function(a){return '    <u>"'+esc(a)+'"</u>';}).join(",\n");
+  return '{\n'+
+   '  <b>"name"</b>: "'+esc(d.id.split(".")[1])+'",\n'+
+   '  <b>"publisher"</b>: "'+esc(d.pub)+'",\n'+
+   '  <b>"version"</b>: "'+esc(d.iv)+'",\n'+
+   '  <b>"activationEvents"</b>: [\n'+acts+'\n  ],\n'+
+   '  <b>"contributes"</b>: { '+esc(d.contrib)+' },\n'+
+   '  <b>"main"</b>: "'+esc(d.main)+'"\n'+
+   '}';
+}
+
+function render(animate){
+  var list = filtered().slice().sort(function(a,b){return power(b)-power(a);});
+  var host = $("#rows");
+  if(!list.length){
+    host.innerHTML='<div class="empty">No extensions match this filter. Try <b>All</b>.</div>';
+    return;
+  }
+  var html="";
+  list.forEach(function(d,i){
+    var open = !!expanded[d.id];
+    html += '<div class="rowwrap" style="animation-delay:'+(animate? i*55 : 0)+'ms">'+
+      '<button class="grow" data-id="'+esc(d.id)+'" aria-expanded="'+open+'">'+
+        '<span class="idcell">'+
+          '<span class="idname">'+esc(d.id)+'</span>'+
+          '<span class="idmeta"><span class="pill '+(d.ver?'p-ver':'p-unv')+'">'+(d.ver?'verified':'unverified')+'</span>'+
+          '<span class="mono">'+esc(d.iv)+(d.lv!==d.iv?' → '+esc(d.lv):'')+'</span></span>'+
+        '</span>'+
+        dot(d.shell,'var(--red)')+
+        dot(d.files!=="no",'var(--amber)')+
+        dot(d.net,'var(--blue)')+
+        dot(d.sec,'var(--purple)')+
+        '<span class="pub '+(d.days<=7?'hot':'')+'">'+d.days+'d ago</span>'+
+        '<span class="st '+(d.status==="REMOVED"?'st-r':'st-a')+'">'+d.status+'</span>'+
+      '</button>';
+    if(open){
+      html += '<div class="exp">'+
+        '<p>'+esc(d.note)+'</p>'+
+        '<p class="note-small">Files: <b>'+esc(d.files)+'</b> · Shell: <b>'+(d.shell?'yes':'no')+
+        '</b> · Network: <b>'+(d.net?'yes':'no')+'</b> · Secrets: <b>'+(d.sec?'yes':'no')+'</b></p>'+
+        '<div class="cap">package.json (reconstructed)</div>'+
+        '<pre class="mono">'+manifest(d)+'</pre>'+
+      '</div>';
+    }
+    html += '</div>';
+  });
+  host.innerHTML = html;
+}
+
+function buildChips(){
+  var defs=[["all","All"],["shell","Can run a shell"],["unverified","Unverified publisher"],["week","Changed this week"]];
+  $("#chips").innerHTML = defs.map(function(c){
+    return '<button class="chip'+(filter===c[0]?' sel':'')+'" data-f="'+c[0]+'">'+c[1]+'</button>';
+  }).join("");
+}
+
+function counts(){
+  return {
+    total: DATA.length,
+    shell: DATA.filter(function(d){return d.shell;}).length,
+    files: DATA.filter(function(d){return d.files==="all";}).length,
+    net:   DATA.filter(function(d){return d.net;}).length,
+    sec:   DATA.filter(function(d){return d.sec;}).length
+  };
+}
+
+function headline(){
+  var c=counts();
+  $("#headline").innerHTML = '<span class="n">'+c.total+'</span> extensions. '+
+    '<b><span class="n">'+c.shell+'</span> can run a shell.</b> '+
+    '<span class="n">'+c.files+'</span> can read every file you open. '+
+    '<b><span class="n">'+c.sec+'</span> can reach your secrets.</b>';
+}
+
+function runScan(){
+  var txt = $("#input").value.trim();
+  var err = $("#err");
+  if(!txt){
+    err.textContent = "Nothing to scan yet — paste your list or tap “use sample list”.";
+    return;
+  }
+  if(!/[a-z0-9][a-z0-9-]*\.[a-z0-9-]+/i.test(txt)){
+    err.textContent = "That doesn't look like extension IDs (expected publisher.name@version).";
+    return;
+  }
+  err.textContent="";
+  show("sload");
+  setTimeout(function(){
+    expanded={}; filter="all";
+    headline(); buildChips(); render(true); buildBars();
+    show("s2");
+  }, 800);
+}
+
+function buildBars(){
+  var c=counts();
+  var defs=[["Can run a shell",c.shell,"#ff5f56"],["Reads every file",c.files,"#ffb340"],
+            ["Talks to the network",c.net,"#6aa8ff"],["Can reach secrets",c.sec,"#b388ff"]];
+  $("#cardNum").textContent = c.shell+" of my "+c.total;
+  $("#bars").innerHTML = defs.map(function(d){
+    return '<div class="capbar"><div class="lbl"><span>'+d[0]+'</span><span>'+d[1]+'/'+c.total+'</span></div>'+
+      '<div class="track"><i data-w="'+Math.round(d[1]/c.total*100)+'" style="width:0;background:'+d[2]+'"></i></div></div>';
+  }).join("");
+  var d=new Date();
+  $("#cardDate").textContent = d.toISOString().slice(0,10);
+}
+
+function animateBars(){
+  var els=document.querySelectorAll("#bars .track i");
+  setTimeout(function(){
+    for(var i=0;i<els.length;i++){ els[i].style.width = els[i].getAttribute("data-w")+"%"; }
+  },60);
+}
+
+function copyText(txt){
+  var done=function(){ toast("Copied: code --uninstall-extension claudecode…"); };
+  try{
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(txt).then(done, fallback);
+    } else { fallback(); }
+  }catch(e){ fallback(); }
+  function fallback(){
+    try{
+      var ta=document.createElement("textarea");
+      ta.value=txt; ta.setAttribute("readonly","");
+      ta.style.position="fixed"; ta.style.opacity="0";
+      document.body.appendChild(ta); ta.select();
+      document.execCommand("copy");
+      document.body.removeChild(ta);
+      done();
+    }catch(e2){ toast("Copy blocked — select the command manually."); }
+  }
+}
+
+/* wiring */
+$("#scan").addEventListener("click", runScan);
+$("#sample").addEventListener("click", function(){
+  $("#input").value = SAMPLE;
+  $("#err").textContent="";
+  runScan();
+});
+$("#input").addEventListener("input", function(){ $("#err").textContent=""; });
+
+$("#chips").addEventListener("click", function(e){
+  var b=e.target.closest(".chip"); if(!b) return;
+  filter=b.getAttribute("data-f");
+  buildChips(); render(true);
+});
+
+$("#rows").addEventListener("click", function(e){
+  var b=e.target.closest(".grow"); if(!b) return;
+  var id=b.getAttribute("data-id");
+  expanded[id] = !expanded[id];
+  render(false);
+});
+
+$("#copyUninstall").addEventListener("click", function(){
+  copyText("code --uninstall-extension claudecode.claude-vscode-helper");
+});
+$("#recheck").addEventListener("click", function(){
+  toast("Saved. Next visit we'll show what changed since today.");
+});
+$("#goShare").addEventListener("click", function(){
+  show("s3"); animateBars();
+});
+$("#png").addEventListener("click", function(){ toast("PNG saved"); });
+$("#back2").addEventListener("click", function(){ show("s2"); });
+$("#back1").addEventListener("click", function(){ show("s1"); });
+
+})();
+</script>
+</body>
+</html>

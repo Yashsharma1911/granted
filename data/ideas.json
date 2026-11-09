@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-07T20:53:00.193Z",
+  "updated": "2026-11-09T20:54:29.514Z",
   "ideas": [
     {
       "id": "2026-10-22-agentgauntlet",
@@ -847,6 +847,66 @@
       "sources_count": 23,
       "superseded_by": null,
       "sibling": "2026-11-07-ghostwritten"
+    },
+    {
+      "id": "2026-11-09-blastdoor",
+      "number": 31,
+      "date": "2026-11-09",
+      "track": "build",
+      "short_name": "Blastdoor",
+      "verdict": "dig_deeper",
+      "score": 8.1,
+      "scores": {
+        "wow": 8,
+        "shareability": 8,
+        "buildability": 8,
+        "freshness": 8.5,
+        "usefulness": 8
+      },
+      "effort": "a weekend",
+      "category": "Developer tools",
+      "tags": [
+        "security",
+        "devtools",
+        "extensions",
+        "supply-chain"
+      ],
+      "pain_type": "expressed",
+      "one_liner": "Paste the output of `code --list-extensions` (or Cursor's) and Blastdoor reads each extension's real manifest from Open VSX to show, in one screen, exactly what powers you handed out — shell commands, filesystem, network, secrets — plus which of them shipped a new version while you slept, and a shareable \"blast radius\" card.",
+      "prototype_url": "https://yashsharma1911.github.io/granted/ideas/2026-11-09-blastdoor/",
+      "sources_count": 14,
+      "superseded_by": null,
+      "sibling": "2026-11-09-dockside"
+    },
+    {
+      "id": "2026-11-09-dockside",
+      "number": 32,
+      "date": "2026-11-09",
+      "track": "venture",
+      "short_name": "Dockside",
+      "verdict": "watch",
+      "score": 7.2,
+      "scores": {
+        "pain": 7.5,
+        "market_pull": 7,
+        "timing": 7,
+        "gap": 7.5,
+        "wedge": 7
+      },
+      "effort": "2-4 weeks",
+      "category": "Back-office automation",
+      "tags": [
+        "manufacturing",
+        "supplier-quality",
+        "agents",
+        "documents"
+      ],
+      "pain_type": "expressed",
+      "one_liner": "For the supplier-quality / receiving owner at a 20-200 person robotics, drone, space or defense hardware company, Dockside is an inbox agent that reads every supplier shipment's document package (CoC, material test report, heat-treat and plating certs, dimensional/FAI report) against the PO's own quality clauses and drawing revision, and returns a one-screen \"release / hold / chase\" verdict with the exact mismatch cited — then emails the supplier the chase itself.",
+      "prototype_url": "https://yashsharma1911.github.io/granted/ideas/2026-11-09-dockside/",
+      "sources_count": 27,
+      "superseded_by": null,
+      "sibling": "2026-11-09-blastdoor"
     }
   ]
 }
