@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-28T19:56:27.955Z",
+  "updated": "2026-11-14T18:59:13.105Z",
   "ideas": [
     {
       "id": "2026-10-26-catalog-check",
@@ -605,6 +605,24 @@
       "sources_count": 13,
       "superseded_by": null,
       "sibling": "2026-10-28-frailty"
+    },
+    {
+      "id": "2026-11-14-schemacheck",
+      "number": 22,
+      "date": "2026-11-14",
+      "track": "build",
+      "short_name": "SchemaCheck",
+      "verdict": "test",
+      "score": 5,
+      "scores": null,
+      "effort": null,
+      "category": null,
+      "tags": [],
+      "pain_type": null,
+      "one_liner": "Test filing for the 1.0.21 publish fix.",
+      "prototype_url": "https://github.com/Yashsharma1911/granted/blob/catalog-test/ideas/2026-11-14-schemacheck/index.html",
+      "sources_count": 0,
+      "superseded_by": null
     }
   ]
 }
