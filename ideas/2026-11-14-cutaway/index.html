@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Cutaway — take anything apart</title>
+<style>
+:root{
+  --bg:#07090c; --panel:#0c1116; --line:#1d2730; --ink:#d7e3ea; --dim:#7b8b97;
+  --cyan:#35d6e8; --amber:#f0a93b; --red:#e2604f;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+}
+@media (prefers-color-scheme: light){
+  :root{ --bg:#f2f4f6; --panel:#ffffff; --line:#d3dade; --ink:#13202a; --dim:#5d6e7a; --cyan:#0b8fa3; --amber:#9a6208; }
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--ink); font-family:var(--mono);
+  font-size:15px; line-height:1.5; -webkit-font-smoothing:antialiased;
+  background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);
+  background-size:64px 64px; background-position:center;
+  min-height:100vh;
+}
+body::before{content:"";position:fixed;inset:0;background:radial-gradient(ellipse at 50% 0%,transparent 0%,var(--bg) 78%);pointer-events:none;z-index:0}
+.wrap{position:relative;z-index:1;max-width:1180px;margin:0 auto;padding:0 16px 56px}
+header.top{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;padding:18px 0 6px;border-bottom:1px solid var(--line);margin-bottom:26px}
+.brand{font-size:17px;letter-spacing:.14em;text-transform:uppercase;color:var(--cyan)}
+.tagline{color:var(--dim);font-size:12.5px}
+.screen{display:none}
+.screen.active{display:block;animation:fade .35s ease}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* shelf */
+.hero{text-align:center;padding:26px 0 10px}
+.hero h1{font-size:clamp(20px,4.4vw,30px);font-weight:500;letter-spacing:.01em;margin:0 0 18px}
+.inputrow{display:flex;gap:8px;max-width:620px;margin:0 auto;flex-wrap:wrap}
+input[type=text]{flex:1 1 240px;min-width:0;background:var(--panel);border:1px solid var(--line);color:var(--ink);
+  font-family:var(--mono);font-size:15px;padding:14px 14px;border-radius:3px;outline:none}
+input[type=text]:focus{border-color:var(--cyan);box-shadow:0 0 0 3px rgba(53,214,232,.12)}
+button{font-family:var(--mono);cursor:pointer;border-radius:3px}
+.btn{background:var(--cyan);color:#05161a;border:1px solid var(--cyan);padding:14px 20px;font-size:14px;letter-spacing:.08em;text-transform:uppercase;min-height:48px}
+.btn:hover{filter:brightness(1.12)}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+.btn.ghost:hover{border-color:var(--cyan);color:var(--cyan)}
+.chips{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:16px 0 4px}
+.chip{background:transparent;border:1px dashed var(--line);color:var(--dim);padding:9px 13px;font-size:12.5px;min-height:40px}
+.chip:hover{border-color:var(--cyan);color:var(--cyan)}
+.err{color:var(--red);font-size:12.5px;min-height:18px;margin-top:10px}
+.sechead{display:flex;justify-content:space-between;align-items:baseline;gap:10px;border-top:1px solid var(--line);margin-top:34px;padding-top:14px;flex-wrap:wrap}
+.sechead h2{font-size:13px;letter-spacing:.18em;text-transform:uppercase;color:var(--dim);font-weight:500;margin:0}
+.count{color:var(--cyan);font-size:12.5px}
+.grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));margin-top:14px}
+.card{background:var(--panel);border:1px solid var(--line);padding:12px;text-align:left;color:inherit;display:flex;flex-direction:column;gap:8px;min-height:160px}
+.card:hover{border-color:var(--cyan)}
+.card .thumb{height:76px;display:flex;align-items:center;justify-content:center}
+.card .thumb svg{width:100%;height:76px;stroke:var(--cyan);fill:none;stroke-width:1.2;opacity:.85}
+.card .t{font-size:13px;line-height:1.3}
+.card .m{font-size:11px;color:var(--dim);display:flex;justify-content:space-between;gap:6px;flex-wrap:wrap}
+.hot .card{border-color:rgba(240,169,59,.45)}
+.hot .card .thumb svg{stroke:var(--amber)}
+.hot{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+.rank{font-size:10px;color:var(--amber);letter-spacing:.14em}
+
+/* generating */
+.term{background:#05080a;border:1px solid var(--line);padding:18px;min-height:300px;font-size:13px;white-space:pre-wrap;word-break:break-word;border-radius:3px}
+@media (prefers-color-scheme: light){.term{background:#0b1116;color:#d7e3ea}}
+.term .ln{margin:0 0 7px}
+.term .ok{color:var(--cyan)}
+.term .dimln{color:#6d7d89}
+.term .amb{color:var(--amber)}
+.cursor{display:inline-block;width:8px;height:14px;background:var(--cyan);vertical-align:-2px;animation:bl 1s steps(2) infinite}
+@keyframes bl{50%{opacity:0}}
+.bar{height:3px;background:var(--line);margin-top:16px;overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--cyan)}
+
+/* teardown */
+.tdhead{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.tdhead h1{font-size:18px;margin:0;font-weight:500}
+.badge{border:1px solid var(--amber);color:var(--amber);font-size:11px;padding:5px 9px;display:inline-flex;gap:8px;align-items:center}
+.badge a{color:var(--amber);text-decoration:underline;cursor:pointer}
+.stage{display:grid;grid-template-columns:1fr 282px;gap:14px}
+@media (max-width:860px){.stage{grid-template-columns:1fr}}
+.canvas{background:var(--panel);border:1px solid var(--line);position:relative;min-height:320px}
+.canvas svg{display:block;width:100%;height:auto;touch-action:manipulation}
+.part{cursor:pointer}
+.part .body{stroke:var(--cyan);fill:rgba(53,214,232,.06);stroke-width:1.4;vector-effect:non-scaling-stroke}
+.part:hover .body{stroke:var(--amber)}
+.part.sel .body{stroke:var(--amber);stroke-width:2.4;fill:rgba(240,169,59,.14)}
+.dimmed{opacity:.17}
+.lbl{font-size:8.5px;fill:var(--dim);font-family:var(--mono)}
+.lead{stroke:var(--dim);stroke-width:.6;stroke-dasharray:2 2}
+.glab{opacity:0}
+.chain{stroke:var(--dim);stroke-width:1.1;fill:none;stroke-dasharray:3 2.4}
+.ctrls{background:var(--panel);border:1px solid var(--line);padding:14px;display:flex;flex-direction:column;gap:16px}
+.ctl label{display:flex;justify-content:space-between;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);margin-bottom:8px}
+.ctl label b{color:var(--cyan);font-weight:500;letter-spacing:0;text-transform:none;font-size:12px}
+input[type=range]{width:100%;-webkit-appearance:none;appearance:none;background:transparent;height:34px;margin:0}
+input[type=range]::-webkit-slider-runnable-track{height:2px;background:var(--line)}
+input[type=range]::-moz-range-track{height:2px;background:var(--line)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;height:26px;margin-top:-12px;border-radius:50%;background:var(--cyan);border:3px solid var(--bg);cursor:pointer}
+input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;background:var(--cyan);border:3px solid var(--bg);cursor:pointer}
+.gearrow{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--dim)}
+.gearno{font-size:26px;color:var(--amber);line-height:1}
+.tens{flex:1;height:8px;border:1px solid var(--line);position:relative}
+.tens i{display:block;height:100%;background:linear-gradient(90deg,var(--cyan),var(--amber));width:0}
+.tgl{display:flex;align-items:center;justify-content:space-between;gap:10px;border-top:1px solid var(--line);padding-top:14px}
+.switch{width:52px;height:30px;border:1px solid var(--line);border-radius:30px;position:relative;background:transparent;flex:none}
+.switch i{position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:var(--dim);transition:.18s}
+.switch.on{border-color:var(--cyan)}.switch.on i{left:25px;background:var(--cyan)}
+.panel{border-top:1px solid var(--line);padding-top:14px}
+.panel .pname{color:var(--amber);font-size:14px;margin-bottom:6px}
+.panel .pfn{font-size:12.5px;color:var(--ink);margin-bottom:10px}
+.panel .meta{font-size:11.5px;color:var(--dim);display:flex;flex-direction:column;gap:4px}
+.panel .empty{color:var(--dim);font-size:12.5px}
+.plist{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.plist button{background:transparent;border:1px solid var(--line);color:var(--dim);font-size:10.5px;padding:7px 8px;min-height:34px}
+.plist button:hover,.plist button.on{border-color:var(--amber);color:var(--amber)}
+.bottom{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+.scard{margin-top:14px;border:1px solid var(--line);background:var(--panel);padding:12px;display:none;gap:12px;align-items:center}
+.scard.show{display:flex}
+.scard svg{width:72px;height:56px;stroke:var(--cyan);fill:none;stroke-width:1.2;flex:none}
+.scard .u{font-size:11px;color:var(--dim)}
+.toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,20px);background:var(--panel);border:1px solid var(--cyan);color:var(--ink);
+  padding:12px 16px;font-size:12.5px;opacity:0;pointer-events:none;transition:.25s;z-index:50;max-width:92vw;text-align:center}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+footer{margin-top:34px;padding-top:14px;border-top:1px solid var(--line);color:var(--dim);font-size:11px;text-align:center}
+.demotag{font-size:10px;color:var(--dim);letter-spacing:.14em;text-transform:uppercase;border:1px solid var(--line);padding:3px 7px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <span class="brand">Cutaway</span>
+    <span class="tagline">type any object → get a take-apart interactive diagram you can share</span>
+    <span class="demotag" style="margin-left:auto">Demo data</span>
+  </header>
+
+  <!-- SCREEN 1 -->
+  <section id="s1" class="screen active">
+    <div class="hero">
+      <h1>What should we take apart?</h1>
+      <div class="inputrow">
+        <input id="q" type="text" autocomplete="off" aria-label="Object to take apart">
+        <button class="btn" id="go">Take it apart</button>
+      </div>
+      <div class="chips" id="chips"></div>
+      <div class="err" id="err"></div>
+    </div>
+
+    <div class="sechead"><h2>Most taken apart this week</h2></div>
+    <div class="grid hot" id="hot"></div>
+
+    <div class="sechead"><h2>The shelf</h2><span class="count">4,112 things taken apart</span></div>
+    <div class="grid" id="shelf"></div>
+  </section>
+
+  <!-- SCREEN 2 -->
+  <section id="s2" class="screen">
+    <div class="sechead" style="border-top:none;margin-top:0"><h2 id="genTitle">Generating teardown</h2><span class="count">click anywhere to skip</span></div>
+    <div class="term" id="term"></div>
+    <div class="bar"><i id="prog"></i></div>
+  </section>
+
+  <!-- SCREEN 3 -->
+  <section id="s3" class="screen">
+    <div class="tdhead">
+      <h1>Bicycle Derailleur <span style="color:var(--dim);font-size:12px">· 11 parts shown of 41 · rear, indexed parallelogram</span></h1>
+      <span class="badge">AI-generated — may be wrong <a id="flag" tabindex="0" role="button">flag this</a></span>
+    </div>
+    <div class="stage">
+      <div class="canvas" id="canvas"></div>
+      <div class="ctrls">
+        <div class="ctl">
+          <label>Explode <b id="expVal">0%</b></label>
+          <input id="exp" type="range" min="0" max="100" value="0" aria-label="Explode">
+        </div>
+        <div class="ctl">
+          <label>Cable pull <b id="pullVal">0.0 mm</b></label>
+          <input id="pull" type="range" min="0" max="34" step="0.5" value="0" aria-label="Cable pull">
+          <div class="gearrow">
+            <span class="gearno" id="gear">1</span>
+            <span>/ 11</span>
+            <div class="tens" title="cable tension"><i id="tens"></i></div>
+          </div>
+        </div>
+        <div class="tgl">
+          <span style="font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim)">Cross-section</span>
+          <button class="switch" id="xsec" aria-pressed="false" aria-label="Cross-section"><i></i></button>
+        </div>
+        <div class="panel" id="panel"></div>
+      </div>
+    </div>
+    <div class="bottom">
+      <button class="btn" id="share">Share</button>
+      <button class="btn ghost" id="again">Take apart something else</button>
+    </div>
+    <div class="scard" id="scard">
+      <svg viewBox="0 0 80 62" aria-hidden="true"><path d="M14 10h22l10 14-8 16H18z"/><circle cx="26" cy="46" r="8"/><circle cx="26" cy="46" r="3"/><circle cx="52" cy="22" r="7"/><circle cx="52" cy="22" r="2.5"/><path d="M14 10 8 30l10 10"/></svg>
+      <div>
+        <div style="font-size:13px">Bicycle Derailleur — Cutaway</div>
+        <div class="u">cutaway.app/t/bicycle-derailleur · 41 parts</div>
+      </div>
+    </div>
+    <footer>Prototype by Granted, inspired by your bookmarks</footer>
+  </section>
+
+  <footer id="mainfoot">Prototype by Granted, inspired by your bookmarks</footer>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function(){
+"use strict";
+var $=function(s){return document.querySelector(s)};
+var toastT=null;
+function toast(msg){var t=$("#toast");t.textContent=msg;t.classList.add("show");clearTimeout(toastT);toastT=setTimeout(function(){t.classList.remove("show")},2200)}
+function show(id){["s1","s2","s3"].forEach(function(s){$("#"+s).classList.toggle("active",s===id)});
+  $("#mainfoot").style.display=(id==="s3")?"none":"";window.scrollTo(0,0)}
+
+/* ---------- thumbnails (inline svg line art) ---------- */
+var TH={
+ lighter:'<rect x="30" y="18" width="24" height="44" rx="3"/><path d="M34 18v-6h16v6M38 8v4M46 8v4"/><path d="M42 2c3 4 1 6 0 8"/>',
+ derailleur:'<path d="M20 12h22l10 14-8 16H24z"/><circle cx="30" cy="48" r="8"/><circle cx="30" cy="48" r="3"/><circle cx="54" cy="24" r="7"/><circle cx="54" cy="24" r="2.5"/><path d="M20 12 14 32l10 10"/>',
+ cistern:'<rect x="14" y="14" width="56" height="44" rx="2"/><path d="M30 20v30a6 6 0 0012 0V20"/><circle cx="36" cy="18" r="5"/><path d="M58 20v22M52 42h12"/>',
+ engine:'<rect x="18" y="26" width="48" height="30" rx="2"/><path d="M30 26V8h10v18M48 26V14h10v12"/><circle cx="42" cy="48" r="8"/><path d="M35 8h10M53 14h10"/>',
+ escape:'<circle cx="36" cy="34" r="20"/><path d="M36 14v6M56 34h-6M36 54v-6M16 34h6M22 20l4 4M50 20l-4 4M50 48l-4-4M22 48l4-4"/><path d="M58 20 50 34l8 14"/>',
+ hdd:'<rect x="10" y="12" width="60" height="42" rx="3"/><circle cx="34" cy="33" r="16"/><circle cx="34" cy="33" r="4"/><path d="M62 18 46 30l16 10"/>',
+ espresso:'<path d="M20 16h40v14H20z"/><path d="M28 30v10h24V30"/><ellipse cx="40" cy="44" rx="14" ry="4"/><path d="M40 48v10M34 58h12"/>',
+ zipper:'<path d="M34 6v26M46 6v26M40 32v26"/><path d="M30 10h8M42 10h8M30 18h8M42 18h8M30 26h8M42 26h8"/><rect x="32" y="32" width="16" height="12" rx="2"/>',
+ shutter:'<rect x="12" y="14" width="56" height="38" rx="2"/><path d="M24 14v38M44 14v38"/><path d="M12 24h12M44 42h24"/><circle cx="34" cy="33" r="3"/>',
+ diff:'<circle cx="40" cy="33" r="18"/><circle cx="40" cy="33" r="7"/><path d="M4 33h18M58 33h18"/><path d="M40 15v-8M40 51v8"/>',
+ flipper:'<path d="M14 42h36l14 8-14 8H14z"/><circle cx="20" cy="50" r="7"/><path d="M50 30v12M44 24h14"/>',
+ elev:'<rect x="12" y="10" width="24" height="24"/><rect x="48" y="32" width="18" height="22"/><path d="M24 10V4h30v6M24 34v20M57 32V10"/><circle cx="42" cy="6" r="4"/>'
+};
+var DATA=[
+ {k:"lighter",t:"Bic Lighter",p:19,n:3184},
+ {k:"derailleur",t:"Bicycle Derailleur",p:41,n:312},
+ {k:"cistern",t:"Toilet Cistern",p:23,n:1946},
+ {k:"engine",t:"Four-Stroke Engine",p:88,n:2771},
+ {k:"escape",t:"Mechanical Watch Escapement",p:31,n:1502},
+ {k:"hdd",t:"Hard Disk Drive",p:46,n:884},
+ {k:"espresso",t:"Espresso Group Head",p:27,n:649},
+ {k:"zipper",t:"Zipper",p:9,n:2210},
+ {k:"shutter",t:"Camera Focal-Plane Shutter",p:34,n:421},
+ {k:"diff",t:"Car Differential",p:52,n:708},
+ {k:"flipper",t:"Pinball Flipper",p:16,n:533},
+ {k:"elev",t:"Elevator Counterweight System",p:21,n:297}
+];
+function cardHTML(d,rank){
+  return '<button class="card" data-t="'+d.t+'">'+(rank?'<span class="rank">#'+rank+' this week</span>':'')+
+   '<span class="thumb"><svg viewBox="0 0 80 64" aria-hidden="true">'+TH[d.k]+'</svg></span>'+
+   '<span class="t">'+d.t+'</span>'+
+   '<span class="m"><span>'+d.p+' parts</span><span>taken apart '+d.n.toLocaleString()+' times</span></span></button>';
+}
+var hotKeys=["lighter","engine","cistern"];
+$("#hot").innerHTML=hotKeys.map(function(k,i){
+  var d=DATA.filter(function(x){return x.k===k})[0];return cardHTML(d,i+1)}).join("");
+$("#shelf").innerHTML=DATA.map(function(d){return cardHTML(d)}).join("");
+document.addEventListener("click",function(e){
+  var c=e.target.closest&&e.target.closest(".card");
+  if(c) startGen(c.getAttribute("data-t"));
+});
+
+/* ---------- placeholder cycling + chips ---------- */
+var PH=["a Bic lighter","a bicycle derailleur","a toilet cistern","a mechanical watch escapement"],pi=0;
+var qEl=$("#q"); qEl.placeholder=PH[0];
+setInterval(function(){pi=(pi+1)%PH.length;qEl.placeholder=PH[pi]},2300);
+$("#chips").innerHTML=PH.map(function(p){return '<button class="chip" data-c="'+p+'">'+p+'</button>'}).join("");
+$("#chips").addEventListener("click",function(e){
+  var b=e.target.closest(".chip"); if(!b)return;
+  qEl.value=b.getAttribute("data-c"); startGen(b.getAttribute("data-c"));
+});
+$("#go").addEventListener("click",function(){
+  var v=qEl.value.trim();
+  if(v.length<2){$("#err").textContent="Give us something to open up — try “a Bic lighter”.";qEl.focus();return}
+  if(v.length>60){$("#err").textContent="That's a bit long. Name one object, not a sentence.";return}
+  $("#err").textContent="";startGen(v);
+});
+qEl.addEventListener("keydown",function(e){if(e.key==="Enter")$("#go").click()});
+qEl.addEventListener("input",function(){$("#err").textContent=""});
+
+/* ---------- SCREEN 2 ---------- */
+var genTimers=[],genDone=false;
+function clearGen(){genTimers.forEach(clearTimeout);genTimers=[]}
+function startGen(label){
+  genDone=false;clearGen();
+  var name=(label||"bicycle derailleur").replace(/^(a|an|the)\s+/i,"");
+  $("#genTitle").textContent="Generating teardown · "+name;
+  var term=$("#term");term.innerHTML="";$("#prog").style.width="0%";
+  show("s2");
+  var LINES=[
+   ["dimln","$ cutaway build \""+name+"\""],
+   ["","Identifying mechanism: bicycle derailleur (parallelogram, indexed)"],
+   ["dimln","  matched 1 of 4,112 reference teardowns · confidence 0.91"],
+   ["","Deriving motion: cable pull 0-34 mm → 11 indexed positions"],
+   ["dimln","  shift ratio 1.7 · spring return 'low-normal'"],
+   ["","Building 41 parts…"],
+   ["dimln","  cage plates ✓  jockey wheels ✓  knuckles ✓  spring ✓  hardware ✓"],
+   ["","Solving explode vectors (collision-free, 11 labelled)"],
+   ["","Linking gauges to the same model"],
+   ["dimln","  gear readout + tension bar bound to cablePull"],
+   ["amb","Flagging uncertainty: pulley tooth count is a guess"],
+   ["ok","Done. 11 parts ready to take apart."]
+  ];
+  var total=6000, step=total/LINES.length, t=0;
+  LINES.forEach(function(L,i){
+    t+=step;
+    genTimers.push(setTimeout(function(){
+      var p=document.createElement("p");
+      p.className="ln "+L[0];
+      p.innerHTML=(L[0]==="dimln"?"":"▸ ")+L[1]+(i===LINES.length-1?"":' <span class="cursor"></span>');
+      var prev=term.querySelector(".cursor"); if(prev) prev.remove();
+      term.appendChild(p);
+      $("#prog").style.width=Math.round((i+1)/LINES.length*100)+"%";
+    },t-step+120));
+  });
+  genTimers.push(setTimeout(finishGen,total));
+}
+function finishGen(){ if(genDone)return; genDone=true; clearGen(); $("#prog").style.width="100%"; openTeardown(); }
+$("#s2").addEventListener("click",finishGen);
+
+/* ---------- SCREEN 3: derailleur model ---------- */
+var PARTS=[
+ {id:"bkn",n:"B-knuckle",fn:"Bolts the derailleur to the frame hanger and carries the b-tension screw.",mat:"Forged aluminium 6061-T6",ex:[-62,-54],sect:false,
+  d:"M196 70 h46 a8 8 0 0 1 8 8 v30 a8 8 0 0 1 -8 8 h-46 a8 8 0 0 1 -8 -8 v-30 a8 8 0 0 1 8 -8 z",extra:'<circle cx="219" cy="93" r="7"/><path d="M196 112 l8 14"/>'},
+ {id:"plo",n:"Parallelogram outer link",fn:"Outer arm of the four-bar linkage — sets how far the cage swings per mm of cable.",mat:"Stamped stainless steel",ex:[-10,-72],sect:true,
+  d:"M188 96 h-60 a6 6 0 0 0 -6 6 v10 a6 6 0 0 0 6 6 h60 a6 6 0 0 0 6 -6 v-10 a6 6 0 0 0 -6 -6 z",extra:'<circle cx="130" cy="107" r="3"/><circle cx="184" cy="107" r="3"/>',swing:1},
+ {id:"pli",n:"Parallelogram inner link",fn:"Inner arm, parallel to the outer — keeps the cage upright through the whole shift.",mat:"Stamped stainless steel",ex:[-10,-30],sect:true,
+  d:"M188 124 h-60 a6 6 0 0 0 -6 6 v10 a6 6 0 0 0 6 6 h60 a6 6 0 0 0 6 -6 v-10 a6 6 0 0 0 -6 -6 z",extra:'<circle cx="130" cy="135" r="3"/><circle cx="184" cy="135" r="3"/>',swing:1},
+ {id:"spr",n:"Return spring",fn:"Coil spring that pulls the parallelogram back outboard when cable tension drops.",mat:"Oil-tempered spring steel wire",ex:[-76,8],sect:false,
+  d:"",extra:'<path d="M186 104 c-10 6 -14 12 -24 18 c-10 6 -14 12 -24 18 M186 112 c-10 6 -14 12 -24 18 c-10 6 -14 12 -24 18" fill="none"/>',swing:.6},
+ {id:"anc",n:"Cable anchor bolt",fn:"Clamps the shifter cable so every millimetre of pull reaches the linkage.",mat:"Steel bolt, serrated washer",ex:[-30,56],sect:false,
+  d:"M120 150 h20 v12 h-20 z",extra:'<circle cx="130" cy="156" r="4"/><path d="M110 156 h10"/>',swing:1},
+ {id:"lim",n:"Limit screws (H/L)",fn:"Two set screws that stop the cage before the chain can leave the cassette.",mat:"M4 steel grub screws",ex:[-66,-18],sect:false,
+  d:"M164 78 h10 v10 h-10 z M176 78 h10 v10 h-10 z",extra:'<path d="M166 83 h6 M178 83 h6"/>'},
+ {id:"pkn",n:"P-knuckle",fn:"Pivot body the cage hangs from, holding the p-spring that tensions the chain.",mat:"Glass-filled nylon over alloy",ex:[6,40],sect:false,
+  d:"M118 148 a16 16 0 1 0 0.01 0 z",extra:'<circle cx="118" cy="148" r="6"/>',swing:1},
+ {id:"cgo",n:"Cage outer plate",fn:"Outer guide plate — holds the jockey wheel axles and shields the chain.",mat:"Anodised aluminium plate",ex:[34,74],sect:false,
+  d:"M108 162 h22 l10 54 h-26 z",extra:'<circle cx="120" cy="170" r="3"/><circle cx="128" cy="210" r="3"/>',swing:1},
+ {id:"cgi",n:"Cage inner plate",fn:"Inner guide plate — mirrors the outer and keeps the chain from falling off the pulleys.",mat:"Anodised aluminium plate",ex:[-26,80],sect:false,
+  d:"M88 162 h18 l10 54 h-22 z",extra:'<circle cx="98" cy="170" r="3"/><circle cx="106" cy="210" r="3"/>',swing:1},
+ {id:"jwu",n:"Upper jockey wheel",fn:"Guide pulley — steers the chain sideways onto the sprocket you selected.",mat:"Delrin / POM, 11T, steel bushing",ex:[-4,118],sect:false,
+  d:"",extra:'<circle cx="109" cy="170" r="15"/><circle cx="109" cy="170" r="5"/><path d="M109 155 v-5 M124 170 h5 M109 185 v5 M94 170 h-5"/>',swing:1},
+ {id:"jwl",n:"Lower jockey wheel",fn:"Tension pulley — takes up chain slack as the chain moves between sprockets.",mat:"Delrin / POM, 11T, sealed bearing",ex:[26,150],sect:false,
+  d:"",extra:'<circle cx="120" cy="212" r="15"/><circle cx="120" cy="212" r="5"/><path d="M120 197 v-5 M135 212 h5 M120 227 v5 M105 212 h-5"/>',swing:1}
+];
+var LABELPOS={bkn:[8,-6],plo:[8,-4],pli:[8,16],spr:[-8,-8],anc:[-10,10],lim:[8,-6],pkn:[-14,16],cgo:[14,10],cgi:[-14,22],jwu:[-16,-18],jwl:[18,20]};
+
+var state={exp:0,pull:0,sel:null,xsec:false};
+
+function buildSVG(){
+  var defs='<defs><pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">'+
+    '<line x1="0" y1="0" x2="0" y2="6" stroke="var(--cyan)" stroke-width="1" opacity=".55"/></pattern></defs>';
+  var bg='<g opacity=".5"><path d="M30 40 h300" stroke="var(--line)" stroke-width="1"/>'+
+    '<text x="30" y="32" class="lbl">CUTAWAY / REAR DERAILLEUR / INDEXED 11-SPEED / SCALE 1:1</text>'+
+    '<text x="30" y="286" class="lbl">DEMO DATA · GENERATED DIAGRAM</text></g>';
+  var chain='<g id="chain"><path class="chain" d="M109 155 C 140 130, 200 120, 250 112"/>'+
+    '<path class="chain" d="M109 185 C 104 196, 104 200, 105 212"/>'+
+    '<path class="chain" d="M135 212 C 180 208, 220 170, 250 120"/></g>';
+  var g="";
+  PARTS.forEach(function(p){
+    g+='<g class="part" id="g_'+p.id+'" data-id="'+p.id+'" tabindex="0" role="button" aria-label="'+p.n+'">'+
+       '<g class="body">'+(p.d?'<path d="'+p.d+'"/>':'')+(p.extra||'')+'</g>'+
+       (p.sect?'<g class="sec" style="display:none">'+(p.d?'<path d="'+p.d+'" fill="url(#hatch)" stroke="var(--amber)" stroke-width="1.2"/>':'')+'</g>':'')+
+       '</g>';
+  });
+  var labs="";
+  PARTS.forEach(function(p){
+    labs+='<g class="glab" id="l_'+p.id+'"><line class="lead" x1="0" y1="0" x2="0" y2="0"/><text class="lbl" x="0" y="0">'+p.n.toUpperCase()+'</text></g>';
+  });
+  $("#canvas").innerHTML='<svg viewBox="0 0 360 300" preserveAspectRatio="xMidYMid meet">'+defs+bg+chain+g+labs+'</svg>';
+  PARTS.forEach(function(p){
+    var el=document.getElementById("g_"+p.id);
+    el.addEventListener("click",function(){select(p.id)});
+    el.addEventListener("keydown",function(e){if(e.key==="Enter"||e.key===" "){e.preventDefault();select(p.id)}});
+  });
+}
+
+function partCenter(p){
+  // approximate anchor per part for leader lines
+  var C={bkn:[219,93],plo:[155,107],pli:[155,135],spr:[162,122],anc:[130,156],lim:[175,83],pkn:[118,148],cgo:[122,190],cgi:[100,190],jwu:[109,170],jwl:[120,212]};
+  return C[p.id];
+}
+
+function render(){
+  var e=state.exp/100;
+  var pull=state.pull;
+  var swing=-(pull/34)*26; // px sideways travel
+  PARTS.forEach(function(p){
+    var g=document.getElementById("g_"+p.id);
+    var dx=p.ex[0]*e+(p.swing?swing*p.swing:0);
+    var dy=p.ex[1]*e;
+    g.setAttribute("transform","translate("+dx.toFixed(2)+","+dy.toFixed(2)+")");
+    var sec=g.querySelector(".sec");
+    if(sec) sec.style.display=(state.xsec&&p.sect)?"":"none";
+    if(sec&&state.xsec&&p.sect) g.querySelector(".body").setAttribute("opacity",".35");
+    else if(sec) g.querySelector(".body").removeAttribute("opacity");
+    // labels
+    var L=document.getElementById("l_"+p.id);
+    var vis=state.exp>30?Math.min(1,(state.exp-30)/25):0;
+    L.style.opacity=vis;
+    if(vis>0){
+      var c=partCenter(p), off=LABELPOS[p.id];
+      var x=c[0]+dx, y=c[1]+dy;
+      var lx=x+off[0]*2.2, ly=y+off[1]*2.2;
+      var ln=L.querySelector("line"), tx=L.querySelector("text");
+      ln.setAttribute("x1",x);ln.setAttribute("y1",y);ln.setAttribute("x2",lx);ln.setAttribute("y2",ly);
+      tx.setAttribute("x",off[0]<0?lx-2:lx+2);tx.setAttribute("y",ly+(off[1]<0?-2:9));
+      tx.setAttribute("text-anchor",off[0]<0?"end":"start");
+    }
+  });
+  var ch=document.getElementById("chain");
+  if(ch){ch.style.opacity=(state.exp>12?0:1);ch.setAttribute("transform","translate("+(swing*0.55).toFixed(2)+",0)")}
+  // gauges from the SAME variable
+  var gear=Math.min(11,Math.floor(pull/34*10.999)+1);
+  $("#gear").textContent=gear;
+  $("#tens").style.width=Math.round(pull/34*100)+"%";
+  $("#pullVal").textContent=pull.toFixed(1)+" mm";
+  $("#expVal").textContent=Math.round(state.exp)+"%";
+  // selection dimming
+  PARTS.forEach(function(p){
+    var g=document.getElementById("g_"+p.id);
+    g.classList.toggle("sel",state.sel===p.id);
+    g.classList.toggle("dimmed",!!state.sel&&state.sel!==p.id);
+  });
+  document.querySelectorAll(".plist button").forEach(function(b){
+    b.classList.toggle("on",b.getAttribute("data-id")===state.sel);
+  });
+}
+
+function panel(){
+  var el=$("#panel");
+  var list='<div class="plist">'+PARTS.map(function(p){return '<button data-id="'+p.id+'">'+p.n+'</button>'}).join("")+'</div>';
+  if(!state.sel){
+    el.innerHTML='<div class="empty">No part selected. Tap a part in the drawing — or pick one below.</div>'+list;
+  }else{
+    var p=PARTS.filter(function(x){return x.id===state.sel})[0];
+    el.innerHTML='<div class="pname">'+p.n+'</div><div class="pfn">'+p.fn+'</div>'+
+      '<div class="meta"><span>Material · '+p.mat+'</span><span>Explode vector · ['+p.ex[0]+', '+p.ex[1]+']</span>'+
+      '<span>Cross-section · '+(p.sect?"available":"n/a")+'</span></div>'+
+      '<button class="btn ghost" id="clr" style="margin-top:12px;padding:10px 14px">Clear selection</button>'+list;
+    $("#clr").addEventListener("click",function(){state.sel=null;panel();render()});
+  }
+  el.querySelectorAll(".plist button").forEach(function(b){
+    b.addEventListener("click",function(){select(b.getAttribute("data-id"))});
+  });
+}
+function select(id){ state.sel=(state.sel===id)?null:id; panel(); render(); }
+
+function openTeardown(){ show("s3"); render(); }
+
+buildSVG(); panel(); render();
+
+$("#exp").addEventListener("input",function(){state.exp=+this.value;render()});
+$("#pull").addEventListener("input",function(){state.pull=+this.value;render()});
+$("#xsec").addEventListener("click",function(){
+  state.xsec=!state.xsec;this.classList.toggle("on",state.xsec);
+  this.setAttribute("aria-pressed",state.xsec?"true":"false");
+  toast(state.xsec?"Cross-section on — parallelogram links hatched":"Cross-section off");render();
+});
+$("#flag").addEventListener("click",function(){toast("Flagged. A human will check the pulley tooth count.")});
+$("#share").addEventListener("click",function(){
+  var url="cutaway.app/t/bicycle-derailleur";
+  $("#scard").classList.add("show");
+  var ok=false;
+  try{
+    var ta=document.createElement("textarea");ta.value=url;ta.setAttribute("readonly","");
+    ta.style.position="fixed";ta.style.opacity="0";document.body.appendChild(ta);
+    ta.select();ok=document.execCommand("copy");document.body.removeChild(ta);
+  }catch(err){ok=false}
+  toast(ok?"Link copied · "+url:"Copy blocked by browser — "+url);
+});
+$("#again").addEventListener("click",function(){state.sel=null;state.exp=0;state.pull=0;state.xsec=false;
+  $("#exp").value=0;$("#pull").value=0;$("#xsec").classList.remove("on");$("#xsec").setAttribute("aria-pressed","false");
+  $("#scard").classList.remove("show");panel();render();show("s1");qEl.value="";});
+})();
+</script>
+</body>
+</html>

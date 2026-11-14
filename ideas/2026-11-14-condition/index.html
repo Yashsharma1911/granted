@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Condition — Willow Creek Apartments conditions register</title>
+<style>
+:root{
+  --bg:#ffffff; --panel:#f6f7f9; --ink:#14181f; --muted:#5d6775; --line:#dfe3e9;
+  --accent:#1b5fd9; --accent-soft:#e8f0fe; --red:#c62828; --red-soft:#fdecec;
+  --green:#15724a; --green-soft:#e6f4ee; --amber:#8a5a00; --amber-soft:#fcf1dc;
+  --shadow:0 6px 24px rgba(15,25,45,.12);
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#0e1116; --panel:#161a21; --ink:#e8ecf2; --muted:#9aa5b4; --line:#262c36;
+    --accent:#6f9dff; --accent-soft:#17243d; --red:#ff6b6b; --red-soft:#331a1c;
+    --green:#5fd3a1; --green-soft:#12271f; --amber:#e3b25b; --amber-soft:#2b2214;
+    --shadow:0 6px 24px rgba(0,0,0,.5);
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--ink);
+  font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  -webkit-text-size-adjust:100%;
+}
+button{font:inherit;color:inherit;cursor:pointer}
+.topbar{
+  position:sticky;top:0;z-index:40;background:var(--bg);
+  border-bottom:1px solid var(--line);padding:10px 14px;
+  display:flex;gap:10px;align-items:center;flex-wrap:wrap;
+}
+.logo{font-weight:700;letter-spacing:-.2px}
+.logo span{color:var(--accent)}
+.topbar .sep{color:var(--line)}
+.topbar .meta{color:var(--muted);font-size:12.5px}
+.demo{margin-left:auto;font-size:11px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:3px 8px;white-space:nowrap}
+.wrap{max-width:1180px;margin:0 auto;padding:14px;display:grid;gap:14px;grid-template-columns:1fr}
+@media(min-width:950px){.wrap{grid-template-columns:minmax(290px,34%) 1fr;align-items:start}}
+.card{background:var(--bg);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.card h2{margin:0;padding:12px 14px 2px;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.note{padding:4px 14px 10px;color:var(--muted);font-size:12.5px}
+.scan{
+  background:var(--panel);border-top:1px solid var(--line);border-bottom:1px solid var(--line);
+  max-height:360px;overflow:auto;padding:14px;font-size:12.5px;line-height:1.65;color:var(--muted);
+}
+@media(min-width:950px){.scan{max-height:62vh}}
+.scan p{margin:0 0 12px}
+.scan p b{color:var(--ink)}
+.scan .pg{display:block;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);opacity:.7;margin:18px 0 8px;border-top:1px dashed var(--line);padding-top:8px}
+.scan p.hl{background:var(--accent-soft);color:var(--ink);border-left:3px solid var(--accent);padding:8px 10px;margin-left:-10px;border-radius:0 6px 6px 0;animation:flash 1.6s ease}
+@keyframes flash{0%{background:var(--accent);color:#fff}100%{background:var(--accent-soft)}}
+.btn{
+  border:1px solid var(--line);background:var(--bg);border-radius:10px;
+  padding:11px 14px;min-height:44px;font-weight:600;font-size:14px;
+}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff;width:100%}
+.btn.primary[disabled]{opacity:.55;cursor:default}
+.btn.sm{padding:8px 11px;min-height:38px;font-size:13px;font-weight:500}
+.pad{padding:12px 14px}
+.banner{
+  display:flex;gap:10px;align-items:center;margin:0 0 12px;
+  background:var(--red-soft);border:1px solid var(--red);color:var(--red);
+  border-radius:10px;padding:10px 12px;font-size:13.5px;font-weight:600;
+}
+.banner.ok{background:var(--green-soft);border-color:var(--green);color:var(--green)}
+.banner svg{flex:0 0 auto}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.progress{padding:28px 14px;text-align:center}
+.bar{height:6px;background:var(--panel);border:1px solid var(--line);border-radius:999px;overflow:hidden;margin:14px auto 10px;max-width:420px}
+.bar i{display:block;height:100%;width:0%;background:var(--accent);transition:width .25s linear}
+.plog{color:var(--muted);font-size:13px;min-height:20px}
+.empty{padding:38px 18px;text-align:center;color:var(--muted);font-size:13.5px}
+.empty svg{opacity:.5;margin-bottom:10px}
+.group{border:1px solid var(--line);border-radius:10px;margin-bottom:10px;overflow:hidden}
+.ghead{
+  display:flex;align-items:center;gap:8px;width:100%;text-align:left;
+  background:var(--panel);border:0;padding:11px 12px;min-height:46px;font-weight:650;font-size:13.5px;
+}
+.ghead .cnt{margin-left:auto;color:var(--muted);font-weight:500;font-size:12.5px}
+.chev{transition:transform .2s}
+.group.collapsed .chev{transform:rotate(-90deg)}
+.group.collapsed .glist{display:none}
+.row{
+  display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border-top:1px solid var(--line);
+  background:var(--bg);cursor:pointer;
+}
+.row:hover{background:var(--accent-soft)}
+.row.moved{animation:slidein .5s ease}
+@keyframes slidein{0%{background:var(--accent-soft);transform:translateX(-10px);opacity:.2}100%{transform:none;opacity:1}}
+.av{
+  flex:0 0 auto;width:30px;height:30px;border-radius:50%;background:var(--accent-soft);color:var(--accent);
+  display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;margin-top:2px;
+}
+.rmain{flex:1;min-width:0}
+.rtitle{font-size:13.8px;font-weight:600;line-height:1.3}
+.rtitle .num{color:var(--muted);font-weight:700;margin-right:5px}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;align-items:center}
+.chip{font-size:11px;border:1px solid var(--line);border-radius:999px;padding:2px 8px;color:var(--muted);white-space:nowrap}
+.chip.ev{background:var(--panel)}
+.src{font-size:11px;color:var(--accent);background:none;border:0;padding:4px 6px;min-height:30px;text-decoration:underline;text-underline-offset:2px}
+.pill{font-size:10.5px;font-weight:700;letter-spacing:.05em;border-radius:999px;padding:4px 9px;white-space:nowrap;margin-top:2px}
+.p-CLEARED{background:var(--green-soft);color:var(--green)}
+.p-OPEN{background:var(--amber-soft);color:var(--amber)}
+.p-ATRISK{background:var(--red-soft);color:var(--red)}
+.p-NOTSTARTED{background:var(--panel);color:var(--muted)}
+.p-ONGOING{background:var(--accent-soft);color:var(--accent)}
+.blocking{background:var(--red);color:#fff;font-size:10px;font-weight:700;border-radius:4px;padding:2px 6px;letter-spacing:.04em}
+.due{font-size:11px;color:var(--muted)}
+.due.warn{color:var(--red);font-weight:600}
+/* drawer */
+.scrim{position:fixed;inset:0;background:rgba(10,15,25,.45);z-index:50;opacity:0;pointer-events:none;transition:opacity .2s}
+.scrim.on{opacity:1;pointer-events:auto}
+.drawer{
+  position:fixed;z-index:60;right:0;top:0;height:100%;width:min(420px,100%);background:var(--bg);
+  border-left:1px solid var(--line);box-shadow:var(--shadow);transform:translateX(102%);transition:transform .28s ease;
+  display:flex;flex-direction:column;
+}
+.drawer.on{transform:none}
+@media(max-width:620px){
+  .drawer{top:auto;bottom:0;height:88%;width:100%;border-left:0;border-top:1px solid var(--line);border-radius:14px 14px 0 0;transform:translateY(102%)}
+  .drawer.on{transform:none}
+}
+.dhead{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--line)}
+.dhead h3{margin:0;font-size:15px}
+.x{margin-left:auto;border:1px solid var(--line);background:var(--bg);border-radius:8px;width:40px;height:40px;font-size:17px;line-height:1}
+.dbody{padding:14px;overflow:auto;flex:1}
+.verbatim{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:0 8px 8px 0;padding:12px;font-size:13px;line-height:1.6;color:var(--ink)}
+label.fl{display:block;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:16px 0 6px}
+select{width:100%;min-height:44px;padding:10px;border:1px solid var(--line);border-radius:9px;background:var(--bg);color:var(--ink);font:inherit}
+.file{display:flex;align-items:center;gap:8px;background:var(--green-soft);color:var(--green);border:1px solid var(--green);border-radius:9px;padding:9px 11px;font-size:12.5px;margin-top:10px;font-weight:600}
+/* modal */
+.modal{
+  position:fixed;z-index:60;inset:auto 0 0 0;margin:0 auto;max-width:720px;background:var(--bg);
+  border:1px solid var(--line);border-radius:14px 14px 0 0;box-shadow:var(--shadow);
+  max-height:88%;display:flex;flex-direction:column;transform:translateY(102%);transition:transform .28s ease;
+}
+.modal.on{transform:none}
+@media(min-width:720px){
+  .modal{inset:5% 0 5% 0;border-radius:14px;max-height:90%}
+}
+.mail{border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:12px;background:var(--panel)}
+.mail .to{font-size:12px;color:var(--muted);margin-bottom:6px}
+.mail .subj{font-weight:650;font-size:13.5px;margin-bottom:8px}
+.mail pre{margin:0;white-space:pre-wrap;font:12.5px/1.6 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--ink)}
+.packet{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:16px}
+.packet h4{margin:0 0 2px;font-size:16px}
+.packet .sub{color:var(--muted);font-size:12px;margin-bottom:12px}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th,td{text-align:left;padding:7px 6px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.sig{margin-top:22px;display:flex;gap:18px;flex-wrap:wrap}
+.sigline{flex:1;min-width:170px;border-top:1px solid var(--ink);padding-top:5px;font-size:11px;color:var(--muted)}
+/* timeline */
+.tl{padding:16px 14px 20px;overflow-x:auto}
+.track{position:relative;min-width:620px;padding-top:6px}
+.line{position:absolute;left:0;right:0;top:46px;height:2px;background:var(--line)}
+.stops{display:flex;position:relative}
+.stop{flex:1;text-align:center;position:relative}
+.dots{display:flex;gap:5px;justify-content:center;flex-wrap:wrap;min-height:26px;align-items:flex-end}
+.dot{width:13px;height:13px;border-radius:50%;background:var(--green);font-size:0;display:block;border:2px solid var(--bg)}
+.dot.open{background:var(--red)}
+.dot.ongoing{background:var(--accent)}
+.knob{width:13px;height:13px;border-radius:50%;background:var(--bg);border:2px solid var(--muted);margin:8px auto 8px;position:relative;z-index:2}
+.stop.key .knob{border-color:var(--accent);background:var(--accent)}
+.slab{font-size:11.5px;color:var(--muted);line-height:1.3;padding:0 4px}
+.stop.key .slab{color:var(--ink);font-weight:650}
+footer{text-align:center;color:var(--muted);font-size:11.5px;padding:18px 14px 28px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.toast{
+  position:fixed;left:50%;bottom:18px;transform:translate(-50%,20px);z-index:80;opacity:0;pointer-events:none;
+  background:var(--ink);color:var(--bg);padding:10px 14px;border-radius:999px;font-size:13px;transition:.25s;
+}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="logo">Condition<span>.</span></div>
+  <div class="meta">Willow Creek Apartments · 212 units · City of Dublin · Resolution PC-2026-14</div>
+  <div class="demo">Demo data</div>
+</header>
+
+<main class="wrap">
+
+  <!-- SECTION 1 -->
+  <section class="card" aria-labelledby="s1">
+    <h2 id="s1">1 · Before</h2>
+    <div class="note">70 pages · 48 conditions · today this becomes a Word table someone retypes.</div>
+    <div class="scan" id="scan" tabindex="0" aria-label="Resolution PC-2026-14 scanned text"></div>
+    <div class="pad"><button class="btn primary" id="extractBtn">Extract conditions</button></div>
+  </section>
+
+  <!-- SECTION 2 -->
+  <section class="card" aria-labelledby="s2">
+    <h2 id="s2">2 · Condition register</h2>
+    <div class="note">Live register, sorted by the milestone each obligation blocks.</div>
+    <div id="stage">
+      <div class="empty" id="emptyState">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5"/><path d="M10 13h7M10 17h5"/></svg>
+        <div>No register yet. Hit <b>Extract conditions</b> to turn the resolution into a tracked register.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 3 -->
+  <section class="card" style="grid-column:1/-1" aria-labelledby="s3">
+    <h2 id="s3">3 · After</h2>
+    <div class="note">Every condition plotted on the milestone it gates. Red = still open.</div>
+    <div class="tl">
+      <div class="track">
+        <div class="line"></div>
+        <div class="stops" id="stops"></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>Prototype by Granted, inspired by your bookmarks</footer>
+
+<div class="scrim" id="scrim"></div>
+
+<aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-label="Condition detail">
+  <div class="dhead"><h3 id="dTitle">Condition</h3><button class="x" id="dClose" aria-label="Close">✕</button></div>
+  <div class="dbody" id="dBody"></div>
+</aside>
+
+<div class="modal" id="modal" role="dialog" aria-modal="true" aria-label="Dialog">
+  <div class="dhead"><h3 id="mTitle">Dialog</h3><button class="x" id="mClose" aria-label="Close">✕</button></div>
+  <div class="dbody" id="mBody"></div>
+</div>
+
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+(function(){
+"use strict";
+
+var OWNERS = ["Developer (Finance)","Landscape Architect (Verde LA)","Civil Engineer (BKF)","Outside counsel","GC (Swinerton)","Architect","Electrical Engineer","Environmental consultant (Rincon)"];
+var EMAILS = {
+  "Developer (Finance)":"finance@willowcreekpartners.com",
+  "Landscape Architect (Verde LA)":"j.ruiz@verdela.com",
+  "Civil Engineer (BKF)":"m.okafor@bkf.com",
+  "Outside counsel":"d.hale@hale-land.com",
+  "GC (Swinerton)":"t.barnes@swinerton.com",
+  "Architect":"studio@mkarch.com",
+  "Electrical Engineer":"p.shah@lumenee.com",
+  "Environmental consultant (Rincon)":"s.alvarez@rinconconsultants.com"
+};
+var TRIGGERS = ["Before grading permit","Before building permit","Before vertical construction","Before CO","Ongoing during construction"];
+
+var C = [
+ {n:7,  t:"Pay Traffic Impact Fee $482,350", trig:"Before building permit", own:"Developer (Finance)", ev:"City receipt", st:"CLEARED", pg:12, file:"Dublin_TIF_Receipt_11Sep.pdf",
+  txt:"7. Prior to issuance of the first building permit, the Applicant shall pay the Traffic Impact Fee in the amount of $482,350 for the Eastern Dublin Transportation Impact Fee program, calculated at the rate in effect at the time of payment pursuant to Chapter 7.78 of the Dublin Municipal Code."},
+ {n:14, t:"Final landscape & irrigation plan", trig:"Before building permit", own:"Landscape Architect (Verde LA)", ev:"Stamped plan set", st:"OPEN", due:"due in 9 days", pg:31,
+  txt:"14. Prior to issuance of the first building permit, the Applicant shall submit a final landscape and irrigation plan prepared by a licensed landscape architect, subject to review and approval by the Community Development Director. The plan shall demonstrate compliance with the State Model Water Efficient Landscape Ordinance (MWELO) and shall include a three-year maintenance schedule for all street trees."},
+ {n:19, t:"Offsite curb, gutter and sidewalk along Amador Valley Blvd", trig:"Before CO", own:"Civil Engineer (BKF)", ev:"City Engineer acceptance letter", st:"ATRISK", due:"submittal 3 weeks late", pg:38,
+  txt:"19. Prior to issuance of a Certificate of Occupancy, the Applicant shall construct, at its sole cost, offsite curb, gutter, sidewalk and ADA-compliant curb ramps along the project frontage of Amador Valley Boulevard, to the satisfaction of the City Engineer, and shall obtain a written acceptance letter for all public improvements."},
+ {n:22, t:"Affordable Housing Agreement recorded with County", trig:"Before building permit", own:"Outside counsel", ev:"Recorded instrument no.", st:"OPEN", blocking:true, pg:44,
+  txt:"22. Prior to issuance of the first building permit, the Applicant shall execute and cause to be recorded with the Alameda County Recorder an Affordable Housing Agreement in a form approved by the City Attorney, restricting not fewer than 26 units (12.5%) to households earning at or below 50% of Area Median Income for a term of 55 years."},
+ {n:26, t:"Fire apparatus access roads installed and usable", trig:"Before vertical construction", own:"GC (Swinerton)", ev:"Fire Dept sign-off", st:"CLEARED", pg:49, file:"ACFD_AccessRoad_Signoff.pdf",
+  txt:"26. Prior to commencement of vertical construction, all-weather fire apparatus access roads capable of supporting 75,000 lbs imposed load shall be installed and maintained usable, and approved fire hydrants shall be operational, subject to inspection and sign-off by the Alameda County Fire Department."},
+ {n:31, t:"Construction Traffic Management Plan", trig:"Before grading permit", own:"GC (Swinerton)", ev:"Approved CTMP", st:"CLEARED", pg:53, file:"Swinerton_CTMP_rev2_approved.pdf",
+  txt:"31. Prior to issuance of a grading permit, the Applicant shall submit a Construction Traffic Management Plan identifying haul routes, staging areas, hours of truck operation and flagging procedures, subject to review and approval by the City Engineer and the Dublin Police Services."},
+ {n:33, t:"Bicycle parking: 24 long-term spaces per DMC 8.76", trig:"Before CO", own:"Architect", ev:"Final inspection", st:"OPEN", pg:57,
+  txt:"33. Prior to issuance of a Certificate of Occupancy, the Applicant shall install no fewer than 24 long-term and 8 short-term bicycle parking spaces in accordance with Dublin Municipal Code Chapter 8.76, verified at final inspection by the Building Official."},
+ {n:37, t:"Photometric plan, no light spill past property line", trig:"Before building permit", own:"Electrical Engineer", ev:"Approved photometric", st:"OPEN", pg:61,
+  txt:"37. Prior to issuance of the first building permit, the Applicant shall submit a photometric plan demonstrating that no measurable light spill extends beyond the property line and that maximum illuminance at the property boundary does not exceed 0.5 foot-candles, subject to approval by the Community Development Director."},
+ {n:39, t:"Stormwater C.3 O&M agreement recorded", trig:"Before CO", own:"Civil Engineer (BKF)", ev:"Recorded agreement", st:"OPEN", pg:63,
+  txt:"39. Prior to issuance of a Certificate of Occupancy, the Applicant shall execute and record a Stormwater Treatment Measures Operation and Maintenance Agreement with the City pursuant to Provision C.3 of the Municipal Regional Stormwater Permit, running with the land in perpetuity."},
+ {n:41, t:"Public art contribution or in-lieu fee $96,000", trig:"Before CO", own:"Developer (Finance)", ev:"Receipt", st:"NOTSTARTED", pg:66,
+  txt:"41. Prior to issuance of a Certificate of Occupancy, the Applicant shall either install publicly accessible art valued at not less than $96,000 pursuant to Chapter 8.58, or pay an in-lieu contribution to the Public Art Fund in the same amount."},
+ {n:44, t:"Archaeological monitoring during grading", trig:"Ongoing during construction", own:"Environmental consultant (Rincon)", ev:"Monitor logs", st:"ONGOING", pg:68,
+  txt:"44. A qualified archaeologist shall be retained to monitor all ground-disturbing activity exceeding three (3) feet in depth. In the event of an inadvertent discovery, work within 50 feet shall halt and the Community Development Director shall be notified within 24 hours. Monitoring logs shall be submitted monthly."},
+ {n:48, t:"Noise: no construction before 7:30am", trig:"Ongoing during construction", own:"GC (Swinerton)", ev:"Complaint log", st:"ONGOING", pg:70,
+  txt:"48. Construction activity shall be limited to the hours of 7:30 a.m. to 6:00 p.m. Monday through Friday, and 9:00 a.m. to 5:00 p.m. on Saturday. No construction shall occur on Sundays or federal holidays. The Applicant shall maintain a complaint log available to the City upon request."}
+];
+
+/* ---------- filler paragraphs for the scan ---------- */
+var FILLER = [
+ "WHEREAS, the Planning Commission of the City of Dublin did hold a duly noticed public hearing on the Project on 10 February 2026, at which time all interested persons had an opportunity to be heard; and",
+ "WHEREAS, the Project is consistent with the General Plan, the Eastern Dublin Specific Plan, and all applicable zoning regulations, and the Planning Commission has considered the Mitigated Negative Declaration prepared for the Project; and",
+ "NOW, THEREFORE, BE IT RESOLVED that the Planning Commission hereby approves Site Development Review Permit PLPA-2025-00118 subject to the conditions set forth herein, each of which shall be satisfied at the time indicated.",
+ "GENERAL. Unless otherwise specified, the conditions of approval contained herein shall be complied with prior to issuance of building permits or establishment of use, and shall be subject to Planning Division review and approval.",
+ "The Applicant shall be responsible for compliance with all conditions set forth herein and with all requirements of the Dublin Municipal Code and the California Building Standards Code, as amended.",
+ "The Applicant shall hold harmless, defend and indemnify the City, its officers, agents and employees from any claim, action or proceeding brought to attack, set aside, void or annul the approvals granted herein.",
+ "Standard public improvement conditions as set forth in the City's Standard Plans and Specifications, latest edition, are incorporated herein by this reference as though fully set forth.",
+ "This approval shall be null and void in the event the approved use or structure ceases to exist for a continuous one-year period, or if construction has not commenced within two (2) years of the date of this Resolution."
+];
+
+/* ---------- build the scan panel ---------- */
+var scan = document.getElementById("scan");
+(function buildScan(){
+  var html = '<span class="pg">Resolution PC-2026-14 · page 1 of 70</span>';
+  html += '<p style="text-align:center"><b>RESOLUTION NO. PC-2026-14</b><br>A RESOLUTION OF THE PLANNING COMMISSION OF THE CITY OF DUBLIN APPROVING A SITE DEVELOPMENT REVIEW PERMIT FOR THE WILLOW CREEK APARTMENTS PROJECT (212 UNITS)</p>';
+  var f = 0;
+  for (var i=0;i<C.length;i++){
+    html += '<span class="pg">page ' + C[i].pg + '</span>';
+    html += '<p>' + esc(FILLER[f % FILLER.length]) + '</p>'; f++;
+    html += '<p id="src-'+C[i].n+'"><b>'+esc(C[i].txt.slice(0, C[i].txt.indexOf(".")+1))+'</b>'+esc(C[i].txt.slice(C[i].txt.indexOf(".")+1))+'</p>';
+    html += '<p>' + esc(FILLER[f % FILLER.length]) + '</p>'; f++;
+  }
+  html += '<span class="pg">end of excerpt · 48 conditions total</span>';
+  scan.innerHTML = html;
+})();
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];});}
+
+/* ---------- state ---------- */
+var extracted = false;
+var collapsed = {};
+var lastMoved = null;
+
+var GROUPS = [
+  {key:"bp",  label:"Before building permit",  match:function(c){return c.trig==="Before building permit" || c.trig==="Before grading permit" || c.trig==="Before vertical construction";}},
+  {key:"co",  label:"Before CO",               match:function(c){return c.trig==="Before CO";}},
+  {key:"og",  label:"Ongoing",                 match:function(c){return c.trig==="Ongoing during construction";}}
+];
+
+function isOpen(c){return c.st==="OPEN" || c.st==="ATRISK" || c.st==="NOTSTARTED";}
+function blockers(){return C.filter(function(c){return isOpen(c) && (c.trig==="Before building permit") && (c.blocking || c.st==="OPEN" || c.st==="ATRISK" || c.st==="NOTSTARTED");});}
+function permitBlockers(){return C.filter(function(c){return c.trig==="Before building permit" && isOpen(c);});}
+
+function statusLabel(s){return s==="ATRISK"?"AT RISK":(s==="NOTSTARTED"?"NOT STARTED":s);}
+function initials(o){
+  if(o.indexOf("(")>-1){var inner=o.substring(o.indexOf("(")+1,o.indexOf(")"));var w=inner.split(/[\s]+/);return (w[0][0]+(w[1]?w[1][0]:inner[1]||"")).toUpperCase();}
+  var p=o.split(/\s+/);return (p[0][0]+(p[1]?p[1][0]:"")).toUpperCase();
+}
+
+/* ---------- extraction ---------- */
+var stage=document.getElementById("stage");
+var btn=document.getElementById("extractBtn");
+btn.addEventListener("click", function(){
+  if(extracted){ document.getElementById("register").scrollIntoView({behavior:"smooth",block:"start"}); return; }
+  btn.disabled=true; btn.textContent="Extracting…";
+  stage.innerHTML='<div class="progress"><div class="plog" id="plog">reading pages…</div><div class="bar"><i id="pbar"></i></div><div class="plog" style="font-size:11.5px">Resolution PC-2026-14 · 70 pages</div></div>';
+  var steps=[["reading pages… 18 / 70",22],["reading pages… 51 / 70",45],["finding numbered obligations… 48 found",68],["classifying triggers and owners…",88],["building register…",100]];
+  var i=0;
+  var pbar=document.getElementById("pbar"), plog=document.getElementById("plog");
+  pbar.style.width="8%";
+  var iv=setInterval(function(){
+    if(i>=steps.length){clearInterval(iv); btn.textContent="Re-extract"; btn.disabled=false; extracted=true; renderRegister(); renderTimeline(); return;}
+    plog.textContent=steps[i][0]; pbar.style.width=steps[i][1]+"%"; i++;
+  },400);
+});
+
+/* ---------- register ---------- */
+function renderRegister(){
+  var blk=permitBlockers().length;
+  var h='<div class="pad" id="register">';
+  if(blk>0){
+    h+='<div class="banner"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 1.9 18a2 2 0 0 0 1.7 3h16.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/></svg>'+
+      '<span>'+blk+' condition'+(blk===1?"":"s")+' block your building permit — earliest clear date 9 Dec</span></div>';
+  } else {
+    h+='<div class="banner ok"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m4 12 5 5L20 6"/></svg><span>Nothing blocks your building permit. Ready to submit clearance packet.</span></div>';
+  }
+  h+='<div class="toolbar"><button class="btn sm" id="chaseBtn">Chase owners</button><button class="btn sm" id="exportBtn">Export clearance packet</button></div>';
+
+  GROUPS.forEach(function(g){
+    var items=C.filter(function(c){return g.match(c) && c.st!=="CLEARED";});
+    var openCount=items.filter(isOpen).length;
+    var sub = g.key==="og" ? ("("+items.length+")") : ("("+openCount+" open)");
+    h+=groupHTML(g.key, g.label+" "+sub, items);
+  });
+  var cleared=C.filter(function(c){return c.st==="CLEARED";});
+  h+=groupHTML("cl","Cleared ("+cleared.length+")",cleared);
+  h+='</div>';
+  stage.innerHTML=h;
+
+  document.getElementById("chaseBtn").addEventListener("click",openChase);
+  document.getElementById("exportBtn").addEventListener("click",openExport);
+  Array.prototype.forEach.call(stage.querySelectorAll(".ghead"),function(b){
+    b.addEventListener("click",function(){
+      var g=b.parentNode; g.classList.toggle("collapsed");
+      collapsed[g.getAttribute("data-k")]=g.classList.contains("collapsed");
+      b.setAttribute("aria-expanded", String(!g.classList.contains("collapsed")));
+    });
+  });
+  Array.prototype.forEach.call(stage.querySelectorAll(".row"),function(r){
+    r.addEventListener("click",function(e){
+      if(e.target.classList.contains("src")) return;
+      openDrawer(parseInt(r.getAttribute("data-n"),10));
+    });
+  });
+  Array.prototype.forEach.call(stage.querySelectorAll(".src"),function(s){
+    s.addEventListener("click",function(e){e.stopPropagation(); gotoSource(parseInt(s.getAttribute("data-n"),10));});
+  });
+}
+
+function groupHTML(key,label,items){
+  var col = collapsed[key] ? " collapsed":"";
+  var h='<div class="group'+col+'" data-k="'+key+'">';
+  h+='<button class="ghead" aria-expanded="'+(!collapsed[key])+'"><svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="m6 9 6 6 6-6"/></svg>'+esc(label)+'<span class="cnt">'+items.length+'</span></button><div class="glist">';
+  if(items.length===0){h+='<div class="row" style="cursor:default;color:var(--muted);font-size:12.5px">Nothing here yet.</div>';}
+  items.forEach(function(c){h+=rowHTML(c);});
+  h+='</div></div>';
+  return h;
+}
+
+function rowHTML(c){
+  var moved = (lastMoved===c.n) ? " moved":"";
+  var h='<div class="row'+moved+'" data-n="'+c.n+'" tabindex="0" role="button">';
+  h+='<div class="av" title="'+esc(c.own)+'">'+esc(initials(c.own))+'</div>';
+  h+='<div class="rmain"><div class="rtitle"><span class="num">#'+c.n+'</span>'+esc(c.t)+'</div>';
+  h+='<div class="chips"><span class="chip">'+esc(c.trig)+'</span><span class="chip ev">'+(c.file? "📎 "+esc(c.file) : "Evidence: "+esc(c.ev))+'</span>';
+  if(c.blocking && c.st!=="CLEARED") h+='<span class="blocking">BLOCKING</span>';
+  if(c.due && c.st!=="CLEARED") h+='<span class="due'+(c.st==="ATRISK"||/9 days/.test(c.due)?" warn":"")+'">'+esc(c.due)+'</span>';
+  h+='<button class="src" data-n="'+c.n+'">source: p. '+c.pg+'</button></div></div>';
+  h+='<span class="pill p-'+c.st+'">'+statusLabel(c.st)+'</span></div>';
+  return h;
+}
+
+/* ---------- source jump ---------- */
+function gotoSource(n){
+  var el=document.getElementById("src-"+n);
+  if(!el){toast("Source paragraph not found in this excerpt."); return;}
+  Array.prototype.forEach.call(scan.querySelectorAll("p.hl"),function(p){p.classList.remove("hl");});
+  void el.offsetWidth;
+  el.classList.add("hl");
+  var top = el.offsetTop - scan.clientHeight/3;
+  scan.scrollTo({top: top<0?0:top, behavior:"smooth"});
+  if(window.innerWidth<950) scan.scrollIntoView({behavior:"smooth",block:"center"});
+  toast("Jumped to p. "+ (C.filter(function(c){return c.n===n;})[0]||{pg:"?"}).pg + " of the resolution");
+}
+
+/* ---------- drawer ---------- */
+var drawer=document.getElementById("drawer"), scrim=document.getElementById("scrim"),
+    modal=document.getElementById("modal"), dBody=document.getElementById("dBody"), dTitle=document.getElementById("dTitle");
+var current=null;
+
+function openDrawer(n){
+  var c=C.filter(function(x){return x.n===n;})[0];
+  if(!c){toast("That condition is no longer in the register."); return;}
+  current=c;
+  dTitle.textContent="Condition #"+c.n;
+  var h='<div style="font-weight:650;font-size:14.5px;margin-bottom:10px">'+esc(c.t)+'</div>';
+  h+='<span class="pill p-'+c.st+'">'+statusLabel(c.st)+'</span>';
+  if(c.blocking && c.st!=="CLEARED") h+=' <span class="blocking">BLOCKING BUILDING PERMIT</span>';
+  h+='<label class="fl">Verbatim text — Resolution PC-2026-14, p. '+c.pg+'</label>';
+  h+='<div class="verbatim">'+esc(c.txt)+'</div>';
+  h+='<div style="margin-top:8px"><button class="btn sm" id="dSrc">View in resolution</button></div>';
+  h+='<label class="fl" for="ownSel">Owner</label><select id="ownSel">'+OWNERS.map(function(o){return '<option'+(o===c.own?' selected':'')+'>'+esc(o)+'</option>';}).join("")+'</select>';
+  h+='<label class="fl" for="trigSel">Trigger</label><select id="trigSel">'+TRIGGERS.map(function(t){return '<option'+(t===c.trig?' selected':'')+'>'+esc(t)+'</option>';}).join("")+'</select>';
+  h+='<label class="fl">Evidence required — '+esc(c.ev)+'</label>';
+  if(c.file){h+='<div class="file">📎 '+esc(c.file)+' · attached 14 Nov</div>';}
+  else {h+='<button class="btn sm" id="attachBtn" style="margin-top:4px">Attach evidence</button><div style="font-size:11.5px;color:var(--muted);margin-top:8px">Demo data — attaching simulates a planner-ready upload.</div>';}
+  dBody.innerHTML=h;
+
+  document.getElementById("dSrc").addEventListener("click",function(){closeAll(); setTimeout(function(){gotoSource(c.n);},260);});
+  document.getElementById("ownSel").addEventListener("change",function(){
+    c.own=this.value; renderRegister(); renderTimeline(); toast("Owner reassigned to "+c.own);
+  });
+  document.getElementById("trigSel").addEventListener("change",function(){
+    c.trig=this.value; lastMoved=c.n; renderRegister(); renderTimeline();
+    setTimeout(function(){lastMoved=null;},700);
+    toast("#"+c.n+" moved to “"+c.trig+"”");
+  });
+  var ab=document.getElementById("attachBtn");
+  if(ab) ab.addEventListener("click",function(){
+    var map={14:"Verde_LA_FinalPlanSet_v3.pdf",19:"BKF_CityEngineer_Acceptance.pdf",22:"AHA_Recorded_2026-118442.pdf",33:"Bike_Parking_FinalInspection.pdf",37:"Photometric_Plan_Rev B.pdf",39:"C3_OM_Agreement_recorded.pdf",41:"PublicArt_InLieu_Receipt.pdf"};
+    c.file = map[c.n] || ("Evidence_C"+c.n+"_14Nov.pdf");
+    c.st="CLEARED"; c.blocking=false; c.due=null;
+    renderRegister(); renderTimeline(); openDrawer(c.n);
+    toast("#"+c.n+" cleared · "+permitBlockers().length+" blocking building permit");
+  });
+  scrim.classList.add("on"); drawer.classList.add("on");
+}
+
+function openModal(title,html){
+  document.getElementById("mTitle").textContent=title;
+  document.getElementById("mBody").innerHTML=html;
+  scrim.classList.add("on"); modal.classList.add("on");
+}
+function closeAll(){scrim.classList.remove("on");drawer.classList.remove("on");modal.classList.remove("on");}
+document.getElementById("dClose").addEventListener("click",closeAll);
+document.getElementById("mClose").addEventListener("click",closeAll);
+scrim.addEventListener("click",closeAll);
+document.addEventListener("keydown",function(e){if(e.key==="Escape")closeAll();});
+
+/* ---------- chase owners ---------- */
+function openChase(){
+  var open=C.filter(isOpen);
+  if(open.length===0){openModal("Chase owners",'<div class="empty">Nothing outstanding — every condition has evidence attached. 🎉</div>'); return;}
+  var byOwner={};
+  open.forEach(function(c){(byOwner[c.own]=byOwner[c.own]||[]).push(c);});
+  var names=Object.keys(byOwner).sort(function(a,b){return byOwner[b].length-byOwner[a].length;}).slice(0,3);
+  var h='<div style="font-size:12.5px;color:var(--muted);margin-bottom:12px">Pre-drafted, one per owner, listing only their open conditions and the exact evidence missing. Demo data — nothing is sent.</div>';
+  names.forEach(function(o){
+    var items=byOwner[o];
+    var body="Hi "+o.split(" (")[0]+",\n\nQuick status check on Willow Creek Apartments (PC-2026-14). You're the owner of record for "+items.length+" outstanding condition"+(items.length===1?"":"s")+":\n\n";
+    items.forEach(function(c){
+      body+="  • #"+c.n+" — "+c.t+"\n      Trigger: "+c.trig+"\n      Missing: "+c.ev+(c.st==="ATRISK"?"  [AT RISK]":"")+(c.blocking?"  [BLOCKS BUILDING PERMIT]":"")+"\n";
+    });
+    body+="\nCan you confirm a date for each by Friday? Building permit submittal is targeted for 9 Dec.\n\nThanks,\nWillow Creek Partners";
+    h+='<div class="mail"><div class="to">To: '+esc(EMAILS[o]||"team@project.com")+'</div><div class="subj">Willow Creek — '+items.length+' open condition'+(items.length===1?"":"s")+' assigned to '+esc(o)+'</div><pre>'+esc(body)+'</pre>'+
+       '<div style="margin-top:10px"><button class="btn sm chaseSend">Send</button></div></div>';
+  });
+  openModal("Chase owners",h);
+  Array.prototype.forEach.call(document.querySelectorAll(".chaseSend"),function(b){
+    b.addEventListener("click",function(){b.textContent="Sent ✓";b.disabled=true;b.style.opacity=".6";toast("Chase email queued (demo)");});
+  });
+}
+
+/* ---------- export packet ---------- */
+function openExport(){
+  var rows=C.slice().sort(function(a,b){return a.n-b.n;}).map(function(c){
+    return '<tr><td>#'+c.n+'</td><td>'+esc(c.t)+'</td><td>'+esc(c.trig)+'</td><td>'+esc(c.own)+'</td><td>'+(c.file?esc(c.file):'<span style="color:var(--red)">— missing: '+esc(c.ev)+'</span>')+'</td><td>'+statusLabel(c.st)+'</td></tr>';
+  }).join("");
+  var cleared=C.filter(function(c){return c.st==="CLEARED";}).length;
+  var h='<div style="font-size:12.5px;color:var(--muted);margin-bottom:12px">One-page printable preview. Demo data.</div>';
+  h+='<div class="packet"><h4>Conditions of Approval — Clearance Packet</h4>'+
+     '<div class="sub">Willow Creek Apartments · 212 units · City of Dublin · Resolution PC-2026-14 · generated 14 Nov 2026</div>'+
+     '<div style="font-size:12.5px;margin-bottom:10px"><b>'+cleared+' of '+C.length+'</b> tracked conditions cleared with evidence on file. '+permitBlockers().length+' outstanding at building permit.</div>'+
+     '<table><thead><tr><th>No.</th><th>Condition</th><th>Trigger</th><th>Responsible party</th><th>Evidence on file</th><th>Status</th></tr></thead><tbody>'+rows+'</tbody></table>'+
+     '<div class="sig"><div class="sigline">City of Dublin — Planner signature / date</div><div class="sigline">Applicant representative / date</div></div></div>'+
+     '<div style="margin-top:12px"><button class="btn sm" id="printBtn">Print / save as PDF</button></div>';
+  openModal("Export clearance packet",h);
+  document.getElementById("printBtn").addEventListener("click",function(){
+    try{window.print();}catch(e){toast("Printing isn't available here.");}
+  });
+}
+
+/* ---------- timeline ---------- */
+var STOPS=[
+  {label:"Approval", key:null},
+  {label:"Grading permit", key:"Before grading permit", k:true},
+  {label:"Building permit", key:"Before building permit", k:true},
+  {label:"Vertical construction", key:"Before vertical construction"},
+  {label:"Final inspection / CO", key:"Before CO", k:true},
+  {label:"Ongoing", key:"Ongoing during construction"}
+];
+function renderTimeline(){
+  var out=STOPS.map(function(s){
+    var items = s.key? C.filter(function(c){return c.trig===s.key;}) : [];
+    var dots=items.map(function(c){
+      var cls = c.st==="CLEARED" ? "" : (c.st==="ONGOING" ? " ongoing" : " open");
+      return '<span class="dot'+cls+'" title="#'+c.n+' '+esc(c.t)+' — '+statusLabel(c.st)+'"></span>';
+    }).join("");
+    return '<div class="stop'+(s.k?" key":"")+'"><div class="dots">'+dots+'</div><div class="knob"></div><div class="slab">'+esc(s.label)+(items.length?'<br><span style="font-size:10.5px">'+items.length+' cond.</span>':'')+'</div></div>';
+  }).join("");
+  document.getElementById("stops").innerHTML=out;
+}
+
+/* ---------- toast ---------- */
+var toastEl=document.getElementById("toast"), tTimer=null;
+function toast(msg){
+  toastEl.textContent=msg; toastEl.classList.add("on");
+  clearTimeout(tTimer); tTimer=setTimeout(function(){toastEl.classList.remove("on");},2200);
+}
+
+renderTimeline();
+})();
+</script>
+</body>
+</html>

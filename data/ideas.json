@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-09T20:54:29.514Z",
+  "updated": "2026-11-14T20:53:31.367Z",
   "ideas": [
     {
       "id": "2026-10-22-agentgauntlet",
@@ -907,6 +907,66 @@
       "sources_count": 27,
       "superseded_by": null,
       "sibling": "2026-11-09-blastdoor"
+    },
+    {
+      "id": "2026-11-14-cutaway",
+      "number": 33,
+      "date": "2026-11-14",
+      "track": "build",
+      "short_name": "Cutaway",
+      "verdict": "dig_deeper",
+      "score": 7.8,
+      "scores": {
+        "wow": 9,
+        "shareability": 8,
+        "buildability": 8,
+        "freshness": 9,
+        "usefulness": 7
+      },
+      "effort": "a weekend",
+      "category": "Public data tools",
+      "tags": [
+        "explainers",
+        "3d",
+        "education",
+        "generative-ui"
+      ],
+      "pain_type": "latent",
+      "one_liner": "Type any object or mechanism — a Bic lighter, a washing machine drum, a 4-stroke engine, an ATM — and Cutaway generates a single-page interactive take-apart diagram (drag the explode slider, click a part, read what it does) that you can share with a link and that joins a public, browsable shelf of everything anyone has torn down.",
+      "prototype_url": "https://yashsharma1911.github.io/granted/ideas/2026-11-14-cutaway/",
+      "sources_count": 13,
+      "superseded_by": null,
+      "sibling": "2026-11-14-condition"
+    },
+    {
+      "id": "2026-11-14-condition",
+      "number": 34,
+      "date": "2026-11-14",
+      "track": "venture",
+      "short_name": "Condition",
+      "verdict": "dig_deeper",
+      "score": 7.6,
+      "scores": {
+        "pain": 8,
+        "market_pull": 7,
+        "timing": 8,
+        "gap": 8,
+        "wedge": 7
+      },
+      "effort": "3+ months",
+      "category": "Back-office automation",
+      "tags": [
+        "construction",
+        "permitting",
+        "agents",
+        "compliance"
+      ],
+      "pain_type": "expressed",
+      "one_liner": "For the permitting/entitlement lead at a 20-200 person multifamily, industrial or renewable-energy developer, Condition turns the approval resolution PDF into a live register of every condition — owner, trigger milestone (permit issuance, each inspection, CO), required evidence and city clearance fee — and chases the owner of each one until the evidence is filed.",
+      "prototype_url": "https://yashsharma1911.github.io/granted/ideas/2026-11-14-condition/",
+      "sources_count": 20,
+      "superseded_by": null,
+      "sibling": "2026-11-14-cutaway"
     }
   ]
 }
