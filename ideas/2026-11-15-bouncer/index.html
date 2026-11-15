@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bouncer — Meeting Bot Exam Pack</title>
+<style>
+:root{
+--bg:#f4f5f7;--panel:#ffffff;--ink:#14181f;--muted:#5d6775;--line:#dfe3e8;
+--green:#0f7b4f;--greenbg:#e6f4ec;--red:#a81d1d;--redbg:#fbeaea;
+--amber:#8a5a00;--amberbg:#fdf2dd;--grey:#4a515c;--greybg:#eceef1;
+--blue:#1b4f9c;--bluebg:#e8eefa;--accent:#1b4f9c;
+}
+@media (prefers-color-scheme:dark){
+:root{
+--bg:#101317;--panel:#171b21;--ink:#e8ebef;--muted:#99a2ae;--line:#2a313a;
+--green:#5fd3a0;--greenbg:#133026;--red:#ff8d85;--redbg:#361a19;
+--amber:#f0bf62;--amberbg:#352a12;--grey:#aab2bd;--greybg:#242a32;
+--blue:#8fb6f5;--bluebg:#172338;--accent:#8fb6f5;
+}
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font:14px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-text-size-adjust:100%}
+header.top{background:var(--panel);border-bottom:1px solid var(--line);padding:10px 14px;display:flex;gap:10px;align-items:center;position:sticky;top:0;z-index:40;flex-wrap:wrap}
+.logo{width:24px;height:24px;flex:0 0 auto}
+.brand{font-weight:700;letter-spacing:.2px}
+.tag{color:var(--muted);font-size:12.5px}
+.demochip{margin-left:auto;font-size:11px;color:var(--muted);border:1px solid var(--line);padding:2px 7px;border-radius:99px}
+.shell{display:flex;align-items:flex-start;gap:14px;padding:14px;max-width:1280px;margin:0 auto}
+nav.side{width:180px;flex:0 0 auto;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px;position:sticky;top:60px}
+nav.side button{display:block;width:100%;text-align:left;background:none;border:0;color:var(--ink);font:inherit;padding:11px 10px;border-radius:7px;cursor:pointer;min-height:44px}
+nav.side button:hover{background:var(--greybg)}
+nav.side button.active{background:var(--bluebg);color:var(--blue);font-weight:600}
+nav .navlabel{font-size:10.5px;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);padding:8px 10px 4px}
+main{flex:1 1 auto;min-width:0}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:14px}
+h2{font-size:15px;margin:0 0 4px}
+h3{font-size:13px;margin:0 0 6px}
+.sub{color:var(--muted);font-size:12.5px;margin:0 0 10px}
+.strip{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+@media(max-width:860px){.shell{flex-direction:column;padding:10px}nav.side{width:100%;position:static;display:flex;flex-wrap:wrap;gap:4px}nav.side .navlabel{display:none}nav.side button{width:auto;flex:1 1 40%}.strip{grid-template-columns:1fr}}
+.before{border:1px solid var(--line);border-radius:10px;background:var(--panel);padding:14px}
+.logmock{border:1px solid var(--line);border-radius:7px;overflow:hidden;filter:blur(.35px);opacity:.82}
+.logmock .lr{display:flex;justify-content:space-between;gap:8px;padding:7px 9px;border-bottom:1px solid var(--line);font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11.5px}
+.logmock .lr:last-child{border-bottom:0}
+.logmock .lh{background:var(--greybg);color:var(--muted);font-weight:600}
+.logmock .q{color:var(--muted)}
+.xlsx{display:flex;gap:8px;align-items:center;margin-top:10px;border:1px dashed var(--line);border-radius:7px;padding:8px}
+.xlsx .thumb{width:34px;height:42px;border:1px solid var(--line);border-radius:3px;background:linear-gradient(var(--greybg),var(--greybg));display:grid;grid-template-rows:repeat(5,1fr);flex:0 0 auto}
+.xlsx .thumb i{border-bottom:1px solid var(--line)}
+.after{border:1px solid var(--accent);border-radius:10px;background:var(--panel);padding:14px;cursor:pointer;text-align:left;width:100%;font:inherit;color:var(--ink)}
+.after:hover{background:var(--bluebg)}
+.bignums{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px}
+.bignum{background:var(--greybg);border-radius:8px;padding:10px}
+.bignum b{display:block;font-size:26px;line-height:1.1}
+.bignum span{font-size:11.5px;color:var(--muted)}
+.chips{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:10px}
+.chip{border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:99px;padding:9px 13px;font:inherit;font-size:12.5px;cursor:pointer;min-height:40px}
+.chip.on{background:var(--ink);color:var(--panel);border-color:var(--ink)}
+@media (prefers-color-scheme:dark){.chip.on{background:var(--accent);color:#0d1117;border-color:var(--accent)}}
+.tblwrap{overflow-x:auto;border:1px solid var(--line);border-radius:9px}
+table{border-collapse:collapse;width:100%;min-width:900px;font-size:12.8px}
+th{text-align:left;background:var(--greybg);color:var(--muted);font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:10px;border-bottom:1px solid var(--line);vertical-align:top}
+tr.row{cursor:pointer}
+tr.row:hover td{background:var(--bluebg)}
+.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11.8px}
+.pill{display:inline-block;border-radius:99px;padding:2px 8px;font-size:11px;font-weight:600;white-space:nowrap}
+.p-ok{background:var(--greenbg);color:var(--green)}
+.p-exc{background:var(--redbg);color:var(--red)}
+.p-cli{background:var(--amberbg);color:var(--amber)}
+.p-rev{background:var(--bluebg);color:var(--blue)}
+.p-gap{background:var(--greybg);color:var(--grey)}
+.flag{display:inline-block;font-size:10.5px;border:1px solid var(--line);border-radius:4px;padding:1px 5px;color:var(--muted);margin-top:4px}
+.stamp{display:inline-block;background:var(--greenbg);color:var(--green);border:1px solid var(--green);border-radius:4px;font-size:10px;padding:1px 5px;margin-top:4px;font-weight:600}
+.btn{font:inherit;border-radius:8px;padding:11px 14px;cursor:pointer;min-height:44px;border:1px solid var(--line);background:var(--panel);color:var(--ink)}
+.btn:hover{background:var(--greybg)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+@media (prefers-color-scheme:dark){.btn.primary{color:#0d1117}}
+.btn.primary:hover{opacity:.9}
+.scrim{position:fixed;inset:0;background:rgba(10,12,16,.45);opacity:0;pointer-events:none;transition:opacity .18s;z-index:50}
+.scrim.on{opacity:1;pointer-events:auto}
+.drawer{position:fixed;top:0;right:0;height:100%;width:min(430px,100%);background:var(--panel);border-left:1px solid var(--line);transform:translateX(102%);transition:transform .2s ease;z-index:60;display:flex;flex-direction:column}
+.drawer.on{transform:none}
+.dhead{display:flex;gap:10px;align-items:flex-start;padding:13px;border-bottom:1px solid var(--line)}
+.dbody{overflow:auto;padding:13px;flex:1 1 auto}
+.dsec{border:1px solid var(--line);border-radius:9px;padding:11px;margin-bottom:11px}
+.kv{display:flex;justify-content:space-between;gap:10px;padding:4px 0;font-size:12.5px;border-bottom:1px dotted var(--line)}
+.kv:last-child{border-bottom:0}
+.kv span:first-child{color:var(--muted)}
+.kv span:last-child{text-align:right}
+.vendorlogo{width:38px;height:38px;border-radius:8px;background:var(--greybg);border:1px solid var(--line);display:grid;place-items:center;font-weight:700;color:var(--muted);flex:0 0 auto}
+.tl{list-style:none;margin:0;padding:0 0 0 14px;border-left:2px solid var(--line)}
+.tl li{position:relative;padding:0 0 10px 10px;font-size:12.5px}
+.tl li:last-child{padding-bottom:0}
+.tl li::before{content:"";position:absolute;left:-19px;top:5px;width:8px;height:8px;border-radius:99px;background:var(--muted)}
+.tl li.warn::before{background:var(--amber)}
+textarea{width:100%;min-height:76px;border:1px solid var(--line);border-radius:8px;padding:9px;font:inherit;background:var(--bg);color:var(--ink);resize:vertical}
+.drowbtns{display:flex;gap:8px;flex-wrap:wrap;padding:11px 13px;border-top:1px solid var(--line);background:var(--panel)}
+.drowbtns .btn{flex:1 1 150px}
+.email{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px;white-space:pre-wrap;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11.6px;max-height:260px;overflow:auto}
+.doc{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:18px;max-width:760px}
+.doc .dochead{border-bottom:2px solid var(--ink);padding-bottom:8px;margin-bottom:12px}
+.doc h1{font-size:17px;margin:0}
+.doc .meta{color:var(--muted);font-size:12px}
+.doc table{min-width:0;font-size:12.5px}
+.docfoot{border-top:1px solid var(--line);margin-top:14px;padding-top:8px;color:var(--muted);font-size:11.5px}
+.exitem{border:1px solid var(--line);border-left:3px solid var(--red);border-radius:6px;padding:9px;margin-bottom:8px}
+.note{background:var(--greenbg);border-left:3px solid var(--green);padding:6px 8px;margin-top:6px;font-size:12px;border-radius:4px}
+.skel{height:12px;border-radius:4px;background:linear-gradient(90deg,var(--greybg),var(--line),var(--greybg));background-size:200% 100%;animation:sh 1.1s linear infinite;margin-bottom:8px}
+@keyframes sh{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.toast{position:fixed;left:50%;bottom:18px;transform:translate(-50%,16px);background:var(--ink);color:var(--bg);padding:11px 15px;border-radius:8px;font-size:12.8px;opacity:0;pointer-events:none;transition:.2s;z-index:80;max-width:92vw;text-align:center}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+.empty{text-align:center;color:var(--muted);padding:28px 10px;font-size:13px}
+footer{text-align:center;color:var(--muted);font-size:11.5px;padding:8px 14px 26px}
+.hide{display:none!important}
+.tip{border-bottom:1px dotted var(--muted);cursor:help}
+.policyrow{display:flex;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);font-size:13px}
+.policyrow:last-child{border-bottom:0}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+</style>
+</head>
+<body>
+<header class="top">
+<svg class="logo" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2 4 5v6.2c0 5 3.4 9.3 8 10.8 4.6-1.5 8-5.8 8-10.8V5l-8-3Zm0 2.1 6 2.3v4.8c0 4-2.5 7.4-6 8.7-3.5-1.3-6-4.7-6-8.7V6.4l6-2.3Zm-1 4.4v3h-3v2h3v3h2v-3h3v-2h-3v-3h-2Z"/></svg>
+<div>
+<div class="brand">Bouncer</div>
+<div class="tag">Meeting-bot control &amp; consent evidence — Harbor Point Advisors (RIA, CA)</div>
+</div>
+<span class="demochip">Demo data</span>
+</header>
+
+<div class="shell">
+<nav class="side" aria-label="Sections">
+<div class="navlabel">Harbor Point</div>
+<button class="active" data-nav="dash">Dashboard</button>
+<button data-nav="meetings">Meetings</button>
+<button data-nav="pack">Exam Pack</button>
+<button data-nav="policy">Policy</button>
+</nav>
+
+<main>
+<!-- SCREEN 1 -->
+<section id="dash">
+<div class="strip">
+<div class="before">
+<h2>What the CCO has today</h2>
+<p class="sub">Google Workspace participant log — 3 Oct, "Prospect intro"</p>
+<div class="logmock" aria-hidden="true">
+<div class="lr lh"><span>Participant</span><span>Duration</span></div>
+<div class="lr"><span>Notetaker</span><span class="q">43 min</span></div>
+<div class="lr"><span>Meeting Assistant</span><span class="q">41 min</span></div>
+<div class="lr"><span>jh (Guest)</span><span class="q">39 min</span></div>
+<div class="lr"><span>Fireflies.ai Notetaker</span><span class="q">44 min</span></div>
+<div class="lr"><span>m.reyes@harborpt.com</span><span class="q">45 min</span></div>
+</div>
+<p class="sub" style="margin:8px 0 0">No vendor, no owner, no consent field. Names are free text.</p>
+<div class="xlsx">
+<div class="thumb"><i></i><i></i><i></i><i></i><i></i></div>
+<div><div style="font-size:12.5px">approved_ai_tools.xlsx</div><div class="sub" style="margin:0">last updated 4 months ago</div></div>
+</div>
+</div>
+<button class="after" id="afterCard">
+<h2>What Bouncer gives you</h2>
+<p class="sub">October 2026 — attendance evidence, reconciled nightly</p>
+<div class="bignums">
+<div class="bignum"><b>127</b><span>client meetings reviewed</span></div>
+<div class="bignum"><b style="color:var(--red)">9</b><span>unapproved bots found</span></div>
+<div class="bignum"><b style="color:var(--amber)">4</b><span>meetings with no consent record</span></div>
+</div>
+<p class="sub" style="margin:10px 0 0;color:var(--accent)">Open the meeting log →</p>
+</button>
+</div>
+</section>
+
+<!-- SCREEN 2 -->
+<section id="meetings" class="card">
+<h2>Meetings — October 2026</h2>
+<p class="sub">12 of 127 meetings shown (external, bot-eligible). Click a row for bot identity and consent evidence.</p>
+<div class="chips" id="chips"></div>
+<div class="tblwrap">
+<table>
+<thead><tr><th>Date</th><th>Meeting</th><th>Advisor</th><th>External party</th><th>Bot detected</th><th>Vendor</th><th>Consent</th><th>Status</th></tr></thead>
+<tbody id="tbody"></tbody>
+</table>
+</div>
+<div id="emptyState" class="empty hide">No meetings match this filter.</div>
+</section>
+
+<!-- SCREEN 4 -->
+<section id="pack" class="card">
+<h2>Exam Pack</h2>
+<p class="sub">One document per period. Carries over any CCO review notes you add in the drawer.</p>
+<button class="btn primary" id="genBtn">Generate October 2026 Exam Pack</button>
+<div id="packLoading" class="hide" style="margin-top:14px;max-width:760px">
+<div class="skel" style="width:40%"></div><div class="skel"></div><div class="skel" style="width:85%"></div><div class="skel" style="width:65%"></div>
+<p class="sub" id="packStep">Reconciling participant logs…</p>
+</div>
+<div id="packDoc" class="hide" style="margin-top:14px"></div>
+</section>
+
+<!-- POLICY -->
+<section id="policy" class="card">
+<h2>Policy — Approved meeting AI tools</h2>
+<p class="sub">Source of truth replacing approved_ai_tools.xlsx. Read-only in this prototype.</p>
+<div class="policyrow"><span><b>Zocks</b> — "Harbor Point Notes"</span><span class="pill p-ok">Approved · DPA on file</span></div>
+<div class="policyrow"><span><b>Zoom AI Companion</b></span><span class="pill p-cli">Approved with attestation required</span></div>
+<div class="policyrow"><span><b>Otter.ai</b></span><span class="pill p-exc">Not approved</span></div>
+<div class="policyrow"><span><b>Read.ai</b></span><span class="pill p-exc">Not approved</span></div>
+<div class="policyrow"><span><b>Fireflies</b></span><span class="pill p-cli">Client-side only — cannot be blocked</span></div>
+<div class="policyrow"><span><b>Anthropic Claude Meetings</b></span><span class="pill p-rev">New vendor — unreviewed</span></div>
+<p class="sub" style="margin-top:12px">Consent rule: CA two-party. Verbal consent must be captured in the first 2 minutes and attested by the advisor.</p>
+</section>
+</main>
+</div>
+
+<footer>Prototype by Granted, inspired by your bookmarks</footer>
+
+<div class="scrim" id="scrim"></div>
+<aside class="drawer" id="drawer" aria-label="Meeting detail" aria-hidden="true">
+<div class="dhead">
+<div style="flex:1 1 auto;min-width:0">
+<div id="dTitle" style="font-weight:600"></div>
+<div class="sub" id="dSub" style="margin:0"></div>
+</div>
+<button class="btn" id="closeDrawer" style="min-height:40px;padding:8px 11px">✕<span class="sr">Close</span></button>
+</div>
+<div class="dbody" id="dBody"></div>
+<div class="drowbtns">
+<button class="btn" id="btnReview">Mark reviewed with note</button>
+<button class="btn" id="btnDelete">Generate deletion request</button>
+</div>
+</aside>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+(function(){
+"use strict";
+var MEETINGS=[
+{id:1,date:"Oct 2",title:"Q3 Review — Alvarez Family Trust",adv:"D. Okafor",ext:"alvarezfamily.com",bot:"Harbor Point Notes",vendor:"Zocks (approved)",vshort:"Zocks",consent:"Verbal consent at 00:41, attested",status:"OK",cls:"p-ok",conf:99,auth:"M. Reyes on 12 Aug 2026 via OAuth",join:"14:02:11",left:"14:46:03",notice:"yes — shown at 00:12"},
+{id:2,date:"Oct 3",title:"Prospect intro — Linwood Dental 401(k)",adv:"M. Reyes",ext:"linwooddental.com",bot:"Notetaker",vendor:"Otter.ai (NOT on approved list)",vshort:"Otter.ai",consent:"none",status:"EXCEPTION",cls:"p-exc",conf:88,auth:"not authorised in your Workspace",join:"09:31:04",left:"10:14:52",notice:"unknown"},
+{id:3,date:"Oct 6",title:"Estate planning w/ outside counsel",adv:"D. Okafor",ext:"brantleylaw.com",bot:"Fireflies.ai Notetaker",vendor:"Fireflies (client-side, external)",vshort:"Fireflies",consent:"none",status:"CLIENT-SIDE BOT",cls:"p-cli",conf:94,auth:"joined as external guest — not your tenant",join:"11:00:48",left:"11:52:19",notice:"unknown"},
+{id:4,date:"Oct 8",title:"Quarterly ops sync (internal)",adv:"—",ext:"—",bot:"none",vendor:"—",vshort:"—",consent:"n/a",status:"OK",cls:"p-ok",conf:null,auth:"—",join:"—",left:"—",notice:"n/a"},
+{id:5,date:"Oct 9",title:"Annual review — Chen, S.",adv:"M. Reyes",ext:"gmail.com",bot:"Harbor Point Notes",vendor:"Zocks (approved)",vshort:"Zocks",consent:"consent recorded, client declined recording of medical discussion",status:"OK",cls:"p-ok",conf:99,auth:"M. Reyes on 12 Aug 2026 via OAuth",join:"13:00:22",left:"13:41:10",notice:"yes — shown at 00:08"},
+{id:6,date:"Oct 13",title:"Rollover discussion — Petrakis",adv:"J. Vance",ext:"petrakis-cpa.com",bot:"AI Companion",vendor:"Zoom native",vshort:"Zoom",consent:"no attestation",status:"EXCEPTION",cls:"p-exc",conf:97,auth:"host-enabled by J. Vance (no attestation step)",join:"15:04:00",left:"15:38:44",notice:"yes — platform banner"},
+{id:7,date:"Oct 15",title:"Portfolio review — Daniels Foundation",adv:"D. Okafor",ext:"danielsfdn.org",bot:"Claude",vendor:"Anthropic Claude Meetings (new vendor, unreviewed)",vshort:"Claude",consent:"none",status:"EXCEPTION",cls:"p-exc",conf:76,flag:"first seen this month",auth:"D. Okafor on 14 Oct 2026 via OAuth — no vendor review on file",join:"10:02:33",left:"10:55:07",notice:"unknown"},
+{id:8,date:"Oct 16",title:"Custodian onboarding call",adv:"J. Vance",ext:"schwab.com",bot:"Notetaker (Guest)",vendor:"unidentified, confidence 42%",vshort:"?",consent:"none",status:"REVIEW",cls:"p-rev",conf:42,auth:"no OAuth grant matched",join:"08:58:12",left:"09:44:30",notice:"unknown"},
+{id:9,date:"Oct 20",title:"Annual review — Osei, A.",adv:"M. Reyes",ext:"oseiholdings.com",bot:"Harbor Point Notes",vendor:"Zocks (approved)",vshort:"Zocks",consent:"attested",status:"OK",cls:"p-ok",conf:99,auth:"M. Reyes on 12 Aug 2026 via OAuth",join:"14:01:05",left:"14:49:58",notice:"yes — shown at 00:10"},
+{id:10,date:"Oct 22",title:"Insurance review — Whitfield",adv:"J. Vance",ext:"whitfield.net",bot:"Read AI",vendor:"Read.ai (NOT approved)",vshort:"Read.ai",consent:"none",status:"EXCEPTION",cls:"p-exc",conf:91,auth:"not authorised in your Workspace",join:"16:00:19",left:"16:35:41",notice:"unknown"},
+{id:11,date:"Oct 27",title:"Prospect — Marchetti Industries",adv:"D. Okafor",ext:"marchetti.com",bot:"none detected",vendor:"—",vshort:"—",consent:"advisor recorded locally (desktop)",status:"COVERAGE GAP",cls:"p-gap",tip:"botless recorders do not appear in participant logs",conf:null,auth:"n/a — no bot joined",join:"—",left:"—",notice:"unknown"},
+{id:12,date:"Oct 29",title:"Client complaint follow-up — Haddad",adv:"M. Reyes",ext:"haddadllc.com",bot:"Notetaker",vendor:"Otter.ai",vshort:"Otter.ai",consent:"none",status:"EXCEPTION",cls:"p-exc",conf:88,flag:"sensitive",auth:"not authorised in your Workspace",join:"11:30:02",left:"12:08:27",notice:"unknown"}
+];
+var notes={},filter="all",current=null;
+var $=function(s){return document.querySelector(s)};
+var tbody=$("#tbody"),drawer=$("#drawer"),scrim=$("#scrim");
+
+function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
+function toast(m){var t=$("#toast");t.textContent=m;t.classList.add("on");clearTimeout(t._t);t._t=setTimeout(function(){t.classList.remove("on")},2400)}
+
+var FILTERS=[{k:"all",l:"All"},{k:"exc",l:"Exceptions only"},{k:"cli",l:"Client-side bots"},{k:"noc",l:"No consent record"}];
+function match(m){
+ if(filter==="all")return true;
+ if(filter==="exc")return m.status==="EXCEPTION";
+ if(filter==="cli")return m.status==="CLIENT-SIDE BOT";
+ if(filter==="noc")return m.consent==="none";
+ return true;
+}
+function renderChips(){
+ $("#chips").innerHTML=FILTERS.map(function(f){
+  var n=MEETINGS.filter(function(m){var p=filter;filter=f.k;var r=match(m);filter=p;return r}).length;
+  return '<button class="chip'+(filter===f.k?" on":"")+'" data-f="'+f.k+'">'+f.l+" ("+n+")</button>";
+ }).join("");
+}
+function renderTable(){
+ var rows=MEETINGS.filter(match);
+ $("#emptyState").classList.toggle("hide",rows.length>0);
+ tbody.innerHTML=rows.map(function(m){
+  return '<tr class="row" data-id="'+m.id+'" tabindex="0">'+
+  "<td class='mono'>"+esc(m.date)+"</td>"+
+  "<td>"+esc(m.title)+(notes[m.id]?'<br><span class="stamp">✓ reviewed by CCO</span>':"")+"</td>"+
+  "<td>"+esc(m.adv)+"</td>"+
+  "<td class='mono'>"+esc(m.ext)+"</td>"+
+  "<td>"+esc(m.bot)+"</td>"+
+  "<td>"+esc(m.vendor)+"</td>"+
+  "<td>"+esc(m.consent)+"</td>"+
+  '<td><span class="pill '+m.cls+'"'+(m.tip?' title="'+esc(m.tip)+'"':"")+">"+esc(m.status)+"</span>"+
+  (m.flag?'<br><span class="flag">'+esc(m.flag)+"</span>":"")+
+  (m.tip?'<br><span class="flag tip" title="'+esc(m.tip)+'">why?</span>':"")+"</td></tr>";
+ }).join("");
+}
+$("#chips").addEventListener("click",function(e){
+ var b=e.target.closest("[data-f]");if(!b)return;
+ filter=b.getAttribute("data-f");renderChips();renderTable();
+});
+tbody.addEventListener("click",function(e){var r=e.target.closest("tr.row");if(r)open(+r.getAttribute("data-id"))});
+tbody.addEventListener("keydown",function(e){if(e.key==="Enter"||e.key===" "){var r=e.target.closest("tr.row");if(r){e.preventDefault();open(+r.getAttribute("data-id"))}}});
+
+function confBar(c){
+ if(c==null)return '<span class="sub">no bot detected</span>';
+ var col=c>=90?"var(--green)":c>=70?"var(--amber)":"var(--red)";
+ return '<div style="display:flex;align-items:center;gap:8px"><div style="flex:1;height:7px;border-radius:99px;background:var(--greybg)"><div style="width:'+c+'%;height:7px;border-radius:99px;background:'+col+'"></div></div><b style="font-size:12px">'+c+"%</b></div>";
+}
+function open(id){
+ var m=MEETINGS.filter(function(x){return x.id===id})[0];
+ if(!m){toast("That meeting could not be loaded.");return}
+ current=m;
+ $("#dTitle").textContent=m.title;
+ $("#dSub").textContent=m.date+" 2026 · "+m.adv+" · "+m.ext;
+ var noBot=m.conf===null;
+ $("#dBody").innerHTML=
+ '<div class="dsec"><div style="display:flex;gap:10px;align-items:center;margin-bottom:8px"><div class="vendorlogo">'+esc((m.vshort||"?").slice(0,2))+'</div>'+
+ "<div><div style='font-weight:600'>"+esc(m.bot)+"</div><div class='sub' style='margin:0'>"+esc(m.vendor)+"</div></div></div>"+
+ confBar(m.conf)+
+ "<div class='kv' style='margin-top:8px'><span>Authorisation</span><span>"+esc(m.auth)+"</span></div>"+
+ "<div class='kv'><span>Status</span><span><span class='pill "+m.cls+"'>"+esc(m.status)+"</span></span></div>"+
+ (m.flag?"<div class='kv'><span>Flag</span><span>"+esc(m.flag)+"</span></div>":"")+"</div>"+
+
+ '<div class="dsec"><h3>Timeline</h3><ul class="tl">'+
+ (noBot?"<li>No bot joined this meeting</li><li class='warn'>Advisor recorded locally (desktop) — not visible in participant logs</li>":
+ "<li>Bot joined "+esc(m.join)+"</li><li"+(m.notice.indexOf("yes")===0?"":" class='warn'")+">Recording notice shown? "+esc(m.notice)+"</li><li>Bot left "+esc(m.left)+"</li>")+
+ "</ul></div>"+
+
+ '<div class="dsec"><h3>Consent</h3><div class="sub" style="margin:0 0 6px">California — two-party consent required</div>'+
+ "<div class='kv'><span>Record</span><span>"+esc(m.consent)+"</span></div>"+
+ "<div class='kv'><span>Attested by advisor</span><span>"+(/attest/.test(m.consent)&&!/no attestation/.test(m.consent)?"Yes":"No")+"</span></div></div>"+
+ (notes[m.id]?'<div class="dsec"><h3>CCO review</h3><div class="note">'+esc(notes[m.id])+'<div class="sub" style="margin:4px 0 0">— A. Duarte, CCO</div></div></div>':"")+
+ '<div id="actionArea"></div>';
+ drawer.classList.add("on");scrim.classList.add("on");drawer.setAttribute("aria-hidden","false");
+}
+function close(){drawer.classList.remove("on");scrim.classList.remove("on");drawer.setAttribute("aria-hidden","true");current=null}
+$("#closeDrawer").addEventListener("click",close);
+scrim.addEventListener("click",close);
+document.addEventListener("keydown",function(e){if(e.key==="Escape")close()});
+
+$("#btnReview").addEventListener("click",function(){
+ if(!current)return;
+ var a=$("#actionArea");
+ a.innerHTML='<div class="dsec"><h3>Reviewed with note</h3><textarea id="noteBox" placeholder="e.g. Advisor contacted; Otter.ai removed from account and deletion requested 30 Oct."></textarea><div style="display:flex;gap:8px;margin-top:8px"><button class="btn primary" id="saveNote">Save note</button><button class="btn" id="cancelNote">Cancel</button></div></div>';
+ a.scrollIntoView({behavior:"smooth",block:"nearest"});
+ $("#noteBox").focus();
+ $("#cancelNote").onclick=function(){a.innerHTML=""};
+ $("#saveNote").onclick=function(){
+  var v=$("#noteBox").value.trim();
+  if(v.length<4){toast("Add a short note (at least 4 characters) before saving.");return}
+  notes[current.id]=v;renderTable();var id=current.id;open(id);toast("Saved — row stamped “reviewed by CCO”.");
+ };
+});
+$("#btnDelete").addEventListener("click",function(){
+ if(!current)return;
+ var m=current,a=$("#actionArea");
+ var vend=m.vshort&&m.vshort!=="—"&&m.vshort!=="?"?m.vshort:"the vendor";
+ var body="To: privacy@"+(m.vshort&&/^[A-Za-z]/.test(m.vshort)?m.vshort.toLowerCase().replace(/[^a-z]/g,""):"vendor")+".com\n"+
+ "From: a.duarte@harborpt.com (Chief Compliance Officer)\n"+
+ "Subject: Deletion request — recording & transcript, "+m.date+" 2026\n\n"+
+ "To whom it may concern,\n\n"+
+ "Harbor Point Advisors LLC (SEC-registered investment adviser, CRD #148-2207) identified a "+vend+" meeting bot present in the following meeting:\n\n"+
+ "  Meeting: "+m.title+"\n  Date: "+m.date+" 2026, "+(m.join==="—"?"n/a":m.join+"–"+m.left)+" PT\n  Participant label: "+m.bot+"\n\n"+
+ "This tool is not on the firm's approved meeting-AI register, and no consent record exists for the external participants. Under our Electronic Communications & Recording Policy (§4.2) and California two-party consent requirements, please:\n\n"+
+ "  1. Permanently delete all recordings, transcripts and derived summaries of this meeting;\n"+
+ "  2. Confirm deletion in writing within 10 business days;\n"+
+ "  3. Confirm whether any content was used for model training or shared with sub-processors.\n\n"+
+ "Regards,\nA. Duarte, CCO — Harbor Point Advisors LLC";
+ a.innerHTML='<div class="dsec"><h3>Deletion request (draft)</h3><div class="email">'+esc(body)+'</div><div style="display:flex;gap:8px;margin-top:8px"><button class="btn primary" id="copyMail">Copy to clipboard</button><button class="btn" id="dismissMail">Close</button></div></div>';
+ a.scrollIntoView({behavior:"smooth",block:"nearest"});
+ $("#dismissMail").onclick=function(){a.innerHTML=""};
+ $("#copyMail").onclick=function(){
+  try{
+   if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(body).then(function(){toast("Draft copied.")},function(){toast("Copy unavailable — select the text instead.")});}
+   else{toast("Copy unavailable — select the text instead.")}
+  }catch(e){toast("Copy unavailable — select the text instead.")}
+ };
+});
+
+/* nav */
+var sections={dash:"#dash",meetings:"#meetings",pack:"#pack",policy:"#policy"};
+document.querySelectorAll("[data-nav]").forEach(function(b){
+ b.addEventListener("click",function(){
+  document.querySelectorAll("[data-nav]").forEach(function(x){x.classList.remove("active")});
+  b.classList.add("active");
+  var el=document.querySelector(sections[b.getAttribute("data-nav")]);
+  if(el)el.scrollIntoView({behavior:"smooth",block:"start"});
+ });
+});
+$("#afterCard").addEventListener("click",function(){
+ document.querySelectorAll("[data-nav]").forEach(function(x){x.classList.toggle("active",x.getAttribute("data-nav")==="meetings")});
+ $("#meetings").scrollIntoView({behavior:"smooth",block:"start"});
+});
+
+/* exam pack */
+$("#genBtn").addEventListener("click",function(){
+ var steps=["Reconciling participant logs…","Matching bots to OAuth grants…","Checking consent attestations…","Assembling document…"],i=0;
+ $("#packDoc").classList.add("hide");$("#packLoading").classList.remove("hide");
+ $("#genBtn").disabled=true;$("#packStep").textContent=steps[0];
+ var t=setInterval(function(){
+  i++;
+  if(i<steps.length){$("#packStep").textContent=steps[i];}
+  else{clearInterval(t);$("#packLoading").classList.add("hide");$("#genBtn").disabled=false;$("#genBtn").textContent="Regenerate October 2026 Exam Pack";buildDoc();}
+ },520);
+});
+function buildDoc(){
+ var exc=MEETINGS.filter(function(m){return m.status==="EXCEPTION"||m.status==="CLIENT-SIDE BOT"||m.status==="REVIEW"||m.status==="COVERAGE GAP"});
+ var reviewed=exc.filter(function(m){return notes[m.id]}).length;
+ var html='<div class="doc"><div class="dochead"><h1>Harbor Point Advisors LLC — Meeting Bot Exam Pack</h1>'+
+ '<div class="meta">Period: 1–31 October 2026 · SEC-registered investment adviser (California) · 14 staff · Prepared for A. Duarte, CCO · Generated 1 Nov 2026 09:14 PT</div></div>'+
+ "<h3>1. Summary</h3><table><tbody>"+
+ "<tr><td>Meetings reviewed</td><td><b>127</b></td></tr>"+
+ "<tr><td>Meetings using an approved tool</td><td><b>94</b></td></tr>"+
+ "<tr><td>Exceptions (unapproved or unattested)</td><td><b>9</b></td></tr>"+
+ "<tr><td>Client-side bots (not controllable)</td><td><b>3</b></td></tr>"+
+ "<tr><td>Coverage gaps (botless recording)</td><td><b>1</b></td></tr>"+
+ "<tr><td>Exceptions with CCO note</td><td><b>"+reviewed+" of "+exc.length+"</b></td></tr>"+
+ "</tbody></table><h3 style='margin-top:14px'>2. Exception detail</h3>"+
+ exc.map(function(m){
+  return '<div class="exitem"><div><b>'+esc(m.date)+" 2026 — "+esc(m.title)+'</b> <span class="pill '+m.cls+'">'+esc(m.status)+"</span></div>"+
+  "<div class='sub' style='margin:3px 0 0'>Bot: "+esc(m.bot)+" · Vendor: "+esc(m.vendor)+" · Advisor: "+esc(m.adv)+" · External: "+esc(m.ext)+"</div>"+
+  "<div class='sub' style='margin:2px 0 0'>Consent: "+esc(m.consent)+(m.flag?" · Flag: "+esc(m.flag):"")+"</div>"+
+  (notes[m.id]?'<div class="note">CCO note: '+esc(notes[m.id])+" — A. Duarte, CCO</div>":'<div class="sub" style="margin:4px 0 0;color:var(--red)">No CCO note recorded.</div>')+
+  "</div>";
+ }).join("")+
+ '<div class="docfoot">Generated by Bouncer — attendance evidence only; does not constitute legal advice.</div>'+
+ '<div style="margin-top:12px"><button class="btn primary" id="dlBtn">Download PDF</button></div></div>';
+ var d=$("#packDoc");d.innerHTML=html;d.classList.remove("hide");
+ $("#dlBtn").onclick=function(){toast("PDF export is not wired up in this prototype.")};
+ d.scrollIntoView({behavior:"smooth",block:"start"});
+}
+
+renderChips();renderTable();
+})();
+</script>
+</body>
+</html>

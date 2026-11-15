@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Blindspot — the map of the code nobody has read</title>
+<style>
+:root{
+  --bg:#0c0f14; --panel:#12161e; --panel2:#171c26; --line:#232b38;
+  --txt:#e6edf6; --dim:#8b97a8; --accent:#5ad1a0;
+  --red:#e5484d; --amber:#e8a33d; --green:#34a853;
+  --redbg:#3a1416; --amberbg:#3a2c12; --greenbg:#133022;
+}
+@media (prefers-color-scheme: light){
+  :root{
+    --bg:#f6f8fb; --panel:#ffffff; --panel2:#f0f3f8; --line:#dde3ec;
+    --txt:#111826; --dim:#5b6878; --accent:#11795a;
+    --redbg:#fde7e8; --amberbg:#fdf1dd; --greenbg:#e2f5e9;
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--txt);
+  font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  -webkit-text-size-adjust:100%;
+  line-height:1.45;
+}
+.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace}
+.wrap{max-width:980px;margin:0 auto;padding:16px 16px 48px}
+header.top{
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  border-bottom:1px solid var(--line);padding:12px 16px;
+  position:sticky;top:0;background:var(--bg);z-index:5;
+}
+.logo{display:flex;align-items:center;gap:8px;font-weight:700;letter-spacing:-.01em}
+.logo svg{display:block}
+.tag{color:var(--dim);font-size:13px}
+.demo-chip{
+  margin-left:auto;font-size:11px;color:var(--dim);border:1px solid var(--line);
+  border-radius:999px;padding:3px 9px;
+}
+.hidden{display:none !important}
+
+/* screen 1 */
+.hero{text-align:center;padding:48px 4px 8px}
+.hero h1{font-size:clamp(38px,11vw,64px);margin:0 0 8px;letter-spacing:-.03em}
+.hero p{color:var(--dim);margin:0 0 28px;font-size:clamp(15px,4vw,18px)}
+.inputrow{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;max-width:620px;margin:0 auto}
+input[type=text]{
+  flex:1 1 300px;min-width:0;background:var(--panel);border:1px solid var(--line);
+  color:var(--txt);border-radius:10px;padding:14px 14px;font-size:16px;
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+input[type=text]:focus{outline:2px solid var(--accent);outline-offset:1px}
+button{
+  font:inherit;cursor:pointer;border-radius:10px;border:1px solid var(--line);
+  background:var(--panel2);color:var(--txt);padding:12px 16px;min-height:48px;
+}
+button:hover{border-color:var(--accent)}
+button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.primary{background:var(--accent);color:#06130e;border-color:transparent;font-weight:700;flex:0 0 auto}
+@media (prefers-color-scheme: light){.primary{color:#fff}}
+.chips{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:20px}
+.chip{
+  font-size:13px;padding:9px 13px;min-height:42px;border-radius:999px;
+  background:transparent;color:var(--dim);
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+.chip:hover{color:var(--txt)}
+.note{color:var(--dim);font-size:12.5px;text-align:center;margin-top:28px;line-height:1.6}
+.err{color:var(--red);font-size:13px;text-align:center;margin-top:12px;min-height:18px}
+
+/* loading */
+.loading{text-align:center;padding:90px 10px}
+.loadline{color:var(--dim);font-size:14px;margin-bottom:14px}
+.bar{height:4px;background:var(--panel2);border-radius:4px;overflow:hidden;max-width:360px;margin:0 auto}
+.bar i{display:block;height:100%;width:8%;background:var(--accent);animation:fill .9s ease forwards}
+@keyframes fill{to{width:100%}}
+
+/* screen 2 */
+.headline{font-size:clamp(24px,6.4vw,40px);line-height:1.15;letter-spacing:-.025em;margin:22px 0 10px;font-weight:700}
+.headline b{color:var(--red)}
+.subline{color:var(--dim);font-size:14px;margin-bottom:18px}
+.subline span{color:var(--txt)}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+.seg{display:flex;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:3px;gap:3px;flex-wrap:wrap}
+.seg button{border:0;background:transparent;padding:9px 12px;min-height:40px;font-size:13px;color:var(--dim);border-radius:8px}
+.seg button[aria-pressed=true]{background:var(--panel);color:var(--txt);font-weight:600;box-shadow:0 1px 2px rgba(0,0,0,.25)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--dim);margin-left:auto}
+.legend i{width:10px;height:10px;border-radius:3px;display:inline-block;margin-right:5px;vertical-align:-1px}
+
+.treemap{
+  display:flex;flex-wrap:wrap;gap:6px;background:var(--panel);
+  border:1px solid var(--line);border-radius:14px;padding:6px;min-height:280px;align-content:flex-start;
+}
+.cell{
+  border:1px solid transparent;border-radius:9px;padding:9px 10px;overflow:hidden;
+  text-align:left;color:var(--txt);display:flex;flex-direction:column;justify-content:space-between;
+  min-height:62px;transition:transform .12s ease;
+}
+.cell:hover{transform:translateY(-2px)}
+.cell .p{font-size:11.5px;font-family:ui-monospace,Menlo,Consolas,monospace;word-break:break-all;line-height:1.3;opacity:.95}
+.cell .l{font-size:11px;font-family:ui-monospace,Menlo,Consolas,monospace;opacity:.75;margin-top:6px}
+.c-red{background:var(--redbg);border-color:var(--red)}
+.c-amber{background:var(--amberbg);border-color:var(--amber)}
+.c-green{background:var(--greenbg);border-color:var(--green)}
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:6px}
+.empty{padding:40px 14px;text-align:center;color:var(--dim);width:100%;font-size:14px}
+
+/* trend */
+.grid{display:grid;grid-template-columns:1fr;gap:14px;margin-top:16px}
+@media(min-width:720px){.grid{grid-template-columns:1.15fr .85fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px}
+.card h3{margin:0 0 4px;font-size:13px;color:var(--dim);font-weight:600;letter-spacing:.02em;text-transform:uppercase}
+.delta{font-size:14px;margin-top:8px}
+.delta b{color:var(--red)}
+.switchrow{display:flex;align-items:center;gap:12px;margin-top:14px;flex-wrap:wrap}
+.switch{position:relative;width:52px;height:30px;border-radius:999px;background:var(--panel2);border:1px solid var(--line);padding:0;min-height:30px;flex:0 0 auto}
+.switch::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:var(--dim);transition:.16s}
+.switch[aria-checked=true]{background:var(--accent);border-color:transparent}
+.switch[aria-checked=true]::after{left:26px;background:#fff}
+.pill{display:inline-block;background:var(--greenbg);color:var(--accent);border:1px solid var(--green);border-radius:999px;padding:6px 12px;font-size:12.5px;margin-top:10px}
+.worst{list-style:none;margin:10px 0 0;padding:0}
+.worst li{display:flex;justify-content:space-between;gap:10px;font-size:12.5px;padding:8px 0;border-bottom:1px dashed var(--line);font-family:ui-monospace,Menlo,Consolas,monospace}
+.worst li:last-child{border-bottom:0}
+.worst span:last-child{color:var(--red);white-space:nowrap}
+
+/* panel */
+.scrim{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:20}
+.side{
+  position:fixed;z-index:21;background:var(--panel);border:1px solid var(--line);
+  right:0;top:0;bottom:0;width:min(420px,100%);padding:18px;overflow:auto;
+}
+@media(max-width:620px){.side{top:auto;bottom:0;width:100%;border-radius:16px 16px 0 0;max-height:86vh}}
+.side h2{font-size:15px;margin:0 0 2px;word-break:break-all;font-family:ui-monospace,Menlo,Consolas,monospace}
+.kv{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:13.5px}
+.kv span:first-child{color:var(--dim)}
+.kv span:last-child{font-family:ui-monospace,Menlo,Consolas,monospace;text-align:right}
+.commit{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:12px;font-size:12.5px;font-family:ui-monospace,Menlo,Consolas,monospace;word-break:break-word;margin:12px 0}
+.verdict{border-radius:10px;padding:12px;font-size:13.5px;margin-top:12px}
+.v-red{background:var(--redbg);border:1px solid var(--red)}
+.v-amber{background:var(--amberbg);border:1px solid var(--amber)}
+.v-green{background:var(--greenbg);border:1px solid var(--green)}
+.closebtn{float:right;margin:-4px -4px 0 0;padding:8px 12px}
+
+/* share card */
+.sharewrap{margin-top:22px}
+.cardscroll{overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--line);border-radius:14px;background:var(--panel2);padding:10px}
+.share{
+  width:1200px;height:630px;background:#0c0f14;color:#e6edf6;border-radius:12px;padding:52px 56px;
+  display:flex;flex-direction:column;transform-origin:top left;
+}
+.share .r{font-family:ui-monospace,Menlo,Consolas,monospace;color:#8b97a8;font-size:26px}
+.share .big{font-size:132px;font-weight:800;letter-spacing:-.04em;line-height:1;margin:12px 0 2px;color:#e5484d}
+.share .sub{font-size:28px;color:#e6edf6;margin-bottom:26px}
+.share .body{display:flex;gap:44px;flex:1;min-height:0}
+.mini{display:flex;flex-wrap:wrap;gap:5px;width:560px;align-content:flex-start}
+.mini div{border-radius:5px;min-height:26px}
+.share .wl{flex:1;font-family:ui-monospace,Menlo,Consolas,monospace}
+.share .wl h4{margin:0 0 14px;font-size:20px;color:#8b97a8;font-family:inherit;letter-spacing:.04em}
+.share .wl div{font-size:21px;padding:11px 0;border-bottom:1px solid #232b38;display:flex;justify-content:space-between;gap:16px}
+.share .ft{margin-top:22px;color:#8b97a8;font-size:22px;font-family:ui-monospace,Menlo,Consolas,monospace}
+.btnrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.toast{
+  position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(12px);
+  background:var(--txt);color:var(--bg);padding:11px 18px;border-radius:999px;font-size:13.5px;
+  opacity:0;pointer-events:none;transition:.2s;z-index:40;font-weight:600;
+}
+.toast.on{opacity:1;transform:translateX(-50%)}
+footer{color:var(--dim);font-size:12px;text-align:center;margin-top:34px;padding-bottom:10px}
+.linkish{background:none;border:0;color:var(--dim);text-decoration:underline;padding:10px 4px;min-height:44px}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="logo">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5ad1a0" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+      <path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="2.6"/><path d="M3 3l18 18"/>
+    </svg>
+    Blindspot
+  </div>
+  <div class="tag">maps the code in your repo no human has read</div>
+  <div class="demo-chip">Demo data</div>
+</header>
+
+<main class="wrap">
+
+  <!-- SCREEN 1 -->
+  <section id="s1">
+    <div class="hero">
+      <h1>Blindspot</h1>
+      <p>The code in your repo that no human has read.</p>
+      <div class="inputrow">
+        <input id="repoInput" type="text" value="github.com/acme/orbit-api" spellcheck="false" autocapitalize="off" aria-label="Repository URL">
+        <button class="primary" id="mapBtn">Map it</button>
+      </div>
+      <div class="err" id="err" role="alert"></div>
+      <div class="chips" id="chips">
+        <button class="chip" data-repo="acme/orbit-api">acme/orbit-api</button>
+        <button class="chip" data-repo="acme/dashboard">acme/dashboard</button>
+        <button class="chip" data-repo="acme/billing-worker">acme/billing-worker</button>
+      </div>
+      <p class="note">Read-only. No tokens, no file contents.<br>Blindspot reads commit authorship only.</p>
+    </div>
+  </section>
+
+  <!-- LOADING -->
+  <section id="sload" class="hidden">
+    <div class="loading">
+      <div class="loadline mono" id="loadText">reading 412 commits…</div>
+      <div class="bar"><i></i></div>
+    </div>
+  </section>
+
+  <!-- SCREEN 2 -->
+  <section id="s2" class="hidden">
+    <button class="linkish" id="backBtn">← map another repo</button>
+    <h1 class="headline" id="headline"></h1>
+    <div class="subline" id="subline"></div>
+
+    <div class="toolbar">
+      <div class="seg" id="filters" role="group" aria-label="Filter files">
+        <button data-f="all" aria-pressed="true">All</button>
+        <button data-f="blind" aria-pressed="false">Blind spots only</button>
+        <button data-f="human" aria-pressed="false">Human-reviewed</button>
+      </div>
+      <div class="legend">
+        <span><i style="background:var(--red)"></i>agent · 90+ days</span>
+        <span><i style="background:var(--amber)"></i>agent · &lt;90 days</span>
+        <span><i style="background:var(--green)"></i>human after agent</span>
+      </div>
+    </div>
+
+    <div class="treemap" id="treemap"></div>
+
+    <!-- 2b trend -->
+    <div class="grid">
+      <div class="card">
+        <h3>Your blind spot share, last 5 weeks</h3>
+        <div id="spark"></div>
+        <div class="delta">+7 points since last week — <b>3 new blind spots</b></div>
+        <div class="switchrow">
+          <button class="switch" id="recheck" role="switch" aria-checked="false" aria-label="Re-check weekly"></button>
+          <span style="font-size:14px">Re-check weekly</span>
+        </div>
+        <div id="recheckPill" class="pill hidden">✓ We'll re-read this repo every Monday</div>
+      </div>
+      <div class="card">
+        <h3>Worst blind spots</h3>
+        <ul class="worst" id="worstList"></ul>
+        <button id="shareBtn" style="margin-top:14px;width:100%" class="primary">Get share card</button>
+      </div>
+    </div>
+
+    <!-- SHARE -->
+    <div class="sharewrap hidden" id="sharewrap">
+      <h3 style="font-size:13px;color:var(--dim);text-transform:uppercase;letter-spacing:.02em">Share card · 1200×630</h3>
+      <div class="cardscroll" id="cardScroll">
+        <div class="share" id="shareCard">
+          <div class="r" id="scRepo"></div>
+          <div class="big" id="scPct"></div>
+          <div class="sub" id="scSub"></div>
+          <div class="body">
+            <div class="mini" id="scMini"></div>
+            <div class="wl">
+              <h4>OLDEST BLIND SPOTS</h4>
+              <div id="scW1"></div><div id="scW2"></div><div id="scW3"></div>
+            </div>
+          </div>
+          <div class="ft">blindspot — map the code nobody has read</div>
+        </div>
+      </div>
+      <div class="btnrow">
+        <button id="dlBtn">Download PNG</button>
+        <button id="cpBtn">Copy link</button>
+      </div>
+    </div>
+  </section>
+
+  <footer>Prototype by Granted, inspired by your bookmarks</footer>
+</main>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function(){
+  "use strict";
+
+  var ORBIT = [
+    ["src/lib/retry-policy.ts",684,"agent",112,"feat: add exponential backoff with jitter (Co-authored-by: Claude)","red","Claude"],
+    ["src/lib/webhook-verify.ts",441,"agent",98,"fix: constant-time signature compare (Co-authored-by: Claude)","red","Claude"],
+    ["src/db/migrations/0031_backfill.ts",390,"agent",94,"chore: backfill tenant ids (Co-authored-by: Codex)","red","Codex"],
+    ["src/routes/billing/reconcile.ts",612,"agent",76,"feat: reconcile stripe events (Co-authored-by: Claude)","amber","Claude"],
+    ["src/lib/rate-limit.ts",298,"agent",61,"feat: sliding window limiter (Co-authored-by: Claude)","amber","Claude"],
+    ["src/workers/export-csv.ts",355,"agent",44,"feat: streaming csv export (Co-authored-by: Codex)","amber","Codex"],
+    ["src/lib/pagination.ts",180,"agent",33,"refactor: cursor pagination (Co-authored-by: Claude)","amber","Claude"],
+    ["src/routes/auth/session.ts",520,"human",2,"fix: rotate session on privilege change — dana","green","dana"],
+    ["src/index.ts",140,"human",1,"chore: bump deps — dana","green","dana"],
+    ["src/lib/logger.ts",96,"human",9,"fix: redact tokens in logs — mert","green","mert"],
+    ["src/routes/health.ts",44,"human",21,"chore: add readiness probe — dana","green","dana"],
+    ["src/lib/email/templates.ts",410,"agent",103,"feat: transactional templates (Co-authored-by: Claude)","red","Claude"],
+    ["test/retry-policy.test.ts",212,"agent",112,"test: cover backoff edges (Co-authored-by: Claude)","red","Claude"],
+    ["src/lib/feature-flags.ts",167,"human",14,"feat: add killswitch — mert","green","mert"],
+    ["src/lib/pdf/render.ts",263,"agent",87,"feat: invoice pdf renderer (Co-authored-by: Codex)","amber","Codex"]
+  ];
+
+  var DASH = [
+    ["src/components/ChartGrid.tsx",512,"agent",131,"feat: virtualised chart grid (Co-authored-by: Claude)","red","Claude"],
+    ["src/hooks/useLiveQuery.ts",288,"agent",96,"feat: live query subscription (Co-authored-by: Codex)","red","Codex"],
+    ["src/lib/csv-parse.ts",204,"agent",91,"fix: handle BOM + quoted newlines (Co-authored-by: Claude)","red","Claude"],
+    ["src/components/FilterBar.tsx",341,"agent",58,"feat: saved filter presets (Co-authored-by: Claude)","amber","Claude"],
+    ["src/lib/format.ts",122,"agent",37,"refactor: locale-aware numbers (Co-authored-by: Codex)","amber","Codex"],
+    ["src/state/store.ts",398,"human",3,"fix: reset store on logout — priya","green","priya"],
+    ["src/App.tsx",210,"human",1,"chore: route split — priya","green","priya"],
+    ["src/components/Nav.tsx",156,"human",6,"feat: collapsed nav on mobile — dana","green","dana"],
+    ["src/lib/theme.ts",88,"human",12,"fix: respect system dark mode — mert","green","mert"],
+    ["src/components/Table.tsx",464,"human",4,"perf: memo row renderer — priya","green","priya"],
+    ["src/lib/export-pdf.ts",233,"agent",72,"feat: dashboard pdf export (Co-authored-by: Codex)","amber","Codex"],
+    ["src/lib/ws-client.ts",187,"agent",49,"fix: reconnect with backoff (Co-authored-by: Claude)","amber","Claude"],
+    ["test/chart-grid.test.tsx",176,"human",8,"test: snapshot grid states — mert","green","mert"],
+    ["src/lib/a11y.ts",74,"human",19,"fix: focus trap in modals — dana","green","dana"],
+    ["src/components/EmptyState.tsx",61,"human",23,"chore: copy tweak — priya","green","priya"]
+  ];
+
+  var BILL = [
+    ["src/jobs/invoice-run.ts",742,"agent",164,"feat: nightly invoice run (Co-authored-by: Claude)","red","Claude"],
+    ["src/jobs/dunning.ts",503,"agent",141,"feat: dunning ladder (Co-authored-by: Claude)","red","Claude"],
+    ["src/lib/proration.ts",418,"agent",129,"fix: mid-cycle proration rounding (Co-authored-by: Codex)","red","Codex"],
+    ["src/lib/tax/vat.ts",366,"agent",118,"feat: EU VAT rules table (Co-authored-by: Claude)","red","Claude"],
+    ["src/lib/currency.ts",201,"agent",95,"fix: minor-unit conversion (Co-authored-by: Codex)","red","Codex"],
+    ["src/jobs/retry-charges.ts",289,"agent",68,"feat: smart retry schedule (Co-authored-by: Claude)","amber","Claude"],
+    ["src/lib/ledger.ts",455,"agent",53,"feat: double-entry ledger (Co-authored-by: Claude)","amber","Claude"],
+    ["src/lib/webhooks/stripe.ts",312,"agent",41,"fix: idempotent event handling (Co-authored-by: Codex)","amber","Codex"],
+    ["src/lib/refunds.ts",198,"agent",29,"feat: partial refunds (Co-authored-by: Claude)","amber","Claude"],
+    ["src/index.ts",96,"human",2,"chore: bump deps — mert","green","mert"],
+    ["src/lib/config.ts",72,"human",7,"fix: validate env at boot — dana","green","dana"],
+    ["src/lib/logger.ts",88,"human",11,"fix: redact card metadata — mert","green","mert"],
+    ["test/proration.test.ts",143,"agent",129,"test: proration edge cases (Co-authored-by: Codex)","red","Codex"],
+    ["src/routes/health.ts",38,"human",26,"chore: readiness probe — dana","green","dana"],
+    ["src/lib/notify.ts",124,"human",16,"feat: slack alert on failed run — dana","green","dana"]
+  ];
+
+  var REPOS = {
+    "acme/orbit-api":{files:ORBIT,commits:412,trend:[22,26,29,31,38],delta:"+7 points since last week — 3 new blind spots"},
+    "acme/dashboard":{files:DASH,commits:268,trend:[18,17,19,21,24],delta:"+3 points since last week — 1 new blind spot"},
+    "acme/billing-worker":{files:BILL,commits:531,trend:[48,53,57,60,63],delta:"+3 points since last week — 2 new blind spots"}
+  };
+
+  var $ = function(id){ return document.getElementById(id); };
+  var state = { repo:"acme/orbit-api", filter:"all" };
+
+  /* ---------- toast ---------- */
+  var toastTimer = null;
+  function toast(msg){
+    var t = $("toast");
+    t.textContent = msg; t.classList.add("on");
+    if(toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){ t.classList.remove("on"); }, 1900);
+  }
+
+  /* ---------- parsing ---------- */
+  function normalise(raw){
+    var s = String(raw || "").trim();
+    if(!s) return null;
+    s = s.replace(/^https?:\/\//i,"").replace(/^www\./i,"").replace(/^github\.com\//i,"").replace(/\.git$/i,"").replace(/\/+$/,"");
+    var parts = s.split("/").filter(Boolean);
+    if(parts.length < 2) return null;
+    var slug = parts[0] + "/" + parts[1];
+    return /^[\w.-]+\/[\w.-]+$/.test(slug) ? slug.toLowerCase() : null;
+  }
+
+  function stats(files){
+    var total = 0, blindFiles = 0, blindLines = 0, oldest = 0;
+    for(var i=0;i<files.length;i++){
+      var f = files[i];
+      total += f[1];
+      if(f[2] === "agent"){
+        blindFiles++; blindLines += f[1];
+        if(f[3] > oldest) oldest = f[3];
+      }
+    }
+    return {
+      totalLines: total, totalFiles: files.length,
+      blindFiles: blindFiles, blindLines: blindLines, oldest: oldest,
+      pct: Math.round(blindLines / total * 100)
+    };
+  }
+
+  function fmt(n){ return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ","); }
+
+  /* ---------- navigation ---------- */
+  function show(id){
+    ["s1","sload","s2"].forEach(function(s){ $(s).classList.toggle("hidden", s !== id); });
+    window.scrollTo(0,0);
+  }
+
+  function go(slug){
+    var key = REPOS[slug] ? slug : null;
+    if(!key){
+      // unknown but well-formed repo: fall back to the demo repo, told honestly
+      key = "acme/orbit-api";
+      toast("Demo data only — showing acme/orbit-api");
+    }
+    state.repo = key;
+    state.filter = "all";
+    $("loadText").textContent = "reading " + REPOS[key].commits + " commits…";
+    show("sload");
+    setTimeout(function(){ render(); show("s2"); }, 200);
+  }
+
+  /* ---------- render ---------- */
+  function render(){
+    var repo = state.repo, data = REPOS[repo], files = data.files, st = stats(files);
+
+    $("headline").innerHTML = "<b>" + st.pct + "%</b> of " + repo +
+      " is code no human has touched since an agent wrote it";
+    $("subline").innerHTML = "<span>" + st.blindFiles + "</span> of " + st.totalFiles + " files · <span>" +
+      fmt(st.blindLines) + "</span> lines · oldest blind spot <span>" + st.oldest + " days</span>";
+
+    drawTreemap();
+    drawSpark(data.trend);
+    document.querySelector(".delta").innerHTML = data.delta.replace(/—\s(.*)$/, "— <b>$1</b>");
+
+    var worst = files.filter(function(f){ return f[2]==="agent"; })
+                     .sort(function(a,b){ return b[3]-a[3]; }).slice(0,3);
+    $("worstList").innerHTML = worst.map(function(f){
+      return "<li><span>" + esc(short(f[0])) + "</span><span>" + f[3] + "d</span></li>";
+    }).join("");
+
+    // reset per-repo UI
+    $("sharewrap").classList.add("hidden");
+    $("recheck").setAttribute("aria-checked","false");
+    $("recheckPill").classList.add("hidden");
+    setFilterButtons();
+  }
+
+  function short(p){
+    return p.length > 30 ? "…" + p.slice(-29) : p;
+  }
+  function esc(s){
+    return String(s).replace(/[&<>"']/g, function(c){
+      return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];
+    });
+  }
+
+  function visibleFiles(){
+    var files = REPOS[state.repo].files;
+    if(state.filter === "blind") return files.filter(function(f){ return f[2]==="agent"; });
+    if(state.filter === "human") return files.filter(function(f){ return f[2]==="human"; });
+    return files;
+  }
+
+  function drawTreemap(){
+    var tm = $("treemap");
+    var files = visibleFiles().slice().sort(function(a,b){ return b[1]-a[1]; });
+    tm.innerHTML = "";
+    if(!files.length){
+      tm.innerHTML = '<div class="empty">No files match this filter.<br>Try “All”.</div>';
+      return;
+    }
+    var total = files.reduce(function(s,f){ return s + f[1]; }, 0);
+    var narrow = window.matchMedia("(max-width:620px)").matches;
+    files.forEach(function(f){
+      var share = f[1] / total;
+      var pct = Math.max(narrow ? 46 : 22, Math.min(96, Math.round(Math.sqrt(share) * (narrow ? 165 : 230))));
+      var h = Math.max(62, Math.min(170, Math.round(share * (narrow ? 1500 : 1250))));
+      var b = document.createElement("button");
+      b.className = "cell c-" + f[5];
+      b.style.flex = "1 1 " + pct + "%";
+      b.style.height = h + "px";
+      b.setAttribute("aria-label", f[0] + ", " + f[1] + " lines, last touched by a human " + f[3] + " days ago");
+      b.innerHTML = '<div class="p">' + esc(f[0]) + '</div><div class="l">' + fmt(f[1]) + ' ln · ' + f[3] + 'd</div>';
+      b.addEventListener("click", function(){ openPanel(f); });
+      tm.appendChild(b);
+    });
+  }
+
+  function setFilterButtons(){
+    var btns = $("filters").querySelectorAll("button");
+    for(var i=0;i<btns.length;i++){
+      btns[i].setAttribute("aria-pressed", btns[i].getAttribute("data-f") === state.filter ? "true" : "false");
+    }
+  }
+
+  function drawSpark(points){
+    var w = 300, h = 86, pad = 10;
+    var min = Math.min.apply(null, points), max = Math.max.apply(null, points);
+    var span = (max - min) || 1;
+    var pts = points.map(function(v,i){
+      var x = pad + i * ((w - pad*2) / (points.length - 1));
+      var y = pad + (1 - (v - min) / span) * (h - pad*2 - 12);
+      return [x, y];
+    });
+    var line = pts.map(function(p,i){ return (i?"L":"M") + p[0].toFixed(1) + " " + p[1].toFixed(1); }).join(" ");
+    var area = line + " L" + pts[pts.length-1][0].toFixed(1) + " " + (h-14) + " L" + pts[0][0].toFixed(1) + " " + (h-14) + " Z";
+    var dots = pts.map(function(p,i){
+      var last = i === pts.length-1;
+      return '<circle cx="'+p[0].toFixed(1)+'" cy="'+p[1].toFixed(1)+'" r="'+(last?4.5:3)+'" fill="'+(last?"var(--red)":"var(--accent)")+'"/>';
+    }).join("");
+    var labels = pts.map(function(p,i){
+      return '<text x="'+p[0].toFixed(1)+'" y="'+(h-2)+'" text-anchor="middle" font-size="10" fill="var(--dim)" font-family="ui-monospace,Menlo,monospace">'+points[i]+'%</text>';
+    }).join("");
+    $("spark").innerHTML =
+      '<svg viewBox="0 0 '+w+' '+h+'" width="100%" height="'+h+'" role="img" aria-label="Blind spot share rose from '+points[0]+'% to '+points[points.length-1]+'% over five weeks">' +
+      '<path d="'+area+'" fill="var(--redbg)" opacity=".7"/>' +
+      '<path d="'+line+'" fill="none" stroke="var(--accent)" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>' +
+      dots + labels + '</svg>';
+  }
+
+  /* ---------- side panel ---------- */
+  var openEls = [];
+  function closePanel(){
+    openEls.forEach(function(e){ if(e.parentNode) e.parentNode.removeChild(e); });
+    openEls = [];
+    document.body.style.overflow = "";
+  }
+  function openPanel(f){
+    closePanel();
+    var scrim = document.createElement("div");
+    scrim.className = "scrim";
+    scrim.addEventListener("click", closePanel);
+
+    var who = f[2] === "agent" ? f[6] + " (agent)" : f[6] + " (human)";
+    var verdictClass = "v-" + f[5];
+    var verdict = f[2] === "agent"
+      ? "No human commit has modified this file in " + f[3] + " days."
+      : "A human (" + f[6] + ") committed after the agent, " + f[3] + " days ago.";
+
+    var side = document.createElement("div");
+    side.className = "side";
+    side.setAttribute("role","dialog");
+    side.setAttribute("aria-label","File details");
+    side.innerHTML =
+      '<button class="closebtn" id="pClose" aria-label="Close">✕</button>' +
+      '<div style="font-size:11px;color:var(--dim);letter-spacing:.06em">' +
+        '<span class="dot" style="background:var(--' + f[5] + ')"></span>' +
+        (f[2]==="agent" ? (f[3] >= 90 ? "BLIND SPOT · 90+ DAYS" : "BLIND SPOT") : "HUMAN-REVIEWED") +
+      '</div>' +
+      '<h2 style="margin-top:8px">' + esc(f[0]) + '</h2>' +
+      '<div class="commit">' + esc(f[4]) + '</div>' +
+      '<div class="kv"><span>Written by</span><span>' + esc(who) + '</span></div>' +
+      '<div class="kv"><span>Lines</span><span>' + fmt(f[1]) + '</span></div>' +
+      '<div class="kv"><span>Days since a human touched it</span><span>' + f[3] + '</span></div>' +
+      '<div class="kv"><span>Share of repo</span><span>' + (f[1]/stats(REPOS[state.repo].files).totalLines*100).toFixed(1) + '%</span></div>' +
+      '<div class="verdict ' + verdictClass + '">' + esc(verdict) + '</div>' +
+      '<p style="color:var(--dim);font-size:12px;margin-top:16px">Blindspot reads commit authorship only — file contents are never fetched. Demo data.</p>';
+
+    document.body.appendChild(scrim);
+    document.body.appendChild(side);
+    document.body.style.overflow = "hidden";
+    openEls = [scrim, side];
+    var c = document.getElementById("pClose");
+    c.addEventListener("click", closePanel);
+    c.focus();
+  }
+  document.addEventListener("keydown", function(e){ if(e.key === "Escape") closePanel(); });
+
+  /* ---------- share card ---------- */
+  function buildShare(){
+    var repo = state.repo, files = REPOS[repo].files, st = stats(files);
+    $("scRepo").textContent = "github.com/" + repo;
+    $("scPct").textContent = st.pct + "%";
+    $("scSub").textContent = "of this repo is code no human has read · " + st.blindFiles + "/" + st.totalFiles + " files · " + fmt(st.blindLines) + " lines";
+
+    var sorted = files.slice().sort(function(a,b){ return b[1]-a[1]; });
+    var total = sorted.reduce(function(s,f){ return s+f[1]; },0);
+    var colors = {red:"#e5484d",amber:"#e8a33d",green:"#34a853"};
+    $("scMini").innerHTML = sorted.map(function(f){
+      var share = f[1]/total;
+      var wpc = Math.max(16, Math.min(60, Math.round(Math.sqrt(share)*118)));
+      var h = Math.max(30, Math.min(120, Math.round(share*820)));
+      return '<div style="flex:1 1 '+wpc+'%;height:'+h+'px;background:'+colors[f[5]]+';opacity:.88"></div>';
+    }).join("");
+
+    var worst = files.filter(function(f){ return f[2]==="agent"; }).sort(function(a,b){ return b[3]-a[3]; }).slice(0,3);
+    ["scW1","scW2","scW3"].forEach(function(id,i){
+      var f = worst[i];
+      $(id).innerHTML = f ? '<span>' + esc(f[0].split("/").pop()) + '</span><span style="color:#e5484d">' + f[3] + 'd</span>' : "";
+    });
+
+    fitCard();
+    $("sharewrap").classList.remove("hidden");
+    $("sharewrap").scrollIntoView({behavior:"smooth", block:"start"});
+  }
+
+  function fitCard(){
+    var wrap = $("cardScroll");
+    if(!wrap || $("sharewrap").classList.contains("hidden")) return;
+    var avail = wrap.clientWidth - 20;
+    var scale = Math.min(1, avail / 1200);
+    var card = $("shareCard");
+    card.style.transform = "scale(" + scale + ")";
+    wrap.style.height = (630 * scale + 20) + "px";
+    wrap.style.overflowX = "hidden";
+  }
+
+  /* ---------- events ---------- */
+  function submit(){
+    var slug = normalise($("repoInput").value);
+    if(!slug){
+      $("err").textContent = "That doesn't look like a repo. Try github.com/acme/orbit-api";
+      return;
+    }
+    $("err").textContent = "";
+    go(slug);
+  }
+
+  $("mapBtn").addEventListener("click", submit);
+  $("repoInput").addEventListener("keydown", function(e){ if(e.key === "Enter") submit(); });
+  $("repoInput").addEventListener("input", function(){ $("err").textContent = ""; });
+
+  $("chips").addEventListener("click", function(e){
+    var b = e.target.closest("button[data-repo]");
+    if(!b) return;
+    $("repoInput").value = "github.com/" + b.getAttribute("data-repo");
+    $("err").textContent = "";
+    go(b.getAttribute("data-repo"));
+  });
+
+  $("backBtn").addEventListener("click", function(){ closePanel(); show("s1"); });
+
+  $("filters").addEventListener("click", function(e){
+    var b = e.target.closest("button[data-f]");
+    if(!b) return;
+    state.filter = b.getAttribute("data-f");
+    setFilterButtons();
+    drawTreemap();
+  });
+
+  $("recheck").addEventListener("click", function(){
+    var on = this.getAttribute("aria-checked") === "true";
+    this.setAttribute("aria-checked", on ? "false" : "true");
+    $("recheckPill").classList.toggle("hidden", on);
+  });
+
+  $("shareBtn").addEventListener("click", buildShare);
+  $("dlBtn").addEventListener("click", function(){ toast("Saved — blindspot-" + state.repo.split("/")[1] + ".png"); });
+  $("cpBtn").addEventListener("click", function(){
+    var link = "https://blindspot.dev/s/" + state.repo.split("/")[1] + "-" + stats(REPOS[state.repo].files).pct;
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(link).then(function(){ toast("Link copied"); }, function(){ toast("Link copied"); });
+    } else {
+      toast("Link copied");
+    }
+  });
+
+  var rt = null;
+  window.addEventListener("resize", function(){
+    if(rt) clearTimeout(rt);
+    rt = setTimeout(function(){
+      if(!$("s2").classList.contains("hidden")) drawTreemap();
+      fitCard();
+    }, 140);
+  });
+})();
+</script>
+</body>
+</html>

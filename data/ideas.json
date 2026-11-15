@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-14T20:53:31.367Z",
+  "updated": "2026-11-15T20:51:21.717Z",
   "ideas": [
     {
       "id": "2026-10-22-agentgauntlet",
@@ -967,6 +967,66 @@
       "sources_count": 20,
       "superseded_by": null,
       "sibling": "2026-11-14-cutaway"
+    },
+    {
+      "id": "2026-11-15-blindspot",
+      "number": 35,
+      "date": "2026-11-15",
+      "track": "build",
+      "short_name": "Blindspot",
+      "verdict": "dig_deeper",
+      "score": 8,
+      "scores": {
+        "wow": 8,
+        "shareability": 8,
+        "buildability": 9,
+        "freshness": 8,
+        "usefulness": 7
+      },
+      "effort": "a weekend",
+      "category": "Developer tools",
+      "tags": [
+        "agents",
+        "github",
+        "code-review",
+        "share-card"
+      ],
+      "pain_type": "latent",
+      "one_liner": "Paste any public GitHub repo and Blindspot draws a map of the files an agent wrote that no human has touched since — your repo's blind spots — with a weekly re-check and a shareable card.",
+      "prototype_url": "https://yashsharma1911.github.io/granted/ideas/2026-11-15-blindspot/",
+      "sources_count": 13,
+      "superseded_by": null,
+      "sibling": "2026-11-15-bouncer"
+    },
+    {
+      "id": "2026-11-15-bouncer",
+      "number": 36,
+      "date": "2026-11-15",
+      "track": "venture",
+      "short_name": "Bouncer",
+      "verdict": "watch",
+      "score": 6.8,
+      "scores": {
+        "pain": 7,
+        "market_pull": 7,
+        "timing": 8,
+        "gap": 7,
+        "wedge": 5
+      },
+      "effort": "3+ months",
+      "category": "Back-office automation",
+      "tags": [
+        "compliance",
+        "meetings",
+        "agents",
+        "fintech ops"
+      ],
+      "pain_type": "expressed",
+      "one_liner": "For the CCO or ops lead at a 5-50 person SEC-registered RIA, Bouncer watches every client video meeting across Google Meet and Zoom, tells you which AI notetaker bot joined (yours, the client's, or an unapproved one), captures the consent moment, and produces a per-meeting, exam-ready evidence record the firm can hand an examiner.",
+      "prototype_url": "https://yashsharma1911.github.io/granted/ideas/2026-11-15-bouncer/",
+      "sources_count": 20,
+      "superseded_by": null,
+      "sibling": "2026-11-15-blindspot"
     }
   ]
 }
