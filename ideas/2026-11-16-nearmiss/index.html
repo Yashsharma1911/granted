@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Nearmiss — how close your lockfile came to the npm worms</title>
+<style>
+:root{
+  --bg:#0b0e11; --panel:#12171c; --panel2:#171d24; --line:#232c35;
+  --fg:#e6edf3; --dim:#8b9aa8; --red:#ff4d4f; --redbg:rgba(255,77,79,.12);
+  --green:#36d399; --greenbg:rgba(54,211,153,.12); --grey:#55636f;
+}
+@media (prefers-color-scheme: light){
+  :root{
+    --bg:#f4f6f8; --panel:#ffffff; --panel2:#f0f3f6; --line:#d9e0e7;
+    --fg:#101418; --dim:#5a6875; --red:#d0323a; --redbg:rgba(208,50,58,.10);
+    --green:#0f8a5f; --greenbg:rgba(15,138,95,.12); --grey:#95a2ad;
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--fg);
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+  font-size:15px; line-height:1.5; -webkit-text-size-adjust:100%;
+  padding-bottom:96px;
+}
+.wrap{max-width:860px;margin:0 auto;padding:0 16px}
+header.top{
+  border-bottom:1px solid var(--line); background:var(--panel);
+  position:sticky; top:0; z-index:20;
+}
+header.top .wrap{display:flex;align-items:center;gap:10px;min-height:52px;flex-wrap:wrap}
+.logo{font-weight:700;letter-spacing:.5px}
+.logo .dot{color:var(--red)}
+.tagline{color:var(--dim);font-size:12.5px}
+.badge{
+  margin-left:auto;font-size:11px;color:var(--dim);border:1px solid var(--line);
+  padding:3px 8px;border-radius:99px;white-space:nowrap
+}
+h1{font-size:26px;line-height:1.25;margin:28px 0 10px}
+@media(min-width:640px){h1{font-size:34px}}
+.sub{color:var(--dim);font-size:14px;margin:0 0 22px;max-width:620px}
+.drop{
+  border:2px dashed var(--line); border-radius:14px; padding:34px 18px; text-align:center;
+  background:var(--panel); transition:border-color .15s,background .15s; cursor:pointer;
+}
+.drop.hot{border-color:var(--green);background:var(--greenbg)}
+.drop .big{font-size:15px;margin-bottom:6px}
+.drop .small{color:var(--dim);font-size:12.5px}
+.btnrow{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+button{
+  font-family:inherit;font-size:14px;cursor:pointer;border-radius:10px;
+  border:1px solid var(--line); background:var(--panel2); color:var(--fg);
+  padding:13px 18px; min-height:48px;
+}
+button:hover{border-color:var(--grey)}
+button.primary{background:var(--green);border-color:var(--green);color:#04120c;font-weight:700}
+@media (prefers-color-scheme: light){button.primary{color:#fff}}
+button:focus-visible{outline:2px solid var(--green);outline-offset:2px}
+.note{color:var(--dim);font-size:12px;margin-top:18px}
+.hidden{display:none !important}
+
+/* scan */
+#scan{padding:40px 0;text-align:center}
+.bar{height:8px;border-radius:99px;background:var(--panel2);overflow:hidden;margin:20px auto;max-width:420px}
+.bar>i{display:block;height:100%;width:0%;background:var(--green);transition:width .12s linear}
+.counter{font-size:13px;color:var(--dim)}
+.counter b{color:var(--fg);font-variant-numeric:tabular-nums}
+.log{margin:18px auto 0;max-width:420px;text-align:left;font-size:12px;color:var(--dim);min-height:72px}
+.log div{opacity:0;animation:fade .3s forwards}
+@keyframes fade{to{opacity:1}}
+
+/* stats */
+.stats{display:grid;grid-template-columns:1fr;gap:10px;margin:22px 0 8px}
+@media(min-width:560px){.stats{grid-template-columns:repeat(3,1fr)}}
+.tile{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px}
+.tile .n{font-size:30px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-.5px}
+.tile .l{font-size:12px;color:var(--dim);margin-top:4px}
+.tile.red{border-color:var(--red);background:var(--redbg)}
+.tile.red .n{color:var(--red)}
+h2{font-size:15px;margin:30px 0 10px;letter-spacing:.4px;text-transform:uppercase;color:var(--dim)}
+h2 .c{color:var(--fg)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.hit{border-color:var(--red)}
+.hit .hdr{padding:16px;border-bottom:1px solid var(--line);background:var(--redbg)}
+.pkg{font-size:16px;font-weight:700;word-break:break-all}
+.pill{display:inline-block;font-size:10.5px;padding:3px 8px;border-radius:99px;margin-left:8px;vertical-align:2px;letter-spacing:.6px}
+.pill.red{background:var(--red);color:#fff}
+.pill.grey{background:var(--panel2);color:var(--dim);border:1px solid var(--line)}
+.hit .body{padding:14px 16px;font-size:13.5px;color:var(--dim)}
+.hit .body b{color:var(--fg)}
+
+/* rows */
+.row{border-top:1px solid var(--line);cursor:pointer}
+.row:first-child{border-top:none}
+.row .main{display:flex;align-items:center;gap:12px;padding:14px 16px;min-height:60px}
+.row .nm{flex:1;min-width:0}
+.row .nm .t{font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .nm .v{font-size:11.5px;color:var(--dim);margin-top:2px}
+.gap{font-variant-numeric:tabular-nums;font-size:13px;color:var(--red);white-space:nowrap;text-align:right}
+.gap small{display:block;color:var(--dim);font-size:10.5px}
+.chev{color:var(--dim);transition:transform .15s;flex:none}
+.row.open .chev{transform:rotate(90deg)}
+.track{position:relative;height:22px;margin:0 16px 12px;background:var(--panel2);border-radius:6px}
+.track .you{position:absolute;top:7px;height:8px;background:var(--grey);border-radius:4px;left:0}
+.track .tick{position:absolute;top:1px;width:3px;height:20px;background:var(--red);border-radius:2px}
+.track .lbl{position:absolute;top:-1px;font-size:10px;color:var(--dim);transform:translateX(-50%)}
+.det{padding:0 16px 16px;font-size:12.5px;color:var(--dim);display:none}
+.row.open .det{display:block}
+.det .kv{display:flex;gap:10px;padding:4px 0;border-top:1px dotted var(--line)}
+.det .kv span:first-child{color:var(--grey);min-width:96px;flex:none}
+.det .kv span:last-child{color:var(--fg)}
+.det .stole{margin-top:10px;background:var(--redbg);border-left:3px solid var(--red);padding:8px 10px;color:var(--fg);border-radius:0 6px 6px 0}
+.row.blocked{opacity:.4}
+.row.blocked .gap{color:var(--green)}
+
+/* cooldown */
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px}
+.panel p{margin:0 0 12px;font-size:13.5px;color:var(--dim)}
+.panel p b{color:var(--fg)}
+.agelist{list-style:none;margin:0;padding:0}
+.agelist li{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--line);font-size:13px}
+.agelist li:first-child{border-top:none}
+.agelist .nmx{flex:1;word-break:break-all}
+.age{font-variant-numeric:tabular-nums;color:var(--red);font-size:12.5px}
+.age.ok{color:var(--green)}
+.toggle{display:flex;align-items:center;gap:12px;margin-top:16px;padding:12px;border:1px solid var(--line);border-radius:10px;cursor:pointer;min-height:52px;background:var(--panel2)}
+.sw{width:46px;height:26px;border-radius:99px;background:var(--grey);position:relative;flex:none;transition:background .15s}
+.sw i{position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:left .15s}
+.toggle.on .sw{background:var(--green)}
+.toggle.on .sw i{left:23px}
+.toggle .tl{font-size:13.5px}
+.verdictline{margin-top:14px;font-size:13.5px;padding:12px;border-radius:10px;background:var(--greenbg);border:1px solid var(--green);color:var(--fg)}
+pre.code{
+  background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:14px;
+  font-size:12.5px;overflow-x:auto;margin:14px 0 0;color:var(--fg);white-space:pre
+}
+.cmt{color:var(--dim)}
+
+/* share */
+.sharebar{position:fixed;left:0;right:0;bottom:0;z-index:30;background:linear-gradient(to top,var(--bg) 60%,transparent);padding:12px 16px calc(12px + env(safe-area-inset-bottom))}
+.sharebar .wrap{display:flex;justify-content:flex-end}
+.sharebar button{box-shadow:0 6px 24px rgba(0,0,0,.35)}
+.modal{position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.72);display:flex;align-items:center;justify-content:center;padding:16px;overflow:auto}
+.modal .box{background:var(--panel);border:1px solid var(--line);border-radius:14px;max-width:620px;width:100%;padding:16px}
+.scard{background:#0b0e11;color:#e6edf3;border:1px solid #232c35;border-radius:10px;padding:18px;aspect-ratio:1200/630;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden}
+.scard .sh{font-size:12px;color:#8b9aa8}
+.scard .sh b{color:#ff4d4f}
+.scard .snums{display:flex;gap:8px}
+.scard .snum{flex:1}
+.scard .snum .v{font-size:clamp(16px,5.2vw,34px);font-weight:700;font-variant-numeric:tabular-nums}
+.scard .snum .k{font-size:clamp(8px,2.1vw,11px);color:#8b9aa8}
+.scard .snum.r .v{color:#ff4d4f}
+.scard .sf{font-size:clamp(8px,2.1vw,11px);color:#8b9aa8;border-top:1px solid #232c35;padding-top:8px}
+.spark{display:flex;align-items:flex-end;gap:6px;height:clamp(28px,9vw,64px)}
+.spark div{flex:1;background:#ff4d4f;border-radius:2px 2px 0 0;opacity:.85}
+.toast{position:fixed;left:50%;bottom:92px;transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:99px;font-size:13px;z-index:60}
+footer{color:var(--dim);font-size:11.5px;text-align:center;padding:26px 16px 10px}
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <span class="logo">nearmiss<span class="dot">.</span>dev</span>
+  <span class="tagline">replays known malicious npm releases against your lockfile</span>
+  <span class="badge">Demo data</span>
+</div></header>
+
+<main class="wrap">
+
+<!-- SCREEN 1 -->
+<section id="s1">
+  <h1>How close did your project come?</h1>
+  <p class="sub">Drop your package-lock.json. We replay every known malicious npm release against your exact versions. Nothing leaves your browser.</p>
+  <div class="drop" id="drop" tabindex="0" role="button" aria-label="Drop your package-lock.json">
+    <div class="big">Drop <b>package-lock.json</b> here</div>
+    <div class="small">or tap to pick a file — it is never read, never uploaded</div>
+  </div>
+  <div class="btnrow">
+    <button class="primary" id="demoBtn">Use the demo lockfile</button>
+    <button id="pickBtn">Choose a file</button>
+  </div>
+  <input type="file" id="file" class="hidden" aria-hidden="true">
+  <p class="note">This prototype runs a fixed, hard-coded replay of the September 2025 "Shai-Hulud" style npm worm releases against a sample 847-package lockfile. No file contents are parsed and no network request is made.</p>
+</section>
+
+<!-- SCAN -->
+<section id="scan" class="hidden">
+  <div class="counter">checking <b id="cPkg">0</b> packages against <b id="cMal">0</b> malicious releases…</div>
+  <div class="bar"><i id="barFill"></i></div>
+  <div class="log" id="log"></div>
+</section>
+
+<!-- SCREEN 2 + 3 -->
+<section id="s2" class="hidden">
+  <div class="stats">
+    <div class="tile"><div class="n">847</div><div class="l">packages in lockfile</div></div>
+    <div class="tile red"><div class="n">1</div><div class="l">direct hit</div></div>
+    <div class="tile red"><div class="n">9 hrs</div><div class="l">closest call — xmorse</div></div>
+  </div>
+
+  <h2>Direct hit</h2>
+  <div class="card hit">
+    <div class="hdr">
+      <div class="pkg">@ctrl/magnet-link@4.0.3 <span class="pill red">COMPROMISED</span></div>
+    </div>
+    <div class="body">
+      You had this <b>exact version</b> in your lockfile from <b>2025-09-16</b> to <b>2025-09-19</b>.
+      Advisory <b>MAL-2025-47133</b> published <b>2025-09-17</b>, <b>11 hours after you installed it</b>.
+      <div style="margin-top:10px;color:var(--fg)">What it stole: postinstall script harvested <b>npm, GitHub and cloud tokens</b> from env and CI, then published them to a public gist.</div>
+    </div>
+  </div>
+
+  <h2>Near misses <span class="c" id="nmCount">(5)</span></h2>
+  <div class="card" id="rows"></div>
+  <p class="note">Grey bar = window you were on your version. Red tick = the malicious release. Tap a row for the advisory.</p>
+
+  <h2>Cooldown verdict</h2>
+  <div class="panel">
+    <p><b>17 of your 847 packages</b> were resolved to a version <b>less than 7 days old</b> at install time. The worms live in exactly that window.</p>
+    <ul class="agelist" id="ages"></ul>
+    <div class="toggle" id="cool" role="switch" aria-checked="false" tabindex="0">
+      <span class="sw"><i></i></span>
+      <span class="tl">Simulate a 7-day cooldown</span>
+    </div>
+    <div class="verdictline" id="coolLine">Turn on the cooldown to see what a minimum package age would have stopped.</div>
+    <pre class="code" id="npmrc"><span class="cmt"># .npmrc — refuse anything published in the last 7 days</span>
+minimum-release-age=10080
+<span class="cmt"># or pin the whole install to a point in time (npm 11+ / pnpm)</span>
+before=2025-09-09</pre>
+    <div class="btnrow"><button id="copyRc">Copy .npmrc snippet</button></div>
+  </div>
+</section>
+</main>
+
+<div class="sharebar hidden" id="sharebar"><div class="wrap">
+  <button class="primary" id="shareBtn">Share my survival card</button>
+</div></div>
+
+<div class="modal hidden" id="modal" role="dialog" aria-modal="true" aria-label="Survival card">
+  <div class="box">
+    <div class="scard">
+      <div class="sh">nearmiss replay · <b>my-app</b> · package-lock.json</div>
+      <div class="snums">
+        <div class="snum"><div class="v">847</div><div class="k">packages</div></div>
+        <div class="snum r"><div class="v">1</div><div class="k">direct hit</div></div>
+        <div class="snum r"><div class="v">9h</div><div class="k">closest call</div></div>
+      </div>
+      <div class="spark" id="spark"></div>
+      <div class="sf">nearmiss.dev — replay the npm worms against your lockfile</div>
+    </div>
+    <div class="btnrow">
+      <button class="primary" id="copyImg">Copy image</button>
+      <button id="copyPost">Copy post text</button>
+      <button id="closeModal">Close</button>
+    </div>
+  </div>
+</div>
+
+<footer>Prototype by Granted, inspired by your bookmarks</footer>
+
+<script>
+(function(){
+  "use strict";
+  var DAY=24;
+  var NEAR=[
+    {n:"chalk",yv:"5.3.0",yp:"2023-08-30",mv:"5.6.1",mp:"2025-09-08",gap:"older pin",gapSub:"advisory 9h after release",adv:"MAL-2025-46990",
+     plain:"You installed 5.3.0 on 30 Aug 2023 and never moved. The worm shipped in 5.6.1 on 8 Sep 2025; the advisory landed 9 hours later.",
+     stole:"Browser-side wallet drainer injected into fetch/XHR to swap crypto addresses in-flight.",youFrac:0.62,tickFrac:0.93,hours:9,blocked:true},
+    {n:"debug",yv:"4.3.4",yp:"2025-09-05",mv:"4.4.2",mp:"2025-09-08",gap:"3 days",gapSub:"you upgraded after the pull",adv:"MAL-2025-46991",
+     plain:"4.4.2 was published and yanked on 8 Sep 2025. You bumped to it 3 days later, by which point the registry had already pulled the tarball.",
+     stole:"Same wallet-drainer payload as chalk, bundled in the published dist build.",youFrac:0.46,tickFrac:0.66,hours:72,blocked:true},
+    {n:"@antv/graphlib",yv:"2.0.2",yp:"2025-09-12",mv:"2.0.3",mp:"2025-09-16",gap:"14 hours",gapSub:"from your install",adv:"MAL-2025-47101",
+     plain:"Your resolve landed on 2.0.2. Fourteen hours later the Shai-Hulud worm published 2.0.3 from a stolen maintainer token.",
+     stole:"Harvested npm and GitHub tokens, then self-published to every package the maintainer owned.",youFrac:0.55,tickFrac:0.72,hours:14,blocked:true},
+    {n:"echarts-for-react",yv:"3.0.2",yp:"2025-09-14",mv:"3.0.3",mp:"2025-09-16",gap:"2 days",gapSub:"before the worm release",adv:"MAL-2025-47108",
+     plain:"You were two days ahead of the compromise. 3.0.3 went out on 16 Sep 2025 carrying the worm postinstall.",
+     stole:"TruffleHog-style secret sweep of the build machine, exfiltrated to a public repo.",youFrac:0.50,tickFrac:0.78,hours:48,blocked:false},
+    {n:"keyv",yv:"4.5.4",yp:"2025-09-10",mv:"5.5.1",mp:"2025-09-16",gap:"6 days",gapSub:"major behind, saved you",adv:"MAL-2025-47121",
+     plain:"A major-version pin kept you on 4.5.4. The malicious 5.5.1 shipped six days after your install.",
+     stole:"CI token theft plus a GitHub Actions workflow injected into downstream repos.",youFrac:0.40,tickFrac:0.84,hours:144,blocked:false},
+    {n:"timeago.js",yv:"4.0.2",yp:"2025-09-15",mv:"4.0.3",mp:"2025-09-16",gap:"31 hours",gapSub:"from your install",adv:"MAL-2025-47112",
+     plain:"You locked 4.0.2 on 15 Sep 2025. The worm published 4.0.3 thirty-one hours later.",
+     stole:"Credential sweep of ~/.npmrc, ~/.aws and env vars.",youFrac:0.58,tickFrac:0.80,hours:31,blocked:false},
+    {n:"ansi-styles",yv:"6.2.1",yp:"2025-09-13",mv:"6.2.2",mp:"2025-09-08",gap:"4 hours",gapSub:"nearest version bump",adv:"MAL-2025-46993",
+     plain:"6.2.2 was live for roughly 4 hours on 8 Sep 2025 before it was pulled. Your resolution stayed on 6.2.1.",
+     stole:"Wallet-address swapping hook installed on window.ethereum.",youFrac:0.52,tickFrac:0.68,hours:4,blocked:true},
+    {n:"color-convert",yv:"2.0.1",yp:"2025-09-03",mv:"3.1.1",mp:"2025-09-08",gap:"5 days",gapSub:"major behind",adv:"MAL-2025-46995",
+     plain:"Your transitive resolve was 2.0.1 from 3 Sep 2025. The compromised 3.1.1 appeared five days later.",
+     stole:"Same in-page transaction rewriting payload as the chalk compromise.",youFrac:0.36,tickFrac:0.70,hours:120,blocked:false},
+    {n:"xmorse",yv:"1.2.4",yp:"2025-09-16",mv:"1.2.5",mp:"2025-09-16",gap:"9 hours",gapSub:"CLOSEST CALL",adv:"MAL-2025-47130",closest:true,
+     plain:"You installed 1.2.4 at 02:10 UTC on 16 Sep 2025. The worm published 1.2.5 at 11:04 UTC the same day — nine hours later.",
+     stole:"Full Shai-Hulud payload: token harvest, public gist exfil, and self-propagation to 7 further packages.",youFrac:0.70,tickFrac:0.82,hours:9,blocked:true},
+    {n:"is-arrayish",yv:"0.3.2",yp:"2025-09-15",mv:"0.3.3",mp:"2025-09-16",gap:"18 hours",gapSub:"from your install",adv:"MAL-2025-47133",
+     plain:"0.3.2 locked on 15 Sep 2025; the malicious 0.3.3 landed eighteen hours later and was pulled within the day.",
+     stole:"Postinstall token harvester targeting CI runners.",youFrac:0.60,tickFrac:0.76,hours:18,blocked:true},
+    {n:"error-ex",yv:"1.3.2",yp:"2025-09-15",mv:"1.3.3",mp:"2025-09-16",gap:"22 hours",gapSub:"from your install",adv:"MAL-2025-47135",
+     plain:"You were on 1.3.2. Twenty-two hours later 1.3.3 shipped with the worm bundled into the published tarball.",
+     stole:"Scanned the filesystem for .env and cloud credential files.",youFrac:0.59,tickFrac:0.78,hours:22,blocked:false}
+  ];
+  var AGES=[
+    {n:"@ctrl/magnet-link@4.0.3",d:1,blocked:true},
+    {n:"xmorse@1.2.4",d:0.4,blocked:true},
+    {n:"is-arrayish@0.3.2",d:2,blocked:true},
+    {n:"error-ex@1.3.2",d:2,blocked:true},
+    {n:"timeago.js@4.0.2",d:3,blocked:true}
+  ];
+  var POST="Ran my lockfile through nearmiss: 847 packages, 1 direct hit (@ctrl/magnet-link@4.0.3 — the advisory landed 11 hours after I installed it), and a closest call of 9 hours on xmorse. A 7-day cooldown would have blocked 4 of my 6 close calls, including the direct hit. nearmiss.dev";
+
+  function $(id){return document.getElementById(id);}
+  function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];});}
+
+  /* ---------- scan ---------- */
+  var LOGS=["reading lockfile tree… 847 resolved entries",
+            "loading advisory corpus… 14,106 malicious releases",
+            "matching exact versions + publish windows…",
+            "cross-checking 2025-09 worm cascade…",
+            "done — 1 direct hit, 5 near misses"];
+  var running=false;
+  function runScan(){
+    if(running) return; running=true;
+    $("s1").classList.add("hidden");
+    $("scan").classList.remove("hidden");
+    var log=$("log"); log.innerHTML="";
+    var t0=Date.now(), dur=1500, li=0;
+    var timer=setInterval(function(){
+      var p=Math.min(1,(Date.now()-t0)/dur);
+      var e=1-Math.pow(1-p,2);
+      $("cPkg").textContent=Math.round(847*e).toLocaleString();
+      $("cMal").textContent=Math.round(14106*e).toLocaleString();
+      $("barFill").style.width=(p*100).toFixed(1)+"%";
+      var want=Math.min(LOGS.length,Math.floor(p*LOGS.length)+1);
+      while(li<want){var d=document.createElement("div");d.textContent="› "+LOGS[li];log.appendChild(d);li++;}
+      if(p>=1){clearInterval(timer);setTimeout(show,220);}
+    },40);
+  }
+  function show(){
+    $("scan").classList.add("hidden");
+    $("s2").classList.remove("hidden");
+    $("sharebar").classList.remove("hidden");
+    window.scrollTo(0,0);
+  }
+
+  /* ---------- rows ---------- */
+  function renderRows(){
+    var html="";
+    for(var i=0;i<NEAR.length;i++){
+      var r=NEAR[i];
+      var youW=Math.max(8,(r.tickFrac-r.youFrac)*100);
+      html+='<div class="row" data-i="'+i+'" tabindex="0" role="button">'+
+        '<div class="main">'+
+          '<div class="nm"><div class="t">'+esc(r.n)+'@'+esc(r.yv)+
+            (r.closest?' <span class="pill red">CLOSEST</span>':'')+'</div>'+
+            '<div class="v">malicious: '+esc(r.mv)+' · '+esc(r.adv)+'</div></div>'+
+          '<div class="gap">'+esc(r.gap)+'<small>'+esc(r.gapSub)+'</small></div>'+
+          '<svg class="chev" width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M4 2l5 4-5 4" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>'+
+        '</div>'+
+        '<div class="track">'+
+          '<div class="you" style="left:'+(r.youFrac*100).toFixed(1)+'%;width:'+youW.toFixed(1)+'%"></div>'+
+          '<div class="tick" style="left:'+(r.tickFrac*100).toFixed(1)+'%"></div>'+
+          '<div class="lbl" style="left:'+(r.youFrac*100).toFixed(1)+'%">you</div>'+
+        '</div>'+
+        '<div class="det">'+
+          '<div class="kv"><span>advisory</span><span>'+esc(r.adv)+'</span></div>'+
+          '<div class="kv"><span>your version</span><span>'+esc(r.yv)+' — published '+esc(r.yp)+'</span></div>'+
+          '<div class="kv"><span>malicious</span><span>'+esc(r.mv)+' — published '+esc(r.mp)+'</span></div>'+
+          '<div class="kv"><span>plain english</span><span>'+esc(r.plain)+'</span></div>'+
+          '<div class="stole"><b>What it stole:</b> '+esc(r.stole)+'</div>'+
+        '</div></div>';
+    }
+    $("rows").innerHTML=html;
+    var rows=$("rows").querySelectorAll(".row");
+    for(var j=0;j<rows.length;j++){
+      (function(el){
+        function tog(){el.classList.toggle("open");}
+        el.addEventListener("click",tog);
+        el.addEventListener("keydown",function(e){if(e.key==="Enter"||e.key===" "){e.preventDefault();tog();}});
+      })(rows[j]);
+    }
+  }
+  function renderAges(){
+    var h="";
+    for(var i=0;i<AGES.length;i++){
+      var a=AGES[i];
+      var txt=a.d<1?Math.round(a.d*24)+" hrs old":a.d+" day"+(a.d===1?"":"s")+" old";
+      h+='<li data-i="'+i+'"><span class="nmx">'+esc(a.n)+'</span><span class="age">'+esc(txt)+'</span></li>';
+    }
+    $("ages").innerHTML=h;
+  }
+  renderRows(); renderAges();
+
+  /* spark: five nearest calls (hours, smaller = taller) */
+  (function(){
+    var five=NEAR.slice().sort(function(a,b){return a.hours-b.hours;}).slice(0,5);
+    var h="";
+    for(var i=0;i<five.length;i++){
+      var pct=Math.max(16,100-(five[i].hours/144)*100);
+      h+='<div style="height:'+pct.toFixed(0)+'%"></div>';
+    }
+    $("spark").innerHTML=h;
+  })();
+
+  /* ---------- cooldown ---------- */
+  var cooled=false;
+  function toggleCool(){
+    cooled=!cooled;
+    var t=$("cool");
+    t.classList.toggle("on",cooled);
+    t.setAttribute("aria-checked",cooled?"true":"false");
+    var rows=$("rows").querySelectorAll(".row");
+    for(var i=0;i<rows.length;i++){
+      rows[i].classList.toggle("blocked",cooled && NEAR[i].blocked);
+    }
+    var lis=$("ages").querySelectorAll("li");
+    for(var j=0;j<lis.length;j++){
+      lis[j].style.opacity=cooled&&AGES[j].blocked?.4:1;
+      var ag=lis[j].querySelector(".age");
+      ag.classList.toggle("ok",cooled&&AGES[j].blocked);
+      if(cooled&&AGES[j].blocked){ag.textContent="blocked";}
+      else{var a=AGES[j];ag.textContent=a.d<1?Math.round(a.d*24)+" hrs old":a.d+" day"+(a.d===1?"":"s")+" old";}
+    }
+    $("coolLine").textContent=cooled
+      ? "A 7-day cooldown would have blocked 4 of your 6 close calls, including the direct hit."
+      : "Turn on the cooldown to see what a minimum package age would have stopped.";
+  }
+  $("cool").addEventListener("click",toggleCool);
+  $("cool").addEventListener("keydown",function(e){if(e.key==="Enter"||e.key===" "){e.preventDefault();toggleCool();}});
+
+  /* ---------- entry points ---------- */
+  var drop=$("drop");
+  ["dragenter","dragover"].forEach(function(ev){
+    drop.addEventListener(ev,function(e){e.preventDefault();drop.classList.add("hot");});
+  });
+  ["dragleave","dragend"].forEach(function(ev){
+    drop.addEventListener(ev,function(){drop.classList.remove("hot");});
+  });
+  drop.addEventListener("drop",function(e){e.preventDefault();drop.classList.remove("hot");runScan();});
+  drop.addEventListener("click",function(){$("file").click();});
+  drop.addEventListener("keydown",function(e){if(e.key==="Enter"||e.key===" "){e.preventDefault();runScan();}});
+  $("pickBtn").addEventListener("click",function(){$("file").click();});
+  $("file").addEventListener("change",function(){
+    if(this.files&&this.files.length){runScan();}
+    else{toast("No file picked — try the demo lockfile");}
+  });
+  $("demoBtn").addEventListener("click",runScan);
+
+  /* ---------- share / copy ---------- */
+  var toastEl=null,toastT=null;
+  function toast(msg){
+    if(toastEl&&toastEl.parentNode){toastEl.parentNode.removeChild(toastEl);}
+    toastEl=document.createElement("div");
+    toastEl.className="toast"; toastEl.textContent=msg;
+    document.body.appendChild(toastEl);
+    clearTimeout(toastT);
+    toastT=setTimeout(function(){if(toastEl&&toastEl.parentNode){toastEl.parentNode.removeChild(toastEl);}},1900);
+  }
+  function copy(text,ok){
+    try{
+      if(navigator.clipboard&&navigator.clipboard.writeText){
+        navigator.clipboard.writeText(text).then(function(){toast(ok);},function(){fallback(text,ok);});
+      }else{fallback(text,ok);}
+    }catch(e){fallback(text,ok);}
+  }
+  function fallback(text,ok){
+    try{
+      var ta=document.createElement("textarea");
+      ta.value=text; ta.setAttribute("readonly","");
+      ta.style.position="fixed"; ta.style.top="-1000px";
+      document.body.appendChild(ta); ta.select();
+      var done=document.execCommand&&document.execCommand("copy");
+      document.body.removeChild(ta);
+      toast(done?ok:"Copy blocked — select the text manually");
+    }catch(e){toast("Copy blocked — select the text manually");}
+  }
+  $("copyRc").addEventListener("click",function(){
+    copy("# .npmrc — refuse anything published in the last 7 days\nminimum-release-age=10080\n# or pin the whole install to a point in time (npm 11+ / pnpm)\nbefore=2025-09-09\n","Copied .npmrc snippet");
+  });
+  $("shareBtn").addEventListener("click",function(){$("modal").classList.remove("hidden");});
+  $("closeModal").addEventListener("click",function(){$("modal").classList.add("hidden");});
+  $("modal").addEventListener("click",function(e){if(e.target===this){this.classList.add("hidden");}});
+  document.addEventListener("keydown",function(e){if(e.key==="Escape"){$("modal").classList.add("hidden");}});
+  $("copyImg").addEventListener("click",function(){toast("Copied");});
+  $("copyPost").addEventListener("click",function(){copy(POST,"Copied post text");});
+})();
+</script>
+</body>
+</html>

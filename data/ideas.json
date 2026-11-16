@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-15T20:51:21.717Z",
+  "updated": "2026-11-16T20:53:47.057Z",
   "ideas": [
     {
       "id": "2026-10-22-agentgauntlet",
@@ -1027,6 +1027,66 @@
       "sources_count": 20,
       "superseded_by": null,
       "sibling": "2026-11-15-blindspot"
+    },
+    {
+      "id": "2026-11-16-nearmiss",
+      "number": 37,
+      "date": "2026-11-16",
+      "track": "build",
+      "short_name": "Nearmiss",
+      "verdict": "dig_deeper",
+      "score": 7.8,
+      "scores": {
+        "wow": 8,
+        "shareability": 8,
+        "buildability": 8,
+        "freshness": 8,
+        "usefulness": 7
+      },
+      "effort": "a weekend",
+      "category": "Developer tools",
+      "tags": [
+        "security",
+        "npm",
+        "supply-chain",
+        "devtools"
+      ],
+      "pain_type": "expressed",
+      "one_liner": "Drop your package-lock.json and Nearmiss replays 2025-26's npm worms against your exact versions: every dependency you installed that later turned malicious, every version you were one bump away from, and how many hours of luck separated you from it — as a shareable \"survival card\".",
+      "prototype_url": "https://yashsharma1911.github.io/granted/ideas/2026-11-16-nearmiss/",
+      "sources_count": 14,
+      "superseded_by": null,
+      "sibling": "2026-11-16-qualifile"
+    },
+    {
+      "id": "2026-11-16-qualifile",
+      "number": 38,
+      "date": "2026-11-16",
+      "track": "venture",
+      "short_name": "Qualifile",
+      "verdict": "dig_deeper",
+      "score": 7.6,
+      "scores": {
+        "pain": 8,
+        "market_pull": 8,
+        "timing": 7,
+        "gap": 7,
+        "wedge": 8
+      },
+      "effort": "3+ months",
+      "category": "Back-office automation",
+      "tags": [
+        "compliance",
+        "construction",
+        "agents",
+        "procurement"
+      ],
+      "pain_type": "expressed",
+      "one_liner": "For the one compliance/safety coordinator at a 20-200 employee specialty trade or industrial services contractor, Qualifile is the single source of truth behind ISNetworld, Avetta, Veriforce and every GC's own prequal portal: it keeps one verified document library, watches every expiry and requirement, and drafts the answer package for each new customer questionnaire so the firm never loses a bid invitation to stale paperwork.",
+      "prototype_url": "https://yashsharma1911.github.io/granted/ideas/2026-11-16-qualifile/",
+      "sources_count": 30,
+      "superseded_by": null,
+      "sibling": "2026-11-16-nearmiss"
     }
   ]
 }

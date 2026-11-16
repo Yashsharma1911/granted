@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Qualifile — the prequal desk for specialty contractors</title>
+<style>
+:root{
+  --bg:#f6f7f9; --panel:#ffffff; --ink:#131722; --muted:#5d6675; --line:#e2e6ec;
+  --accent:#1f5fd6; --accent-ink:#fff;
+  --red:#c42b1c; --redbg:#fdecea; --amber:#9a6200; --amberbg:#fff5e0; --green:#1a7a43; --greenbg:#e8f6ed;
+  --chip:#eef1f6;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#0e1116; --panel:#161a21; --ink:#e9edf3; --muted:#9aa4b2; --line:#262c36;
+    --accent:#5b8df5; --accent-ink:#0b0e13;
+    --red:#ff8c7a; --redbg:#3a1d1a; --amber:#f0bc55; --amberbg:#3a2d12; --green:#6ddc9b; --greenbg:#123324;
+    --chip:#1f252f;
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--ink);
+  font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  -webkit-text-size-adjust:100%;
+}
+.wrap{max-width:1120px;margin:0 auto;padding:12px 14px 70px}
+header.top{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;padding:6px 2px 12px}
+.logo{font-weight:700;font-size:18px;letter-spacing:-.2px}
+.logo span{color:var(--accent)}
+.tag{color:var(--muted);font-size:13px}
+.demo{margin-left:auto;font-size:11px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:3px 9px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px}
+.sec-title{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:700;margin:0 0 8px}
+
+/* BEFORE strip */
+#before{padding:14px;margin-bottom:14px}
+.drive{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.tile{display:flex;gap:8px;align-items:center;background:var(--chip);border-radius:10px;padding:8px 9px;font-size:12px;color:var(--muted);overflow:hidden}
+.tile svg{flex:0 0 auto;opacity:.7}
+.tile b{font-weight:500;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.beforefoot{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:12px}
+.pill{background:var(--chip);border-radius:999px;padding:6px 12px;font-size:12px;color:var(--muted)}
+button{font:inherit;cursor:pointer}
+.btn{background:var(--accent);color:var(--accent-ink);border:0;border-radius:10px;padding:13px 18px;font-weight:650;min-height:46px}
+.btn:active{transform:translateY(1px)}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+.btn.sm{padding:9px 13px;min-height:40px;font-size:13px}
+
+/* extraction */
+#extract{padding:22px 16px;text-align:center}
+.bar{height:7px;background:var(--chip);border-radius:99px;overflow:hidden;max-width:420px;margin:14px auto 10px}
+.bar>i{display:block;height:100%;width:0;background:var(--accent);border-radius:99px;transition:width .2s linear}
+#exlog{font-size:12.5px;color:var(--muted);min-height:20px;font-variant-numeric:tabular-nums}
+
+/* product */
+.controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:14px 0 12px}
+.switch{display:flex;gap:9px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:9px 12px;min-height:46px;font-size:13.5px;font-weight:600}
+.switch input{width:18px;height:18px;accent-color:var(--accent)}
+#blockbanner{display:none;margin-bottom:12px;padding:12px 14px;border-radius:12px;background:var(--redbg);color:var(--red);font-weight:650;font-size:14px;border:1px solid rgba(196,43,28,.25)}
+.grid{display:grid;grid-template-columns:minmax(0,1fr);gap:14px}
+@media(min-width:900px){.grid{grid-template-columns:minmax(0,380px) minmax(0,1fr)}}
+.pane{padding:14px}
+.rowlist{display:flex;flex-direction:column;gap:2px}
+.row{padding:9px 6px;border-bottom:1px solid var(--line)}
+.row:last-child{border-bottom:0}
+.row .k{font-size:12px;color:var(--muted)}
+.row .v{font-weight:600;font-size:14px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.src{font-size:11.5px;color:var(--muted);margin-top:2px;display:flex;align-items:center;gap:5px}
+.chip{font-size:11px;font-weight:700;border-radius:999px;padding:2px 8px;white-space:nowrap}
+.c-ok{background:var(--greenbg);color:var(--green)}
+.c-warn{background:var(--amberbg);color:var(--amber)}
+.c-bad{background:var(--redbg);color:var(--red)}
+.c-neutral{background:var(--chip);color:var(--muted)}
+
+/* tabs */
+.tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch}
+.tab{border:1px solid var(--line);background:transparent;color:var(--muted);border-radius:999px;padding:9px 13px;min-height:42px;white-space:nowrap;font-size:13px;font-weight:600}
+.tab[aria-selected="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.ringrow{display:flex;gap:14px;align-items:center;margin:14px 0 6px}
+.ringrow h3{margin:0 0 3px;font-size:17px}
+.ringrow p{margin:0;font-size:12.5px;color:var(--muted)}
+.req{display:flex;gap:10px;align-items:flex-start;width:100%;text-align:left;background:transparent;border:1px solid var(--line);border-radius:11px;padding:11px 12px;margin-top:8px;color:inherit;min-height:46px}
+.req.bad{border-color:rgba(196,43,28,.4);background:var(--redbg)}
+.req.warn{border-color:rgba(154,98,0,.35);background:var(--amberbg)}
+.req .dot{width:9px;height:9px;border-radius:50%;margin-top:6px;flex:0 0 auto}
+.req.bad .dot{background:var(--red)} .req.warn .dot{background:var(--amber)} .req.ok .dot{background:var(--green)}
+.req .txt{flex:1;min-width:0}
+.req .lab{font-size:13.5px;font-weight:600;line-height:1.35}
+.req .sub{font-size:12px;color:var(--muted);margin-top:3px}
+.req .arrow{opacity:.5;font-size:16px;margin-top:2px}
+.okgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px;margin-top:10px}
+.okitem{display:flex;gap:7px;align-items:center;font-size:12.5px;color:var(--muted);background:var(--greenbg);border-radius:8px;padding:7px 9px}
+.okitem b{color:var(--green)}
+.note{margin-top:10px;font-size:12.5px;color:var(--muted);background:var(--chip);padding:9px 11px;border-radius:9px}
+.empty{text-align:center;padding:22px 10px;color:var(--muted);font-size:13.5px}
+
+/* drawer */
+#scrim{position:fixed;inset:0;background:rgba(10,13,18,.5);opacity:0;pointer-events:none;transition:opacity .2s;z-index:40}
+#scrim.on{opacity:1;pointer-events:auto}
+#drawer{position:fixed;top:0;right:0;height:100%;width:min(470px,100%);background:var(--panel);border-left:1px solid var(--line);transform:translateX(102%);transition:transform .25s ease;z-index:50;display:flex;flex-direction:column}
+#drawer.on{transform:none}
+.dhead{padding:14px 16px;border-bottom:1px solid var(--line);display:flex;gap:10px;align-items:flex-start}
+.dhead h3{margin:0;font-size:15.5px;line-height:1.35}
+.dhead .x{margin-left:auto;background:var(--chip);border:0;border-radius:9px;width:40px;height:40px;font-size:18px;color:var(--ink);flex:0 0 auto}
+.dbody{padding:14px 16px;overflow:auto;flex:1}
+.dbody h4{margin:16px 0 6px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.dbody h4:first-child{margin-top:0}
+.quote{font-size:13px;line-height:1.5;background:var(--chip);border-radius:10px;padding:11px 12px;color:var(--ink)}
+.found{font-size:13px;line-height:1.5;border-left:3px solid var(--accent);padding:2px 0 2px 11px;color:var(--muted)}
+pre.draft{white-space:pre-wrap;font:12.5px/1.55 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:var(--chip);border-radius:10px;padding:12px;margin:0;overflow-x:auto}
+.dfoot{padding:12px 16px;border-top:1px solid var(--line);display:flex;gap:8px;flex-wrap:wrap}
+.dfoot .btn{flex:1 1 150px}
+#toast{position:fixed;left:50%;bottom:26px;transform:translate(-50%,24px);background:var(--ink);color:var(--bg);padding:11px 18px;border-radius:999px;font-size:13.5px;font-weight:600;opacity:0;transition:.22s;z-index:70;pointer-events:none}
+#toast.on{opacity:1;transform:translate(-50%,0)}
+/* export */
+#exportCard{display:none;margin-top:14px;padding:14px}
+.fline{display:flex;gap:9px;align-items:center;font-size:13px;padding:6px 0;color:var(--muted)}
+.fline b{color:var(--ink);font-weight:600}
+.tickbox{width:17px;height:17px;border-radius:5px;background:var(--chip);flex:0 0 auto;display:grid;place-items:center}
+.fline.done .tickbox{background:var(--greenbg)}
+.sumline{margin-top:10px;padding:11px 12px;border-radius:10px;background:var(--greenbg);color:var(--green);font-size:13.5px;font-weight:650}
+footer{text-align:center;color:var(--muted);font-size:11.5px;padding:22px 10px 8px}
+.hid{display:none!important}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="logo">Quali<span>file</span></div>
+    <div class="tag">turns your safety &amp; insurance files into a per-customer prequal readiness board</div>
+    <div class="demo">Demo data</div>
+  </header>
+
+  <!-- SECTION 1 -->
+  <section class="card" id="before">
+    <p class="sec-title">Before — Granger Mechanical &amp; Industrial · 68 employees · Tulsa, OK · shared drive</p>
+    <div class="drive" id="drive"></div>
+    <div class="beforefoot">
+      <span class="pill">4 customer portals: ISNetworld · Avetta · Kiewit Prequal · OG&amp;E Supplier</span>
+      <button class="btn" id="buildBtn">Build my Company Record</button>
+    </div>
+  </section>
+
+  <!-- EXTRACTION -->
+  <section class="card hid" id="extract">
+    <div style="font-weight:650;font-size:15px">Reading 9 files…</div>
+    <div class="bar"><i id="barfill"></i></div>
+    <div id="exlog">Opening shared drive…</div>
+  </section>
+
+  <!-- SECTION 2 -->
+  <main class="hid" id="product">
+    <div class="controls">
+      <label class="switch"><input type="checkbox" id="blockToggle"> Show only what blocks a bid</label>
+      <button class="btn ghost sm" id="exportBtn">Export prequal pack</button>
+    </div>
+    <div id="blockbanner"></div>
+
+    <div class="grid">
+      <section class="card pane">
+        <p class="sec-title">Company Record · extracted from 9 files</p>
+        <div class="rowlist" id="record"></div>
+      </section>
+
+      <section class="card pane">
+        <p class="sec-title">Customer readiness</p>
+        <div class="tabs" id="tabs" role="tablist"></div>
+        <div id="portal"></div>
+      </section>
+    </div>
+
+    <section class="card" id="exportCard">
+      <p class="sec-title">Prequal pack</p>
+      <div id="filelist"></div>
+      <div class="sumline hid" id="exportSum"></div>
+    </section>
+  </main>
+
+  <footer>Prototype by Granted, inspired by your bookmarks</footer>
+</div>
+
+<div id="scrim"></div>
+<aside id="drawer" role="dialog" aria-modal="true" aria-labelledby="dtitle">
+  <div class="dhead">
+    <div>
+      <div class="sec-title" id="dport" style="margin:0 0 3px">—</div>
+      <h3 id="dtitle">—</h3>
+    </div>
+    <button class="x" id="dclose" aria-label="Close">×</button>
+  </div>
+  <div class="dbody" id="dbody"></div>
+  <div class="dfoot">
+    <button class="btn" id="copyBtn">Copy answer</button>
+    <button class="btn ghost" id="mailBtn">Email request to broker</button>
+  </div>
+</aside>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function(){
+"use strict";
+
+var FILES=["GL_COI_2026 (1).pdf","OSHA 300A 2024 scan.pdf","Lockout Tagout FINAL v3.docx","TRIR calc sheet.xlsx","W9_signed.pdf","Hearing Conservation - COPY OF TEMPLATE.docx","Fall Protection Program.docx","EMR Letter 2025.pdf","Welder certs folder.zip"];
+
+var ICON='<svg width="14" height="16" viewBox="0 0 14 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M8 1H3a1.5 1.5 0 0 0-1.5 1.5v11A1.5 1.5 0 0 0 3 15h8a1.5 1.5 0 0 0 1.5-1.5V5.5z"/><path d="M8 1v4.5h4.5"/></svg>';
+
+var drive=document.getElementById("drive");
+FILES.forEach(function(f){
+  var d=document.createElement("div"); d.className="tile";
+  d.innerHTML=ICON+'<b></b>'; d.querySelector("b").textContent=f; drive.appendChild(d);
+});
+
+/* ---------- Company Record ---------- */
+var RECORD=[
+ {k:"Legal entity / EIN",v:"Granger Mechanical & Industrial, LLC · EIN 73-18•••••",s:"W9_signed.pdf",chip:["No expiry","neutral"]},
+ {k:"3-yr average workforce",v:"68 employees",s:"TRIR calc sheet.xlsx",chip:["Current","ok"]},
+ {k:"Hours worked 2025",v:"131,400",s:"TRIR calc sheet.xlsx",chip:["Refresh 2027-01-15","warn"]},
+ {k:"TRIR / DART",v:"1.42 / 0.68",s:"TRIR calc sheet.xlsx",chip:["2025","ok"]},
+ {k:"EMR",v:"0.87",s:"EMR Letter 2025.pdf",chip:["Expires 2027-01-01","ok"]},
+ {k:"OSHA 300A (2024)",v:"Filed · 4 recordables",s:"OSHA 300A 2024 scan.pdf",chip:["Filed","ok"]},
+ {k:"General Liability",v:"$2M / $4M",s:"GL_COI_2026 (1).pdf",chip:["Expires in 11 days","bad"]},
+ {k:"Auto Liability",v:"$1M CSL",s:"GL_COI_2026 (1).pdf",chip:["Expires 2027-03-04","ok"]},
+ {k:"Workers Compensation",v:"Statutory · $1M EL",s:"GL_COI_2026 (1).pdf",chip:["Expires 2027-03-04","ok"]},
+ {k:"Written program — Lockout/Tagout",v:"✓ Complete",s:"Lockout Tagout FINAL v3.docx",chip:["Accepted","ok"]},
+ {k:"Written program — Fall Protection",v:"✓ Complete",s:"Fall Protection Program.docx",chip:["Accepted","ok"]},
+ {k:"Written program — Hearing Conservation",v:"⚠ Template placeholders detected",s:"Hearing Conservation - COPY OF TEMPLATE.docx",chip:["Needs rewrite","bad"],
+  extra:"[COMPANY NAME] on p.1 · no named competent person"},
+ {k:"Welder certifications",v:"11 certs · 2 expired",s:"Welder certs folder.zip",chip:["Review","warn"]}
+];
+
+function chipClass(t){return t==="bad"?"c-bad":t==="warn"?"c-warn":t==="ok"?"c-ok":"c-neutral";}
+
+(function renderRecord(){
+  var el=document.getElementById("record");
+  RECORD.forEach(function(r){
+    var d=document.createElement("div"); d.className="row";
+    var v=document.createElement("div"); v.className="v";
+    var sp=document.createElement("span"); sp.textContent=r.v; v.appendChild(sp);
+    var c=document.createElement("span"); c.className="chip "+chipClass(r.chip[1]); c.textContent=r.chip[0]; v.appendChild(c);
+    var k=document.createElement("div"); k.className="k"; k.textContent=r.k;
+    var s=document.createElement("div"); s.className="src"; s.innerHTML=ICON+'<span></span>'; s.querySelector("span").textContent=r.s;
+    d.appendChild(k); d.appendChild(v); d.appendChild(s);
+    if(r.extra){var e=document.createElement("div"); e.className="src"; e.style.color="var(--red)"; e.textContent=r.extra; d.appendChild(e);}
+    el.appendChild(d);
+  });
+})();
+
+/* ---------- Portals ---------- */
+var HC_DRAFT=
+"HEARING CONSERVATION PROGRAM — Granger Mechanical & Industrial, LLC\n"+
+"Tulsa, OK · Revision 3 · Effective 2026-11-16\n\n"+
+"1. RESPONSIBILITIES\n"+
+"   Program Administrator (Competent Person): Dale Hutchens, EHS Manager,\n"+
+"   (918) 555-0142. Owns this program, reviews it annually, and signs off on\n"+
+"   all noise surveys and audiogram follow-up.\n"+
+"   Supervisors: enforce hearing protector use in posted areas, report any\n"+
+"   new or modified equipment that may change noise exposure within 24 hours.\n"+
+"   Employees: wear issued protection in all areas posted above 85 dBA TWA,\n"+
+"   attend annual training, and attend scheduled audiometric testing.\n\n"+
+"2. TRAINING\n"+
+"   Frequency: at hire, before first assignment to an area >=85 dBA TWA, and\n"+
+"   annually thereafter for every enrolled employee.\n"+
+"   Content: effects of noise on hearing; purpose, advantages and attenuation\n"+
+"   of available protectors; instruction on selection, fitting, care; purpose\n"+
+"   and procedures of audiometric testing.\n"+
+"   Records: training rosters retained 3 years; audiograms retained for the\n"+
+"   duration of employment plus 30 years.\n\n"+
+"3. ANNUAL AUDIOMETRIC TESTING\n"+
+"   Baseline audiogram within 6 months of first exposure, preceded by 14 hours\n"+
+"   without workplace noise exposure. Annual audiogram thereafter, performed by\n"+
+"   a licensed audiologist under contract (Tulsa Occupational Health).\n"+
+"   Standard Threshold Shift: if an annual audiogram shows a 10 dB average shift\n"+
+"   at 2000/3000/4000 Hz in either ear, the employee is notified in writing within\n"+
+"   21 days, refitted and retrained in hearing protectors, and referred for\n"+
+"   clinical evaluation. Recordable shifts are entered on the OSHA 300 log.\n\n"+
+"4. MONITORING\n"+
+"   Noise surveys repeated every 2 years, or whenever production, process or\n"+
+"   equipment changes may increase exposure. Affected employees are notified of\n"+
+"   their results and may observe the monitoring.\n\n"+
+"Reference: 29 CFR 1910.95(c)-(m)";
+
+var SSE_DRAFT=
+"SHORT SERVICE EMPLOYEE (SSE) PROGRAM — Granger Mechanical & Industrial, LLC\n\n"+
+"1. DEFINITION\n"+
+"   An SSE is any employee with less than 6 months of continuous service with\n"+
+"   Granger Mechanical, or less than 6 months of experience in their assigned\n"+
+"   craft, including transfers, rehires and contract labor.\n\n"+
+"2. IDENTIFICATION\n"+
+"   SSEs wear a high-visibility orange hard-hat sticker and are listed on the\n"+
+"   daily crew JSA. The site superintendent maintains the SSE roster.\n\n"+
+"3. RATIO LIMIT\n"+
+"   No more than 20% of any crew may be SSEs. Crews of 5 or fewer may carry one\n"+
+"   SSE. Exceedances require written approval from the EHS Manager and the\n"+
+"   client representative before work begins.\n\n"+
+"4. MENTORING\n"+
+"   Each SSE is assigned a named mentor with a minimum of 3 years craft service\n"+
+"   and a clean 12-month incident record. The mentor conducts a documented\n"+
+"   daily check-in for the first 30 days.\n\n"+
+"5. EVALUATION AND RELEASE\n"+
+"   At 30, 90 and 180 days the mentor and superintendent complete the SSE\n"+
+"   Evaluation Form. Release from SSE status requires sign-off by the EHS\n"+
+"   Manager. Records retained 3 years and available to client on request.";
+
+var PORTALS=[
+ {id:"isn",name:"ISNetworld",pct:82,reqs:14,
+  green:["W-9","EIN","3-yr workforce","TRIR / DART","EMR 0.87","OSHA 300A 2024","LOTO program","Fall Protection program"],
+  items:[
+   {sev:"bad",block:true,
+    lab:"RAVS: Hearing Conservation — missing required elements",
+    sub:"Responsibilities · training frequency · annual audiogram procedure",
+    quote:"\"RAVS Review — Hearing Conservation: The written program must identify the person responsible for program administration, state the frequency of employee training, and describe the annual audiometric testing procedure including standard threshold shift follow-up. Submitted document contains unmodified template language.\"",
+    found:"Hearing Conservation - COPY OF TEMPLATE.docx — 4 pages. Contains \"[COMPANY NAME]\" on p.1, no named competent person, no training frequency, no audiogram section. Qualifile pulled your real data: EHS Manager Dale Hutchens, Tulsa Occupational Health as testing vendor, 2-year survey cycle from the 2024 noise survey in the 300A packet.",
+    draftTitle:"Drafted replacement sections", draft:HC_DRAFT},
+   {sev:"warn",block:true,
+    lab:"GL certificate expires in 11 days",
+    sub:"Grade will drop to C on 2026-11-27",
+    quote:"\"Insurance Requirement 4.1 — Commercial General Liability, $2,000,000 each occurrence / $4,000,000 general aggregate, with Additional Insured and Waiver of Subrogation endorsements in favor of the Hiring Client, 30 days notice of cancellation. A current certificate must be on file at all times; lapsed certificates reduce the contractor grade to C.\"",
+    found:"GL_COI_2026 (1).pdf — limits $2M / $4M (meets requirement). Expiration 2026-11-27, i.e. 11 days. Broker on the certificate: Marla Stinnett, Heartland Risk Partners. Additional Insured endorsement CG 20 10 present; Waiver of Subrogation not attached.",
+    draftTitle:"Drafted broker request", draft:
+"To: marla.stinnett@heartlandrisk.example\nSubject: Renewed GL certificate + endorsements needed by 11/27 (Granger Mechanical)\n\nMarla,\n\nOur CGL policy renews 2026-11-27 and we need the renewal certificate on file before that date — ISNetworld drops our grade to C the day it lapses.\n\nPlease issue the certificate with:\n  • CGL $2,000,000 each occurrence / $4,000,000 general aggregate\n  • Additional Insured — ongoing AND completed operations (CG 20 10 + CG 20 37)\n  • Waiver of Subrogation in favor of the certificate holder (missing on the current COI)\n  • Primary & non-contributory wording\n  • 30 days notice of cancellation\n  • Certificate holder: ISNetworld, on behalf of connected hiring clients\n\nSame for Auto ($1M CSL) and Workers Comp when they renew 2027-03-04.\n\nCopies of the endorsement forms, not just the ACORD, please — the portal reviewers reject certificates without them.\n\nThanks,\nDale Hutchens\nEHS Manager, Granger Mechanical & Industrial\n(918) 555-0142"}
+  ]},
+ {id:"avetta",name:"Avetta",pct:71,reqs:12,
+  green:["W-9 / EIN","Workforce","TRIR / DART","EMR letter","OSHA 300A","Workers Comp","Fall Protection"],
+  items:[
+   {sev:"bad",block:true,
+    lab:"Client connection: Phillips 66 requires Short Service Employee program",
+    sub:"Not on file",
+    quote:"\"Phillips 66 Contractor Requirement SSE-1: Contractor shall maintain a written Short Service Employee program defining SSE status, visual identification, maximum SSE crew ratio, mentoring assignment, and evaluation/release criteria. Upload required before site access is granted.\"",
+    found:"No SSE document in the shared drive. Qualifile found the components scattered elsewhere: mentor-pairing language in Lockout Tagout FINAL v3.docx §7, orange sticker convention referenced in the 2024 site audit inside OSHA 300A 2024 scan.pdf, and a 20% ratio used in your Kiewit bid narrative.",
+    draftTitle:"Drafted program (new document)", draft:SSE_DRAFT},
+   {sev:"warn",block:false,
+    lab:"Answer differs from ISNetworld",
+    sub:"Inspection frequency stated \"monthly\" here vs \"weekly\" in LOTO program",
+    quote:"\"Q 6.4 — How frequently are documented equipment and energy-isolation inspections performed? [Contractor answer on file: Monthly]\"",
+    found:"Lockout Tagout FINAL v3.docx §4.2 states: \"A documented inspection of each energy-isolating device and of employee LOTO performance shall be completed weekly by the area supervisor.\" Your ISNetworld answer to the equivalent question says \"Weekly\". Reviewers cross-read portals and flag inconsistencies — this is one of the most common causes of a returned submission.",
+    draftTitle:"Drafted corrected answer", draft:
+"Avetta Q 6.4 — Inspection frequency (replace current answer)\n\n\"Documented inspections of energy-isolating devices and of employee lockout/tagout\nperformance are completed WEEKLY by the area supervisor, using the LOTO Inspection\nForm (GM-SAF-04). A consolidated periodic inspection covering every authorized\nemployee is performed at least annually and certified by the EHS Manager, in\naccordance with 29 CFR 1910.147(c)(6).\n\nSource document: Lockout Tagout Program, Rev. 3, Section 4.2.\"\n\nThis now matches the answer filed in ISNetworld (Weekly) and the written program."}
+  ]},
+ {id:"kiewit",name:"Kiewit Prequal",pct:64,reqs:16,
+  green:["W-9 / EIN","Workforce","TRIR 1.42","EMR 0.87","OSHA 300A","LOTO","Fall Protection","Welder certs"],
+  note:"Bid invite deadline: 6 days",
+  items:[
+   {sev:"bad",block:true,
+    lab:"Bonding capacity letter — not on file",
+    sub:"Required: single project and aggregate limits on surety letterhead",
+    quote:"\"Financial Prequalification 3.2 — Submit a letter from your surety, on surety letterhead and signed by an attorney-in-fact, stating single-project bonding capacity and total aggregate capacity, with the surety's A.M. Best rating (minimum A- VII).\"",
+    found:"No surety letter in the shared drive. Qualifile found your bonding agent referenced in the 2025 Kiewit bid cover sheet: Tri-State Surety Group, agent Ray Okafor. Largest completed project in your record: $1.9M (OG&E Riverside compressor retrofit, 2025).",
+    draftTitle:"Drafted request to surety agent", draft:
+"To: ray.okafor@tristatesurety.example\nSubject: Bonding capacity letter needed for Kiewit prequal — due in 6 days\n\nRay,\n\nKiewit's prequalification (Financial Prequalification 3.2) needs a bonding capacity\nletter from Tri-State Surety on your letterhead, signed by an attorney-in-fact, stating:\n\n  • Single project bonding capacity\n  • Total aggregate bonding capacity\n  • A.M. Best rating of the surety (they require A- VII or better)\n  • Confirmation that Granger Mechanical & Industrial, LLC is in good standing\n\nOur bid invitation window closes in 6 days, so anything you can get over by Friday\nwould keep us in the running.\n\nThanks,\nDale Hutchens\nEHS Manager, Granger Mechanical & Industrial"},
+   {sev:"bad",block:true,
+    lab:"Reference list for 3 projects >$1M — not on file",
+    sub:"Owner contact, contract value and completion date required for each",
+    quote:"\"Experience 2.1 — List three (3) completed projects of similar scope with a contract value exceeding $1,000,000 within the last five years. For each, provide owner name, owner contact with phone and email, contract value, self-performed scope and completion date.\"",
+    found:"Qualifile assembled candidates from job data referenced in TRIR calc sheet.xlsx (hours by job) and the welder cert packages: Riverside compressor retrofit, Tulsa Port process piping, and the Sand Springs boiler replacement. Owner contacts need your confirmation before submission.",
+    draftTitle:"Drafted reference list (confirm contacts)", draft:
+"EXPERIENCE 2.1 — THREE COMPLETED PROJECTS OVER $1,000,000\n\n1. OG&E Riverside Station — Compressor Retrofit\n   Owner: Oklahoma Gas & Electric | Contact: [confirm name] , (405) 555-01••\n   Contract value: $1,940,000  |  Completed: 09/2025\n   Self-performed: mechanical demo, 4\" & 6\" process piping, rigging, alignment.\n   Hours: 21,800 (source: TRIR calc sheet.xlsx, job code RVS-24)\n\n2. Tulsa Port of Catoosa — Process Piping Expansion\n   Owner: Tulsa Ports Authority | Contact: [confirm name], (918) 555-02••\n   Contract value: $1,375,000  |  Completed: 03/2025\n   Self-performed: 3,100 LF stainless piping, B31.3 weld procedures, hydro testing.\n   Hours: 16,400 (job code TPC-23)\n\n3. Sand Springs — Package Boiler Replacement\n   Owner: Midland Paperboard | Contact: [confirm name], (918) 555-03••\n   Contract value: $1,120,000  |  Completed: 11/2024\n   Self-performed: boiler setting, fuel-gas train, steam header tie-ins.\n   Hours: 12,900 (job code SSB-22)\n\nZero recordable injuries on projects 2 and 3. Reference EMR 0.87, TRIR 1.42."}
+  ]},
+ {id:"oge",name:"OG&E Supplier",pct:95,reqs:9,
+  green:["W-9 / EIN","Workforce","TRIR / DART","EMR","OSHA 300A","GL / Auto / WC","LOTO","Fall Protection"],
+  items:[
+   {sev:"warn",block:false,
+    lab:"Annual hours worked refresh due 2027-01-15",
+    sub:"Current figure: 131,400 hours (2025)",
+    quote:"\"Supplier Safety Data 1.3 — Man-hours worked must be updated annually within 15 days of calendar year end. Stale data places the supplier in Pending status until refreshed.\"",
+    found:"Hours worked 2025: 131,400 (TRIR calc sheet.xlsx, tab \"Hours by job\"). 2026 hours to date through 10/31: 118,250 across 9 job codes. Qualifile will have the full-year figure ready on 01/02/2027.",
+    draftTitle:"Drafted refresh answer (ready 01/02/2027)", draft:
+"OG&E Supplier Safety Data 1.3 — Annual man-hours\n\nCalendar year 2026 total employee hours worked: [auto-fills 01/02/2027]\nHours to date through 10/31/2026: 118,250\nAverage number of employees (3-yr): 68\nPrior year (2025) hours worked: 131,400\nPrior year TRIR: 1.42   DART: 0.68   EMR: 0.87\n\nSource: TRIR calc sheet.xlsx, tab \"Hours by job\", payroll-reconciled monthly.\nPrepared by: Dale Hutchens, EHS Manager."}
+  ]}
+];
+
+/* ---------- Build flow ---------- */
+var STEPS=["Opening shared drive…","Reading GL_COI_2026 (1).pdf — limits, dates, endorsements","Parsing TRIR calc sheet.xlsx — hours, TRIR, DART","Matching EMR Letter 2025.pdf to NCCI record","Scanning written programs for template placeholders","Mapping 51 requirements across 4 customer portals","Company Record built."];
+
+var buildBtn=document.getElementById("buildBtn"),
+    extract=document.getElementById("extract"),
+    product=document.getElementById("product"),
+    barfill=document.getElementById("barfill"),
+    exlog=document.getElementById("exlog");
+
+buildBtn.addEventListener("click",function(){
+  buildBtn.disabled=true; buildBtn.textContent="Building…";
+  extract.classList.remove("hid");
+  var i=0,total=STEPS.length;
+  var t=setInterval(function(){
+    exlog.textContent=STEPS[i];
+    barfill.style.width=Math.round(((i+1)/total)*100)+"%";
+    i++;
+    if(i>=total){
+      clearInterval(t);
+      setTimeout(function(){
+        extract.classList.add("hid");
+        product.classList.remove("hid");
+        buildBtn.textContent="Rebuild Company Record";
+        buildBtn.disabled=false;
+        renderPortal();
+        product.scrollIntoView({behavior:"smooth",block:"start"});
+      },300);
+    }
+  },1500/total);
+});
+
+/* ---------- Tabs ---------- */
+var active="isn", onlyBlocking=false;
+var tabsEl=document.getElementById("tabs");
+PORTALS.forEach(function(p){
+  var b=document.createElement("button");
+  b.className="tab"; b.type="button"; b.setAttribute("role","tab");
+  b.setAttribute("aria-selected",p.id===active?"true":"false");
+  b.textContent=p.name+" · "+p.pct+"%";
+  b.addEventListener("click",function(){
+    active=p.id;
+    [].forEach.call(tabsEl.children,function(c){c.setAttribute("aria-selected","false");});
+    b.setAttribute("aria-selected","true");
+    renderPortal();
+  });
+  tabsEl.appendChild(b);
+});
+
+function ring(pct){
+  var r=26,c=2*Math.PI*r, off=c*(1-pct/100);
+  var col=pct>=90?"var(--green)":pct>=75?"var(--accent)":pct>=70?"var(--amber)":"var(--red)";
+  return '<svg width="64" height="64" viewBox="0 0 64 64" aria-hidden="true">'+
+   '<circle cx="32" cy="32" r="'+r+'" fill="none" stroke="var(--chip)" stroke-width="7"/>'+
+   '<circle cx="32" cy="32" r="'+r+'" fill="none" stroke="'+col+'" stroke-width="7" stroke-linecap="round" stroke-dasharray="'+c.toFixed(1)+'" stroke-dashoffset="'+off.toFixed(1)+'" transform="rotate(-90 32 32)"/>'+
+   '<text x="32" y="37" text-anchor="middle" font-size="16" font-weight="700" fill="currentColor">'+pct+'</text></svg>';
+}
+
+var portalEl=document.getElementById("portal");
+function renderPortal(){
+  var p=PORTALS.filter(function(x){return x.id===active;})[0];
+  portalEl.innerHTML="";
+  var head=document.createElement("div"); head.className="ringrow";
+  head.innerHTML=ring(p.pct)+'<div><h3></h3><p></p></div>';
+  head.querySelector("h3").textContent=p.name+" — "+p.pct+"% ready";
+  head.querySelector("p").textContent=p.reqs+" requirements · "+p.green.length+" satisfied from your Company Record";
+  portalEl.appendChild(head);
+
+  var items=p.items.filter(function(it){return onlyBlocking? it.block : true;});
+  if(items.length===0){
+    var e=document.createElement("div"); e.className="empty";
+    e.textContent="Nothing here blocks a bid. "+p.name+" has no blocking items.";
+    portalEl.appendChild(e);
+  }
+  items.forEach(function(it){
+    var b=document.createElement("button");
+    b.type="button"; b.className="req "+(it.sev==="bad"?"bad":"warn");
+    b.innerHTML='<span class="dot"></span><span class="txt"><span class="lab"></span><span class="sub"></span></span><span class="arrow">›</span>';
+    b.querySelector(".lab").textContent=it.lab;
+    b.querySelector(".sub").textContent=it.sub;
+    b.addEventListener("click",function(){openDrawer(p,it);});
+    portalEl.appendChild(b);
+  });
+
+  if(p.note){
+    var n=document.createElement("div"); n.className="note"; n.textContent="⏱ "+p.note; portalEl.appendChild(n);
+  }
+  if(!onlyBlocking){
+    var g=document.createElement("div"); g.className="okgrid";
+    p.green.forEach(function(x){
+      var d=document.createElement("div"); d.className="okitem";
+      d.innerHTML='<b>✓</b><span></span>'; d.querySelector("span").textContent=x; g.appendChild(d);
+    });
+    portalEl.appendChild(g);
+  }
+}
+
+/* ---------- Blocking toggle ---------- */
+var banner=document.getElementById("blockbanner");
+document.getElementById("blockToggle").addEventListener("change",function(e){
+  onlyBlocking=e.target.checked;
+  banner.style.display=onlyBlocking?"block":"none";
+  banner.textContent="5 items block 2 bid invitations worth an estimated $340,000";
+  [].forEach.call(tabsEl.children,function(c,i){
+    var p=PORTALS[i], n=p.items.filter(function(x){return x.block;}).length;
+    c.textContent=onlyBlocking? p.name+" · "+n+" blocking" : p.name+" · "+p.pct+"%";
+  });
+  renderPortal();
+});
+
+/* ---------- Drawer ---------- */
+var drawer=document.getElementById("drawer"), scrim=document.getElementById("scrim"),
+    dbody=document.getElementById("dbody"), dtitle=document.getElementById("dtitle"),
+    dport=document.getElementById("dport"), current=null;
+
+function openDrawer(p,it){
+  current=it;
+  dport.textContent=p.name;
+  dtitle.textContent=it.lab;
+  dbody.innerHTML="";
+  add("Requirement, as the portal words it",'<div class="quote"></div>',it.quote);
+  add("What Qualifile found in your Company Record",'<div class="found"></div>',it.found);
+  var h=document.createElement("h4"); h.textContent=it.draftTitle; dbody.appendChild(h);
+  var pre=document.createElement("pre"); pre.className="draft"; pre.textContent=it.draft; dbody.appendChild(pre);
+  drawer.classList.add("on"); scrim.classList.add("on");
+  dbody.scrollTop=0;
+  document.getElementById("dclose").focus();
+}
+function add(title,html,text){
+  var h=document.createElement("h4"); h.textContent=title; dbody.appendChild(h);
+  var w=document.createElement("div"); w.innerHTML=html; w.firstChild.textContent=text; dbody.appendChild(w.firstChild);
+}
+function closeDrawer(){drawer.classList.remove("on");scrim.classList.remove("on");current=null;}
+document.getElementById("dclose").addEventListener("click",closeDrawer);
+scrim.addEventListener("click",closeDrawer);
+document.addEventListener("keydown",function(e){if(e.key==="Escape")closeDrawer();});
+
+var toastEl=document.getElementById("toast"),toastT=null;
+function toast(msg){
+  toastEl.textContent=msg; toastEl.classList.add("on");
+  clearTimeout(toastT); toastT=setTimeout(function(){toastEl.classList.remove("on");},2200);
+}
+document.getElementById("copyBtn").addEventListener("click",function(){
+  if(!current){toast("Open a requirement first");return;}
+  try{
+    if(navigator.clipboard&&navigator.clipboard.writeText){
+      navigator.clipboard.writeText(current.draft).then(function(){toast("Copied — paste into the portal");},function(){toast("Copied");});
+    }else{toast("Copied — paste into the portal");}
+  }catch(err){toast("Copied — paste into the portal");}
+});
+
+var BROKER_MAIL=
+"To: marla.stinnett@heartlandrisk.example\nCc: dale.hutchens@grangermech.example\nSubject: Renewed GL certificate + endorsements needed by 11/27 (Granger Mechanical)\n\nMarla,\n\nOur CGL renews 2026-11-27. ISNetworld drops our grade to C the day the certificate on file lapses, and we have a Kiewit bid invitation open, so we need the renewal COI before that date.\n\nPlease issue with:\n  • CGL $2,000,000 occurrence / $4,000,000 aggregate\n  • Additional Insured — ongoing and completed operations (CG 20 10 + CG 20 37)\n  • Waiver of Subrogation (missing from the current certificate)\n  • Primary & non-contributory wording\n  • 30 days notice of cancellation\n  • Holder: ISNetworld, on behalf of connected hiring clients\n\nPlease attach the endorsement forms, not just the ACORD — portal reviewers reject certificates without them.\n\nThanks,\nDale Hutchens\nEHS Manager, Granger Mechanical & Industrial, LLC\n(918) 555-0142";
+
+document.getElementById("mailBtn").addEventListener("click",function(){
+  dport.textContent="Drafted email";
+  dtitle.textContent="To Marla Stinnett — Heartland Risk Partners";
+  dbody.innerHTML="";
+  var h=document.createElement("h4"); h.textContent="Pre-written broker request"; dbody.appendChild(h);
+  var pre=document.createElement("pre"); pre.className="draft"; pre.textContent=BROKER_MAIL; dbody.appendChild(pre);
+  current={draft:BROKER_MAIL};
+  drawer.classList.add("on"); scrim.classList.add("on"); dbody.scrollTop=0;
+  toast("Draft ready — nothing sent (demo)");
+});
+
+/* ---------- Export ---------- */
+var EXPORT_FILES=["answers.docx — 51 portal answers, pre-mapped","GL_COI_2026.pdf","EMR Letter 2025.pdf","OSHA 300A 2024.pdf","W9_signed.pdf","Lockout Tagout Program.pdf","Fall Protection Program.pdf","Hearing Conservation Program (rewritten).pdf","Short Service Employee Program (new).pdf","Welder certs (9 current).pdf","gap_report.pdf — 5 blocking items, owners, due dates"];
+var exportCard=document.getElementById("exportCard"), fileList=document.getElementById("filelist"), exportSum=document.getElementById("exportSum"), exporting=false;
+
+document.getElementById("exportBtn").addEventListener("click",function(){
+  if(exporting) return;
+  exporting=true;
+  exportCard.style.display="block";
+  fileList.innerHTML=""; exportSum.classList.add("hid");
+  exportCard.scrollIntoView({behavior:"smooth",block:"nearest"});
+  var i=0;
+  var t=setInterval(function(){
+    var d=document.createElement("div"); d.className="fline";
+    d.innerHTML='<span class="tickbox">…</span><b></b>';
+    d.querySelector("b").textContent=EXPORT_FILES[i];
+    fileList.appendChild(d);
+    (function(node){setTimeout(function(){node.classList.add("done");node.querySelector(".tickbox").textContent="✓";},200);})(d);
+    i++;
+    if(i>=EXPORT_FILES.length){
+      clearInterval(t);
+      setTimeout(function(){
+        exportSum.classList.remove("hid");
+        exportSum.textContent="Ready to paste into ISNetworld. Consultant quote for the same package: $750.";
+        exporting=false;
+      },420);
+    }
+  },130);
+});
+
+})();
+</script>
+</body>
+</html>
