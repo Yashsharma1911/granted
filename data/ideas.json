@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-16T20:53:47.057Z",
+  "updated": "2026-11-17T20:53:39.804Z",
   "ideas": [
     {
       "id": "2026-10-22-agentgauntlet",
@@ -1087,6 +1087,66 @@
       "sources_count": 30,
       "superseded_by": null,
       "sibling": "2026-11-16-nearmiss"
+    },
+    {
+      "id": "2026-11-17-surrender",
+      "number": 39,
+      "date": "2026-11-17",
+      "track": "build",
+      "short_name": "Surrender",
+      "verdict": "dig_deeper",
+      "score": 8,
+      "scores": {
+        "wow": 8,
+        "shareability": 8,
+        "buildability": 9,
+        "freshness": 8,
+        "usefulness": 7
+      },
+      "effort": "a weekend",
+      "category": "Developer tools",
+      "tags": [
+        "github",
+        "code-review",
+        "ai-coding",
+        "quiz"
+      ],
+      "pain_type": "expressed",
+      "one_liner": "Paste any public GitHub PR URL (yours or someone else's) and Surrender quizzes you on it the way a sharp reviewer would — five questions straight from the diff, graded in 20 seconds — then gives you a shareable \"Surrender Score\" card and a weekly streak of the PRs you actually understood.",
+      "prototype_url": "https://yashsharma1911.github.io/granted/ideas/2026-11-17-surrender/",
+      "sources_count": 18,
+      "superseded_by": null,
+      "sibling": "2026-11-17-declined"
+    },
+    {
+      "id": "2026-11-17-declined",
+      "number": 40,
+      "date": "2026-11-17",
+      "track": "venture",
+      "short_name": "Declined",
+      "verdict": "dig_deeper",
+      "score": 7.6,
+      "scores": {
+        "pain": 8,
+        "market_pull": 8,
+        "timing": 8,
+        "gap": 7,
+        "wedge": 7
+      },
+      "effort": "3+ months",
+      "category": "Back-office automation",
+      "tags": [
+        "insurance",
+        "compliance",
+        "agents",
+        "meetings"
+      ],
+      "pain_type": "expressed",
+      "one_liner": "For the commercial-lines account manager and agency principal at a 5-75 person independent P&C agency, Declined turns every renewal conversation (Teams/Zoom call, phone call, or email thread) into a coverage-by-coverage decision record — offered, recommended, accepted, declined — drafts the matching declination/acknowledgment for the client to e-sign, and files the whole chain into Applied Epic/EZLynx/HawkSoft as the agency's defensible E&O record.",
+      "prototype_url": "https://yashsharma1911.github.io/granted/ideas/2026-11-17-declined/",
+      "sources_count": 19,
+      "superseded_by": null,
+      "sibling": "2026-11-17-surrender"
     }
   ]
 }

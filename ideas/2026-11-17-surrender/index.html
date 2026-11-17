@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Surrender — can you explain the code you merged?</title>
+<style>
+:root{
+  --bg:#0b0d10; --panel:#12161b; --panel2:#171c22; --line:#232a33;
+  --txt:#e6edf3; --dim:#8b97a5; --acc:#7dd3fc; --accd:#0ea5e9;
+  --pass:#3fb950; --part:#d29922; --fail:#f85149;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+}
+@media (prefers-color-scheme: light){
+  :root{
+    --bg:#f6f8fa; --panel:#ffffff; --panel2:#f0f3f6; --line:#d8dee4;
+    --txt:#11161c; --dim:#5a6672; --acc:#0969da; --accd:#0969da;
+    --pass:#1a7f37; --part:#9a6700; --fail:#cf222e;
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--txt);
+  font-family:var(--mono);
+  -webkit-text-size-adjust:100%;
+  line-height:1.5;
+}
+.wrap{max-width:760px;margin:0 auto;padding:14px 14px 60px}
+header.top{display:flex;align-items:center;gap:9px;padding:6px 2px 14px;flex-wrap:wrap}
+.logo{width:22px;height:22px;flex:none}
+.brand{font-weight:700;letter-spacing:.5px}
+.tagline{color:var(--dim);font-size:12.5px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px}
+h1{font-size:22px;line-height:1.25;margin:14px 0 6px;letter-spacing:-.2px}
+.sub{color:var(--dim);font-size:13px;margin:0 0 16px}
+label.fl{display:block;font-size:11.5px;color:var(--dim);text-transform:uppercase;letter-spacing:.9px;margin:0 0 6px}
+input,textarea{
+  width:100%;background:var(--panel2);color:var(--txt);border:1px solid var(--line);
+  border-radius:10px;padding:13px 12px;font-family:var(--mono);font-size:14px;
+}
+input:focus,textarea:focus{outline:2px solid var(--acc);outline-offset:1px}
+textarea{min-height:104px;resize:vertical}
+button{font-family:var(--mono);cursor:pointer}
+.btn{
+  width:100%;background:var(--accd);color:#001018;border:0;border-radius:10px;
+  padding:15px 16px;font-size:15px;font-weight:700;min-height:50px;letter-spacing:.3px;
+}
+.btn:active{transform:translateY(1px)}
+.btn.sec{background:transparent;color:var(--txt);border:1px solid var(--line)}
+.btn.sm{width:auto;padding:10px 14px;font-size:13px;min-height:42px}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.row>*{flex:1 1 150px}
+.chips{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+.chip{
+  text-align:left;background:var(--panel2);border:1px solid var(--line);color:var(--txt);
+  border-radius:10px;padding:12px;font-size:12.5px;min-height:48px;width:100%;
+}
+.chip b{color:var(--acc);font-weight:600}
+.chip span{color:var(--dim)}
+.muted{color:var(--dim);font-size:12px}
+.err{color:var(--fail);font-size:12.5px;margin-top:8px;min-height:16px}
+.demo{display:inline-block;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--dim);border:1px solid var(--line);border-radius:999px;padding:3px 8px}
+/* loading */
+.loadline{display:flex;gap:9px;align-items:flex-start;font-size:13px;margin:10px 0;color:var(--dim);opacity:.25;transition:opacity .25s}
+.loadline.on{opacity:1;color:var(--txt)}
+.tick{color:var(--pass)}
+.bar{height:4px;background:var(--panel2);border-radius:4px;overflow:hidden;margin-top:14px}
+.bar i{display:block;height:100%;width:0;background:var(--accd);transition:width 1.2s linear}
+/* quiz */
+.qhead{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--dim);margin-bottom:8px}
+.prog{height:4px;background:var(--panel2);border-radius:4px;overflow:hidden;margin-bottom:14px}
+.prog i{display:block;height:100%;background:var(--acc);transition:width .3s}
+.diff{background:var(--panel2);border:1px solid var(--line);border-radius:10px;overflow:auto;margin:0 0 14px}
+.diff .fp{font-size:11.5px;color:var(--dim);padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+pre.code{margin:0;padding:8px 0;font-size:12px;line-height:1.55;overflow-x:auto}
+pre.code .ln{display:block;padding:0 10px;white-space:pre}
+.ln .num{color:#5b6672;display:inline-block;width:34px;user-select:none}
+.ln.add{background:rgba(63,185,80,.13)}
+.ln.del{background:rgba(248,81,73,.13)}
+.kw{color:#ff7b72}.st{color:#a5d6ff}.fn{color:#d2a8ff}.cm{color:#8b949e;font-style:italic}.nm{color:#79c0ff}
+@media (prefers-color-scheme: light){.kw{color:#cf222e}.st{color:#0a3069}.fn{color:#8250df}.cm{color:#6e7781}.nm{color:#0550ae}}
+.q{font-size:15px;margin:0 0 12px;line-height:1.45}
+.q code{background:var(--panel2);border:1px solid var(--line);border-radius:5px;padding:1px 5px;font-size:13px}
+.skip{display:block;text-align:center;color:var(--dim);font-size:13px;margin-top:12px;background:none;border:0;width:100%;padding:12px;text-decoration:underline}
+.verdict{border:1px solid var(--line);border-radius:12px;padding:14px;margin-top:14px;background:var(--panel2)}
+.vchip{display:inline-block;font-size:11px;font-weight:700;letter-spacing:1.2px;padding:5px 10px;border-radius:999px;color:#000}
+.vchip.PASS{background:var(--pass);color:#001b06}
+.vchip.PARTIAL{background:var(--part);color:#1d1400}
+.vchip.FAIL{background:var(--fail);color:#2b0000}
+.vlab{font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:1px;margin:12px 0 4px}
+.src{font-size:11.5px;color:var(--dim)}
+/* result */
+.poster{
+  width:100%;aspect-ratio:2/1;border-radius:14px;color:#e9f1f7;
+  background:linear-gradient(145deg,#0d1117 0%,#17222e 60%,#0b1a24 100%);
+  border:1px solid #233140;padding:4.2% 5%;display:flex;flex-direction:column;justify-content:space-between;
+  overflow:hidden;
+}
+.poster .pt{font-size:11px;letter-spacing:2.4px;text-transform:uppercase;color:#7dd3fc}
+.poster .score{font-size:min(14vw,62px);font-weight:800;line-height:1;letter-spacing:-2px}
+.poster .tier{font-size:min(4.4vw,19px);color:#7dd3fc;font-weight:700;margin-top:2px}
+.poster .meta{font-size:min(3vw,12.5px);color:#9fb0c0;line-height:1.5;overflow:hidden}
+.dots{display:flex;gap:7px;margin-top:6px}
+.dot{width:13px;height:13px;border-radius:50%;background:#2c3a48}
+.dot.PASS{background:#3fb950}.dot.PARTIAL{background:#d29922}.dot.FAIL{background:#f85149}
+.brk{border:1px solid var(--line);border-radius:10px;padding:11px 12px;margin-top:8px;background:var(--panel2);font-size:12.5px}
+.brk .t{display:flex;gap:9px;align-items:flex-start}
+.pill{font-size:10px;font-weight:700;letter-spacing:.8px;padding:3px 7px;border-radius:999px;flex:none}
+.pill.PASS{background:rgba(63,185,80,.18);color:var(--pass)}
+.pill.PARTIAL{background:rgba(210,153,34,.18);color:var(--part)}
+.pill.FAIL{background:rgba(248,81,73,.18);color:var(--fail)}
+/* streak */
+.streak{margin-top:16px;border:1px solid var(--line);border-radius:12px;padding:13px;background:var(--panel)}
+.streak .l{font-size:12.5px;color:var(--dim)}
+.spark{display:block;margin:8px 0 4px}
+footer{text-align:center;color:var(--dim);font-size:11.5px;margin-top:26px}
+.hide{display:none!important}
+a{color:var(--acc)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <svg class="logo" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 2.5 20 6v6.2c0 4.6-3.3 8.1-8 9.3-4.7-1.2-8-4.7-8-9.3V6l8-3.5Z" stroke="#0ea5e9" stroke-width="1.6" fill="rgba(14,165,233,.12)"/><path d="M8.6 12.2l2.4 2.4 4.4-5" stroke="#0ea5e9" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <span class="brand">Surrender</span>
+    <span class="tagline">— the cognitive surrender test for your own pull requests</span>
+  </header>
+
+  <!-- SCREEN 1 -->
+  <section id="s1">
+    <div class="card">
+      <h1>Can you explain the code you merged?</h1>
+      <p class="sub">Paste a public GitHub PR. 5 questions. 90 seconds.</p>
+      <label class="fl" for="url">Pull request URL</label>
+      <input id="url" type="text" inputmode="url" spellcheck="false" value="https://github.com/vercel/next.js/pull/84120">
+      <div class="err" id="err"></div>
+      <button class="btn" id="go">Quiz me</button>
+      <div style="margin-top:12px">
+        <label class="fl">Gemini API key (optional)</label>
+        <input id="key" type="password" placeholder="sk-… — leave blank to use the built-in grader" autocomplete="off">
+        <div class="muted" style="margin-top:6px">Cosmetic in this prototype. Grading runs locally. <span class="demo">Demo data</span></div>
+      </div>
+      <div class="chips" id="chips"></div>
+    </div>
+    <div class="streak hide" id="streak1"></div>
+  </section>
+
+  <!-- SCREEN 2 -->
+  <section id="s2" class="hide">
+    <div class="card">
+      <div class="muted" id="lrepo"></div>
+      <div class="loadline" id="l1"><span class="tick">▸</span><span>Fetching diff…</span></div>
+      <div class="loadline" id="l2"><span class="tick">▸</span><span>Reading the parts a reviewer would stop on…</span></div>
+      <div class="loadline" id="l3"><span class="tick">✓</span><span>5 questions ready.</span></div>
+      <div class="bar"><i id="lbar"></i></div>
+    </div>
+  </section>
+
+  <!-- SCREEN 3 -->
+  <section id="s3" class="hide">
+    <div class="card">
+      <div class="qhead"><span id="qprog">1 of 5</span><span id="qtimer">0:00</span></div>
+      <div class="prog"><i id="qbar"></i></div>
+      <div class="diff" id="qdiff"></div>
+      <p class="q" id="qtext"></p>
+      <div id="answerBox">
+        <textarea id="ans" placeholder="Explain it in your own words — no need to be perfect." spellcheck="false"></textarea>
+        <div class="err" id="qerr"></div>
+        <button class="btn" id="submit">Submit answer</button>
+        <button class="skip" id="skip">Skip — I don't know</button>
+      </div>
+      <div id="verdictBox"></div>
+    </div>
+  </section>
+
+  <!-- SCREEN 4 + 5 -->
+  <section id="s4" class="hide">
+    <div id="poster" class="poster"></div>
+    <div class="row" style="margin-top:12px">
+      <button class="btn sec" id="png">Download PNG</button>
+      <button class="btn sec" id="xpost">Post on X</button>
+    </div>
+    <div id="breakdown" style="margin-top:14px"></div>
+    <div class="streak" id="streak2"></div>
+  </section>
+
+  <footer>Prototype by Granted, inspired by your bookmarks</footer>
+</div>
+
+<script>
+(function(){
+"use strict";
+
+/* ---------------- hard-coded demo data ---------------- */
+var PRS = [
+{
+ id:"nextjs", repo:"vercel/next.js", num:84120, url:"https://github.com/vercel/next.js/pull/84120",
+ title:"fix: debounce router prefetch on hover", author:"ijjk", add:84, del:31, files:3,
+ hunks:[
+  {file:"packages/next/src/client/link.tsx", start:212, lines:[
+   ["ctx","const prefetchTimer = useRef<ReturnType<typeof setTimeout>|null>(null)"],
+   ["add","const PREFETCH_DELAY_MS = 120"],
+   ["ctx",""],
+   ["ctx","const onMouseEnter = useCallback(() => {"],
+   ["del","  router.prefetch(href, as, { kind: PrefetchKind.FULL })"],
+   ["add","  if (prefetchTimer.current) return"],
+   ["add","  prefetchTimer.current = setTimeout(() => {"],
+   ["add","    router.prefetch(href, as, { kind: PrefetchKind.FULL })"],
+   ["add","  }, PREFETCH_DELAY_MS)"],
+   ["ctx","}, [href, as, router])"]
+  ]},
+  {file:"packages/next/src/client/link.tsx", start:244, lines:[
+   ["ctx","const onMouseLeave = useCallback(() => {"],
+   ["add","  if (prefetchTimer.current) {"],
+   ["add","    clearTimeout(prefetchTimer.current)"],
+   ["add","    prefetchTimer.current = null"],
+   ["add","  }"],
+   ["ctx","}, [])"],
+   ["cm","// NOTE: no cleanup effect is registered for prefetchTimer"]
+  ]},
+  {file:"packages/next/src/client/link.tsx", start:301, lines:[
+   ["ctx","if (process.env.NODE_ENV !== 'production') {"],
+   ["del","  if (!href) throw new Error('Link requires href')"],
+   ["add","  if (!href) {"],
+   ["add","    console.error('Link requires an href prop')"],
+   ["add","    return null"],
+   ["add","  }"],
+   ["ctx","}"]
+  ]},
+  {file:"packages/next/src/client/link.test.tsx", start:88, lines:[
+   ["add","it('does not prefetch on a 50ms hover', async () => {"],
+   ["add","  fireEvent.mouseEnter(link)"],
+   ["add","  jest.advanceTimersByTime(50)"],
+   ["add","  fireEvent.mouseLeave(link)"],
+   ["add","  expect(prefetchSpy).not.toHaveBeenCalled()"],
+   ["add","})"]
+  ]}
+ ],
+ qs:[
+  {h:0, q:"Why does <code>onMouseEnter</code> now return early when <code>prefetchTimer.current</code> is truthy?",
+   a:"It de-duplicates hovers: if a prefetch is already scheduled, re-entering (or a mouse jiggle that fires mouseenter again) must not stack a second timer, which would fire a duplicate prefetch for the same href.",
+   src:"packages/next/src/client/link.tsx:215-220",
+   k:["duplicate","dedup","already","twice","second timer","stack","re-enter","multiple","guard","one"]},
+  {h:1, q:"<code>prefetchTimer</code> is cleared in the mouseleave handler but not on unmount. What happens if the user navigates away mid-hover?",
+   a:"The timeout survives the unmount and fires ~120ms later against a dead component, calling router.prefetch for a route the user already left — wasted bandwidth, and a potential setState-after-unmount / stale-ref warning. It needs a useEffect cleanup that clears the timer.",
+   src:"packages/next/src/client/link.tsx:244-250",
+   k:["unmount","cleanup","useeffect","leak","fires anyway","after","stale","still prefetch","wasted","memory"]},
+  {h:0, q:"What user-visible behaviour changes on a slow 3G connection with the 120ms delay added?",
+   a:"Quick passes over a link no longer burn data — prefetch only starts for deliberate hovers. The cost is up to 120ms of extra latency before the prefetch starts, so a fast click right after hover gets slightly less of a head start.",
+   src:"packages/next/src/client/link.tsx:213",
+   k:["bandwidth","data","fewer","latency","delay","slower","120","head start","waste","requests"]},
+  {h:2, q:"The dev-only invalid-href branch changed from <code>throw</code> to <code>console.error</code> + <code>return null</code>. What does that trade away?",
+   a:"It stops a whole page crashing in dev for one bad Link, but the failure is now silent-ish: the link renders nothing, so a missing href can slip through local testing and only surface as a missing nav element.",
+   src:"packages/next/src/client/link.tsx:301-307",
+   k:["silent","crash","no error","easier to miss","renders nothing","null","swallow","dev","loud","slip"]},
+  {h:3, q:"The test advances timers by 50ms then fires mouseleave. Which bug would this test fail to catch?",
+   a:"It only proves the short-hover case. It never advances past 120ms, so it would not catch a broken clearTimeout on a long hover, nor the missing unmount cleanup — the timer path after the delay is untested.",
+   src:"packages/next/src/client/link.test.tsx:88-93",
+   k:["unmount","cleartimeout","long hover","past","beyond","120","not tested","after delay","leak","only short"]}
+ ]
+},
+{
+ id:"supabase", repo:"supabase/supabase", num:29911, url:"https://github.com/supabase/supabase/pull/29911",
+ title:"feat: add RLS policy templates", author:"gregnr", add:212, del:8, files:6,
+ hunks:[
+  {file:"supabase/migrations/20261103_rls_templates.sql", start:1, lines:[
+   ["add","create policy \"owner_can_read\" on public.documents"],
+   ["add","  for select"],
+   ["add","  using ( auth.uid() = owner_id );"],
+   ["add",""],
+   ["add","create policy \"team_can_read\" on public.documents"],
+   ["add","  for select"],
+   ["add","  using ( team_id in ("],
+   ["add","    select team_id from public.memberships where user_id = auth.uid()"],
+   ["add","  ) );"]
+  ]},
+  {file:"supabase/migrations/20261103_rls_templates.sql", start:32, lines:[
+   ["add","create policy \"owner_can_update\" on public.documents"],
+   ["add","  for update"],
+   ["add","  using ( auth.uid() = owner_id );"],
+   ["cm","-- no with check clause on the update policy"],
+   ["ctx",""],
+   ["ctx","alter table public.documents enable row level security;"]
+  ]},
+  {file:"apps/studio/lib/rls/templates.ts", start:14, lines:[
+   ["add","export const templates: PolicyTemplate[] = ["],
+   ["add","  { id:'owner-read', table:'documents', cmd:'select',"],
+   ["add","    using:`auth.uid() = owner_id` },"],
+   ["add","  { id:'team-read', table:'documents', cmd:'select',"],
+   ["add","    using:`team_id in (select team_id from memberships where user_id = auth.uid())` },"],
+   ["add","]"]
+  ]},
+  {file:"apps/studio/lib/rls/apply.ts", start:41, lines:[
+   ["add","export async function applyTemplate(t: PolicyTemplate) {"],
+   ["add","  const sql = `create policy \"${t.id}\" on ${t.table} for ${t.cmd} using (${t.using});`"],
+   ["add","  return exec(sql)"],
+   ["add","}"],
+   ["cm","// t.id and t.table are interpolated straight into DDL"]
+  ]}
+ ],
+ qs:[
+  {h:1, q:"The update policy has a <code>using</code> clause but no <code>with check</code>. What can a user do that they shouldn't?",
+   a:"using only gates which existing rows you may target. Without with check, an owner can update a row and set owner_id (or team_id) to someone else — handing their row away, or escaping the policy entirely on write.",
+   src:"supabase/migrations/20261103_rls_templates.sql:32-35",
+   k:["with check","owner_id","change","reassign","give away","new row","write","escape","transfer","update to"]},
+  {h:0, q:"The <code>team_can_read</code> policy runs a subquery against <code>memberships</code> per row. What's the performance risk on a large table?",
+   a:"The subquery is evaluated per row unless the planner caches it, so a wide select over documents can turn into an N-times membership lookup. The usual fix is wrapping auth.uid() in (select auth.uid()) and indexing memberships(user_id, team_id).",
+   src:"supabase/migrations/20261103_rls_templates.sql:5-9",
+   k:["per row","n+1","subquery","index","slow","seq scan","select auth.uid","cache","planner","latency"]},
+  {h:0, q:"<code>memberships</code> itself is queried inside the policy. What must be true of RLS on <code>memberships</code> for this to behave?",
+   a:"Policies run as the invoking user, so RLS on memberships also applies inside the subquery. If memberships has a restrictive policy the user can't read their own rows, team_can_read silently returns nothing — it fails closed and looks like a bug.",
+   src:"supabase/migrations/20261103_rls_templates.sql:7-9",
+   k:["rls on memberships","own rows","invoker","silently","empty","fails closed","recursion","security definer","read","nothing"]},
+  {h:3, q:"<code>applyTemplate</code> interpolates <code>t.id</code> and <code>t.table</code> straight into DDL. Why is that still risky even though templates are hard-coded today?",
+   a:"It's a SQL injection hole waiting for the first user-supplied template name or custom table. Identifiers should be quoted/validated server-side; a template coming from the UI later turns this into arbitrary DDL execution.",
+   src:"apps/studio/lib/rls/apply.ts:41-45",
+   k:["injection","sql injection","user input","escape","quote","identifier","validate","arbitrary","ddl","untrusted"]},
+  {h:2, q:"The TS <code>templates</code> array and the SQL migration both define the same policies. What's the maintenance hazard?",
+   a:"Two sources of truth that can drift: editing the SQL migration doesn't update the Studio template, so the UI can show a policy that no longer matches what is actually installed in the database.",
+   src:"apps/studio/lib/rls/templates.ts:14-20",
+   k:["drift","two","duplicate","source of truth","out of sync","mismatch","maintain","copy","both","diverge"]}
+ ]
+},
+{
+ id:"langchain", repo:"langchain-ai/langchain", num:21877, url:"https://github.com/langchain-ai/langchain/pull/21877",
+ title:"perf: cache tokenizer instances", author:"baskaryan", add:47, del:12, files:2,
+ hunks:[
+  {file:"libs/core/langchain_core/tokenizers/cache.py", start:9, lines:[
+   ["add","_TOKENIZER_CACHE: dict[str, Tokenizer] = {}"],
+   ["ctx",""],
+   ["ctx","def get_tokenizer(model_name: str) -> Tokenizer:"],
+   ["del","    return Tokenizer.from_pretrained(model_name)"],
+   ["add","    tok = _TOKENIZER_CACHE.get(model_name)"],
+   ["add","    if tok is None:"],
+   ["add","        tok = Tokenizer.from_pretrained(model_name)"],
+   ["add","        _TOKENIZER_CACHE[model_name] = tok"],
+   ["add","    return tok"]
+  ]},
+  {file:"libs/core/langchain_core/tokenizers/cache.py", start:28, lines:[
+   ["add","def count_tokens(text: str, model_name: str) -> int:"],
+   ["add","    return len(get_tokenizer(model_name).encode(text).ids)"],
+   ["cm","#  no eviction, no max size, no lock"]
+  ]},
+  {file:"libs/core/langchain_core/tokenizers/cache.py", start:40, lines:[
+   ["add","def reset_tokenizer_cache() -> None:"],
+   ["add","    _TOKENIZER_CACHE.clear()"],
+   ["ctx",""],
+   ["ctx","__all__ = [\"get_tokenizer\", \"count_tokens\", \"reset_tokenizer_cache\"]"]
+  ]},
+  {file:"libs/core/tests/unit_tests/test_cache.py", start:5, lines:[
+   ["add","def test_same_instance():"],
+   ["add","    a = get_tokenizer(\"gpt2\")"],
+   ["add","    b = get_tokenizer(\"gpt2\")"],
+   ["add","    assert a is b"]
+  ]}
+ ],
+ qs:[
+  {h:0, q:"<code>_TOKENIZER_CACHE</code> is a module-level dict with no eviction. In a server that accepts <code>model_name</code> from a request, what goes wrong over days?",
+   a:"It's an unbounded cache keyed by attacker/user-controlled strings — every distinct model name loads and pins a tokenizer forever. Memory grows monotonically until OOM. It needs an LRU with a max size, or a whitelist of allowed model names.",
+   src:"libs/core/langchain_core/tokenizers/cache.py:9-18",
+   k:["memory leak","unbounded","grows","oom","evict","lru","max size","forever","never freed","user-controlled"]},
+  {h:0, q:"Two threads call <code>get_tokenizer(\"gpt2\")</code> at the same time on a cold cache. What actually happens?",
+   a:"Both see None and both call from_pretrained, so the model loads twice and one instance is discarded — wasted work and double download, but not corruption, since dict assignment is atomic under the GIL. A lock or double-checked write avoids the duplicate load.",
+   src:"libs/core/langchain_core/tokenizers/cache.py:13-17",
+   k:["twice","both","race","lock","gil","duplicate","thread","atomic","wasted","double"]},
+  {h:1, q:"Is the cached <code>Tokenizer</code> safe to share across concurrent <code>count_tokens</code> calls? What would you check before shipping?",
+   a:"Only if encode() is stateless/thread-safe. Many Rust-backed tokenizers are, but ones with mutable truncation/padding state are not — a shared instance would then interleave settings between requests. Check the library's thread-safety docs or give each thread its own instance.",
+   src:"libs/core/langchain_core/tokenizers/cache.py:28-30",
+   k:["thread-safe","stateless","shared","mutable","truncation","padding","concurrent","per-thread","docs","state"]},
+  {h:2, q:"What breaks for a caller that happens to hold a reference when <code>reset_tokenizer_cache()</code> is called?",
+   a:"Nothing immediately — clear() only drops the dict's references, so existing holders keep a live object. But the next get_tokenizer reloads a fresh instance, so you can briefly have two tokenizers in memory and lose any warm state on the old one.",
+   src:"libs/core/langchain_core/tokenizers/cache.py:40-42",
+   k:["still valid","reference","keeps","reload","two","nothing","garbage","alive","fresh","clear"]},
+  {h:3, q:"<code>test_same_instance</code> asserts <code>a is b</code>. Name one real regression it cannot catch.",
+   a:"Identity across one key says nothing about unbounded growth, thread races, or eviction. A cache that leaks under many distinct model names still passes this test.",
+   src:"libs/core/tests/unit_tests/test_cache.py:5-9",
+   k:["leak","growth","many","eviction","thread","concurren","size","distinct","unbounded","race"]}
+ ]
+},
+{
+ id:"billing", repo:"your-org/billing-api", num:318, url:"https://github.com/your-org/billing-api/pull/318",
+ title:"chore: migrate webhook retries to exponential backoff", author:"you", add:156, del:90, files:4,
+ hunks:[
+  {file:"src/webhooks/retry.ts", start:18, lines:[
+   ["add","const MAX_RETRIES = 5"],
+   ["add","const BASE_MS = 500"],
+   ["ctx",""],
+   ["add","export function nextDelay(attempt: number): number {"],
+   ["add","  return BASE_MS * Math.pow(2, attempt)"],
+   ["add","}"],
+   ["cm","// 500, 1000, 2000, 4000, 8000, 16000 …"]
+  ]},
+  {file:"src/webhooks/retry.ts", start:44, lines:[
+   ["del","  while (attempt < MAX_RETRIES) {"],
+   ["add","  while (attempt <= MAX_RETRIES) {"],
+   ["add","    const res = await deliver(event, endpoint)"],
+   ["add","    if (res.ok) return res"],
+   ["add","    await sleep(nextDelay(attempt))"],
+   ["ctx","    attempt++"],
+   ["ctx","  }"],
+   ["ctx","  await deadLetter(event)"]
+  ]},
+  {file:"src/webhooks/deliver.ts", start:61, lines:[
+   ["ctx","const body = JSON.stringify(event.payload)"],
+   ["del","const sig = hmac(body, secret)"],
+   ["add","const sig = hmac(`${event.id}.${body}`, secret)"],
+   ["add","headers['X-Signature'] = `v2=${sig}`"],
+   ["del","headers['X-Signature'] = sig"]
+  ]},
+  {file:"src/webhooks/deliver.ts", start:88, lines:[
+   ["ctx","if (res.status >= 500) return { ok:false, retryable:true }"],
+   ["add","if (res.status === 429) return { ok:false, retryable:true }"],
+   ["ctx","return { ok:false, retryable:false }"],
+   ["cm","// retryable is returned but never read by retry.ts"]
+  ]}
+ ],
+ qs:[
+  {h:1, q:"The loop condition changed from <code>attempt &lt; MAX_RETRIES</code> to <code>attempt &lt;= MAX_RETRIES</code>. How many delivery attempts does an endpoint now get?",
+   a:"Off-by-one: attempts 0..5 inclusive = 6 deliveries where MAX_RETRIES = 5 implies 5 (or 1 + 5 retries at most). Every dead endpoint now gets one extra call, and one extra sleep of 16s before the dead letter.",
+   src:"src/webhooks/retry.ts:44-45",
+   k:["six","6","off-by-one","one extra","inclusive","too many","5","should be","<=","extra attempt"]},
+  {h:0, q:"<code>nextDelay</code> has no jitter and no cap. What does that do to a downstream endpoint recovering from an outage?",
+   a:"Every queued event retries on the same doubling schedule, so the whole backlog hits the endpoint in synchronised waves — a thundering herd that can knock it straight back over. You want random jitter and a max delay cap.",
+   src:"src/webhooks/retry.ts:18-24",
+   k:["jitter","thundering herd","same time","synchron","wave","cap","overwhelm","spike","random","retry storm"]},
+  {h:1, q:"<code>sleep(nextDelay(attempt))</code> runs even after the final failed attempt. Why does that matter?",
+   a:"The last sleep is pure waste — nothing retries after it. With attempt 5 that's a 16-second delay before deadLetter() is reached, holding the worker and delaying the dead-letter signal for no benefit.",
+   src:"src/webhooks/retry.ts:47-50",
+   k:["waste","pointless","16","delay","dead letter","blocks","holds","no retry","after last","unnecessary"]},
+  {h:2, q:"The signature payload changed to <code>${event.id}.${body}</code> with a <code>v2=</code> prefix. What must ship before this merges?",
+   a:"It's a breaking change for every existing consumer verifying v1 signatures. You need a dual-signing window (send both headers), docs, and a deprecation deadline — otherwise every customer's verification fails the moment this deploys.",
+   src:"src/webhooks/deliver.ts:61-65",
+   k:["breaking","consumers","both","dual","v1","migration","notify","deprecat","verification fail","window"]},
+  {h:3, q:"<code>deliver</code> returns <code>retryable:false</code> for 4xx, but the retry loop never reads it. What's the consequence?",
+   a:"A permanent 400/410 is retried all 6 times with full backoff, wasting ~31 seconds per event and spamming a client that will never accept it. The loop should bail out immediately when retryable is false.",
+   src:"src/webhooks/deliver.ts:88-92",
+   k:["retries anyway","4xx","400","permanent","never","waste","should stop","ignored","bail","spam"]}
+ ]
+},
+{
+ id:"shadcn", repo:"shadcn-ui/ui", num:4402, url:"https://github.com/shadcn-ui/ui/pull/4402",
+ title:"fix: focus trap in Dialog on Safari", author:"shadcn", add:29, del:14, files:2,
+ hunks:[
+  {file:"apps/www/registry/default/ui/dialog.tsx", start:37, lines:[
+   ["ctx","React.useEffect(() => {"],
+   ["del","  contentRef.current?.focus()"],
+   ["add","  const id = requestAnimationFrame(() => {"],
+   ["add","    contentRef.current?.focus({ preventScroll: true })"],
+   ["add","  })"],
+   ["add","  return () => cancelAnimationFrame(id)"],
+   ["ctx","}, [open])"]
+  ]},
+  {file:"apps/www/registry/default/ui/dialog.tsx", start:58, lines:[
+   ["add","const focusables = content.querySelectorAll<HTMLElement>("],
+   ["add","  'a[href],button:not([disabled]),textarea,input,select,[tabindex]:not([tabindex=\"-1\"])'"],
+   ["add",")"],
+   ["add","const first = focusables[0]"],
+   ["add","const last = focusables[focusables.length - 1]"],
+   ["cm","// queried once, when the dialog opens"]
+  ]},
+  {file:"apps/www/registry/default/ui/dialog.tsx", start:74, lines:[
+   ["ctx","if (e.key === 'Tab' && e.shiftKey && document.activeElement === first) {"],
+   ["add","  e.preventDefault()"],
+   ["add","  last?.focus()"],
+   ["ctx","}"]
+  ]}
+ ],
+ qs:[
+  {h:0, q:"Why does wrapping <code>.focus()</code> in <code>requestAnimationFrame</code> fix Safari?",
+   a:"Safari ignores focus() on an element that isn't painted/focusable yet when the effect runs. Deferring one frame lets layout and the portal mount finish, so the element is really in the document and can take focus.",
+   src:"apps/www/registry/default/ui/dialog.tsx:37-43",
+   k:["not yet","paint","layout","mounted","portal","next frame","timing","dom","rendered","defer"]},
+  {h:0, q:"What does the <code>cancelAnimationFrame</code> in the cleanup prevent?",
+   a:"If the dialog closes (or open flips) before the frame runs, the callback would otherwise fire and yank focus into a now-hidden or unmounted dialog — stealing focus from whatever the user moved to.",
+   src:"apps/www/registry/default/ui/dialog.tsx:41",
+   k:["closed","unmount","steal","focus back","hidden","race","before","cancel","flip","no longer"]},
+  {h:1, q:"The focusable list is queried once on open. What breaks with an async-loaded form inside the dialog?",
+   a:"first/last are stale. Controls rendered after open aren't in the NodeList, so Tab can escape the trap or wrap to the wrong element. The query needs to run on each Tab, or use a MutationObserver.",
+   src:"apps/www/registry/default/ui/dialog.tsx:58-64",
+   k:["stale","new elements","not included","escape","wrong","re-query","dynamic","mutation","after","missed"]},
+  {h:1, q:"The selector includes <code>[tabindex]:not([tabindex=\"-1\"])</code> but doesn't filter hidden elements. Why is that a bug?",
+   a:"A display:none or visibility:hidden control still matches the selector, so last can be an invisible element. Shift+Tab then focuses nothing visible and the user's focus ring vanishes — it looks like the trap broke.",
+   src:"apps/www/registry/default/ui/dialog.tsx:58-60",
+   k:["hidden","display:none","invisible","not visible","focus nothing","disappear","offsetparent","aria-hidden","lost","filter"]},
+  {h:2, q:"Only the shift+Tab-on-first case is handled here. What's missing for a complete trap?",
+   a:"The forward direction: Tab on the last element must preventDefault and focus first. Without it, focus walks out of the dialog into the page behind — plus focus should return to the trigger on close.",
+   src:"apps/www/registry/default/ui/dialog.tsx:74-78",
+   k:["forward","tab on last","wrap","first","escapes","behind","other direction","restore","trigger","missing"]}
+ ]
+}
+];
+
+var TIERS={5:"You wrote this",4:"Reviewer-ready",3:"Mostly yours",2:"Deferral",1:"Cognitive surrender",0:"Who wrote this?"};
+var SEED=[
+ {repo:"vercel/swr",num:3011,score:4,ts:Date.now()-4*864e5},
+ {repo:"openai/openai-node",num:1288,score:1,ts:Date.now()-7*864e5},
+ {repo:"prisma/prisma",num:25740,score:3,ts:Date.now()-9*864e5}
+];
+var LSKEY="surrender.attempts.v1";
+
+/* ---------------- storage ---------------- */
+function readHist(){
+  try{
+    var raw=localStorage.getItem(LSKEY);
+    if(!raw){ localStorage.setItem(LSKEY,JSON.stringify(SEED)); return SEED.slice(); }
+    var v=JSON.parse(raw);
+    return Array.isArray(v)?v:SEED.slice();
+  }catch(e){ return SEED.slice(); }
+}
+function writeHist(h){ try{ localStorage.setItem(LSKEY,JSON.stringify(h)); }catch(e){} }
+
+/* ---------------- helpers ---------------- */
+function $(id){ return document.getElementById(id); }
+function esc(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+function show(id){
+  ["s1","s2","s3","s4"].forEach(function(x){ $(x).classList.add("hide"); });
+  $(id).classList.remove("hide");
+  window.scrollTo(0,0);
+}
+function hl(line){
+  var s=esc(line);
+  s=s.replace(/(&quot;|&#39;|'[^']*'|"[^"]*"|`[^`]*`)/g,'<span class="st">$1</span>');
+  s=s.replace(/\b(const|let|var|function|return|if|else|async|await|export|import|new|def|class|while|for|in|is|None|null|true|false|create|policy|select|update|using|check|alter|table|enable|row|level|security|from|where|not)\b/g,'<span class="kw">$1</span>');
+  s=s.replace(/\b([A-Za-z_$][\w$]*)\(/g,'<span class="fn">$1</span>(');
+  return s;
+}
+function renderHunk(h){
+  var n=h.start, out="";
+  for(var i=0;i<h.lines.length;i++){
+    var t=h.lines[i][0], txt=h.lines[i][1];
+    var cls = t==="add"?"ln add":(t==="del"?"ln del":"ln");
+    var mark = t==="add"?"+":(t==="del"?"-":" ");
+    var body = t==="cm" ? '<span class="cm">'+esc(txt)+'</span>' : hl(txt);
+    out+='<span class="'+cls+'"><span class="num">'+n+'</span>'+mark+' '+body+'</span>';
+    if(t!=="del") n++;
+  }
+  return '<div class="fp">'+esc(h.file)+' · line '+h.start+'</div><pre class="code">'+out+'</pre>';
+}
+
+/* ---------------- state ---------------- */
+var state={pr:null,i:0,results:[],t0:0,timer:null,elapsed:0};
+
+/* ---------------- screen 1 ---------------- */
+function findPR(url){
+  var u=String(url||"").trim();
+  if(!u) return {err:"Paste a GitHub pull request URL to get started."};
+  var m=u.match(/github\.com\/([\w.-]+)\/([\w.-]+)\/pull\/(\d+)/i);
+  if(!m) return {err:"That doesn't look like a PR URL. Try https://github.com/owner/repo/pull/123"};
+  var repo=(m[1]+"/"+m[2]).toLowerCase(), num=parseInt(m[3],10);
+  for(var i=0;i<PRS.length;i++){
+    if(PRS[i].repo.toLowerCase()===repo && PRS[i].num===num) return {pr:PRS[i]};
+  }
+  return {err:"Demo build: only the 5 sample PRs below are cached. Tap one to try it."};
+}
+function buildChips(){
+  var c=$("chips"); c.innerHTML="";
+  [PRS[1],PRS[2],PRS[3]].forEach(function(p){
+    var b=document.createElement("button");
+    b.className="chip"; b.type="button";
+    b.innerHTML='<b>'+esc(p.repo)+' #'+p.num+'</b> <span>+'+p.add+' −'+p.del+'</span><br><span>'+esc(p.title)+'</span>';
+    b.addEventListener("click",function(){ $("url").value=p.url; $("err").textContent=""; start(p); });
+    c.appendChild(b);
+  });
+}
+
+/* ---------------- screen 2 ---------------- */
+function start(pr){
+  state={pr:pr,i:0,results:[],t0:0,timer:null,elapsed:0};
+  $("lrepo").textContent=pr.repo+" #"+pr.num+" · "+pr.title;
+  ["l1","l2","l3"].forEach(function(x){ $(x).classList.remove("on"); });
+  $("lbar").style.width="0%";
+  show("s2");
+  setTimeout(function(){ $("lbar").style.width="100%"; },30);
+  $("l1").querySelector("span:last-child").textContent="Fetching diff… "+pr.files+" files, +"+pr.add+" −"+pr.del;
+  setTimeout(function(){ $("l1").classList.add("on"); },150);
+  setTimeout(function(){ $("l2").classList.add("on"); },620);
+  setTimeout(function(){ $("l3").classList.add("on"); },1050);
+  setTimeout(function(){ beginQuiz(); },1250);
+}
+
+/* ---------------- screen 3 ---------------- */
+function beginQuiz(){
+  state.t0=Date.now();
+  if(state.timer) clearInterval(state.timer);
+  state.timer=setInterval(tick,1000);
+  show("s3"); tick(); renderQ();
+}
+function tick(){
+  state.elapsed=Math.floor((Date.now()-state.t0)/1000);
+  var m=Math.floor(state.elapsed/60), s=state.elapsed%60;
+  $("qtimer").textContent=m+":"+(s<10?"0":"")+s;
+}
+function renderQ(){
+  var pr=state.pr, q=pr.qs[state.i];
+  $("qprog").textContent=(state.i+1)+" of 5";
+  $("qbar").style.width=((state.i)/5*100)+"%";
+  $("qdiff").innerHTML=renderHunk(pr.hunks[q.h]);
+  $("qtext").innerHTML=q.q;
+  $("ans").value=""; $("qerr").textContent="";
+  $("answerBox").classList.remove("hide");
+  $("verdictBox").innerHTML="";
+}
+function grade(text,q){
+  var t=String(text||"").toLowerCase();
+  if(t.trim().length<3) return {v:"FAIL",hits:0};
+  var hits=0;
+  for(var i=0;i<q.k.length;i++){ if(t.indexOf(q.k[i])>-1) hits++; }
+  return {v: hits>=2?"PASS":(hits===1?"PARTIAL":"FAIL"), hits:hits};
+}
+function submit(skipped){
+  var q=state.pr.qs[state.i];
+  var txt=$("ans").value;
+  if(!skipped && txt.trim().length<3){
+    $("qerr").textContent="Write at least a few words, or tap “Skip — I don't know”.";
+    return;
+  }
+  var g = skipped ? {v:"FAIL",hits:0} : grade(txt,q);
+  state.results[state.i]={v:g.v,q:q,skipped:!!skipped,answer:txt.trim()};
+  showVerdict();
+}
+function showVerdict(){
+  var r=state.results[state.i], q=r.q, last=(state.i===4);
+  $("answerBox").classList.add("hide");
+  var html='<div class="verdict">'+
+    '<span class="vchip '+r.v+'">'+r.v+'</span>'+
+    (r.skipped?' <span class="muted">skipped</span>':'')+
+    '<div class="vlab">Model answer</div><div style="font-size:13.5px">'+esc(q.a)+'</div>'+
+    '<div class="vlab">From</div><div class="src">'+esc(q.src)+'</div>'+
+    '<div class="row" style="margin-top:14px">'+
+      (r.v==="PASS"?'':'<button class="btn sec sm" id="iwasright">I think I was right</button>')+
+      '<button class="btn sm" id="nextq">'+(last?"See my result":"Next question")+'</button>'+
+    '</div></div>';
+  $("verdictBox").innerHTML=html;
+  $("qbar").style.width=((state.i+1)/5*100)+"%";
+  var iw=$("iwasright");
+  if(iw) iw.addEventListener("click",function(){
+    var cur=state.results[state.i];
+    cur.v = cur.v==="FAIL" ? "PARTIAL" : "PASS";
+    cur.bumped=true;
+    showVerdict();
+  });
+  $("nextq").addEventListener("click",function(){
+    if(last){ finish(); } else { state.i++; renderQ(); window.scrollTo(0,0); }
+  });
+}
+
+/* ---------------- screen 4 ---------------- */
+function finish(){
+  if(state.timer) clearInterval(state.timer);
+  var score=0;
+  state.results.forEach(function(r){ if(r.v==="PASS") score++; });
+  state.score=score;
+  var h=readHist();
+  h.push({repo:state.pr.repo,num:state.pr.num,score:score,ts:Date.now()});
+  writeHist(h);
+  renderPoster(); renderBreakdown(); renderStreak($("streak2")); show("s4");
+}
+function fmtTime(s){ var m=Math.floor(s/60); return m+"m "+(s%60)+"s"; }
+function renderPoster(){
+  var pr=state.pr, sc=state.score;
+  var dots=state.results.map(function(r){ return '<div class="dot '+r.v+'"></div>'; }).join("");
+  $("poster").innerHTML=
+    '<div><div class="pt">Surrender · cognitive surrender test</div></div>'+
+    '<div><div class="score">'+sc+' / 5</div><div class="tier">'+esc(TIERS[sc])+'</div>'+
+    '<div class="dots">'+dots+'</div></div>'+
+    '<div class="meta">'+esc(pr.repo)+' #'+pr.num+' — '+esc(pr.title)+'<br>'+
+    '+'+pr.add+' −'+pr.del+' · answered in '+fmtTime(state.elapsed)+'</div>';
+}
+function renderBreakdown(){
+  var out='<div class="muted" style="margin-bottom:6px">Per-question breakdown <span class="demo">Demo data</span></div>';
+  state.results.forEach(function(r,i){
+    out+='<div class="brk"><div class="t"><span class="pill '+r.v+'">'+r.v+'</span>'+
+      '<div><div>'+r.q.q.replace(/<\/?code>/g,"`")+'</div>'+
+      '<div class="src" style="margin-top:5px">'+esc(r.q.src)+(r.bumped?' · self-marked':'')+'</div></div></div></div>';
+  });
+  $("breakdown").innerHTML=out;
+}
+
+/* ---------------- streak ---------------- */
+function renderStreak(el){
+  if(!el) return;
+  var h=readHist().slice(-8);
+  if(!h.length){ el.classList.add("hide"); return; }
+  el.classList.remove("hide");
+  var sum=0; h.forEach(function(a){ sum+=a.score; });
+  var avg=(sum/h.length).toFixed(1);
+  var clean=null;
+  for(var i=h.length-1;i>=0;i--){ if(h[i].score>=4){ clean=h[i]; break; } }
+  var daysAgo = clean ? Math.max(0,Math.round((Date.now()-clean.ts)/864e5)) : null;
+  var cleanTxt = clean ? (daysAgo===0?"today":daysAgo+" day"+(daysAgo===1?"":"s")+" ago") : "never";
+  var recent=h.filter(function(a){ return Date.now()-a.ts < 8*864e5; });
+  // sparkline
+  var w=240,hh=34,pad=4,n=h.length;
+  var pts=h.map(function(a,i){
+    var x=pad+(n===1?w-2*pad:(i*(w-2*pad)/(n-1)));
+    var y=pad+(1-a.score/5)*(hh-2*pad);
+    return x.toFixed(1)+","+y.toFixed(1);
+  }).join(" ");
+  var circles=h.map(function(a,i){
+    var x=pad+(n===1?w-2*pad:(i*(w-2*pad)/(n-1)));
+    var y=pad+(1-a.score/5)*(hh-2*pad);
+    var c=a.score>=4?"var(--pass)":(a.score>=2?"var(--part)":"var(--fail)");
+    return '<circle cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="3" fill="'+c+'"/>';
+  }).join("");
+  el.innerHTML='<div class="l">This week: '+recent.length+' PRs · avg '+avg+' / 5 · last clean explain: '+cleanTxt+'</div>'+
+   '<svg class="spark" viewBox="0 0 '+w+' '+hh+'" width="100%" height="40" preserveAspectRatio="none" aria-label="score history">'+
+   '<polyline points="'+pts+'" fill="none" stroke="var(--acc)" stroke-width="1.8" stroke-linejoin="round"/>'+circles+'</svg>'+
+   '<div class="muted" style="margin-bottom:10px">'+h.map(function(a){return a.repo.split("/")[1]+" "+a.score;}).join(" · ")+'</div>'+
+   '<button class="btn sec sm" data-again="1">Quiz another PR</button>';
+  var b=el.querySelector("[data-again]");
+  if(b) b.addEventListener("click",function(){
+    renderStreak($("streak1")); show("s1");
+  });
+}
+
+/* ---------------- share ---------------- */
+function downloadPNG(){
+  try{
+    var W=1200,H=600,c=document.createElement("canvas");
+    c.width=W; c.height=H;
+    var x=c.getContext("2d");
+    var g=x.createLinearGradient(0,0,W,H);
+    g.addColorStop(0,"#0d1117"); g.addColorStop(.6,"#17222e"); g.addColorStop(1,"#0b1a24");
+    x.fillStyle=g; x.fillRect(0,0,W,H);
+    x.strokeStyle="#233140"; x.lineWidth=3; x.strokeRect(1.5,1.5,W-3,H-3);
+    var mono='600 28px ui-monospace, Menlo, Consolas, monospace';
+    x.fillStyle="#7dd3fc"; x.font='600 22px ui-monospace, Menlo, monospace';
+    x.fillText("SURRENDER · COGNITIVE SURRENDER TEST",60,80);
+    x.fillStyle="#e9f1f7"; x.font='800 140px ui-monospace, Menlo, monospace';
+    x.fillText(state.score+" / 5",60,300);
+    x.fillStyle="#7dd3fc"; x.font='700 44px ui-monospace, Menlo, monospace';
+    x.fillText(TIERS[state.score],60,365);
+    for(var i=0;i<5;i++){
+      var v=state.results[i].v;
+      x.fillStyle = v==="PASS"?"#3fb950":(v==="PARTIAL"?"#d29922":"#f85149");
+      x.beginPath(); x.arc(76+i*48,420,15,0,Math.PI*2); x.fill();
+    }
+    x.fillStyle="#9fb0c0"; x.font=mono;
+    var t=state.pr.repo+" #"+state.pr.num;
+    x.fillText(t,60,500);
+    var title=state.pr.title; if(title.length>52) title=title.slice(0,52)+"…";
+    x.fillText(title,60,538);
+    x.fillStyle="#6b7b8a"; x.font='400 24px ui-monospace, Menlo, monospace';
+    x.fillText("+"+state.pr.add+" −"+state.pr.del+" · answered in "+fmtTime(state.elapsed),60,576);
+    var a=document.createElement("a");
+    a.download="surrender-"+state.pr.repo.replace("/","-")+"-"+state.pr.num+".png";
+    a.href=c.toDataURL("image/png");
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  }catch(e){
+    alert("Couldn't render the image in this browser — screenshot the card instead.");
+  }
+}
+function postX(){
+  var txt="I scored "+state.score+"/5 explaining "+state.pr.repo+" #"+state.pr.num+" — \""+state.pr.title+"\".\nTier: "+TIERS[state.score]+".\nCan you explain the code you merged?";
+  var u="https://twitter.com/intent/tweet?text="+encodeURIComponent(txt);
+  var w=window.open(u,"_blank","noopener");
+  if(!w) alert("Popup blocked — copy this:\n\n"+txt);
+}
+
+/* ---------------- wire up ---------------- */
+buildChips();
+renderStreak($("streak1"));
+$("go").addEventListener("click",function(){
+  var r=findPR($("url").value);
+  if(r.err){ $("err").textContent=r.err; return; }
+  $("err").textContent=""; start(r.pr);
+});
+$("url").addEventListener("keydown",function(e){ if(e.key==="Enter"){ $("go").click(); } });
+$("submit").addEventListener("click",function(){ submit(false); });
+$("skip").addEventListener("click",function(){ submit(true); });
+$("png").addEventListener("click",downloadPNG);
+$("xpost").addEventListener("click",postX);
+})();
+</script>
+</body>
+</html>

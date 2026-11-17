@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Declined — coverage-decision record</title>
+<style>
+:root{
+  --bg:#f4f5f7; --panel:#ffffff; --ink:#15181d; --muted:#5d6672; --line:#d8dce2;
+  --accent:#1d4ed8; --accent-ink:#ffffff;
+  --green-bg:#e3f5e8; --green-ink:#17623a; --green-line:#9fd8b4;
+  --amber-bg:#fdf1dc; --amber-ink:#8a5a07; --amber-line:#edc27a;
+  --red-bg:#fdE6E6; --red-ink:#9b1c1c; --red-line:#f0a9a9;
+  --grey-bg:#eceef1;
+  --hl:#fff3b0;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#111418; --panel:#1a1e24; --ink:#e9edf2; --muted:#98a2b0; --line:#2c333c;
+    --accent:#5b8def; --accent-ink:#0b1016;
+    --green-bg:#153226; --green-ink:#7fdba6; --green-line:#22543d;
+    --amber-bg:#352810; --amber-ink:#f0c478; --amber-line:#5c4518;
+    --red-bg:#3a1a1a; --red-ink:#f3a0a0; --red-line:#5e2626;
+    --grey-bg:#222830;
+    --hl:#5d5212;
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--ink);
+  font:14px/1.5 ui-sans-serif,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  -webkit-text-size-adjust:100%;
+}
+.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace}
+header.top{
+  position:sticky; top:0; z-index:30; background:var(--panel);
+  border-bottom:1px solid var(--line); padding:10px 14px;
+}
+.brandline{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px}
+.brand{font-weight:700;letter-spacing:-.2px;font-size:16px}
+.brand .dot{color:var(--accent)}
+.ctx{color:var(--muted);font-size:12.5px}
+.tag{display:inline-block;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;
+  border:1px solid var(--line);color:var(--muted);border-radius:999px;padding:2px 8px}
+main{max-width:1180px;margin:0 auto;padding:14px 14px 40px}
+section{margin-bottom:26px}
+h2.sec{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);
+  margin:0 0 8px;display:flex;align-items:center;gap:8px}
+h2.sec .num{background:var(--ink);color:var(--bg);border-radius:4px;padding:1px 6px;font-size:11px}
+.grid2{display:grid;grid-template-columns:1fr;gap:14px}
+@media(min-width:900px){.grid2{grid-template-columns:1.25fr .95fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:8px}
+.card .hd{padding:9px 12px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;
+  align-items:center;gap:8px;font-weight:600;font-size:12.5px}
+.card .hd small{font-weight:400;color:var(--muted)}
+#transcript{max-height:360px;overflow:auto;padding:8px 4px 10px;scroll-behavior:smooth}
+.ln{display:flex;gap:8px;padding:3px 10px;border-radius:4px}
+.ln .who{flex:0 0 72px;color:var(--muted);font-size:11.5px;text-align:right;padding-top:1px}
+.ln .tx{flex:1;font-size:13px}
+.ln.sys .tx{color:var(--muted);font-style:italic}
+.ln.hit{background:var(--hl);outline:1px solid var(--amber-line)}
+.epicbox{background:var(--grey-bg);border:1px dashed var(--line);border-radius:6px;padding:12px;margin:12px}
+.epicbox .lbl{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:6px}
+.epicbox .txt{font-size:13.5px}
+.warn{color:#c0392b;font-size:12.5px;padding:0 12px 14px;font-weight:600}
+@media (prefers-color-scheme: dark){.warn{color:#f3a0a0}}
+.btn{
+  appearance:none;border:1px solid var(--line);background:var(--panel);color:var(--ink);
+  border-radius:6px;padding:10px 14px;font-size:13.5px;font-weight:600;cursor:pointer;min-height:44px;
+}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn.small{min-height:36px;padding:6px 10px;font-size:12.5px;font-weight:600}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.extractbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding:14px;background:var(--panel);
+  border:1px solid var(--line);border-radius:8px}
+.extractbar .hint{color:var(--muted);font-size:12.5px}
+.proc{display:none;padding:18px 14px}
+.proc.on{display:block}
+.bar{height:6px;background:var(--grey-bg);border-radius:99px;overflow:hidden}
+.bar i{display:block;height:100%;width:0%;background:var(--accent);transition:width .15s linear}
+.proc .steps{margin-top:10px;font-size:12.5px;color:var(--muted);min-height:20px}
+#resultWrap{display:none}
+#resultWrap.on{display:block}
+.tablewrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:760px}
+th,td{border-bottom:1px solid var(--line);padding:8px 9px;vertical-align:top;text-align:left;font-size:12.8px}
+th{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);background:var(--panel);
+  position:sticky;top:0;z-index:5}
+tr.done td{background:rgba(125,125,125,.06)}
+.cov{font-weight:600}
+.flag{display:block;margin-top:3px;font-size:11.5px;color:var(--amber-ink)}
+.chip{display:inline-block;border-radius:999px;padding:2px 9px;font-size:11px;font-weight:700;
+  letter-spacing:.03em;border:1px solid transparent;white-space:nowrap}
+.chip.green{background:var(--green-bg);color:var(--green-ink);border-color:var(--green-line)}
+.chip.amber{background:var(--amber-bg);color:var(--amber-ink);border-color:var(--amber-line)}
+.chip.red{background:var(--red-bg);color:var(--red-ink);border-color:var(--red-line)}
+.quote{background:transparent;border:0;padding:0;margin:0;text-align:left;color:var(--ink);
+  font:inherit;font-size:12.4px;cursor:pointer;border-bottom:1px dotted var(--accent)}
+.quote:hover{background:var(--hl)}
+.noq{color:var(--muted);font-size:12.2px}
+select{font:inherit;font-size:12.5px;padding:7px 6px;min-height:40px;border:1px solid var(--line);
+  border-radius:5px;background:var(--panel);color:var(--ink);width:100%;max-width:210px}
+.conf{white-space:nowrap}
+.confbar{display:block;height:4px;width:54px;background:var(--grey-bg);border-radius:9px;margin-top:4px}
+.confbar i{display:block;height:100%;background:var(--accent);border-radius:9px}
+.tick{width:40px;height:40px;border-radius:6px;border:1px solid var(--line);background:var(--panel);
+  cursor:pointer;font-size:16px;line-height:1;color:var(--muted)}
+.tick.on{background:var(--green-bg);border-color:var(--green-line);color:var(--green-ink)}
+.reviewbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;
+  padding:11px 12px;border-top:1px solid var(--line);background:var(--panel);position:sticky;bottom:0}
+.counter{font-size:12.8px;font-weight:600}
+.counter span{color:var(--muted);font-weight:400}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;padding:10px 12px;border-bottom:1px solid var(--line)}
+.tab{border:1px solid var(--line);background:var(--panel);color:var(--muted);border-radius:6px;
+  padding:9px 12px;font-size:12.8px;font-weight:600;cursor:pointer;min-height:42px}
+.tab.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.pane{display:none;padding:12px}
+.pane.on{display:block}
+pre.note{white-space:pre-wrap;word-wrap:break-word;background:var(--grey-bg);border:1px solid var(--line);
+  border-radius:6px;padding:12px;font-size:12.3px;max-height:420px;overflow:auto;margin:0}
+.rowbtns{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;align-items:center}
+.ok{color:var(--green-ink);font-size:12.3px;font-weight:600}
+.email{border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.email .ehd{padding:10px 12px;border-bottom:1px solid var(--line);background:var(--grey-bg);font-size:12.3px}
+.email .ebody{padding:12px;font-size:13px}
+.email ul{list-style:none;margin:10px 0;padding:0}
+.email li{display:flex;gap:9px;padding:8px 0;border-bottom:1px dotted var(--line)}
+.box{flex:0 0 16px;height:16px;width:16px;border:1.5px solid var(--muted);border-radius:3px;margin-top:2px}
+.sig{margin-top:14px;border-top:1px solid var(--line);padding-top:12px;color:var(--muted);font-size:12.3px}
+.sigline{display:inline-block;border-bottom:1px solid var(--muted);min-width:200px;height:22px;vertical-align:bottom}
+.strip{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;padding:9px 12px;background:var(--green-bg);
+  color:var(--green-ink);border:1px solid var(--green-line);border-radius:6px;font-size:12.3px;font-weight:600;margin-bottom:10px}
+.subnote{color:var(--muted);font-size:12px;margin-top:8px}
+.tl{border-left:2px solid var(--line);margin-left:8px;padding-left:14px}
+.tlitem{position:relative;padding:10px 0}
+.tlitem::before{content:"";position:absolute;left:-21px;top:16px;width:9px;height:9px;border-radius:99px;
+  background:var(--accent)}
+.tlitem h4{margin:0 0 4px;font-size:13px}
+.tlitem p{margin:0;color:var(--muted);font-size:12.4px}
+.switch{display:flex;align-items:center;gap:10px;margin-top:10px;cursor:pointer;min-height:44px}
+.track{width:44px;height:26px;border-radius:99px;background:var(--grey-bg);border:1px solid var(--line);
+  position:relative;transition:background .15s}
+.knob{position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:99px;background:var(--muted);
+  transition:left .15s,background .15s}
+.switch.on .track{background:var(--green-bg);border-color:var(--green-line)}
+.switch.on .knob{left:20px;background:var(--green-ink)}
+.empty{padding:26px 14px;text-align:center;color:var(--muted);font-size:13px}
+footer{color:var(--muted);font-size:11.5px;text-align:center;padding:18px 10px 30px;border-top:1px solid var(--line)}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:18px;background:var(--ink);color:var(--bg);
+  padding:10px 16px;border-radius:999px;font-size:12.8px;font-weight:600;opacity:0;pointer-events:none;
+  transition:opacity .2s;z-index:60}
+.toast.on{opacity:1}
+.demo{font-size:10.5px;color:var(--muted);border:1px solid var(--line);border-radius:4px;padding:1px 5px}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="brandline">
+    <div class="brand">Declined<span class="dot">.</span></div>
+    <div class="ctx">Riverbend Manufacturing · commercial renewal · 14 Nov 2026 · account manager: Dana Ruiz</div>
+    <span class="demo">Demo data</span>
+  </div>
+</header>
+
+<main>
+  <p class="ctx" style="margin:4px 0 16px">Turns a messy renewal conversation into a typed, defensible coverage-decision record.</p>
+
+  <!-- SECTION 1 -->
+  <section>
+    <h2 class="sec"><span class="num">1</span> Before — what actually happened on the call</h2>
+    <div class="grid2">
+      <div class="card">
+        <div class="hd"><span>Call recording transcript <small>· 14 Nov 2026, 10:04 — 10:26</small></span><span class="tag">excerpt</span></div>
+        <div id="transcript"></div>
+      </div>
+      <div>
+        <div class="card">
+          <div class="hd"><span>What goes in Applied Epic today</span><span class="tag">status quo</span></div>
+          <div class="epicbox">
+            <div class="lbl">Activity note · RENEWAL · D.Ruiz</div>
+            <div class="txt mono">"Renewal mtg w/ Tom. Discussed options. Will follow up."</div>
+          </div>
+          <div class="warn">Three years from now this is your entire defence.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 2 -->
+  <section>
+    <h2 class="sec"><span class="num">2</span> Extract the coverage decisions</h2>
+    <div class="extractbar" id="extractBar">
+      <button class="btn primary" id="extractBtn">Extract coverage decisions</button>
+      <span class="hint">Reads the transcript, types every coverage touched, cites the verbatim line.</span>
+    </div>
+
+    <div class="card proc" id="proc" style="margin-top:12px">
+      <div class="bar"><i id="barFill"></i></div>
+      <div class="steps mono" id="procStep">Loading transcript…</div>
+    </div>
+
+    <div id="resultWrap" style="margin-top:12px">
+      <div class="card">
+        <div class="hd"><span>Coverage-decision record <small>· 11 items detected</small></span><span class="tag">draft — unfiled</span></div>
+        <div class="tablewrap">
+          <table>
+            <thead>
+              <tr>
+                <th style="min-width:170px">Coverage</th>
+                <th style="min-width:130px">Limit discussed</th>
+                <th style="min-width:200px">Status</th>
+                <th style="min-width:230px">Evidence</th>
+                <th>Conf.</th>
+                <th>OK</th>
+              </tr>
+            </thead>
+            <tbody id="tbody"></tbody>
+          </table>
+        </div>
+        <div class="reviewbar">
+          <div class="counter" id="counter">Reviewed 0 of 11 — <span>licensed review required before filing</span></div>
+          <div class="rowbtns" style="margin:0">
+            <button class="btn small" id="approveAll">Approve all</button>
+            <button class="btn small primary" id="fileBtn" disabled>File record</button>
+          </div>
+        </div>
+      </div>
+      <div id="filedMsg" class="ok" style="display:none;margin-top:8px">✓ Filed to Applied Epic 14 Nov 2026 16:41 by Dana Ruiz (licensed, NY-8841209). Record locked, revision history retained.</div>
+    </div>
+  </section>
+
+  <!-- SECTION 3 -->
+  <section id="sec3">
+    <h2 class="sec"><span class="num">3</span> After — the artefacts</h2>
+    <div class="card">
+      <div class="tabs">
+        <button class="tab on" data-pane="pA">AMS activity note</button>
+        <button class="tab" data-pane="pB">Client acknowledgment</button>
+        <button class="tab" data-pane="pC">Next renewal</button>
+      </div>
+
+      <div class="pane on" id="pA">
+        <div id="aEmpty" class="empty">Nothing to write yet — run the extraction above.</div>
+        <div id="aBody" style="display:none">
+          <div class="rowbtns">
+            <button class="btn small" id="copyNote">Copy note</button>
+            <span class="ctx">Plain text, pastes straight into an Epic activity.</span>
+          </div>
+          <pre class="note mono" id="noteOut"></pre>
+        </div>
+      </div>
+
+      <div class="pane" id="pB">
+        <div id="bEmpty" class="empty">Nothing to acknowledge yet — run the extraction above.</div>
+        <div id="bBody" style="display:none">
+          <div class="strip">
+            <span>● Sent 14 Nov 16:42</span><span>● Viewed 14 Nov 17:08</span><span>● Awaiting signature</span>
+          </div>
+          <div class="email">
+            <div class="ehd mono">
+              To: tkeeler@riverbendmfg.com · From: druiz@harbourline-ins.com<br>
+              Subject: Riverbend Manufacturing — coverage decisions you asked us to record (14 Nov 2026)
+            </div>
+            <div class="ebody">
+              <p>Tom — thanks for the time today. So we both have the same record, please confirm the items below. These are the coverages we recommended or raised that are <strong>not</strong> being bound, or that are still open.</p>
+              <ul id="ackList"></ul>
+              <div class="sig">
+                Signed: <span class="sigline"></span> &nbsp; Date: <span class="sigline" style="min-width:120px"></span><br>
+                Thomas Keeler, Chief Financial Officer, Riverbend Manufacturing
+              </div>
+            </div>
+          </div>
+          <p class="subnote">If unsigned, proof of sending is retained.</p>
+        </div>
+      </div>
+
+      <div class="pane" id="pC">
+        <div id="cEmpty" class="empty">Nothing carried forward yet — run the extraction above.</div>
+        <div id="cBody" style="display:none">
+          <div class="tl">
+            <div class="tlitem">
+              <h4>Nov 2026 — this renewal</h4>
+              <p id="tlLine">declined $5M umbrella (chose $2M) · declined cyber</p>
+            </div>
+            <div class="tlitem">
+              <h4>Nov 2027 — next renewal</h4>
+              <p id="tlNext">Re-offer queued: nothing yet.</p>
+            </div>
+          </div>
+          <div class="switch on" id="reoffer" role="switch" aria-checked="true" tabindex="0">
+            <div class="track"><div class="knob"></div></div>
+            <div><strong>Re-offer at 2027 renewal</strong><br><span class="ctx">Adds declined &amp; unresolved items to Dana's 90-day pre-renewal task list.</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>Prototype by Granted, inspired by your bookmarks</footer>
+</main>
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+"use strict";
+
+/* ---------- transcript (demo data) ---------- */
+var T = [
+["sys","", "Call recording — Riverbend Manufacturing commercial renewal. Present: Mike Halvorsen (producer), Dana Ruiz (account manager), Tom Keeler (CFO, Riverbend Manufacturing)."],
+["Mike","Mike","Tom, can you hear us alright? Dana's on too."],
+["Tom","Tom","Loud and clear. Give me one second, I'm shutting a door."],
+["Dana","Dana","No rush."],
+["Tom","Tom","Okay. Go ahead."],
+["Mike","Mike","How'd the season treat you? You still got that boat up at Lake Pleasant?"],
+["Tom","Tom","Sold it in June. Grandkid number three showed up, priorities change."],
+["Mike","Mike","Congratulations. Alright — renewal's 1 December, so I wanted to walk the program with you before we go to market."],
+["Tom","Tom","Sure. Try to keep it tight, I've got a board thing at eleven."],
+["Dana","Dana","We'll be quick. Starting with general liability — we've got you at a million per occurrence, two million aggregate, same as expiring."],
+["Tom","Tom","That's been fine. Leave it."],
+["Dana","Dana","Good. Property, the blanket's at four point two million across the two locations."],
+["Tom","Tom","Yeah, four two sounds right."],
+["Mike","Mike","Two locations — is that still accurate? I heard something about Elm Street."],
+["Tom","Tom","Oh — yeah, we took the Elm Street building in September. Eighteen thousand square feet, it's mostly racking and finished goods staging."],
+["Mike","Mike","Eighteen thousand. Okay, that's new to us."],
+["Tom","Tom","It's not fancy. Old building, we repainted, put a new roof section on the east side."],
+["Dana","Dana","Is anyone in there full time?"],
+["Tom","Tom","Two guys on days, forklift, that's about it."],
+["Mike","Mike","Dana, flag that one, we'll need values and a COPE sheet."],
+["Dana","Dana","Flagged."],
+["Tom","Tom","It's just storage, Mike."],
+["Mike","Mike","Understood, but it's storage we're not insuring yet."],
+["Tom","Tom","Fair."],
+["Dana","Dana","While we're there — business interruption. Right now you're on an actual loss sustained form, and I'd like to talk about the period of restoration."],
+["Tom","Tom","Meaning what."],
+["Dana","Dana","If the Burnside plant goes down, twelve months of ALS is the standard. With the Elm Street staging in the mix, your recovery could run longer."],
+["Tom","Tom","Hm."],
+["Mike","Mike","We can quote an extended period endorsement, it's not a huge number."],
+["Tom","Tom","Send me what it costs and I'll look."],
+["Dana","Dana","Will do."],
+["Mike","Mike","Auto. We show nine vehicles on the schedule."],
+["Tom","Tom","Oh, the truck, yeah we picked one up in August. The box truck."],
+["Mike","Mike","August. What is it?"],
+["Tom","Tom","Twenty twenty-four, I'd have to get you the VIN from Rosa."],
+["Dana","Dana","I'll email Rosa this afternoon."],
+["Tom","Tom","Does it matter? It's barely been out."],
+["Mike","Mike","It matters if it's in a wreck."],
+["Tom","Tom","Alright."],
+["Dana","Dana","Related — hired and non-owned. Your sales folks are using personal cars for customer visits, right?"],
+["Tom","Tom","Some of them, sure. Kyle drives everywhere."],
+["Dana","Dana","That's an exposure with no coverage behind it today. I'd recommend we add hired and non-owned."],
+["Tom","Tom","What's it run?"],
+["Dana","Dana","Usually a few hundred."],
+["Tom","Tom","Put it in the proposal."],
+["Mike","Mike","Umbrella. You're at two million excess. With the new location, the extra truck, and the revenue up — I want to move you to five."],
+["Tom","Tom","Five."],
+["Mike","Mike","Five. Your contracts with the Thorne account already ask for more than two on paper, by the way."],
+["Tom","Tom","Two's fine, we've never had anything."],
+["Mike","Mike","Tom, I'd really rather —"],
+["Tom","Tom","Mike. Two's fine."],
+["Mike","Mike","Alright. I'm going to note that I recommended five."],
+["Tom","Tom","Note whatever you like."],
+["Dana","Dana","Cyber. We quoted a million last year and it didn't get bound. You've got EDI with two of your big customers now."],
+["Tom","Tom","Let's hold off on the cyber thing for now, money's tight."],
+["Dana","Dana","I understand. I'll re-quote anyway so you have the number."],
+["Tom","Tom","You can send it, I'm not buying it this year."],
+["Mike","Mike","Employment practices? You're at about ninety employees now."],
+["Tom","Tom","Ninety-four."],
+["Mike","Mike","A million EPLI is cheap at that headcount."],
+["Tom","Tom","Not this year. We had the HR consultant in, we're fine."],
+["Dana","Dana","Workers comp, the mod came back at point nine one, and we'll keep the existing program."],
+["Tom","Tom","That one I like."],
+["Dana","Dana","One more thing — the Elm Street site. On the map it's sitting pretty close to Kettle Creek."],
+["Tom","Tom","The creek? It's across the road."],
+["Dana","Dana","Do you know the flood zone?"],
+["Tom","Tom","No idea. The seller never said anything."],
+["Mike","Mike","Tom, I've got the board call bumping us. Dana, can you pull the flood determination?"],
+["Dana","Dana","I'll pull it."],
+["Tom","Tom","Yeah, look at it and tell me."],
+["Mike","Mike","We'll send something over."],
+["Tom","Tom","Perfect. Thanks both. I've got to jump."],
+["Dana","Dana","Thanks Tom."],
+["sys","","Call ended 10:26. Duration 22 min."]
+];
+
+var tEl = document.getElementById("transcript");
+var frag = document.createDocumentFragment();
+T.forEach(function(r,i){
+  var d=document.createElement("div");
+  d.className="ln"+(r[0]==="sys"?" sys":"");
+  d.id="ln"+i;
+  var w=document.createElement("div"); w.className="who"; w.textContent=r[1];
+  var x=document.createElement("div"); x.className="tx"; x.textContent=r[2];
+  d.appendChild(w); d.appendChild(x); frag.appendChild(d);
+});
+tEl.appendChild(frag);
+
+/* ---------- rows (demo data) ---------- */
+var ROWS = [
+ {id:1, cov:"General Liability", lim:"$1M / $2M", st:"ACCEPTED", q:"That's been fine. Leave it.", line:11, conf:92, flag:""},
+ {id:2, cov:"Commercial Property", lim:"$4.2M blanket", st:"ACCEPTED", q:"Yeah, four two sounds right.", line:13, conf:95, flag:""},
+ {id:3, cov:"NEW: Warehouse, 18,000 sq ft, Elm St", lim:"values TBC", st:"UNRESOLVED", q:"we took the Elm Street building in September", line:15, conf:71, flag:"Flag: not on the schedule"},
+ {id:4, cov:"Business Interruption", lim:"12 months ALS", st:"OFFERED, no decision — UNRESOLVED", q:"Send me what it costs and I'll look.", line:31, conf:64, flag:""},
+ {id:5, cov:"Commercial Auto — add 2024 box truck", lim:"schedule amendment", st:"UNRESOLVED", q:"oh, the truck, yeah we picked one up in August", line:34, conf:88, flag:"Flag: vehicle may be unscheduled"},
+ {id:6, cov:"Hired & Non-Owned Auto", lim:"—", st:"RECOMMENDED", q:"Put it in the proposal.", line:46, conf:80, flag:""},
+ {id:7, cov:"Umbrella / Excess", lim:"$5M recommended, $2M chosen", st:"DECLINED (recommended higher limit)", q:"two's fine, we've never had anything", line:51, conf:96, flag:"Flag: contract requirement may exceed $2M"},
+ {id:8, cov:"Cyber Liability", lim:"$1M", st:"DECLINED", q:"let's hold off on the cyber thing for now", line:56, conf:97, flag:""},
+ {id:9, cov:"EPLI", lim:"$1M", st:"DECLINED", q:"Not this year. We had the HR consultant in, we're fine.", line:62, conf:90, flag:""},
+ {id:10, cov:"Flood (new Elm St location, near creek)", lim:"—", st:"NOT DISCUSSED", q:"", line:66, conf:99, flag:"Flag: exposure identified, no record of offer"},
+ {id:11, cov:"Workers Comp", lim:"existing program", st:"ACCEPTED", q:"That one I like.", line:64, conf:93, flag:""}
+];
+
+var STATUSES = ["ACCEPTED","RECOMMENDED","UNRESOLVED","OFFERED, no decision — UNRESOLVED","DECLINED","DECLINED (recommended higher limit)","NOT DISCUSSED"];
+
+function kind(st){
+  if(st.indexOf("DECLINED (recommended")===0) return "red";
+  if(st==="DECLINED") return "red";
+  if(st==="ACCEPTED") return "green";
+  return "amber";
+}
+function isOpen(st){ return st.indexOf("UNRESOLVED")>-1 || st==="NOT DISCUSSED" || st==="RECOMMENDED"; }
+function isDeclined(st){ return st.indexOf("DECLINED")===0; }
+
+var state = ROWS.map(function(r){ return {id:r.id, st:r.st, ok:false}; });
+function S(id){ for(var i=0;i<state.length;i++){ if(state[i].id===id) return state[i]; } return null; }
+
+/* ---------- toast ---------- */
+var toastEl=document.getElementById("toast"), tTimer=null;
+function toast(msg){
+  toastEl.textContent=msg; toastEl.classList.add("on");
+  if(tTimer) clearTimeout(tTimer);
+  tTimer=setTimeout(function(){ toastEl.classList.remove("on"); },1800);
+}
+
+/* ---------- transcript highlight ---------- */
+var lastHit=null;
+function highlight(idx){
+  if(lastHit) lastHit.classList.remove("hit");
+  var el=document.getElementById("ln"+idx);
+  if(!el){ toast("No transcript line for this item"); return; }
+  el.classList.add("hit"); lastHit=el;
+  var top = el.offsetTop - tEl.clientHeight/2 + el.clientHeight/2;
+  tEl.scrollTop = top<0?0:top;
+}
+
+/* ---------- table ---------- */
+var tbody=document.getElementById("tbody");
+function buildTable(){
+  tbody.innerHTML="";
+  ROWS.forEach(function(r){
+    var s=S(r.id);
+    var tr=document.createElement("tr");
+    tr.id="row"+r.id;
+    if(s.ok) tr.className="done";
+
+    var c1=document.createElement("td");
+    var b=document.createElement("div"); b.className="cov"; b.textContent=r.cov; c1.appendChild(b);
+    if(r.flag){ var f=document.createElement("span"); f.className="flag"; f.textContent=r.flag; c1.appendChild(f); }
+
+    var c2=document.createElement("td"); c2.textContent=r.lim;
+
+    var c3=document.createElement("td");
+    var chip=document.createElement("span"); chip.className="chip "+kind(s.st); chip.textContent=s.st;
+    c3.appendChild(chip);
+    var sel=document.createElement("select");
+    sel.setAttribute("aria-label","Status for "+r.cov);
+    STATUSES.forEach(function(o){
+      var op=document.createElement("option"); op.value=o; op.textContent=o;
+      if(o===s.st) op.selected=true; sel.appendChild(op);
+    });
+    sel.addEventListener("change",function(){
+      s.st=sel.value; buildTable(); renderOutputs();
+      toast(r.cov.split(" —")[0]+" → "+s.st);
+    });
+    var wrap=document.createElement("div"); wrap.style.marginTop="6px"; wrap.appendChild(sel);
+    c3.appendChild(wrap);
+
+    var c4=document.createElement("td");
+    if(r.q){
+      var qb=document.createElement("button");
+      qb.type="button"; qb.className="quote"; qb.textContent="“"+r.q+"”";
+      qb.title="Show in transcript";
+      qb.addEventListener("click",function(){ highlight(r.line); });
+      c4.appendChild(qb);
+    } else {
+      var nq=document.createElement("button");
+      nq.type="button"; nq.className="quote noq"; nq.textContent="No verbatim statement — see context";
+      nq.addEventListener("click",function(){ highlight(r.line); });
+      c4.appendChild(nq);
+    }
+
+    var c5=document.createElement("td"); c5.className="conf";
+    c5.appendChild(document.createTextNode(r.conf+"%"));
+    var cb=document.createElement("span"); cb.className="confbar";
+    var ci=document.createElement("i"); ci.style.width=r.conf+"%"; cb.appendChild(ci); c5.appendChild(cb);
+
+    var c6=document.createElement("td");
+    var tk=document.createElement("button");
+    tk.type="button"; tk.className="tick"+(s.ok?" on":"");
+    tk.textContent=s.ok?"✓":"";
+    tk.setAttribute("aria-pressed",s.ok?"true":"false");
+    tk.setAttribute("aria-label","Approve "+r.cov);
+    tk.addEventListener("click",function(){ s.ok=!s.ok; buildTable(); renderOutputs(); });
+    c6.appendChild(tk);
+
+    [c1,c2,c3,c4,c5,c6].forEach(function(c){ tr.appendChild(c); });
+    tbody.appendChild(tr);
+  });
+  renderCounter();
+}
+
+var fileBtn=document.getElementById("fileBtn");
+var filedMsg=document.getElementById("filedMsg");
+var filed=false;
+function renderCounter(){
+  var n=0; state.forEach(function(s){ if(s.ok) n++; });
+  document.getElementById("counter").innerHTML="Reviewed "+n+" of 11 — <span>licensed review required before filing</span>";
+  fileBtn.disabled = n<11;
+  if(n<11 && filed){ filed=false; filedMsg.style.display="none"; }
+}
+
+/* ---------- outputs ---------- */
+function rowById(id){ for(var i=0;i<ROWS.length;i++){ if(ROWS[i].id===id) return ROWS[i]; } return null; }
+
+function renderOutputs(){
+  var ready = extracted;
+  ["a","b","c"].forEach(function(k){
+    var e=document.getElementById(k+"Empty"), b=document.getElementById(k+"Body");
+    if(e) e.style.display = ready?"none":"block";
+    if(b) b.style.display = ready?"block":"none";
+  });
+  if(!ready) return;
+
+  /* Tab A */
+  var L=[];
+  L.push("ACTIVITY — COVERAGE DECISION RECORD");
+  L.push("Account : Riverbend Manufacturing   Policy term: 01 Dec 2026 – 01 Dec 2027");
+  L.push("Date    : 14 Nov 2026, 10:04–10:26 (recorded renewal call)");
+  L.push("Present : Mike Halvorsen (producer) · Dana Ruiz (account manager) ·");
+  L.push("          Tom Keeler (CFO, Riverbend Manufacturing)");
+  L.push("Entered : D. Ruiz   Source: transcript, 11 coverage items typed");
+  L.push("");
+  L.push("DECISIONS");
+  state.forEach(function(s,i){
+    var r=rowById(s.id);
+    L.push(String(i+1).padStart(2," ")+". "+r.cov);
+    L.push("    Limit discussed : "+r.lim);
+    L.push("    Decision        : "+s.st);
+    L.push("    Evidence        : "+(r.q?"\""+r.q+"\"":"no verbatim statement on the call"));
+    if(r.flag) L.push("    "+r.flag);
+    L.push("");
+  });
+  var dec=[],opn=[];
+  state.forEach(function(s){ var r=rowById(s.id);
+    if(isDeclined(s.st)) dec.push(r.cov); else if(isOpen(s.st)) opn.push(r.cov); });
+  L.push("SUMMARY");
+  L.push("  Declined after recommendation : "+(dec.length?dec.join("; "):"none"));
+  L.push("  Open / unresolved             : "+(opn.length?opn.join("; "):"none"));
+  L.push("  Client acknowledgment issued  : 14 Nov 2026 16:42, awaiting signature");
+  L.push("");
+  L.push("Reviewed and approved by a licensed producer before filing.");
+  document.getElementById("noteOut").textContent=L.join("\n");
+
+  /* Tab B */
+  var ul=document.getElementById("ackList"); ul.innerHTML="";
+  var items=[];
+  state.forEach(function(s){
+    var r=rowById(s.id);
+    if(isDeclined(s.st)||isOpen(s.st)) items.push({r:r,st:s.st});
+  });
+  if(!items.length){
+    var li=document.createElement("li");
+    li.innerHTML="<span>Nothing outstanding — every coverage discussed was accepted and bound.</span>";
+    ul.appendChild(li);
+  } else {
+    items.forEach(function(it){
+      var li=document.createElement("li");
+      var bx=document.createElement("div"); bx.className="box";
+      var tx=document.createElement("div");
+      var strong=document.createElement("strong"); strong.textContent=it.r.cov;
+      tx.appendChild(strong);
+      var sm=document.createElement("div"); sm.style.color="var(--muted)"; sm.style.fontSize="12.3px";
+      var line = it.st + (it.r.lim && it.r.lim!=="—" ? " · "+it.r.lim : "");
+      if(it.r.q) line += " · you said: “"+it.r.q+"”";
+      sm.textContent=line;
+      tx.appendChild(sm);
+      li.appendChild(bx); li.appendChild(tx);
+      ul.appendChild(li);
+    });
+  }
+
+  /* Tab C */
+  var tl=[];
+  state.forEach(function(s){
+    var r=rowById(s.id);
+    if(s.st.indexOf("DECLINED (recommended")===0) tl.push("declined $5M umbrella (chose $2M)");
+    else if(s.st==="DECLINED") tl.push("declined "+r.cov.toLowerCase().replace(" liability",""));
+  });
+  document.getElementById("tlLine").textContent = tl.length? tl.join(" · ") : "no coverage declined against recommendation";
+  updateNext();
+}
+
+var reofferOn=true;
+function updateNext(){
+  var n=0; state.forEach(function(s){ if(isDeclined(s.st)||isOpen(s.st)) n++; });
+  document.getElementById("tlNext").textContent = reofferOn
+    ? n+" item"+(n===1?"":"s")+" auto-queued for re-offer, task opens 01 Sep 2027 for D. Ruiz."
+    : "Re-offer off — these items will not resurface automatically.";
+}
+var sw=document.getElementById("reoffer");
+function toggleSw(){
+  reofferOn=!reofferOn;
+  sw.classList.toggle("on",reofferOn);
+  sw.setAttribute("aria-checked",reofferOn?"true":"false");
+  updateNext();
+}
+sw.addEventListener("click",toggleSw);
+sw.addEventListener("keydown",function(e){ if(e.key===" "||e.key==="Enter"){ e.preventDefault(); toggleSw(); }});
+
+/* ---------- extraction ---------- */
+var extracted=false;
+var steps=["Loading transcript (78 lines)…","Segmenting by speaker…","Matching coverage vocabulary…","Typing decisions and citing evidence…","Cross-checking against the schedule…"];
+document.getElementById("extractBtn").addEventListener("click",function(){
+  if(extracted) return;
+  var btn=this; btn.disabled=true; btn.textContent="Extracting…";
+  var proc=document.getElementById("proc"); proc.classList.add("on");
+  var fill=document.getElementById("barFill"), stepEl=document.getElementById("procStep");
+  var start=Date.now(), dur=1500;
+  var iv=setInterval(function(){
+    var p=Math.min(1,(Date.now()-start)/dur);
+    fill.style.width=(p*100).toFixed(0)+"%";
+    stepEl.textContent=steps[Math.min(steps.length-1,Math.floor(p*steps.length))];
+    if(p>=1){
+      clearInterval(iv);
+      proc.classList.remove("on");
+      extracted=true;
+      document.getElementById("resultWrap").classList.add("on");
+      buildTable(); renderOutputs();
+      btn.textContent="Re-extract";
+      document.getElementById("extractBar").querySelector(".hint").textContent="11 coverage items typed from 78 transcript lines. Click any quote to jump to the line.";
+      document.getElementById("resultWrap").scrollIntoView({behavior:"smooth",block:"start"});
+    }
+  },50);
+});
+
+document.getElementById("approveAll").addEventListener("click",function(){
+  state.forEach(function(s){ s.ok=true; });
+  buildTable(); renderOutputs(); toast("All 11 items approved");
+});
+
+fileBtn.addEventListener("click",function(){
+  filed=true;
+  filedMsg.style.display="block";
+  toast("Record filed to Applied Epic");
+  document.getElementById("sec3").scrollIntoView({behavior:"smooth",block:"start"});
+});
+
+/* tabs */
+Array.prototype.forEach.call(document.querySelectorAll(".tab"),function(t){
+  t.addEventListener("click",function(){
+    Array.prototype.forEach.call(document.querySelectorAll(".tab"),function(x){ x.classList.remove("on"); });
+    Array.prototype.forEach.call(document.querySelectorAll(".pane"),function(x){ x.classList.remove("on"); });
+    t.classList.add("on");
+    var p=document.getElementById(t.getAttribute("data-pane"));
+    if(p) p.classList.add("on");
+  });
+});
+
+/* copy */
+document.getElementById("copyNote").addEventListener("click",function(){
+  var txt=document.getElementById("noteOut").textContent;
+  function fallback(){
+    try{
+      var ta=document.createElement("textarea");
+      ta.value=txt; ta.setAttribute("readonly","");
+      ta.style.position="fixed"; ta.style.top="-1000px";
+      document.body.appendChild(ta); ta.select();
+      var ok=document.execCommand("copy");
+      document.body.removeChild(ta);
+      toast(ok?"Note copied":"Select the note text to copy");
+    }catch(e){ toast("Select the note text to copy"); }
+  }
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(txt).then(function(){ toast("Note copied"); },fallback);
+  } else { fallback(); }
+});
+
+renderOutputs();
+})();
+</script>
+</body>
+</html>
