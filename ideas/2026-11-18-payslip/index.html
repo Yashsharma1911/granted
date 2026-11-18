@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Payslip — the payslip your coding agent earned this week</title>
+<style>
+:root{
+  --bg:#0c0d10; --fg:#e8e6df; --dim:#8a8c93; --line:#24262c;
+  --paper:#f4efe2; --ink:#1d1b16; --inkdim:#6a6459;
+  --green:#2e7d4f; --red:#b03a2e; --accent:#d6a93b;
+}
+@media (prefers-color-scheme: light){
+  :root{ --bg:#efeee9; --fg:#1c1d20; --dim:#5e6066; --line:#d6d4cc; }
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--fg);
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"DejaVu Sans Mono",monospace;
+  font-size:15px; line-height:1.45; min-height:100vh;
+  -webkit-text-size-adjust:100%;
+}
+.wrap{max-width:860px;margin:0 auto;padding:18px 16px 60px}
+header.top{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:20px}
+header.top b{font-size:15px;letter-spacing:.04em}
+header.top span{color:var(--dim);font-size:12.5px}
+.tag{font-size:10.5px;border:1px solid var(--line);color:var(--dim);padding:2px 6px;border-radius:999px}
+
+/* screen 1 */
+#s1 h1{font-size:25px;line-height:1.25;margin:28px 0 10px;letter-spacing:-.01em}
+#s1 p.sub{color:var(--dim);font-size:13.5px;margin:0 0 24px;max-width:46ch}
+.drop{
+  width:100%;border:2px dashed #3a3d46;border-radius:14px;background:rgba(255,255,255,.02);
+  min-height:220px;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  text-align:center;padding:26px 18px;gap:10px;cursor:pointer;color:var(--fg);
+  font:inherit;transition:border-color .15s,background .15s,transform .1s;
+}
+@media (prefers-color-scheme: light){.drop{border-color:#bdbbb2;background:rgba(0,0,0,.02)}}
+.drop:hover,.drop:focus-visible,.drop.over{border-color:var(--accent);background:rgba(214,169,59,.08);outline:none}
+.drop:active{transform:scale(.995)}
+.drop .big{font-size:14.5px}
+.drop .small{font-size:11.5px;color:var(--dim)}
+.sampleline{margin:16px 0 0;font-size:13px}
+.linkish{background:none;border:none;padding:10px 0;font:inherit;color:var(--accent);cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.ticker{margin-top:18px;min-height:76px;font-size:13px;color:var(--dim)}
+.ticker div{opacity:0;animation:fade .25s forwards}
+@keyframes fade{to{opacity:1}}
+.bar{height:4px;background:var(--line);border-radius:3px;overflow:hidden;margin-top:12px}
+.bar i{display:block;height:100%;width:0;background:var(--accent);animation:grow 1.2s linear forwards}
+@keyframes grow{to{width:100%}}
+
+/* screen 2 */
+#s2{display:none}
+.bartop{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:space-between;margin-bottom:14px}
+.tabs{display:flex;gap:6px;flex-wrap:wrap}
+.tab{font:inherit;font-size:12.5px;padding:10px 13px;min-height:44px;border-radius:9px;border:1px solid var(--line);background:transparent;color:var(--dim);cursor:pointer}
+.tab[aria-selected="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.chip{font:inherit;font-size:12px;padding:9px 12px;min-height:44px;border-radius:999px;border:1px dashed #4a4d56;background:transparent;color:var(--fg);cursor:pointer;display:flex;align-items:center;gap:7px}
+.chip[aria-pressed="true"]{border-style:solid;border-color:var(--accent);color:var(--accent)}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--accent);display:inline-block}
+
+.paperwrap{display:flex;justify-content:center}
+.paper{
+  width:100%;max-width:700px;background:var(--paper);color:var(--ink);
+  border-radius:3px;position:relative;overflow:hidden;
+  box-shadow:0 18px 50px rgba(0,0,0,.45);
+  padding:26px 20px 22px;
+}
+.paper:before,.paper:after{
+  content:"";position:absolute;left:0;right:0;height:12px;
+  background-image:radial-gradient(circle at 6px 6px, var(--bg) 4.5px, transparent 5px);
+  background-size:14px 14px;
+}
+.paper:before{top:-6px}
+.paper:after{bottom:-6px;transform:rotate(180deg)}
+.paper .grain{position:absolute;inset:0;pointer-events:none;opacity:.5;
+  background:repeating-linear-gradient(to bottom, rgba(0,0,0,.035) 0 1px, transparent 1px 3px)}
+.slide{animation:slide .28s ease-out}
+@keyframes slide{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.ph{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;border-bottom:2px solid var(--ink);padding-bottom:9px}
+.ph h2{margin:0;font-size:13.5px;letter-spacing:.06em}
+.ph .no{font-size:11px;color:var(--inkdim)}
+.meta{display:grid;grid-template-columns:1fr 1fr;gap:2px 14px;font-size:11.5px;margin:10px 0 4px;color:var(--inkdim)}
+.meta b{color:var(--ink);font-weight:600}
+.sect{margin-top:16px}
+.sect h3{margin:0 0 6px;font-size:11px;letter-spacing:.16em;color:var(--inkdim);border-bottom:1px dashed #c3bca9;padding-bottom:4px}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+td{padding:6px 0;vertical-align:top;border-bottom:1px dotted #d2cab6}
+td.q,td.a{text-align:right;white-space:nowrap}
+td.a{font-weight:600}
+tr.row{cursor:help}
+tr.row:hover td,tr.row:focus-within td{background:rgba(214,169,59,.22)}
+.badge{font-size:9px;letter-spacing:.1em;border:1px solid var(--red);color:var(--red);padding:1px 5px;border-radius:3px;margin-left:6px;vertical-align:1px}
+.why{display:none;font-size:10.8px;color:var(--inkdim);padding:0 0 7px;line-height:1.4}
+tr.row.open .why{display:block}
+.grid2{display:grid;grid-template-columns:1fr;gap:16px}
+@media(min-width:620px){.grid2{grid-template-columns:1.35fr .9fr}}
+.deltas div{display:flex;justify-content:space-between;font-size:12px;padding:5px 0;border-bottom:1px dotted #d2cab6}
+.up{color:var(--green);font-weight:600}
+.down{color:var(--red);font-weight:600}
+.bottom{margin-top:18px;border-top:2px solid var(--ink);border-bottom:2px solid var(--ink);padding:12px 0;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:flex-end}
+.bottom .lbl{font-size:10px;letter-spacing:.14em;color:var(--inkdim)}
+.bottom .net{font-size:30px;font-weight:700;letter-spacing:-.02em;line-height:1.1}
+.bottom .cpc{font-size:17px;font-weight:700}
+.stamp{
+  position:absolute;right:-6px;top:116px;transform:rotate(-13deg);
+  border:3px double var(--red);color:var(--red);opacity:.78;
+  padding:6px 14px;font-size:15px;letter-spacing:.1em;font-weight:700;border-radius:5px;
+  pointer-events:none;text-transform:uppercase;
+}
+.projs{margin-top:14px;font-size:11.5px;color:var(--inkdim);line-height:1.6}
+.projs b{color:var(--ink)}
+.streak{text-align:center;color:var(--dim);font-size:12.5px;margin:14px 0 4px}
+.acts{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:10px}
+.btn{font:inherit;font-size:12.5px;min-height:44px;padding:11px 14px;border-radius:9px;border:1px solid var(--line);background:transparent;color:var(--fg);cursor:pointer}
+.btn:hover{border-color:var(--accent);color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#1b1a16;font-weight:600}
+.thumb{display:none;margin:14px auto 0;width:122px;height:86px;border-radius:4px;background:var(--paper);position:relative;overflow:hidden;box-shadow:0 6px 18px rgba(0,0,0,.4)}
+.thumb.show{display:block;animation:slide .3s}
+.thumb i{position:absolute;left:8px;right:8px;height:4px;background:#cfc7b2;border-radius:2px}
+.footlinks{text-align:center;margin-top:22px;font-size:12px;color:var(--dim)}
+.foot{text-align:center;margin-top:26px;font-size:11px;color:var(--dim);border-top:1px solid var(--line);padding-top:14px}
+
+.toast{position:fixed;left:50%;bottom:22px;transform:translate(-50%,24px);opacity:0;pointer-events:none;
+  background:var(--fg);color:var(--bg);padding:12px 16px;border-radius:10px;font-size:12.5px;z-index:60;transition:.22s;max-width:92vw;text-align:center}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.66);display:none;align-items:center;justify-content:center;padding:16px;z-index:50}
+.modal.show{display:flex}
+.sheet{background:var(--bg);border:1px solid var(--line);border-radius:14px;max-width:520px;width:100%;padding:20px;max-height:86vh;overflow:auto}
+@media (prefers-color-scheme: light){.sheet{background:#fff}}
+.sheet h4{margin:0 0 10px;font-size:13px;letter-spacing:.08em}
+.sheet p{font-size:12.5px;color:var(--dim)}
+.quote{border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:8px;padding:13px;font-size:13px;line-height:1.5}
+.fields{list-style:none;padding:0;margin:10px 0;font-size:12.5px}
+.fields li{padding:7px 0;border-bottom:1px dotted var(--line);display:flex;justify-content:space-between;gap:10px}
+.fields li span{color:var(--dim);font-size:11px;text-align:right}
+.bold{font-weight:700;color:var(--fg);font-size:12.5px;margin-top:12px}
+.sheet .acts{justify-content:flex-end;margin-top:14px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <b>Payslip</b>
+    <span>turns your coding agent's session logs into a weekly payslip</span>
+    <span class="tag">Demo data</span>
+  </header>
+
+  <!-- SCREEN 1 -->
+  <section id="s1">
+    <h1>Your coding agent worked this week. Pay it.</h1>
+    <p class="sub">Drop your Claude Code or Codex session logs. Everything is parsed in your browser — nothing is uploaded.</p>
+    <button class="drop" id="drop" type="button">
+      <span class="big">Drop <b>~/.claude/projects</b> or <b>~/.codex/sessions</b> here</span>
+      <span class="small">.jsonl session transcripts · parsed locally · click to try it</span>
+    </button>
+    <p class="sampleline"><button class="linkish" id="sample" type="button">No logs handy? Use the sample week →</button></p>
+    <div class="ticker" id="ticker" aria-live="polite"></div>
+  </section>
+
+  <!-- SCREEN 2 -->
+  <section id="s2">
+    <div class="bartop">
+      <div class="tabs" role="tablist" aria-label="Pay period">
+        <button class="tab" role="tab" data-p="0" aria-selected="true">This period</button>
+        <button class="tab" role="tab" data-p="1" aria-selected="false">Last period</button>
+        <button class="tab" role="tab" data-p="2" aria-selected="false">All time</button>
+      </div>
+      <button class="chip" id="chip" aria-pressed="false"><span class="dot"></span>Codex (gpt-5.3) — 8.2 hrs</button>
+    </div>
+
+    <div class="paperwrap"><div class="paper" id="paper"><div class="grain"></div></div></div>
+
+    <p class="streak">Pay period streak: 9 weeks filed 🔥</p>
+    <div class="acts">
+      <button class="btn primary" id="bCopy" type="button">Copy card as image</button>
+      <button class="btn" id="bPng" type="button">Download PNG</button>
+      <button class="btn" id="bX" type="button">Post to X</button>
+    </div>
+    <div class="thumb" id="thumb" aria-hidden="true"></div>
+    <p class="footlinks"><button class="linkish" id="bWhat" type="button">What we read</button></p>
+  </section>
+
+  <p class="foot">Prototype by Granted, inspired by your bookmarks</p>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<div class="modal" id="modal" role="dialog" aria-modal="true" aria-label="Dialog">
+  <div class="sheet" id="sheet"></div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var $=function(s){return document.querySelector(s);};
+
+  var WHY={
+    "Shift hours":"first to last event timestamp per session, idle gaps >20 min removed",
+    "Files touched":"unique absolute paths seen in Edit / Write / NotebookEdit tool_use calls",
+    "Lines written":"sum of added lines across every applied diff, whitespace-only lines excluded",
+    "Lines deleted":"sum of removed lines across applied diffs; reverts counted once",
+    "Commands run":"Bash tool_use invocations, excluding internal retries of the same command",
+    "Tests run":"commands matching test runners (pytest/jest/go test); pass/fail from exit status",
+    "Commits authored":"git commit commands whose tool_result exit status was 0",
+    "Night shift (22:00–06:00)":"shift minutes falling between 22:00 and 06:00 in your local timezone",
+    "Input tokens":"usage.input_tokens summed per assistant message, billed at model list price",
+    "Output tokens":"usage.output_tokens summed per assistant message",
+    "Cache reads":"usage.cache_read_input_tokens — cheap, but counted so the math reconciles",
+    "Rework (files edited 4+ times)":"files with 4 or more distinct edit events inside one pay period",
+    "Dead ends (sessions ending with no commit)":"sessions whose final 30 min contain no successful git commit"
+  };
+
+  function E(l,q,r,a,badge){return{l:l,q:q,r:r,a:a,badge:badge||""};}
+
+  var CC_THIS={
+    agent:"Claude Code (Opus 4.5)", no:"cc-7731",
+    period:"PAY PERIOD 09 NOV – 15 NOV 2026",
+    earn:[E("Shift hours","31.4 hrs","$2.21/hr","$69.40"),
+      E("Files touched","212","—","—"),
+      E("Lines written","18,430","—","—"),
+      E("Lines deleted","9,102","—","—"),
+      E("Commands run","904","—","—"),
+      E("Tests run","148","passed 131 / failed 17","—"),
+      E("Commits authored","46","$1.90/ea","$87.43"),
+      E("Night shift (22:00–06:00)","6.1 hrs","1.0x","$13.48","OVERTIME")],
+    ded:[E("Input tokens","41.2M","$0.90/M","$37.08"),
+      E("Output tokens","2.9M","$12.00/M","$34.80"),
+      E("Cache reads","180.4M","$0.09/M","$16.24"),
+      E("Rework (files edited 4+ times)","19 files","—","—"),
+      E("Dead ends (sessions ending with no commit)","5","—","—")],
+    net:"$87.43", cpc:"$1.90", band:"PROMOTION PENDING",
+    projs:"payslip-store 11.2h · scout-agent 8.9h · dotfiles 4.4h · infra-tf 3.6h · notes-cli 2.1h · sandbox 1.2h",
+    deltas:[["hours","+4.2h",1],["files","+38",1],["tests passed","+22",1],["cost","−$11.05",1],["rework","−6 files",1]],
+    vs:"vs LAST PERIOD"
+  };
+
+  var CC_LAST={
+    agent:"Claude Code (Opus 4.5)", no:"cc-7731",
+    period:"PAY PERIOD 02 NOV – 08 NOV 2026",
+    earn:[E("Shift hours","27.2 hrs","$3.62/hr","$98.48"),
+      E("Files touched","174","—","—"),
+      E("Lines written","15,207","—","—"),
+      E("Lines deleted","7,744","—","—"),
+      E("Commands run","812","—","—"),
+      E("Tests run","126","passed 109 / failed 17","—"),
+      E("Commits authored","38","$2.59/ea","$98.48"),
+      E("Night shift (22:00–06:00)","4.4 hrs","1.0x","$15.93","OVERTIME")],
+    ded:[E("Input tokens","38.7M","$0.90/M","$34.83"),
+      E("Output tokens","3.4M","$12.00/M","$40.80"),
+      E("Cache reads","151.0M","$0.09/M","$13.59"),
+      E("Rework (files edited 4+ times)","25 files","—","—"),
+      E("Dead ends (sessions ending with no commit)","8","—","—")],
+    net:"$98.48", cpc:"$2.59", band:"SOLID QUARTER",
+    projs:"scout-agent 9.8h · payslip-store 7.1h · infra-tf 4.0h · dotfiles 3.3h · notes-cli 1.9h · sandbox 1.1h",
+    deltas:[["hours","−1.6h",0],["files","+12",1],["tests passed","+5",1],["cost","+$7.90",0],["rework","+3 files",0]],
+    vs:"vs 26 OCT – 01 NOV"
+  };
+
+  var CC_ALL={
+    agent:"Claude Code (Opus 4.5)", no:"cc-7731",
+    period:"ALL TIME — 9 PAY PERIODS",
+    earn:[E("Shift hours","284.0 hrs","$2.86/hr","$812.19"),
+      E("Files touched","1,648","—","—"),
+      E("Lines written","162,904","—","—"),
+      E("Lines deleted","78,331","—","—"),
+      E("Commands run","7,936","—","—"),
+      E("Tests run","1,314","passed 1,118 / failed 196","—"),
+      E("Commits authored","391","$2.08/ea","$812.19"),
+      E("Night shift (22:00–06:00)","48.7 hrs","1.0x","$139.30","OVERTIME")],
+    ded:[E("Input tokens","366.5M","$0.90/M","$329.85"),
+      E("Output tokens","28.4M","$12.00/M","$340.80"),
+      E("Cache reads","1.42B","$0.09/M","$127.80"),
+      E("Rework (files edited 4+ times)","186 files","—","—"),
+      E("Dead ends (sessions ending with no commit)","61","—","—")],
+    net:"$812.19", cpc:"$2.08", band:"SOLID QUARTER",
+    projs:"scout-agent 71.4h · payslip-store 64.8h · infra-tf 39.2h · dotfiles 28.6h · notes-cli 21.0h · sandbox 14.3h",
+    deltas:[["hours/wk avg","31.6h",1],["periods filed","9",1],["tests passed","1,118",1],["avg cost/wk","$90.24",0],["rework rate","11%",0]],
+    vs:"LIFETIME AVERAGES"
+  };
+
+  var CX_THIS={
+    agent:"Codex (gpt-5.3)", no:"cx-0412",
+    period:"PAY PERIOD 09 NOV – 15 NOV 2026",
+    earn:[E("Shift hours","8.2 hrs","$2.34/hr","$19.18"),
+      E("Files touched","41","—","—"),
+      E("Lines written","3,120","—","—"),
+      E("Lines deleted","1,488","—","—"),
+      E("Commands run","186","—","—"),
+      E("Tests run","22","passed 14 / failed 8","—"),
+      E("Commits authored","7","$2.74/ea","$19.18"),
+      E("Night shift (22:00–06:00)","0.0 hrs","—","$0.00")],
+    ded:[E("Input tokens","9.4M","$0.90/M","$8.46"),
+      E("Output tokens","0.6M","$12.00/M","$7.20"),
+      E("Cache reads","22.1M","$0.09/M","$1.99"),
+      E("Rework (files edited 4+ times)","11 files","—","—"),
+      E("Dead ends (sessions ending with no commit)","6","—","—")],
+    net:"$19.18", cpc:"$2.74", band:"ON PROBATION",
+    projs:"sandbox 3.4h · notes-cli 2.2h · dotfiles 1.1h · scout-agent 0.8h · infra-tf 0.5h · payslip-store 0.2h",
+    deltas:[["hours","+1.1h",1],["files","−4",0],["tests passed","−3",0],["cost","+$2.40",0],["rework","+2 files",0]],
+    vs:"vs LAST PERIOD"
+  };
+  var CX_LAST=Object.assign({},CX_THIS,{period:"PAY PERIOD 02 NOV – 08 NOV 2026",net:"$16.78",cpc:"$3.36",band:"ON PROBATION"});
+  var CX_ALL=Object.assign({},CX_THIS,{period:"ALL TIME — 4 PAY PERIODS",net:"$61.04",cpc:"$3.05",band:"ON PROBATION"});
+
+  var DATA={cc:[CC_THIS,CC_LAST,CC_ALL],cx:[CX_THIS,CX_LAST,CX_ALL]};
+  var state={agent:"cc",period:0};
+
+  function esc(s){return String(s).replace(/[&<>"]/g,function(c){return({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c];});}
+
+  function rows(list){
+    return list.map(function(r){
+      var why=WHY[r.l]||"derived locally from your session logs";
+      return '<tr class="row" tabindex="0" data-why="'+esc(why)+'">'+
+        '<td>'+esc(r.l)+(r.badge?'<span class="badge">'+esc(r.badge)+'</span>':'')+
+        '<div class="why">↳ '+esc(why)+'</div></td>'+
+        '<td class="q">'+esc(r.q)+'</td><td class="q">'+esc(r.r)+'</td><td class="a">'+esc(r.a)+'</td></tr>';
+    }).join("");
+  }
+
+  function render(){
+    var d=DATA[state.agent][state.period];
+    if(!d){ toast("That payslip isn't filed yet."); return; }
+    var p=$("#paper");
+    p.innerHTML='<div class="grain"></div>'+
+      '<div class="ph"><h2>PAYSLIP — '+esc(d.period)+'</h2><div class="no">EMP NO '+esc(d.no)+'</div></div>'+
+      '<div class="meta"><div>Employer: <b>@yourhandle</b></div><div>Department: <b>Engineering</b></div>'+
+      '<div>Employee: <b>'+esc(d.agent)+'</b></div><div>Basis: <b>Per-session, parsed locally</b></div></div>'+
+      '<div class="stamp">'+esc(d.band)+'</div>'+
+      '<div class="grid2">'+
+        '<div><div class="sect"><h3>EARNINGS</h3><table><tbody>'+rows(d.earn)+'</tbody></table></div>'+
+        '<div class="sect"><h3>DEDUCTIONS</h3><table><tbody>'+rows(d.ded)+'</tbody></table></div></div>'+
+        '<div class="sect"><h3>'+esc(d.vs)+'</h3><div class="deltas">'+
+          d.deltas.map(function(x){return '<div><span>'+esc(x[0])+'</span><span class="'+(x[2]?'up':'down')+'">'+esc(x[1])+'</span></div>';}).join("")+
+        '</div></div>'+
+      '</div>'+
+      '<div class="bottom"><div><div class="lbl">NET COST THIS PERIOD</div><div class="net">'+esc(d.net)+'</div></div>'+
+      '<div><div class="lbl">COST PER COMMIT</div><div class="cpc">'+esc(d.cpc)+'</div></div></div>'+
+      '<div class="projs"><b>TOP PROJECTS</b><br>'+esc(d.projs)+'</div>';
+    p.classList.remove("slide"); void p.offsetWidth; p.classList.add("slide");
+  }
+
+  // tooltips / tap-to-reveal derivation
+  document.addEventListener("click",function(e){
+    var tr=e.target.closest ? e.target.closest("tr.row") : null;
+    if(tr){ tr.classList.toggle("open"); }
+  });
+  document.addEventListener("keydown",function(e){
+    if(e.key==="Enter"&&e.target&&e.target.classList&&e.target.classList.contains("row")){e.target.classList.toggle("open");}
+    if(e.key==="Escape"){closeModal();}
+  });
+  document.addEventListener("mouseover",function(e){
+    var tr=e.target.closest?e.target.closest("tr.row"):null;
+    if(tr&&!tr.classList.contains("open")){tr.classList.add("open");tr.dataset.hov="1";}
+  });
+  document.addEventListener("mouseout",function(e){
+    var tr=e.target.closest?e.target.closest("tr.row"):null;
+    if(tr&&tr.dataset.hov==="1"){tr.classList.remove("open");delete tr.dataset.hov;}
+  });
+
+  // screen 1 -> 2
+  var started=false;
+  var LINES=["reading 14 sessions…","3,871 events…","2 agents found","building payslip…"];
+  function start(){
+    if(started)return; started=true;
+    var t=$("#ticker"); t.innerHTML='<div class="bar"><i></i></div>';
+    LINES.forEach(function(l,i){
+      setTimeout(function(){
+        var d=document.createElement("div"); d.textContent="› "+l; t.appendChild(d);
+      },i*280);
+    });
+    setTimeout(function(){
+      $("#s1").style.display="none"; $("#s2").style.display="block"; render();
+      window.scrollTo(0,0);
+    },1200);
+  }
+  var drop=$("#drop");
+  drop.addEventListener("click",start);
+  $("#sample").addEventListener("click",start);
+  ["dragenter","dragover"].forEach(function(ev){drop.addEventListener(ev,function(e){e.preventDefault();drop.classList.add("over");});});
+  ["dragleave","dragend"].forEach(function(ev){drop.addEventListener(ev,function(){drop.classList.remove("over");});});
+  drop.addEventListener("drop",function(e){e.preventDefault();drop.classList.remove("over");start();});
+  document.addEventListener("dragover",function(e){e.preventDefault();});
+  document.addEventListener("drop",function(e){e.preventDefault();if(!started)start();});
+
+  // tabs
+  Array.prototype.forEach.call(document.querySelectorAll(".tab"),function(b){
+    b.addEventListener("click",function(){
+      Array.prototype.forEach.call(document.querySelectorAll(".tab"),function(x){x.setAttribute("aria-selected","false");});
+      b.setAttribute("aria-selected","true");
+      state.period=parseInt(b.dataset.p,10)||0; render();
+    });
+  });
+
+  // agent chip
+  var chip=$("#chip");
+  chip.addEventListener("click",function(){
+    var on=state.agent==="cc";
+    state.agent=on?"cx":"cc";
+    chip.setAttribute("aria-pressed",on?"true":"false");
+    chip.lastChild.nodeValue=on?"Claude Code (Opus 4.5) — 31.4 hrs":"Codex (gpt-5.3) — 8.2 hrs";
+    render();
+  });
+
+  // toast
+  var tEl=$("#toast"),tTo=null;
+  function toast(msg){
+    tEl.textContent=msg; tEl.classList.add("show");
+    clearTimeout(tTo); tTo=setTimeout(function(){tEl.classList.remove("show");},2200);
+  }
+
+  $("#bCopy").addEventListener("click",function(){
+    var th=$("#thumb");
+    th.innerHTML=""; 
+    for(var i=0;i<7;i++){var b=document.createElement("i");b.style.top=(10+i*10)+"px";b.style.width=(40+((i*37)%60))+"%";th.appendChild(b);}
+    th.classList.add("show");
+    toast("Payslip copied to clipboard");
+  });
+  $("#bPng").addEventListener("click",function(){toast("payslip-09nov-15nov.png saved to Downloads");});
+
+  var modal=$("#modal"),sheet=$("#sheet");
+  function openModal(html){sheet.innerHTML=html;modal.classList.add("show");}
+  function closeModal(){modal.classList.remove("show");}
+  modal.addEventListener("click",function(e){if(e.target===modal)closeModal();});
+
+  var POST="My coding agent billed 31.4 hours this week — 6 of them overtime while I slept. 212 files, 148 tests, $87.43. It's getting a promotion.";
+  $("#bX").addEventListener("click",function(){
+    openModal('<h4>POST TO X</h4><p>Pre-filled text — nothing is sent from this prototype.</p>'+
+      '<div class="quote" id="postText">'+esc(POST)+'</div>'+
+      '<div class="acts"><button class="btn" data-close type="button">Close</button>'+
+      '<button class="btn primary" id="copyPost" type="button">Copy</button></div>');
+    var cp=document.getElementById("copyPost");
+    if(cp)cp.addEventListener("click",function(){closeModal();toast("Post text copied");});
+  });
+
+  $("#bWhat").addEventListener("click",function(){
+    openModal('<h4>WHAT WE READ</h4><p>Fields parsed from each .jsonl session line, in your browser only.</p>'+
+      '<ul class="fields">'+
+      '<li>timestamp<span>shift hours, night shift</span></li>'+
+      '<li>cwd<span>project attribution</span></li>'+
+      '<li>gitBranch<span>commits, dead ends</span></li>'+
+      '<li>tool_use.name<span>files, commands, tests</span></li>'+
+      '<li>tool_result.status<span>pass / fail counts</span></li>'+
+      '<li>usage.*_tokens<span>deductions &amp; cost</span></li>'+
+      '</ul><p class="bold">Your prompts and file contents are never read into the card.</p>'+
+      '<div class="acts"><button class="btn primary" data-close type="button">Got it</button></div>');
+  });
+
+  sheet.addEventListener("click",function(e){
+    if(e.target&&e.target.hasAttribute&&e.target.hasAttribute("data-close"))closeModal();
+  });
+})();
+</script>
+</body>
+</html>

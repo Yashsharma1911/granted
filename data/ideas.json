@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-17T20:53:39.804Z",
+  "updated": "2026-11-18T20:52:07.552Z",
   "ideas": [
     {
       "id": "2026-10-22-agentgauntlet",
@@ -1147,6 +1147,66 @@
       "sources_count": 19,
       "superseded_by": null,
       "sibling": "2026-11-17-surrender"
+    },
+    {
+      "id": "2026-11-18-payslip",
+      "number": 41,
+      "date": "2026-11-18",
+      "track": "build",
+      "short_name": "Payslip",
+      "verdict": "dig_deeper",
+      "score": 8,
+      "scores": {
+        "wow": 8,
+        "shareability": 9,
+        "buildability": 8,
+        "freshness": 8,
+        "usefulness": 7
+      },
+      "effort": "a weekend",
+      "category": "Developer tools",
+      "tags": [
+        "agents",
+        "devtools",
+        "visualization",
+        "privacy"
+      ],
+      "pain_type": "latent",
+      "one_liner": "Drag your Claude Code / Codex session logs onto a page and Payslip issues your agent a weekly payslip — hours worked, files touched, tests run, tokens burned, what it cost, and the \"overtime\" it did while you slept — as a shareable card, all parsed locally in the browser.",
+      "prototype_url": "https://yashsharma1911.github.io/granted/ideas/2026-11-18-payslip/",
+      "sources_count": 9,
+      "superseded_by": null,
+      "sibling": "2026-11-18-shiftlog"
+    },
+    {
+      "id": "2026-11-18-shiftlog",
+      "number": 42,
+      "date": "2026-11-18",
+      "track": "venture",
+      "short_name": "Shiftlog",
+      "verdict": "dig_deeper",
+      "score": 7.8,
+      "scores": {
+        "pain": 7.5,
+        "market_pull": 7,
+        "timing": 9,
+        "gap": 8,
+        "wedge": 7.5
+      },
+      "effort": "3+ months",
+      "category": "Back-office automation",
+      "tags": [
+        "agents",
+        "finance ops",
+        "audit",
+        "erp"
+      ],
+      "pain_type": "expressed",
+      "one_liner": "For the controller at a 100-1,000 person private company that has let AI agents into NetSuite or Sage Intacct, Shiftlog is the evidence layer: it registers every agent as a named \"employee\" with a written scope, records each action it took with the before/after ERP values, the approver and the exception, and exports a signed, auditor-ready pack at quarter-end.",
+      "prototype_url": "https://yashsharma1911.github.io/granted/ideas/2026-11-18-shiftlog/",
+      "sources_count": 25,
+      "superseded_by": null,
+      "sibling": "2026-11-18-payslip"
     }
   ]
 }

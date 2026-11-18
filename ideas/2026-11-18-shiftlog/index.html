@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Shiftlog — the audit file for the bots on your accounting team</title>
+<style>
+:root{
+  --bg:#f6f7f9; --panel:#ffffff; --ink:#15181d; --muted:#5d6672; --line:#e2e6eb;
+  --accent:#1f5eff; --accent-soft:#e8efff; --green:#0a7a4b; --green-soft:#e3f5ec;
+  --amber:#8a5a00; --amber-soft:#fdf0d8; --red:#b3261e; --red-soft:#fdeceb;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --bg:#0e1116; --panel:#151a21; --ink:#e8ecf2; --muted:#98a2b1; --line:#262d37;
+    --accent:#6f9bff; --accent-soft:#1a2236; --green:#54d49a; --green-soft:#12271e;
+    --amber:#f0c070; --amber-soft:#2b2214; --red:#ff8a80; --red-soft:#2e1715;
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-text-size-adjust:100%}
+header.top{position:sticky;top:0;z-index:30;background:var(--panel);border-bottom:1px solid var(--line);padding:10px 14px}
+.brand{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.logo{width:26px;height:26px;flex:0 0 26px}
+.brand h1{font-size:15px;margin:0;font-weight:700;letter-spacing:-.2px}
+.brand .tag{font-size:13px;color:var(--muted)}
+.banner{margin-top:7px;font-size:12px;color:var(--muted);font-family:var(--mono);display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.pill{background:var(--accent-soft);color:var(--accent);border-radius:99px;padding:2px 9px;font-weight:600;font-size:11px;font-family:inherit}
+.shell{display:flex;min-height:calc(100vh - 86px)}
+nav.side{width:206px;flex:0 0 206px;border-right:1px solid var(--line);background:var(--panel);padding:12px 10px}
+nav.side .lbl{font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);padding:6px 8px}
+nav.side button{display:flex;width:100%;align-items:center;gap:9px;background:none;border:0;color:var(--ink);font:inherit;text-align:left;padding:11px 10px;border-radius:9px;cursor:pointer;min-height:44px}
+nav.side button:hover{background:var(--bg)}
+nav.side button[aria-current="true"]{background:var(--accent-soft);color:var(--accent);font-weight:650}
+nav.side .dot{width:7px;height:7px;border-radius:50%;background:currentColor;opacity:.55;flex:0 0 7px}
+nav.side .count{margin-left:auto;font-size:11px;color:var(--muted);font-family:var(--mono)}
+main{flex:1;min-width:0;padding:14px 16px 60px}
+.tabs{display:flex;gap:6px;background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:4px;margin-bottom:14px;overflow:auto}
+.tabs button{flex:1;white-space:nowrap;min-height:42px;border:0;background:none;color:var(--muted);font:inherit;font-size:13px;font-weight:600;border-radius:8px;padding:8px 10px;cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--accent);color:#fff}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:14px}
+h2{font-size:16px;margin:0 0 4px}
+h3{font-size:13px;margin:0 0 8px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
+p.sub{margin:0 0 12px;color:var(--muted);font-size:13px}
+.strip{display:flex;gap:10px;align-items:flex-start;background:var(--red-soft);border:1px solid var(--red);color:var(--red);border-radius:10px;padding:11px 12px;font-size:13px;font-weight:600;margin-bottom:12px}
+.strip svg{flex:0 0 18px;margin-top:1px}
+.toggle{display:flex;align-items:center;gap:10px;min-height:44px;cursor:pointer;font-size:13.5px;font-weight:600;user-select:none}
+.toggle input{position:absolute;opacity:0;width:0;height:0}
+.track{width:44px;height:26px;border-radius:99px;background:var(--line);position:relative;transition:background .18s;flex:0 0 44px}
+.knob{position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3);transition:transform .18s}
+.toggle input:checked + .track{background:var(--red)}
+.toggle input:checked + .track .knob{transform:translateX(18px)}
+.scrollx{overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--line);border-radius:10px}
+table{border-collapse:collapse;width:100%;min-width:720px}
+th{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);text-align:left;padding:8px 9px;border-bottom:1px solid var(--line);white-space:nowrap;background:var(--panel);position:sticky;top:0}
+td{padding:7px 9px;border-bottom:1px solid var(--line);vertical-align:top}
+.raw table{min-width:860px}
+.raw td{font-family:var(--mono);font-size:11px;line-height:1.3;color:var(--ink);white-space:nowrap}
+.raw tr.note td{color:var(--muted);background:linear-gradient(0deg,rgba(125,125,125,.05),rgba(125,125,125,.05))}
+.raw tr.expiring.dim td{opacity:.3;text-decoration:line-through}
+.raw .s500{color:var(--red);font-weight:700}
+.raw .s200{color:var(--green)}
+.raw .orphan{color:var(--amber);font-weight:700}
+.btn{appearance:none;border:0;border-radius:10px;background:var(--accent);color:#fff;font:inherit;font-weight:650;padding:13px 18px;min-height:48px;cursor:pointer;display:inline-flex;align-items:center;gap:9px}
+.btn:disabled{opacity:.6;cursor:default}
+.btn.ghost{background:var(--panel);color:var(--ink);border:1px solid var(--line)}
+.spin{width:16px;height:16px;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;animation:sp .7s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.steps{margin-top:12px;font-family:var(--mono);font-size:12px;color:var(--muted)}
+.steps div{padding:3px 0;opacity:.25;transition:opacity .2s}
+.steps div.on{opacity:1;color:var(--ink)}
+.hidden{display:none !important}
+.agentcard{border-left:3px solid var(--accent)}
+.kv{display:grid;grid-template-columns:150px 1fr;gap:6px 14px;font-size:13px}
+.kv dt{color:var(--muted)}
+.kv dd{margin:0}
+@media(max-width:700px){.kv{grid-template-columns:1fr;gap:2px 0}.kv dd{margin-bottom:8px}}
+.badge{display:inline-block;font-size:11px;font-weight:700;border-radius:99px;padding:3px 9px;white-space:nowrap}
+.b-auto{background:var(--green-soft);color:var(--green)}
+.b-human{background:var(--accent-soft);color:var(--accent)}
+.b-esc{background:var(--amber-soft);color:var(--amber)}
+.b-fail{background:var(--red-soft);color:var(--red)}
+tr.act{cursor:pointer}
+tr.act:hover td{background:var(--accent-soft)}
+tr.act td{font-size:12.5px}
+.mono{font-family:var(--mono);font-size:12px}
+.amt{text-align:right;font-family:var(--mono);white-space:nowrap}
+.stats{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.stat{flex:1 1 130px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.stat b{display:block;font-size:19px;letter-spacing:-.4px}
+.stat span{font-size:11.5px;color:var(--muted)}
+.scrim{position:fixed;inset:0;background:rgba(5,8,13,.5);opacity:0;pointer-events:none;transition:opacity .2s;z-index:40}
+.scrim.open{opacity:1;pointer-events:auto}
+.drawer{position:fixed;top:0;right:0;height:100%;width:430px;max-width:92vw;background:var(--panel);border-left:1px solid var(--line);transform:translateX(102%);transition:transform .24s ease;z-index:50;display:flex;flex-direction:column}
+.drawer.open{transform:none}
+.drawer header{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--line)}
+.drawer header h3{margin:0;font-size:13px;color:var(--ink)}
+.drawer .body{overflow:auto;padding:14px;flex:1}
+.x{margin-left:auto;background:none;border:1px solid var(--line);border-radius:9px;width:40px;height:40px;font-size:19px;line-height:1;color:var(--ink);cursor:pointer}
+.chain{list-style:none;margin:0;padding:0}
+.chain li{position:relative;padding:0 0 16px 20px;border-left:2px solid var(--line)}
+.chain li:last-child{border-left-color:transparent;padding-bottom:0}
+.chain li::before{content:"";position:absolute;left:-6px;top:3px;width:10px;height:10px;border-radius:50%;background:var(--accent)}
+.chain h4{margin:0 0 3px;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.chain p{margin:0;font-size:13px}
+.quote{font-family:var(--mono);font-size:11.5px;background:var(--bg);border:1px dashed var(--line);border-radius:8px;padding:9px;white-space:pre-wrap;margin-top:5px}
+.hash{margin-top:12px;font-family:var(--mono);font-size:11px;color:var(--green);background:var(--green-soft);border-radius:8px;padding:8px 10px;display:flex;gap:7px;align-items:center}
+.doc{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px;max-width:780px}
+.doc .dochead{border-bottom:2px solid var(--ink);padding-bottom:10px;margin-bottom:14px}
+.doc .dochead b{font-size:17px}
+.sec{margin-bottom:16px}
+.sec h4{margin:0 0 6px;font-size:13px}
+.sec .num{color:var(--accent)}
+.doc table{min-width:0}
+.doc td,.doc th{font-size:12.5px}
+.signoff{border:1px dashed var(--line);border-radius:10px;padding:12px;font-size:13px;line-height:2.1}
+.toast{position:fixed;left:50%;bottom:22px;transform:translate(-50%,20px);background:var(--ink);color:var(--bg);padding:12px 18px;border-radius:99px;font-size:13.5px;font-weight:600;opacity:0;pointer-events:none;transition:all .22s;z-index:60}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+footer{text-align:center;color:var(--muted);font-size:11.5px;padding:18px 10px 26px}
+.empty{text-align:center;color:var(--muted);padding:34px 14px}
+.empty svg{opacity:.5;margin-bottom:8px}
+@media(max-width:860px){
+  .shell{display:block}
+  nav.side{width:auto;flex:none;border-right:0;border-bottom:1px solid var(--line);display:flex;gap:6px;overflow-x:auto;padding:8px}
+  nav.side .lbl{display:none}
+  nav.side button{width:auto;white-space:nowrap;padding:9px 12px}
+  nav.side .count{margin-left:6px}
+  main{padding:12px}
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="brand">
+    <svg class="logo" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="2.5" y="2.5" width="19" height="19" rx="5" stroke="currentColor" stroke-width="1.7"/><path d="M7 12.5l3.2 3.2L17 9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <h1>Shiftlog</h1>
+    <span class="tag">— the audit file for the bots on your accounting team</span>
+  </div>
+  <div class="banner"><span class="pill">Demo data</span> Fiscal Q3 2026 · Acme Industrial Supply · NetSuite OneWorld</div>
+</header>
+
+<div class="shell">
+  <nav class="side" aria-label="Sections">
+    <div class="lbl">Workspace</div>
+    <button data-nav="after" aria-current="false"><span class="dot"></span>Agents<span class="count">1</span></button>
+    <button data-nav="after" aria-current="false"><span class="dot"></span>Actions<span class="count">12</span></button>
+    <button data-nav="exceptions" aria-current="false"><span class="dot"></span>Exceptions<span class="count">1</span></button>
+    <button data-nav="pack" aria-current="false"><span class="dot"></span>Evidence Pack<span class="count">Q3</span></button>
+  </nav>
+
+  <main>
+    <div class="tabs" role="tablist">
+      <button role="tab" id="tab-before" aria-selected="true" data-tab="before">Raw logs — what you have today</button>
+      <button role="tab" id="tab-after" aria-selected="false" data-tab="after">Reconstructed agent record</button>
+      <button role="tab" id="tab-pack" aria-selected="false" data-tab="pack">Evidence Pack</button>
+    </div>
+
+    <!-- SCREEN 1 -->
+    <section id="view-before">
+      <div class="strip">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" width="18" height="18"><path d="M12 3L1.8 20.5h20.4L12 3z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M12 9.5v5M12 17.4v.2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <span>Oracle retains production execution-log entries for 21 days. 6 of these expire in 4 days.</span>
+      </div>
+      <div class="card">
+        <h2>NetSuite AI Connector execution log + System Notes</h2>
+        <p class="sub">Raw export, unjoined · 14 rows · 2026-10-12 → 2026-10-16 · subsidiaries US-01, US-02</p>
+        <label class="toggle"><input type="checkbox" id="expToggle"><span class="track"><span class="knob"></span></span>Show what expires in 4 days</label>
+        <div class="scrollx raw" style="margin-top:10px">
+          <table>
+            <thead><tr><th>timestamp</th><th>user</th><th>method / path</th><th>status</th><th>dur_ms</th><th>record · field · old → new</th></tr></thead>
+            <tbody id="rawBody"></tbody>
+          </table>
+        </div>
+        <p class="sub" style="margin:10px 0 0">2 calls returned <span class="s500" style="font-family:var(--mono)">500</span>. 1 execution-log entry has no matching System Note (orphan). No owner, no scope, no approvals, no PDF.</p>
+      </div>
+      <button class="btn" id="goReconstruct">Reconstruct agent activity
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </section>
+
+    <!-- SCREEN 2 -->
+    <section id="view-after" class="hidden">
+      <div class="card" id="reconPanel">
+        <h2>Reconstruct agent activity</h2>
+        <p class="sub">Joins connector calls to System Notes, recovers approvals and remittance evidence, hash-chains each action before retention expiry.</p>
+        <button class="btn" id="runBtn">Reconstruct agent activity</button>
+        <div class="steps hidden" id="steps">
+          <div data-s="0">› reading 14 execution-log entries…</div>
+          <div data-s="1">› joining System Notes by record id…</div>
+          <div data-s="2">› recovering approval records + remittance evidence…</div>
+          <div data-s="3">› hash-chaining 12 actions…</div>
+        </div>
+      </div>
+
+      <div id="afterResult" class="hidden">
+        <div class="card agentcard">
+          <h3>Agent register</h3>
+          <h2 style="margin-bottom:8px">CashApp-1 · Cash Application Agent</h2>
+          <dl class="kv">
+            <dt>Owner</dt><dd>Dana Whitfield, Assistant Controller</dd>
+            <dt>Scope</dt><dd>Match incoming ACH/check payments to open AR invoices in subsidiaries US-01, US-02</dd>
+            <dt>Authority</dt><dd>May auto-apply up to <b>$25,000</b> exact matches</dd>
+            <dt>Must escalate</dt><dd>Short payments, unidentified remitters, any write-off</dd>
+            <dt>Role</dt><dd class="mono">AI Cash Application (Custom)</dd>
+            <dt>Permissions</dt><dd>Snapshot taken 2026-10-01, unchanged <span class="badge b-auto">diff: none</span></dd>
+          </dl>
+        </div>
+
+        <div class="stats">
+          <div class="stat"><b>12</b><span>actions captured</span></div>
+          <div class="stat"><b>$214,882.10</b><span>cash applied</span></div>
+          <div class="stat"><b>2</b><span>human approvals</span></div>
+          <div class="stat"><b>0</b><span>orphans remaining</span></div>
+        </div>
+
+        <div class="card">
+          <h3>Action record · tap any row for the full chain</h3>
+          <div class="scrollx">
+            <table>
+              <thead><tr><th>Date</th><th>Payment ref</th><th>Customer</th><th class="amt">Amount</th><th>Invoice(s)</th><th>State</th><th>Conf.</th><th>Outcome</th></tr></thead>
+              <tbody id="actBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- EXCEPTIONS -->
+    <section id="view-exceptions" class="hidden">
+      <div class="card">
+        <h2>Exception register</h2>
+        <p class="sub">Items the agent was required to escalate. 1 item, disposed.</p>
+        <div id="excBody"></div>
+      </div>
+    </section>
+
+    <!-- SCREEN 3 -->
+    <section id="view-pack" class="hidden">
+      <div class="card">
+        <h2>Q3 2026 evidence pack</h2>
+        <p class="sub">One signed file for your external auditor: register, population, approvals, exceptions, reconciliation, sign-off.</p>
+        <button class="btn" id="genBtn">Generate Q3 evidence pack</button>
+      </div>
+      <div id="packEmpty" class="card empty">
+        <svg width="34" height="34" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 2.8h7l5 5v13.4H6z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M13 2.8v5.2h5" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>
+        <div>No pack generated yet for Fiscal Q3 2026.</div>
+      </div>
+      <div id="packDoc" class="hidden"></div>
+    </section>
+
+    <footer>Prototype by Granted, inspired by your bookmarks</footer>
+  </main>
+</div>
+
+<div class="scrim" id="scrim"></div>
+<aside class="drawer" id="drawer" aria-hidden="true" aria-label="Action detail">
+  <header><h3 id="drawerTitle">Action</h3><button class="x" id="closeDrawer" aria-label="Close">×</button></header>
+  <div class="body" id="drawerBody"></div>
+</aside>
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+"use strict";
+var $=function(s){return document.querySelector(s)};
+
+/* ---------- Screen 1 raw data ---------- */
+var RAW=[
+ {t:"2026-10-12 02:14:07",u:"INTEGRATION_AI_CASHAPP",m:"POST /services/rest/record/v1/customerpayment",s:200,d:842,n:"",exp:true},
+ {t:"2026-10-12 02:14:08",u:"INTEGRATION_AI_CASHAPP",m:"— System Note —",s:"",d:"",n:"customerpayment:118402 · applied_to · [null] → INV-20418",note:true,exp:true},
+ {t:"2026-10-12 06:41:55",u:"INTEGRATION_AI_CASHAPP",m:"GET /services/rest/record/v1/invoice?q=status%3Aopen",s:200,d:1933,n:"",exp:true},
+ {t:"2026-10-12 06:42:01",u:"INTEGRATION_AI_CASHAPP",m:"POST /services/rest/record/v1/customerpayment",s:500,d:30012,n:"ECONNRESET upstream",exp:true},
+ {t:"2026-10-12 06:42:34",u:"INTEGRATION_AI_CASHAPP",m:"POST /services/rest/record/v1/customerpayment",s:200,d:911,n:"",exp:true},
+ {t:"2026-10-12 06:42:35",u:"INTEGRATION_AI_CASHAPP",m:"— System Note —",s:"",d:"",n:"customerpayment:118409 · status · Unapplied → Applied",note:true,exp:true},
+ {t:"2026-10-13 23:58:12",u:"INTEGRATION_AI_CASHAPP",m:"POST /services/rest/record/v1/customerpayment",s:200,d:764,n:""},
+ {t:"2026-10-13 23:58:13",u:"INTEGRATION_AI_CASHAPP",m:"— System Note —",s:"",d:"",n:"customerpayment:118421 · amount_applied · 0.00 → 12,940.00",note:true},
+ {t:"2026-10-14 09:11:40",u:"INTEGRATION_AI_CASHAPP",m:"POST /services/rest/record/v1/customerpayment",s:500,d:30008,n:"gateway timeout",orphan:true},
+ {t:"2026-10-14 09:12:03",u:"MORTIZ",m:"PUT /services/rest/record/v1/customerpayment/118433",s:200,d:410,n:""},
+ {t:"2026-10-14 09:12:04",u:"MORTIZ",m:"— System Note —",s:"",d:"",n:"customerpayment:118433 · approval_status · Pending → Approved",note:true},
+ {t:"2026-10-15 01:22:49",u:"INTEGRATION_AI_CASHAPP",m:"POST /services/rest/record/v1/customerpayment",s:200,d:688,n:""},
+ {t:"2026-10-15 01:22:50",u:"INTEGRATION_AI_CASHAPP",m:"— System Note —",s:"",d:"",n:"customerpayment:118440 · applied_to · [null] → INV-20502 / INV-20511",note:true},
+ {t:"2026-10-16 04:03:18",u:"INTEGRATION_AI_CASHAPP",m:"POST /services/rest/record/v1/creditmemo",s:200,d:1204,n:"memo=CM-0442"}
+];
+function esc(x){return String(x).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")}
+var rawHtml="";
+RAW.forEach(function(r){
+  var cls=(r.note?"note ":"")+(r.exp?"expiring":"");
+  var st=r.s===500?'<span class="s500">500</span>':(r.s===200?'<span class="s200">200</span>':"·");
+  var nt=r.orphan?'<span class="orphan">'+esc(r.n)+' · NO MATCHING SYSTEM NOTE</span>':esc(r.n||"·");
+  rawHtml+='<tr class="'+cls+'"><td>'+esc(r.t)+'</td><td>'+esc(r.u)+'</td><td>'+esc(r.m)+'</td><td>'+st+'</td><td>'+esc(r.d===""?"·":r.d)+'</td><td>'+nt+'</td></tr>';
+});
+$("#rawBody").innerHTML=rawHtml;
+$("#expToggle").addEventListener("change",function(e){
+  var rows=document.querySelectorAll("#rawBody tr.expiring");
+  for(var i=0;i<rows.length;i++){rows[i].classList.toggle("dim",e.target.checked);}
+  if(e.target.checked) toast("6 rows expire 2026-11-22 — gone from Oracle after that");
+});
+
+/* ---------- Screen 2 actions ---------- */
+var ACTS=[
+ {id:1,date:"2026-10-12",ref:"ACH 8841-2206",cust:"Brennan Fabrication",amt:12840.00,inv:"INV-20418",state:"Unapplied → Applied",conf:"99.4%",out:"auto",tx:"CUSTPYMT-118402",
+  ev:"REMITTANCE ADVICE — BRENNAN FABRICATION\nACH TRACE 8841-2206\nINV-20418 .......... 12,840.00\nTOTAL REMITTED ..... 12,840.00",
+  rule:"Auto-apply exact match ≤ $25,000 · single open invoice · remitter name match ≥ 0.95",
+  dec:"Exact amount and invoice reference match on a single open AR invoice in US-01. Within auto-apply authority.",
+  appr:"Auto-applied under delegated authority (limit $25,000). No human review required by policy."},
+ {id:2,date:"2026-10-12",ref:"CHK 40118",cust:"Keystone Pipe & Valve",amt:6420.75,inv:"INV-20423",state:"Unapplied → Applied",conf:"98.1%",out:"auto",tx:"CUSTPYMT-118409",
+  ev:"CHECK 40118 / LOCKBOX BATCH 221\nKEYSTONE PIPE & VALVE\nINV-20423 .......... 6,420.75",
+  rule:"Auto-apply exact match ≤ $25,000 · lockbox image OCR confidence ≥ 0.95",
+  dec:"Lockbox OCR matched invoice number and amount to the cent.",
+  appr:"Auto-applied under delegated authority (limit $25,000)."},
+ {id:3,date:"2026-10-13",ref:"ACH 8852-1144",cust:"Northstar Logistics",amt:12940.00,inv:"INV-20430 / INV-20431",state:"Unapplied → Applied",conf:"97.6%",out:"auto",tx:"CUSTPYMT-118421",
+  ev:"REMITTANCE — NORTHSTAR LOGISTICS\nINV-20430 ... 7,215.00\nINV-20431 ... 5,725.00\nTOTAL ....... 12,940.00",
+  rule:"Auto-apply combined exact match ≤ $25,000 across ≤ 3 invoices",
+  dec:"Two open invoices sum exactly to remitted amount; both in US-01.",
+  appr:"Auto-applied under delegated authority (limit $25,000)."},
+ {id:4,date:"2026-10-13",ref:"ACH 8853-0097",cust:"Delta Coatings LLC",amt:1284.00,inv:"INV-20436",state:"Unapplied → Applied",conf:"99.8%",out:"auto",tx:"CUSTPYMT-118424",
+  ev:"REMITTANCE — DELTA COATINGS LLC\nINV-20436 .......... 1,284.00",
+  rule:"Auto-apply exact match ≤ $25,000",
+  dec:"Single invoice, exact match, remitter on file.",
+  appr:"Auto-applied under delegated authority (limit $25,000)."},
+ {id:5,date:"2026-10-14",ref:"WIRE 6610-884",cust:"Granite Valve Works",amt:86450.00,inv:"INV-20441 / INV-20444 / INV-20449",state:"Unapplied → Applied",conf:"91.2%",out:"human",tx:"CUSTPYMT-118433",
+  ev:"WIRE ADVICE 6610-884 — GRANITE VALVE WORKS\nREF: \"OCT PROGRESS BILLINGS\"\nNo invoice numbers supplied.",
+  rule:"Exceeds $25,000 auto-apply limit → human approval required before posting",
+  dec:"Proposed 3-invoice allocation from open AR aging; remitter matched by bank account on file. Held for approval.",
+  appr:"Approved by Marcus Ortiz, Controller · 2026-10-14 09:12 · reviewed remittance PDF + 2 candidate invoices"},
+ {id:6,date:"2026-10-14",ref:"ACH 8861-3320",cust:"Brennan Fabrication",amt:28300.00,inv:"INV-20452 / INV-20455",state:"Unapplied → Applied",conf:"93.7%",out:"human",tx:"CUSTPYMT-118436",
+  ev:"REMITTANCE — BRENNAN FABRICATION\nINV-20452 ... 19,100.00\nINV-20455 ...  9,200.00\nTOTAL ....... 28,300.00",
+  rule:"Exceeds $25,000 auto-apply limit → human approval required before posting",
+  dec:"Exact two-invoice match but total above delegated authority. Routed for approval.",
+  appr:"Approved by Marcus Ortiz, Controller · 2026-10-14 09:12 · reviewed remittance PDF + 2 candidate invoices"},
+ {id:7,date:"2026-10-14",ref:"ACH 8862-7741",cust:"Pioneer Ductworks",amt:3117.40,inv:"INV-20458 (short paid)",state:"Unapplied → Escalated",conf:"64.0%",out:"esc",tx:"CUSTPYMT-118439 (held)",
+  ev:"REMITTANCE — PIONEER DUCTWORKS\nINV-20458 billed 3,642.40\nPAID ........... 3,117.40\nSHORT .......... 525.00 (damage claim)",
+  rule:"Short payments must escalate — no write-off authority",
+  dec:"Payment $525.00 short of invoice. Outside authority; escalated to collections rather than applied with write-off.",
+  appr:"Escalated 2026-10-14 10:04 to Collections (R. Nakamura). Disposition: credit memo CM-0442 issued 2026-10-16, invoice closed."},
+ {id:8,date:"2026-10-15",ref:"CHK 40199",cust:"Keystone Pipe & Valve",amt:9875.25,inv:"INV-20461",state:"Unapplied → Applied",conf:"98.9%",out:"auto",tx:"CUSTPYMT-118443",
+  ev:"CHECK 40199 / LOCKBOX BATCH 229\nINV-20461 .......... 9,875.25",
+  rule:"Auto-apply exact match ≤ $25,000",
+  dec:"Exact match on single open invoice.",
+  appr:"Auto-applied under delegated authority (limit $25,000)."},
+ {id:9,date:"2026-10-15",ref:"ACH 8870-5512",cust:"Northstar Logistics",amt:14060.00,inv:"INV-20502 / INV-20511",state:"Unapplied → Applied",conf:"96.8%",out:"auto",tx:"CUSTPYMT-118440",
+  ev:"REMITTANCE — NORTHSTAR LOGISTICS\nINV-20502 ... 8,310.00\nINV-20511 ... 5,750.00",
+  rule:"Auto-apply combined exact match ≤ $25,000",
+  dec:"Both invoices open in US-02; total matches exactly.",
+  appr:"Auto-applied under delegated authority (limit $25,000)."},
+ {id:10,date:"2026-10-15",ref:"ACH 8871-0220",cust:"Delta Coatings LLC",amt:7490.50,inv:"INV-20515",state:"Unapplied → Applied",conf:"99.1%",out:"auto",tx:"CUSTPYMT-118447",
+  ev:"REMITTANCE — DELTA COATINGS LLC\nINV-20515 .......... 7,490.50",
+  rule:"Auto-apply exact match ≤ $25,000",
+  dec:"Exact single-invoice match.",
+  appr:"Auto-applied under delegated authority (limit $25,000)."},
+ {id:11,date:"2026-10-16",ref:"CHK 40231",cust:"Harbor Steel Supply",amt:18204.90,inv:"INV-20521",state:"Unapplied → Applied",conf:"97.2%",out:"auto",tx:"CUSTPYMT-118451",
+  ev:"CHECK 40231 / LOCKBOX BATCH 236\nINV-20521 ......... 18,204.90",
+  rule:"Auto-apply exact match ≤ $25,000",
+  dec:"Exact match; remitter on file since 2021.",
+  appr:"Auto-applied under delegated authority (limit $25,000)."},
+ {id:12,date:"2026-10-16",ref:"ACH 8879-4410",cust:"Harbor Steel Supply",amt:13899.80,inv:"INV-20528",state:"Unapplied → Applied",conf:"99.0%",out:"fail",tx:"CUSTPYMT-118456",
+  ev:"REMITTANCE — HARBOR STEEL SUPPLY\nINV-20528 ......... 13,899.80",
+  rule:"Auto-apply exact match ≤ $25,000 · retry on 5xx, idempotency key required",
+  dec:"Attempt 1 · 2026-10-16 04:02:48 → HTTP 500 gateway timeout (30,008 ms), no record created.\nAttempt 2 · 2026-10-16 04:03:18 → HTTP 200, payment posted.",
+  appr:"Auto-applied under delegated authority. Note: no duplicate posting — verified against ERP transaction id CUSTPYMT-118456 (single record, idempotency key ak-118456)."}
+];
+var LBL={auto:["Auto-applied","b-auto"],human:["Approved by human","b-human"],esc:["Escalated","b-esc"],fail:["Failed-retried","b-fail"]};
+function money(n){return "$"+n.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2})}
+var actHtml="";
+ACTS.forEach(function(a){
+  actHtml+='<tr class="act" tabindex="0" data-id="'+a.id+'"><td class="mono">'+a.date+'</td><td class="mono">'+esc(a.ref)+'</td><td>'+esc(a.cust)+
+  '</td><td class="amt">'+money(a.amt)+'</td><td class="mono">'+esc(a.inv)+'</td><td>'+esc(a.state)+'</td><td class="mono">'+a.conf+
+  '</td><td><span class="badge '+LBL[a.out][1]+'">'+LBL[a.out][0]+'</span></td></tr>';
+});
+$("#actBody").innerHTML=actHtml;
+
+/* ---------- drawer ---------- */
+function openDrawer(id){
+  var a=null,i;
+  for(i=0;i<ACTS.length;i++){if(ACTS[i].id===id){a=ACTS[i];break;}}
+  if(!a){toast("That action could not be found."); return;}
+  $("#drawerTitle").textContent=a.ref+" · "+a.cust;
+  $("#drawerBody").innerHTML=
+   '<div style="margin-bottom:12px"><span class="badge '+LBL[a.out][1]+'">'+LBL[a.out][0]+'</span> '+
+   '<span class="mono" style="margin-left:6px">'+money(a.amt)+' · '+a.date+'</span></div>'+
+   '<ul class="chain">'+
+   '<li><h4>1 · Input evidence</h4><p>Remittance captured at ingest</p><div class="quote">'+esc(a.ev)+'</div></li>'+
+   '<li><h4>2 · Rule applied</h4><p>'+esc(a.rule)+'</p></li>'+
+   '<li><h4>3 · Agent decision + reason</h4><p style="white-space:pre-wrap">'+esc(a.dec)+'</p></li>'+
+   '<li><h4>4 · '+(a.out==="human"?"Approval record":(a.out==="esc"?"Escalation + disposition":"Auto-apply justification"))+'</h4><p>'+esc(a.appr)+'</p></li>'+
+   '<li><h4>5 · Resulting NetSuite transaction</h4><p class="mono">'+esc(a.tx)+' · '+esc(a.state)+' · conf '+a.conf+'</p></li>'+
+   '</ul>'+
+   '<div class="hash"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><rect x="4" y="10" width="16" height="11" rx="2.5" stroke="currentColor" stroke-width="1.8"/><path d="M8 10V7a4 4 0 118 0v3" stroke="currentColor" stroke-width="1.8"/></svg>hash-chained, captured 2026-10-14 09:11:52</div>';
+  $("#drawer").classList.add("open");$("#drawer").setAttribute("aria-hidden","false");$("#scrim").classList.add("open");
+}
+function closeDrawer(){$("#drawer").classList.remove("open");$("#drawer").setAttribute("aria-hidden","true");$("#scrim").classList.remove("open");}
+$("#closeDrawer").addEventListener("click",closeDrawer);
+$("#scrim").addEventListener("click",closeDrawer);
+document.addEventListener("keydown",function(e){if(e.key==="Escape")closeDrawer();});
+$("#actBody").addEventListener("click",function(e){
+  var tr=e.target.closest("tr.act"); if(tr) openDrawer(parseInt(tr.getAttribute("data-id"),10));
+});
+$("#actBody").addEventListener("keydown",function(e){
+  if(e.key!=="Enter"&&e.key!==" ")return;
+  var tr=e.target.closest("tr.act"); if(tr){e.preventDefault();openDrawer(parseInt(tr.getAttribute("data-id"),10));}
+});
+
+/* ---------- exceptions ---------- */
+$("#excBody").innerHTML=
+ '<div style="border:1px solid var(--line);border-radius:10px;padding:12px">'+
+ '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px"><span class="badge b-esc">Escalated · disposed</span>'+
+ '<b class="mono">ACH 8862-7741 · Pioneer Ductworks</b></div>'+
+ '<dl class="kv"><dt>Amount</dt><dd>$3,117.40 (short $525.00 vs INV-20458)</dd>'+
+ '<dt>Why escalated</dt><dd>Short payment — agent has no write-off authority</dd>'+
+ '<dt>Routed to</dt><dd>Collections (R. Nakamura) · 2026-10-14 10:04</dd>'+
+ '<dt>Disposition</dt><dd>Credit memo CM-0442 issued 2026-10-16; invoice closed</dd>'+
+ '<dt>Ledger impact</dt><dd>No agent-initiated write-off posted</dd></dl></div>';
+
+/* ---------- tabs / nav ---------- */
+var VIEWS={before:"#view-before",after:"#view-after",pack:"#view-pack",exceptions:"#view-exceptions"};
+function show(v){
+  for(var k in VIEWS){$(VIEWS[k]).classList.toggle("hidden",k!==v);}
+  var tabs=document.querySelectorAll('.tabs button');
+  for(var i=0;i<tabs.length;i++){
+    var t=tabs[i].getAttribute("data-tab");
+    tabs[i].setAttribute("aria-selected", String(t===v || (v==="exceptions"&&t==="after")));
+  }
+  var nb=document.querySelectorAll('nav.side button');
+  for(var j=0;j<nb.length;j++){nb[j].setAttribute("aria-current",String(nb[j].getAttribute("data-nav")===v));}
+  window.scrollTo(0,0);
+}
+document.querySelector(".tabs").addEventListener("click",function(e){
+  var b=e.target.closest("button[data-tab]"); if(b) show(b.getAttribute("data-tab"));
+});
+document.querySelector("nav.side").addEventListener("click",function(e){
+  var b=e.target.closest("button[data-nav]"); if(b) show(b.getAttribute("data-nav"));
+});
+$("#goReconstruct").addEventListener("click",function(){show("after");});
+
+/* ---------- reconstruct ---------- */
+var done=false;
+$("#runBtn").addEventListener("click",function(){
+  if(done){toast("Already reconstructed."); return;}
+  var btn=this;
+  btn.disabled=true;
+  btn.innerHTML='<span class="spin"></span>Reconstructing…';
+  var steps=$("#steps"); steps.classList.remove("hidden");
+  var divs=steps.querySelectorAll("div");
+  [0,1,2,3].forEach(function(i){setTimeout(function(){divs[i].classList.add("on");},i*340);});
+  setTimeout(function(){
+    done=true;
+    $("#afterResult").classList.remove("hidden");
+    btn.disabled=false;
+    btn.innerHTML='Reconstructed · 12 actions, 0 orphans';
+    toast("12 of 12 connector calls matched — sealed before expiry");
+  },1500);
+});
+
+/* ---------- evidence pack ---------- */
+$("#genBtn").addEventListener("click",function(){
+  var btn=this; btn.disabled=true; btn.innerHTML='<span class="spin"></span>Generating…';
+  setTimeout(function(){
+    btn.disabled=false; btn.textContent="Regenerate Q3 evidence pack";
+    $("#packEmpty").classList.add("hidden");
+    var d=$("#packDoc"); d.classList.remove("hidden"); d.innerHTML=packHtml();
+    $("#dlBtn").addEventListener("click",function(){toast("Demo only");});
+    toast("Evidence pack generated · 6 sections");
+  },1200);
+});
+function packHtml(){
+  var rows="";
+  ACTS.forEach(function(a){
+    rows+='<tr><td class="mono">'+a.date+'</td><td class="mono">'+esc(a.ref)+'</td><td>'+esc(a.cust)+'</td><td class="amt">'+money(a.amt)+'</td><td><span class="badge '+LBL[a.out][1]+'">'+LBL[a.out][0]+'</span></td></tr>';
+  });
+  return '<div class="doc">'+
+  '<div class="dochead"><b>Agent Activity Evidence Pack — Fiscal Q3 2026</b><div class="mono" style="color:var(--muted);font-size:12px;margin-top:4px">Acme Industrial Supply · NetSuite OneWorld · prepared 2026-10-17 · hash-chained</div></div>'+
+  '<div class="sec"><h4><span class="num">1.</span> Agent register</h4><dl class="kv"><dt>Agents in scope</dt><dd>1 — CashApp-1, Cash Application Agent</dd><dt>Owner</dt><dd>Dana Whitfield, Assistant Controller</dd><dt>Scope</dt><dd>Match ACH/check payments to open AR invoices, subsidiaries US-01 / US-02; auto-apply ≤ $25,000 exact matches</dd><dt>Permissions diff</dt><dd><b>none</b> (baseline 2026-10-01)</dd></dl></div>'+
+  '<div class="sec"><h4><span class="num">2.</span> Population summary</h4><p class="sub" style="margin:0 0 8px">12 actions · $214,882.10 applied · 100% captured · 0 orphans after reconciliation</p><div class="scrollx"><table><thead><tr><th>Date</th><th>Ref</th><th>Customer</th><th class="amt">Amount</th><th>Outcome</th></tr></thead><tbody>'+rows+'</tbody></table></div></div>'+
+  '<div class="sec"><h4><span class="num">3.</span> Approval evidence</h4><p style="margin:0 0 6px;font-size:13px">2 approvals, named and timestamped:</p><ul style="margin:0;padding-left:18px;font-size:13px"><li>WIRE 6610-884 · Granite Valve Works · $86,450.00 — Marcus Ortiz, Controller · 2026-10-14 09:12 · reviewed remittance PDF + 2 candidate invoices</li><li>ACH 8861-3320 · Brennan Fabrication · $28,300.00 — Marcus Ortiz, Controller · 2026-10-14 09:12 · reviewed remittance PDF + 2 candidate invoices</li></ul></div>'+
+  '<div class="sec"><h4><span class="num">4.</span> Exception register</h4><p style="margin:0;font-size:13px">1 item, disposed — ACH 8862-7741, Pioneer Ductworks, $3,117.40 short payment escalated to Collections 2026-10-14 10:04; disposition: credit memo CM-0442 issued, invoice closed. No agent-initiated write-off.</p></div>'+
+  '<div class="sec"><h4><span class="num">5.</span> Reconciliation statement</h4><p style="margin:0;font-size:13px">12 of 12 connector calls matched to System Notes; 0 unexplained ledger changes by this agent. 1 failed call (HTTP 500) retried successfully — no duplicate posting, verified against ERP transaction id CUSTPYMT-118456.</p></div>'+
+  '<div class="sec"><h4><span class="num">6.</span> Sign-off</h4><div class="signoff">Prepared by Shiftlog<br>Reviewed by ________________________<br>Date ________________________</div></div>'+
+  '<button class="btn" id="dlBtn" style="margin-top:6px">Download PDF</button> <span class="pill" style="margin-left:6px">Demo data</span>'+
+  '</div>';
+}
+
+/* ---------- toast ---------- */
+var tTimer=null;
+function toast(msg){
+  var el=$("#toast"); el.textContent=msg; el.classList.add("show");
+  if(tTimer) clearTimeout(tTimer);
+  tTimer=setTimeout(function(){el.classList.remove("show");},2200);
+}
+show("before");
+})();
+</script>
+</body>
+</html>
