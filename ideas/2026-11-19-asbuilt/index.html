@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Asbuilt — Northwind Foods as-built record</title>
+<style>
+:root{
+  --bg:#f5f6f8; --panel:#ffffff; --ink:#15181d; --muted:#626b78; --line:#e2e5ea;
+  --accent:#1f5eff; --accent-ink:#ffffff; --green:#117a4a; --green-bg:#e6f5ed;
+  --amber:#8a5a00; --amber-bg:#fff5de; --red:#a51f1f; --red-bg:#fdeaea;
+  --hi:#fff2b8; --hi-line:#e0b400; --doc:#ffffff;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#0e1116; --panel:#161a21; --ink:#e8ebf0; --muted:#98a2b3; --line:#252b35;
+    --accent:#5b8cff; --accent-ink:#0b0f16; --green:#4ad295; --green-bg:#11291f;
+    --amber:#f0c04a; --amber-bg:#2c2410; --red:#ff8a8a; --red-bg:#2d1618;
+    --hi:#413718; --hi-line:#c9a227; --doc:#12161c;
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--ink);
+  font:15px/1.5 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  -webkit-text-size-adjust:100%;
+}
+header.top{
+  position:sticky; top:0; z-index:20; background:var(--panel);
+  border-bottom:1px solid var(--line); padding:10px 14px;
+  display:flex; gap:10px; align-items:center; flex-wrap:wrap;
+}
+.brand{display:flex;align-items:center;gap:8px;font-weight:700;letter-spacing:-.02em}
+.logo{width:26px;height:26px;flex:0 0 26px}
+.top .sub{color:var(--muted);font-size:12.5px;line-height:1.35}
+.demochip{margin-left:auto;font-size:11px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:3px 9px;white-space:nowrap}
+main{display:grid;grid-template-columns:1fr;gap:12px;padding:12px;max-width:1500px;margin:0 auto}
+@media(min-width:1000px){ main{grid-template-columns:0.95fr 1fr 1.35fr; align-items:start} }
+section.pane{background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden;min-width:0}
+.pane > h2{
+  margin:0;padding:11px 14px;font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--muted);border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:8px;align-items:baseline
+}
+.pane > h2 span{letter-spacing:0;text-transform:none;font-size:12px}
+.body{padding:12px;max-height:72vh;overflow:auto;-webkit-overflow-scrolling:touch}
+@media(max-width:999px){ .body{max-height:none} }
+
+/* LEFT */
+.art{border:1px solid var(--line);border-radius:11px;padding:10px 12px;margin-bottom:9px;background:transparent;width:100%;text-align:left;cursor:pointer;color:inherit;font:inherit;display:block}
+.art:hover{border-color:var(--accent)}
+.art:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.art .row1{display:flex;gap:9px;align-items:flex-start}
+.art .ic{flex:0 0 20px;margin-top:1px;color:var(--muted)}
+.art .nm{font-weight:600;font-size:14px;word-break:break-word}
+.art .meta{color:var(--muted);font-size:12px;margin-top:2px}
+.chips{margin-top:7px;display:flex;flex-wrap:wrap;gap:6px}
+.chip{font-size:11px;border-radius:999px;padding:2px 8px;border:1px solid var(--line);color:var(--muted)}
+.chip.stale{background:var(--red-bg);color:var(--red);border-color:transparent;font-weight:600}
+.chip.ok{background:var(--green-bg);color:var(--green);border-color:transparent}
+.raw{display:none;margin-top:9px;padding:9px 10px;border-radius:9px;background:var(--bg);border:1px dashed var(--line);
+  font:12.5px/1.6 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:pre-wrap;color:var(--muted)}
+.art.open .raw{display:block}
+.art.flash{border-color:var(--hi-line);background:var(--hi);box-shadow:0 0 0 3px rgba(224,180,0,.22)}
+.art.flash .nm,.art.flash .meta,.art.flash .ic{color:#4a3a00}
+@media (prefers-color-scheme: dark){ .art.flash .nm,.art.flash .meta,.art.flash .ic{color:var(--ink)} }
+
+/* MIDDLE */
+.btn{
+  appearance:none;border:none;border-radius:11px;background:var(--accent);color:var(--accent-ink);
+  font:600 15px/1 inherit;padding:15px 16px;width:100%;min-height:50px;cursor:pointer
+}
+.btn:disabled{opacity:.55;cursor:default}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+.btn.sm{width:auto;padding:10px 13px;font-size:13px;min-height:42px}
+.hint{color:var(--muted);font-size:12.5px;margin:9px 2px 0}
+.steps{list-style:none;margin:14px 0 0;padding:0}
+.steps li{display:flex;gap:9px;align-items:flex-start;padding:7px 0;font-size:13.5px;color:var(--muted);border-bottom:1px dashed var(--line)}
+.steps li:last-child{border-bottom:none}
+.steps li.done{color:var(--ink)}
+.spin{width:16px;height:16px;flex:0 0 16px;margin-top:2px;border-radius:50%;border:2px solid var(--line);border-top-color:var(--accent);animation:sp .7s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion: reduce){ .spin{animation-duration:2s} }
+.tick{width:16px;height:16px;flex:0 0 16px;margin-top:2px;color:var(--green)}
+.dot{width:16px;height:16px;flex:0 0 16px;margin-top:2px;border-radius:50%;border:2px solid var(--line)}
+.bar{height:6px;border-radius:99px;background:var(--line);overflow:hidden;margin-top:14px}
+.bar>i{display:block;height:100%;width:0;background:var(--accent);transition:width .35s linear}
+.toc{list-style:none;margin:4px 0 0;padding:0}
+.toc li{display:flex;gap:10px;align-items:center;padding:10px 2px;border-bottom:1px solid var(--line);font-size:14px}
+.toc li:last-child{border-bottom:none}
+.toc .n{color:var(--muted);font-variant-numeric:tabular-nums;width:16px}
+.panel-amber{margin-top:14px;background:var(--amber-bg);border:1px solid rgba(138,90,0,.3);border-radius:11px;padding:11px 12px}
+.panel-amber h4{margin:0 0 4px;font-size:13px;color:var(--amber)}
+.panel-amber p{margin:0;font-size:12.8px;color:var(--muted)}
+.statline{display:flex;gap:14px;flex-wrap:wrap;margin-top:12px}
+.stat{flex:1 1 90px}
+.stat b{display:block;font-size:19px;letter-spacing:-.02em}
+.stat span{font-size:11.5px;color:var(--muted)}
+
+/* RIGHT */
+.tabs{display:flex;gap:6px;padding:9px 12px;border-bottom:1px solid var(--line);flex-wrap:wrap;align-items:center}
+.tab{appearance:none;border:1px solid var(--line);background:transparent;color:var(--muted);font:600 13px/1 inherit;
+  padding:10px 12px;border-radius:9px;cursor:pointer;min-height:40px}
+.tab[aria-selected="true"]{background:var(--ink);color:var(--panel);border-color:var(--ink)}
+.tab .badge{display:inline-block;margin-left:6px;background:var(--amber-bg);color:var(--amber);border-radius:999px;padding:1px 6px;font-size:11px}
+.docwrap{padding:12px;background:var(--bg)}
+.page{background:var(--doc);border:1px solid var(--line);border-radius:10px;padding:20px 18px;max-width:740px;margin:0 auto}
+.doc-head{display:flex;gap:10px;align-items:center;border-bottom:1px solid var(--line);padding-bottom:11px;margin-bottom:16px}
+.plogo{width:36px;height:36px;border-radius:8px;border:1px dashed var(--line);display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--muted);text-align:center;line-height:1.1;flex:0 0 36px}
+.doc-head .t{font-weight:700;font-size:14px}
+.doc-head .s{font-size:11.5px;color:var(--muted)}
+.page h3{margin:0 0 2px;font-size:19px;letter-spacing:-.02em}
+.page .kicker{color:var(--muted);font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;margin-bottom:12px}
+.page h4{margin:20px 0 7px;font-size:13.5px}
+.page p{margin:0 0 11px;font-size:14px}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th{text-align:left;color:var(--muted);font-size:11px;letter-spacing:.08em;text-transform:uppercase;padding:6px 8px;border-bottom:1px solid var(--line);font-weight:600}
+td{padding:9px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+tr.src{cursor:pointer}
+tr.src:hover td{background:var(--bg)}
+tr.src.sel td{background:var(--hi)}
+@media (prefers-color-scheme: dark){ tr.src.sel td{background:var(--hi);color:var(--ink)} }
+tr.src td:last-child{color:var(--muted);font-size:12px;white-space:nowrap}
+blockquote{margin:0;padding:11px 13px;border-left:3px solid var(--accent);background:var(--bg);border-radius:0 9px 9px 0;font-size:13.5px}
+blockquote cite{display:block;margin-top:6px;font-size:11.5px;color:var(--muted);font-style:normal}
+.behind{font-size:13px;color:var(--muted);border:1px dashed var(--line);border-radius:9px;padding:10px 12px}
+.behind b{color:var(--ink)}
+.pagefoot{margin-top:18px;padding-top:10px;border-top:1px solid var(--line);display:flex;justify-content:space-between;font-size:11px;color:var(--muted)}
+.added{background:var(--green-bg);border-left:3px solid var(--green);padding:9px 11px;border-radius:0 9px 9px 0;font-size:13px;margin:0 0 11px}
+.diffcard{border:1px solid var(--line);border-radius:11px;padding:11px 12px;margin-bottom:9px;background:var(--panel)}
+.diffcard.warn{border-color:rgba(138,90,0,.45);background:var(--amber-bg)}
+.diffcard .dh{display:flex;gap:8px;justify-content:space-between;align-items:baseline;flex-wrap:wrap}
+.diffcard .dt{font-weight:650;font-size:13.8px}
+.diffcard .dd{font-size:11.5px;color:var(--muted);white-space:nowrap}
+.vals{margin-top:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;font:12.5px/1.4 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.v{padding:3px 8px;border-radius:7px;border:1px solid var(--line)}
+.v.old{text-decoration:line-through;color:var(--muted)}
+.v.new{background:var(--green-bg);color:var(--green);border-color:transparent;font-weight:600}
+.arrow{color:var(--muted)}
+.by{margin-top:7px;font-size:12px;color:var(--muted)}
+.warnnote{margin-top:8px;font-size:12.5px;color:var(--amber);font-weight:600}
+.empty{text-align:center;padding:30px 16px;color:var(--muted)}
+.empty svg{opacity:.5;margin-bottom:10px}
+.empty p{margin:0 0 4px;font-size:14px}
+.empty small{font-size:12px}
+footer{text-align:center;color:var(--muted);font-size:12px;padding:16px 12px 30px}
+.toast{
+  position:fixed;left:50%;bottom:18px;transform:translate(-50%,18px);background:var(--ink);color:var(--panel);
+  padding:12px 16px;border-radius:11px;font-size:13.5px;opacity:0;pointer-events:none;transition:.25s;z-index:60;
+  max-width:92vw;text-align:center;box-shadow:0 8px 28px rgba(0,0,0,.25)
+}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="brand">
+    <svg class="logo" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <rect x="2.5" y="2.5" width="19" height="19" rx="5" stroke="currentColor" stroke-width="1.8"/>
+      <path d="M7 15.5 12 7l5 8.5M9 13h6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <span>Asbuilt</span>
+  </div>
+  <div class="sub">Northwind Foods · Business Central · Go-live 14 Mar 2026 — the living as-built record of how the system was actually configured.</div>
+  <div class="demochip">Demo data</div>
+</header>
+
+<main>
+  <!-- LEFT -->
+  <section class="pane" aria-labelledby="h-before">
+    <h2 id="h-before">Before <span>9 artefacts · 4 tools</span></h2>
+    <div class="body" id="artefacts"></div>
+  </section>
+
+  <!-- MIDDLE -->
+  <section class="pane" aria-labelledby="h-asbuilt">
+    <h2 id="h-asbuilt">Asbuilt <span id="midState">Not generated</span></h2>
+    <div class="body">
+      <button class="btn" id="genBtn">Generate as-built pack</button>
+      <p class="hint" id="genHint">Reads the live tenant, then matches every setting back to the decision that caused it.</p>
+      <ul class="steps" id="steps" hidden></ul>
+      <div class="bar" id="bar" hidden><i></i></div>
+      <div id="result" hidden>
+        <div class="statline">
+          <div class="stat"><b>1,284</b><span>setup records read</span></div>
+          <div class="stat"><b>47 / 52</b><span>decisions matched</span></div>
+          <div class="stat"><b>24</b><span>pages written</span></div>
+        </div>
+        <h4 style="margin:18px 0 2px;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)">Contents</h4>
+        <ul class="toc" id="toc"></ul>
+        <div class="panel-amber">
+          <h4>Could not read: 2 areas</h4>
+          <p>Job queue entries and Power Automate flows are outside the automation API scope for this tenant. They are marked “unverified” in the pack rather than guessed. 5 settings remain unexplained — no workshop decision found.</p>
+        </div>
+        <button class="btn ghost sm" id="dlBtn" style="margin-top:14px">⤓ Download .docx</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- RIGHT -->
+  <section class="pane" aria-labelledby="h-after">
+    <h2 id="h-after">After <span>Northwind_AsBuilt_v1</span></h2>
+    <div class="tabs" role="tablist" aria-label="Document views">
+      <button class="tab" role="tab" id="tabDoc" aria-selected="true" aria-controls="viewDoc">Chapter 2 — Purchase to pay</button>
+      <button class="tab" role="tab" id="tabDiff" aria-selected="false" aria-controls="viewDiff">Change diff — November <span class="badge">1</span></button>
+    </div>
+    <div class="body" style="padding:0">
+      <div id="viewEmpty">
+        <div class="empty">
+          <svg width="42" height="42" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M6 3h8l4 4v14H6z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+            <path d="M14 3v4h4M9 12h6M9 16h6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+          </svg>
+          <p>No pack yet.</p>
+          <small>Generate the as-built pack to see the client-ready document.</small>
+        </div>
+      </div>
+
+      <div id="viewDoc" role="tabpanel" aria-labelledby="tabDoc" hidden>
+        <div class="docwrap">
+          <article class="page">
+            <div class="doc-head">
+              <div class="plogo">PARTNER<br>LOGO</div>
+              <div>
+                <div class="t">Northwind Foods Ltd — As-built record</div>
+                <div class="s">Dynamics 365 Business Central 25.4 · Production · Issued 19 Nov 2026 · v1</div>
+              </div>
+            </div>
+            <div class="kicker">Chapter 2 of 6</div>
+            <h3>Purchase to pay</h3>
+            <p>Northwind Foods buys ambient and chilled stock from 212 active vendors across three trading regions. The purchase to pay process was rebuilt during implementation to put a single spending gate in front of the Controller, and to make freight recoverable at the line level rather than being absorbed into margin.</p>
+            <p>Every purchase order is raised by a buyer against a vendor with an agreed posting group. Orders at or under the approval limit post straight through; anything above routes to the Controller through the approval workflow. Receiving is done against the order in the warehouse, and invoices are matched three ways — order, receipt, invoice — before they can be posted. Where a quantity or price falls outside tolerance the invoice is held and appears on the buyer's role centre, not the Controller's.</p>
+
+            <h4>Configured settings <span style="font-weight:400;color:var(--muted);font-size:12px">— tap a row to see where it came from</span></h4>
+            <table>
+              <thead><tr><th>Setting</th><th>Value</th><th>Source</th></tr></thead>
+              <tbody id="settings"></tbody>
+            </table>
+
+            <h4>Why it is set this way</h4>
+            <blockquote>
+              “Anything over 25k has to come to me. I don't care if it's pallets of tinned tomatoes — if it's over 25 I sign it.”
+              <cite>Discovery workshop 3, 11 Feb 2026 — Controller, Northwind Foods (transcript 00:18:42)</cite>
+            </blockquote>
+
+            <h4>Behind this</h4>
+            <p class="behind">Freight surcharge lines on purchase invoices are produced by the extension <b>NW_FreightSurcharge v1.2.0</b> (AppSource ID 8f3a…c71), which subscribes to the purchase line validate event and inserts a charge (item) line per shipment agent. It is not standard Business Central. If this extension is uninstalled, freight recovery stops silently.</p>
+            <div id="docExtra"></div>
+            <div class="pagefoot"><span>Northwind Foods — As-built record v1</span><span>Page 7 of 24</span></div>
+          </article>
+        </div>
+      </div>
+
+      <div id="viewDiff" role="tabpanel" aria-labelledby="tabDiff" hidden>
+        <div class="docwrap">
+          <article class="page">
+            <div class="doc-head">
+              <div class="plogo">PARTNER<br>LOGO</div>
+              <div>
+                <div class="t">Change diff — 1–19 November 2026</div>
+                <div class="s">5 changes to production since the pack was issued · 1 needs attention</div>
+              </div>
+            </div>
+            <div id="diffs"></div>
+            <div class="pagefoot"><span>Compared against tenant snapshot 31 Oct 2026</span><span>Demo data</span></div>
+          </article>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>Prototype by Granted, inspired by your bookmarks</footer>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<div class="sr" id="live" aria-live="polite"></div>
+
+<script>
+(function(){
+  "use strict";
+
+  var ICONS = {
+    doc:'<path d="M6 3h8l4 4v14H6z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M14 3v4h4" stroke="currentColor" stroke-width="1.6"/>',
+    audio:'<path d="M12 3v18M7 8v8M17 8v8M3 11v2M21 11v2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>',
+    sheet:'<rect x="3" y="4" width="18" height="16" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M3 10h18M9 10v10" stroke="currentColor" stroke-width="1.6"/>',
+    chat:'<path d="M4 5h16v11H9l-5 4z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>',
+    ext:'<rect x="4" y="4" width="16" height="16" rx="3" stroke="currentColor" stroke-width="1.6"/><path d="M9 9h6v6H9z" stroke="currentColor" stroke-width="1.6"/>',
+    mail:'<rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="m3.5 7 8.5 6 8.5-6" stroke="currentColor" stroke-width="1.6"/>',
+    bug:'<circle cx="12" cy="13" r="5" stroke="currentColor" stroke-width="1.6"/><path d="M12 4v3M4 13h3M17 13h3M6 7l2 2M18 7l-2 2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>',
+    key:'<circle cx="8" cy="12" r="3.5" stroke="currentColor" stroke-width="1.6"/><path d="M11.5 12H21l-2 2.5M17 12v3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>',
+    sync:'<path d="M4 12a8 8 0 0 1 13.7-5.6M20 12a8 8 0 0 1-13.7 5.6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M18 3v4h-4M6 21v-4h4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>'
+  };
+
+  var ARTEFACTS = [
+    {id:'wk3', ic:'audio', nm:'Discovery workshop 3 — AP process.vtt', meta:'41 min transcript · 11 Feb 2026 · Teams recording',
+     chips:[{t:'transcribed'}],
+     raw:"00:18:36  Consultant: ...so on the approval side, where do we draw the line?\n00:18:42  Controller: Anything over 25k has to come to me. I don't care if\n          it's pallets of tinned tomatoes — if it's over 25 I sign it.\n00:19:05  Buyer (Dana): and under that I just release it myself?\n00:19:08  Controller: under that you're fine. But I want the three-way\n          match on, I'm not paying invoices we never received.\n00:21:14  Consultant: noted — PO approval limit 25,000, approver = Controller."},
+    {id:'fdd', ic:'doc', nm:'FDD_Northwind_v7_FINAL_final.docx', meta:'Shared drive · 86 pages · 4 people edited',
+     chips:[{t:'last updated 6 weeks ago',c:'stale'},{t:'3 near-duplicates'}],
+     raw:"§4.2 Purchasing\n  \"The purchase approval limit shall be set to 25.000 (TBC with client)\"\n  [comment — Priya, 3 Mar]: this is out of date, see Teams\n  [tracked change: 15,000 → 25,000]\n§4.3 Freight\n  \"Freight to be handled by customisation (see appendix C — missing)\"\nNote: v6 and v7 both in the folder. v7_FINAL_final is the one sent to client."},
+    {id:'cfg', ic:'sheet', nm:'Config decisions.xlsx — sheet: Dimensions', meta:'Owner: Priya N. · 9 sheets · 612 rows',
+     chips:[{t:'last updated 6 weeks ago',c:'stale'}],
+     raw:"DEPARTMENT  | Global Dim 1 | mandatory on purchase lines = YES\nREGION      | Global Dim 2 | mandatory = YES (blocked: WEST-OLD)\nPROJECT     | Shortcut 3   | optional\nVendor posting groups: DOMESTIC / EU / US-WEST  (row 118-120)\nrow 121: \"US-WEST added late, check payables account\" — unresolved"},
+    {id:'teams', ic:'chat', nm:"Teams chat: 'we changed the posting group on Friday'", meta:'#northwind-build · 14 Sep 2026 · 23 messages',
+     chips:[{t:'not in any doc'}],
+     raw:"Priya N. (Fri 17:41): we changed the posting group on Friday, US-WEST now\n  points at 2112 not 2110. Finance asked.\nMark T. (Fri 17:49): is that in the FDD?\nPriya N. (Fri 17:49): no 🙂\nMark T. (Mon 08:12): add it to the issue log then\n(no issue log entry found)"},
+    {id:'ext', ic:'ext', nm:'Extension: NW_FreightSurcharge v1.2.0', meta:'AppSource ID 8f3a…c71 · per-tenant · installed 02 Mar 2026',
+     chips:[{t:'installed'},{t:'no handover doc'}],
+     raw:"Publisher: Harbourline Consulting\nObjects: tableext 50112 Purch. Line, codeunit 50113 FreightCalc\nSubscribes: OnAfterValidateEvent — Purchase Line, \"Shipment Agent Code\"\nInserts charge (item) line per shipment agent, G/L 7410.\nLast deployed: 1.2.0 (04 Oct 2026). No release notes supplied."},
+    {id:'mail', ic:'mail', nm:'Email: client asks why PO approval limit is 25k', meta:'From Controller · 06 Nov 2026 · unanswered 13 days',
+     chips:[{t:'awaiting reply'}],
+     raw:"Subject: RE: PO approvals\n\"Our new FD is asking where the 25k came from and who signed it off.\nCan you send something official? We can't find it written down anywhere.\"\n\n(No reply in thread.)"},
+    {id:'issues', ic:'bug', nm:'Issue log — 14 open', meta:'Azure DevOps board · 3 severity-1 · 2 unassigned',
+     chips:[{t:'14 open'}],
+     raw:"#214  s1  Freight line duplicates on partial receipt            (NW_FreightSurcharge)\n#219  s2  US-WEST payables account mismatch                     unassigned\n#227  s1  Job queue 'POST SALES INV' stuck in Ready since 3 Nov\n#231  s3  Buyer sees Controller's approval entries\n...10 more"},
+    {id:'perms', ic:'key', nm:'Permission sets — 6 custom', meta:'Read from tenant · last compared 31 Oct 2026',
+     chips:[{t:'6 custom'}],
+     raw:"NW-BUYER        28 objects  · 11 users · includes Purch. Header RIMD\nNW-CONTROLLER   64 objects  ·  2 users · approval entries + G/L\nNW-WHSE         19 objects  · 17 users\nNW-SUPER        all objects ·  4 users  ← wider than intended\nNW-API, NW-READONLY"},
+    {id:'env', ic:'sync', nm:'Sandbox vs Production: untracked', meta:'No config package comparison run since Mar 2026',
+     chips:[{t:'last compared: never',c:'stale'}],
+     raw:"Sandbox NWF-UAT last refreshed 09 Mar 2026 (pre go-live).\nConfiguration packages: NWF-SETUP-FIN, NWF-SETUP-PURCH — applied to\nProduction only. Drift unknown.\n2 areas unreadable via automation API: job queue entries, Power Automate flows."}
+  ];
+
+  var SETTINGS = [
+    {k:'PO approval limit', v:'25,000 USD', srcLabel:'Workshop 3', src:'wk3'},
+    {k:'Approver hierarchy', v:'Buyer → Controller', srcLabel:'Workshop 3', src:'wk3'},
+    {k:'3-way match (order / receipt / invoice)', v:'ON · qty tol. 0%, price tol. 2%', srcLabel:'Workshop 3', src:'wk3'},
+    {k:'Vendor posting groups', v:'DOMESTIC / EU / US-WEST', srcLabel:'Config decisions.xlsx', src:'cfg'},
+    {k:'US-WEST payables account', v:'2112 (changed 14 Sep)', srcLabel:'Teams chat', src:'teams'},
+    {k:'Dimensions mandatory on purchase lines', v:'DEPARTMENT, REGION', srcLabel:'Config decisions.xlsx', src:'cfg'},
+    {k:'Freight surcharge on purchase lines', v:'Automatic, G/L 7410', srcLabel:'NW_FreightSurcharge v1.2.0', src:'ext'},
+    {k:'Purchase order release permission', v:'NW-BUYER, NW-CONTROLLER', srcLabel:'Permission sets', src:'perms'}
+  ];
+
+  var STEPS = [
+    {t:'Reading tenant configuration via automation API… 1,284 setup records', ms:1100},
+    {t:'Reading 3 installed extensions', ms:700},
+    {t:'Reading 6 permission sets', ms:600},
+    {t:'Matching configuration to workshop decisions… 47 matched, 5 unexplained', ms:1050},
+    {t:'Writing chapters', ms:550}
+  ];
+
+  var CHAPTERS = ['Finance setup','Purchase to pay','Sales order to cash','Inventory & warehouse','Customizations & integrations','Who to call'];
+
+  var DIFFS = [
+    {t:'PO approval limit raised', date:'04 Nov 2026', old:'25,000 USD', neu:'40,000 USD', by:'Priya N. (Harbourline Consulting) · no workshop decision on record', warn:false},
+    {t:'Vendor posting group US-WEST — payables account', date:'07 Nov 2026', old:'G/L 2110', neu:'G/L 2112', by:'M. Thorne (Northwind Finance) · matches Teams chat 14 Sep', warn:false},
+    {t:'Agent: BC Sales Order Agent enabled', date:'11 Nov 2026', old:'Disabled', neu:'Enabled · full order create', by:'Tenant admin (Northwind IT)', warn:true,
+     note:'Can create sales orders. No approval boundary set — the agent is not covered anywhere in the as-built pack.', id:'agent'},
+    {t:'Permission set NW-SUPER assigned to 2 more users', date:'12 Nov 2026', old:'4 users', neu:'6 users', by:'Tenant admin (Northwind IT)', warn:false},
+    {t:'Job queue entry “POST SALES INV” — recurrence', date:'17 Nov 2026', old:'Every 15 min', neu:'Every 4 hours', by:'Unknown · job queue not readable via API', warn:false}
+  ];
+
+  function $(id){ return document.getElementById(id); }
+  var artWrap=$('artefacts'), flashTimer=null, generated=false, agentAdded=false;
+
+  function esc(s){ return String(s).replace(/[&<>]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c];}); }
+
+  // Render LEFT
+  ARTEFACTS.forEach(function(a){
+    var b=document.createElement('button');
+    b.className='art'; b.type='button'; b.id='art-'+a.id;
+    b.setAttribute('aria-expanded','false');
+    var chips=(a.chips||[]).map(function(c){return '<span class="chip '+(c.c||'')+'">'+esc(c.t)+'</span>';}).join('');
+    b.innerHTML='<div class="row1"><svg class="ic" viewBox="0 0 24 24" fill="none" aria-hidden="true">'+ICONS[a.ic]+'</svg>'+
+      '<div style="min-width:0"><div class="nm">'+esc(a.nm)+'</div><div class="meta">'+esc(a.meta)+'</div>'+
+      '<div class="chips">'+chips+'</div></div></div>'+
+      '<div class="raw">'+esc(a.raw)+'</div>';
+    b.addEventListener('click',function(){
+      var open=b.classList.toggle('open');
+      b.setAttribute('aria-expanded',open?'true':'false');
+    });
+    artWrap.appendChild(b);
+  });
+
+  function highlight(id){
+    var el=$('art-'+id);
+    if(!el){ toast('Source artefact not available in this demo'); return; }
+    document.querySelectorAll('.art.flash').forEach(function(n){n.classList.remove('flash');});
+    el.classList.add('open'); el.setAttribute('aria-expanded','true');
+    el.classList.add('flash');
+    try{ el.scrollIntoView({block:'nearest',behavior:'smooth'}); }catch(e){ el.scrollIntoView(); }
+    if(flashTimer) clearTimeout(flashTimer);
+    flashTimer=setTimeout(function(){ el.classList.remove('flash'); },3200);
+    $('live').textContent='Source highlighted: '+el.querySelector('.nm').textContent;
+  }
+
+  // Settings table
+  var tb=$('settings');
+  SETTINGS.forEach(function(s,i){
+    var tr=document.createElement('tr');
+    tr.className='src'; tr.tabIndex=0; tr.setAttribute('role','button');
+    tr.innerHTML='<td>'+esc(s.k)+'</td><td><b>'+esc(s.v)+'</b></td><td>↖ '+esc(s.srcLabel)+'</td>';
+    function go(){
+      document.querySelectorAll('tr.src.sel').forEach(function(n){n.classList.remove('sel');});
+      tr.classList.add('sel'); highlight(s.src);
+    }
+    tr.addEventListener('click',go);
+    tr.addEventListener('keydown',function(e){ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); go(); }});
+    tb.appendChild(tr);
+  });
+
+  // Diffs
+  var dw=$('diffs');
+  DIFFS.forEach(function(d){
+    var c=document.createElement('div');
+    c.className='diffcard'+(d.warn?' warn':'');
+    var html='<div class="dh"><span class="dt">'+esc(d.t)+'</span><span class="dd">'+esc(d.date)+'</span></div>'+
+      '<div class="vals"><span class="v old">'+esc(d.old)+'</span><span class="arrow">→</span><span class="v new">'+esc(d.neu)+'</span></div>'+
+      '<div class="by">'+esc(d.by)+'</div>';
+    if(d.warn){ html+='<div class="warnnote">⚠ '+esc(d.note)+'</div>'; }
+    c.innerHTML=html;
+    if(d.warn){
+      var btn=document.createElement('button');
+      btn.className='btn ghost sm'; btn.type='button'; btn.style.marginTop='10px';
+      btn.textContent='+ Add to pack (Chapter 5)';
+      btn.addEventListener('click',function(){
+        if(agentAdded){ toast('Already in Chapter 5'); return; }
+        if(!generated){ toast('Generate the as-built pack first'); return; }
+        agentAdded=true;
+        btn.disabled=true; btn.textContent='✓ Added to Chapter 5';
+        var p=document.createElement('p');
+        p.className='added';
+        p.innerHTML='<b>Added 19 Nov 2026 — Chapter 5, Customizations &amp; integrations.</b> BC Sales Order Agent is enabled in production and can create sales orders autonomously. No approval boundary or spending limit is configured for the agent, and it is not covered by the Buyer → Controller hierarchy described in Chapter 2. Owner: Northwind IT. Action: agree a boundary before year-end.';
+        $('docExtra').appendChild(p);
+        var badge=document.querySelector('#tabDiff .badge'); if(badge) badge.remove();
+        selectTab('doc');
+        toast('Added to Chapter 5 — pack is now 25 pages');
+      });
+      c.appendChild(btn);
+    }
+    dw.appendChild(c);
+  });
+
+  // Tabs
+  function selectTab(which){
+    var isDoc = which==='doc';
+    if(!generated){
+      $('viewEmpty').hidden=false; $('viewDoc').hidden=true; $('viewDiff').hidden=true;
+    } else {
+      $('viewEmpty').hidden=true;
+      $('viewDoc').hidden=!isDoc; $('viewDiff').hidden=isDoc;
+    }
+    $('tabDoc').setAttribute('aria-selected', isDoc?'true':'false');
+    $('tabDiff').setAttribute('aria-selected', isDoc?'false':'true');
+  }
+  $('tabDoc').addEventListener('click',function(){ if(!generated){toast('Generate the as-built pack first');return;} selectTab('doc'); });
+  $('tabDiff').addEventListener('click',function(){ if(!generated){toast('Generate the as-built pack first');return;} selectTab('diff'); });
+
+  // Toast
+  var toastEl=$('toast'), toastTimer=null;
+  function toast(msg){
+    toastEl.textContent=msg; toastEl.classList.add('show');
+    if(toastTimer) clearTimeout(toastTimer);
+    toastTimer=setTimeout(function(){ toastEl.classList.remove('show'); },2600);
+  }
+
+  // Pipeline
+  var genBtn=$('genBtn'), stepsEl=$('steps'), barEl=$('bar'), barFill=barEl.firstElementChild;
+  genBtn.addEventListener('click',function(){
+    if(genBtn.disabled) return;
+    genBtn.disabled=true; genBtn.textContent='Generating…';
+    $('genHint').textContent='Reading tenant NWF-PROD · read-only · Demo data';
+    $('midState').textContent='Generating…';
+    stepsEl.hidden=false; barEl.hidden=false; stepsEl.innerHTML='';
+    $('result').hidden=true; $('docExtra').innerHTML=''; agentAdded=false;
+
+    STEPS.forEach(function(s,i){
+      var li=document.createElement('li');
+      li.innerHTML='<span class="dot"></span><span>'+esc(s.t)+'</span>';
+      stepsEl.appendChild(li);
+    });
+
+    var total=STEPS.reduce(function(a,s){return a+s.ms;},0), elapsed=0;
+    function run(i){
+      if(i>=STEPS.length){ finish(); return; }
+      var li=stepsEl.children[i];
+      li.firstElementChild.outerHTML='<span class="spin"></span>';
+      setTimeout(function(){
+        li.classList.add('done');
+        li.firstElementChild.outerHTML='<svg class="tick" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+        elapsed+=STEPS[i].ms;
+        barFill.style.width=Math.round(elapsed/total*100)+'%';
+        run(i+1);
+      },STEPS[i].ms);
+    }
+    run(0);
+
+    function finish(){
+      generated=true;
+      $('midState').textContent='v1 · 24 pages';
+      var toc=$('toc'); toc.innerHTML='';
+      CHAPTERS.forEach(function(c,i){
+        var li=document.createElement('li');
+        li.innerHTML='<span class="n">'+(i+1)+'</span>'+
+          '<svg class="tick" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>'+
+          '<span>'+esc(c)+'</span>';
+        toc.appendChild(li);
+      });
+      $('result').hidden=false;
+      genBtn.textContent='✓ Pack generated — regenerate';
+      genBtn.disabled=false;
+      selectTab('doc');
+      $('live').textContent='As-built pack generated. 6 chapters, 24 pages.';
+      toast('As-built pack generated — 6 chapters, 24 pages');
+    }
+  });
+
+  $('dlBtn').addEventListener('click',function(){
+    toast('Exported — Northwind_AsBuilt_v1.docx ('+(agentAdded?25:24)+' pages)');
+  });
+
+  selectTab('doc');
+})();
+</script>
+</body>
+</html>

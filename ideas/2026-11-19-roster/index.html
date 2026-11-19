@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Roster — paste your job, get the bot team that would do it</title>
+<style>
+:root{
+  --bg:#0b0d12; --panel:#13161e; --panel2:#181c26; --line:#272c38;
+  --txt:#e9edf5; --dim:#9aa3b5; --accent:#7cf0c0; --accent2:#8fb4ff;
+  --you:#ffd27d; --gate:#ff6b6b;
+}
+@media (prefers-color-scheme: light){
+  :root{
+    --bg:#f6f7fb; --panel:#ffffff; --panel2:#f0f2f8; --line:#dfe3ed;
+    --txt:#131720; --dim:#5d6678; --accent:#0a8f66; --accent2:#2a5fd0;
+    --you:#a26a00; --gate:#d7263d;
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--txt);
+  font-family:ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  -webkit-font-smoothing:antialiased; line-height:1.45;
+  padding-bottom:60px;
+}
+button,input,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+.wrap{max-width:1120px;margin:0 auto;padding:0 16px}
+
+header.top{
+  position:sticky;top:0;z-index:30;background:color-mix(in srgb,var(--bg) 88%, transparent);
+  backdrop-filter:blur(8px);border-bottom:1px solid var(--line);
+}
+.topin{display:flex;align-items:center;gap:12px;padding:10px 16px;max-width:1120px;margin:0 auto}
+.brand{display:flex;align-items:center;gap:9px;font-weight:700;letter-spacing:-.02em}
+.mark{width:26px;height:26px;flex:0 0 26px}
+.tag{font-size:12.5px;color:var(--dim);font-weight:400;display:none}
+@media(min-width:720px){.tag{display:inline}}
+.navsp{flex:1}
+.tabs{display:flex;gap:6px;background:var(--panel2);border:1px solid var(--line);border-radius:999px;padding:3px}
+.tab{border:0;background:transparent;color:var(--dim);padding:8px 13px;border-radius:999px;font-size:13.5px;min-height:38px}
+.tab[aria-selected="true"]{background:var(--panel);color:var(--txt);box-shadow:0 1px 3px rgba(0,0,0,.25);font-weight:600}
+
+/* screen 1 */
+.hero{min-height:62vh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:48px 16px 24px}
+.hero h1{font-size:clamp(28px,6.4vw,46px);line-height:1.1;letter-spacing:-.03em;margin:0 0 10px;max-width:14ch}
+.hero p.sub{color:var(--dim);margin:0 0 26px;max-width:46ch;font-size:15.5px}
+.searchbox{position:relative;width:100%;max-width:520px;text-align:left}
+input[type=text]{
+  width:100%;padding:16px 16px;border-radius:14px;border:1px solid var(--line);
+  background:var(--panel);font-size:16.5px;min-height:56px;outline:none;
+}
+input[type=text]:focus{border-color:var(--accent2);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent2) 22%,transparent)}
+textarea{
+  width:100%;min-height:120px;padding:14px;border-radius:14px;border:1px solid var(--line);
+  background:var(--panel);font-size:15px;outline:none;resize:vertical;
+}
+.ac{position:absolute;left:0;right:0;top:calc(100% + 6px);background:var(--panel);border:1px solid var(--line);
+  border-radius:14px;overflow:hidden;z-index:20;box-shadow:0 18px 40px rgba(0,0,0,.35);max-height:270px;overflow-y:auto}
+.ac button{display:block;width:100%;text-align:left;background:transparent;border:0;padding:13px 15px;font-size:15px;min-height:46px}
+.ac button:hover,.ac button.hi{background:var(--panel2)}
+.ac .nores{padding:13px 15px;color:var(--dim);font-size:14px}
+.cta{
+  margin-top:14px;width:100%;max-width:520px;padding:15px 20px;border-radius:14px;border:0;
+  background:var(--accent);color:#06241a;font-weight:700;font-size:16px;min-height:54px;letter-spacing:-.01em;
+}
+@media (prefers-color-scheme: light){.cta{color:#fff}}
+.cta:disabled{opacity:.5}
+.linkish{background:none;border:0;color:var(--accent2);text-decoration:underline;font-size:14px;padding:10px 6px;min-height:40px}
+.cap{color:var(--dim);font-size:11.5px;margin-top:22px;max-width:40ch}
+.chipsrow{display:flex;flex-wrap:wrap;gap:7px;justify-content:center;margin-top:18px;max-width:540px}
+.sugg{background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:8px 13px;font-size:13px;color:var(--dim);min-height:38px}
+
+/* loading */
+.stage{padding:34px 0 10px}
+.loadwrap{max-width:560px;margin:0 auto}
+.loadline{display:flex;align-items:center;gap:10px;color:var(--dim);font-size:14px;margin-bottom:14px}
+.spin{width:16px;height:16px;border-radius:50%;border:2px solid var(--line);border-top-color:var(--accent);animation:sp .7s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.pretask{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:11px 13px;font-size:13.5px;margin-bottom:7px;opacity:0;animation:fin .3s forwards}
+@keyframes fin{to{opacity:1}}
+
+/* card */
+.cardhead{display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:22px 0 6px}
+.cardhead h2{margin:0;font-size:clamp(21px,4.4vw,29px);letter-spacing:-.025em}
+.demochip{font-size:11px;border:1px dashed var(--line);color:var(--dim);border-radius:999px;padding:4px 9px}
+.statline{color:var(--dim);font-size:14.5px;margin:2px 0 14px}
+.statline b{color:var(--txt)}
+.toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:16px}
+.btn{background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:10px 14px;font-size:14px;min-height:44px}
+.btn.primary{background:var(--accent);color:#06241a;border-color:transparent;font-weight:700}
+@media (prefers-color-scheme: light){.btn.primary{color:#fff}}
+.btn[aria-pressed="true"]{border-color:var(--gate);color:var(--gate)}
+
+.cols{display:grid;gap:12px;grid-template-columns:1fr}
+@media(min-width:760px){.cols{grid-template-columns:repeat(auto-fit,minmax(230px,1fr))}}
+.col{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px;opacity:0;transform:translateY(14px);animation:colin .42s forwards}
+@keyframes colin{to{opacity:1;transform:none}}
+.col.you{border-color:color-mix(in srgb,var(--you) 55%,var(--line));background:color-mix(in srgb,var(--you) 7%,var(--panel))}
+.col.gated{outline:2px solid var(--gate);outline-offset:-2px}
+.colhead{display:flex;align-items:center;gap:9px;margin-bottom:3px}
+.botdot{width:26px;height:26px;border-radius:8px;background:var(--panel2);display:grid;place-items:center;flex:0 0 26px}
+.col h3{margin:0;font-size:15.5px;letter-spacing:-.01em}
+.scope{color:var(--dim);font-size:12.5px;margin:0 0 10px}
+.gate{display:none;border:1px solid var(--gate);color:var(--gate);border-radius:10px;padding:7px 9px;font-size:12px;margin:0 0 10px;background:color-mix(in srgb,var(--gate) 8%,transparent)}
+.showgates .gate{display:block}
+.task{
+  display:block;width:100%;text-align:left;background:var(--panel2);border:1px solid var(--line);
+  border-radius:11px;padding:10px 11px;font-size:13.5px;margin-bottom:7px;min-height:44px;
+  opacity:0;transform:translateY(10px) scale(.97);animation:tin .34s forwards;
+}
+@keyframes tin{to{opacity:1;transform:none}}
+.task:hover{border-color:var(--accent2)}
+.task .tbadge{display:inline-block;font-size:10.5px;letter-spacing:.04em;border-radius:5px;padding:2px 6px;margin-right:6px;background:color-mix(in srgb,var(--accent2) 20%,transparent);color:var(--accent2);font-weight:700;vertical-align:1px}
+.col.you .task .tbadge{background:color-mix(in srgb,var(--you) 20%,transparent);color:var(--you)}
+.count{font-size:11.5px;color:var(--dim);margin-top:4px}
+
+/* detail panel */
+.sheet{position:fixed;inset:auto 0 0 0;z-index:60;background:var(--panel);border-top:1px solid var(--line);
+  border-radius:18px 18px 0 0;padding:18px 16px 24px;box-shadow:0 -14px 40px rgba(0,0,0,.4);
+  transform:translateY(110%);transition:transform .26s ease;max-height:82vh;overflow:auto}
+.sheet.open{transform:none}
+@media(min-width:760px){.sheet{left:auto;right:16px;bottom:16px;width:400px;border-radius:18px;border:1px solid var(--line)}}
+.sheet h4{margin:0 0 4px;font-size:16px;letter-spacing:-.01em}
+.sheet .meta{color:var(--dim);font-size:12.5px;margin-bottom:12px}
+.kv{font-size:14px;margin:10px 0}
+.kv span{display:block;color:var(--dim);font-size:11.5px;text-transform:uppercase;letter-spacing:.07em;margin-bottom:2px}
+.src{font-size:13px;color:var(--accent2);word-break:break-word}
+.closex{position:absolute;top:12px;right:12px;background:var(--panel2);border:1px solid var(--line);border-radius:9px;width:38px;height:38px}
+
+/* modal */
+.modal{position:fixed;inset:0;z-index:70;background:rgba(3,5,9,.72);display:none;align-items:center;justify-content:center;padding:16px}
+.modal.open{display:flex}
+.mbox{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:16px;max-width:560px;width:100%;max-height:92vh;overflow:auto}
+.mbox h4{margin:0 0 10px;font-size:17px}
+canvas{width:100%;height:auto;border-radius:12px;border:1px solid var(--line);display:block;background:#0b0d12}
+.shorturl{font-size:13px;color:var(--dim);margin:11px 0;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+.mrow{display:flex;gap:8px;flex-wrap:wrap}
+.mrow .btn{flex:1 1 140px;justify-content:center;text-align:center}
+
+/* week */
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{text-align:left;padding:12px 10px;border-bottom:1px solid var(--line)}
+th{color:var(--dim);font-weight:500;font-size:12px;text-transform:uppercase;letter-spacing:.07em}
+td.n{color:var(--dim);width:32px}
+.up{display:inline-block;font-size:11px;border-radius:999px;padding:3px 8px;background:color-mix(in srgb,var(--accent) 18%,transparent);color:var(--accent);font-weight:600;white-space:nowrap}
+.lk{color:var(--dim);text-align:right;white-space:nowrap}
+td.lk{text-align:right}
+.rowbtn{background:none;border:0;padding:0;font:inherit;text-align:left;color:var(--txt);text-decoration:underline;text-decoration-color:var(--line);min-height:40px}
+
+.toast{position:fixed;left:50%;bottom:26px;transform:translate(-50%,24px);background:var(--txt);color:var(--bg);
+  padding:12px 18px;border-radius:999px;font-size:14px;font-weight:600;opacity:0;pointer-events:none;transition:.25s;z-index:90}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+footer{text-align:center;color:var(--dim);font-size:12px;padding:34px 16px 20px}
+.hid{display:none!important}
+.err{color:var(--gate);font-size:13.5px;margin-top:10px;min-height:18px}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="topin">
+    <div class="brand">
+      <svg class="mark" viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="5" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="9" cy="12" r="1.8" fill="currentColor"/><circle cx="15" cy="12" r="1.8" fill="currentColor"/><path d="M12 5V2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      Roster <span class="tag">— paste your job, get the bot team that would do it</span>
+    </div>
+    <div class="navsp"></div>
+    <div class="tabs" role="tablist">
+      <button class="tab" id="tabBuild" role="tab" aria-selected="true">Build</button>
+      <button class="tab" id="tabWeek" role="tab" aria-selected="false">This week</button>
+    </div>
+  </div>
+</header>
+
+<!-- SCREEN 1 -->
+<section id="screen1">
+  <div class="hero">
+    <h1>What would your bot team look like?</h1>
+    <p class="sub">Type a job. Roster splits its real task list into bots you could hire today — and the work that stays yours.</p>
+
+    <div class="searchbox">
+      <input type="text" id="jobInput" placeholder="e.g. Bookkeeping / Accounting Clerk" autocomplete="off" aria-label="Job title">
+      <div class="ac hid" id="acList"></div>
+    </div>
+    <div class="err" id="err"></div>
+
+    <div id="pasteWrap" class="hid" style="width:100%;max-width:520px;margin-top:10px">
+      <textarea id="jd" placeholder="Paste a job description…"></textarea>
+    </div>
+
+    <button class="cta" id="buildBtn">Build my roster</button>
+    <button class="linkish" id="pasteToggle">or paste your job description</button>
+
+    <div class="chipsrow" id="suggRow"></div>
+    <p class="cap">Task data: Anthropic Economic Index + O*NET 29.3, CC BY 4.0. Demo data — all mappings are hard-coded for this prototype.</p>
+  </div>
+</section>
+
+<!-- LOADING -->
+<section id="loading" class="hid">
+  <div class="wrap stage">
+    <div class="loadwrap">
+      <div class="loadline"><div class="spin"></div><span id="loadTxt">Pulling task statements…</span></div>
+      <div id="preList"></div>
+    </div>
+  </div>
+</section>
+
+<!-- SCREEN 2 -->
+<section id="screen2" class="hid">
+  <div class="wrap">
+    <div class="cardhead">
+      <h2 id="jobTitle">—</h2>
+      <span class="demochip hid" id="demoChip">demo data</span>
+    </div>
+    <div class="statline" id="statLine"></div>
+    <div class="toolbar">
+      <button class="btn" id="gateBtn" aria-pressed="false">Show approval gates</button>
+      <button class="btn primary" id="copyCardBtn">Copy card</button>
+      <button class="btn" id="againBtn">Try another job</button>
+    </div>
+    <div class="cols" id="cols"></div>
+  </div>
+</section>
+
+<!-- SCREEN 3 -->
+<section id="screen3" class="hid">
+  <div class="wrap" style="padding-top:22px">
+    <h2 style="margin:0 0 4px;font-size:22px;letter-spacing:-.02em">This week on Roster</h2>
+    <p style="color:var(--dim);font-size:14px;margin:0 0 14px">Most-looked-up occupations, last 7 days. <span class="demochip">demo data</span></p>
+    <table>
+      <thead><tr><th></th><th>Occupation</th><th class="lk">Lookups</th></tr></thead>
+      <tbody id="weekBody"></tbody>
+    </table>
+    <p style="color:var(--dim);font-size:12.5px;margin-top:14px">Data refreshes when Anthropic updates the index.</p>
+  </div>
+</section>
+
+<!-- detail sheet -->
+<div class="sheet" id="sheet" role="dialog" aria-label="Task detail">
+  <button class="closex" id="sheetClose" aria-label="Close">✕</button>
+  <h4 id="shTitle">—</h4>
+  <div class="meta" id="shMeta"></div>
+  <div class="kv"><span>Why</span><div id="shWhy"></div></div>
+  <div class="kv"><span>Source</span><div id="shSrc" class="src"></div></div>
+</div>
+
+<!-- share modal -->
+<div class="modal" id="modal" role="dialog" aria-label="Share card">
+  <div class="mbox">
+    <h4>Your roster card</h4>
+    <canvas id="cv" width="1200" height="630"></canvas>
+    <div class="shorturl" id="shortUrl">roster.app/r/bookkeeping-clerk</div>
+    <div class="mrow">
+      <button class="btn primary" id="copyImg">Copy image</button>
+      <button class="btn" id="copyLink">Copy link</button>
+      <button class="btn" id="mClose">Close</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<footer>Prototype by Granted, inspired by your bookmarks</footer>
+
+<script>
+(function(){
+"use strict";
+var $=function(id){return document.getElementById(id);};
+
+var JOBS=["Bookkeeping/Accounting Clerk","Registered Nurse","Recruiter","CNC Machinist","Paralegal","High School Teacher","Insurance Claims Adjuster","Warehouse Supervisor","Marketing Manager","Civil Engineer","Restaurant Server","Software Developer"];
+
+var SRC={
+ aei:{t:"Anthropic Economic Index — occupational task shares (2025 report)",u:"anthropic.com/economic-index"},
+ onet:{t:"O*NET 29.3 Task Statements & Work Activities",u:"onetcenter.org/database"},
+ gate:{t:"Roster tiering notes — E0–E3 automation readiness",u:"roster.app/method"}
+};
+
+function t(txt,tier,why,src){return {txt:txt,tier:tier,why:why,src:src||SRC.onet};}
+
+var DATA={
+"Bookkeeping/Accounting Clerk":{
+ slug:"bookkeeping-clerk",
+ bots:[
+  {name:"Invoice Bot",scope:"Issues and reconciles invoices straight from contract terms.",gate:"Any credit or refund needs your yes.",
+   tasks:[
+    t("Prepare and issue customer invoices from signed contract terms and rate cards.","AI: high automation share","Directive, fully structured input → output; top-decile automation share in the index.",SRC.aei),
+    t("Operate computers programmed with accounting software to record, store and analyse information.","E3","Deterministic data entry against a fixed schema; no judgement in the loop.",SRC.onet),
+    t("Code documents according to company procedures and the chart of accounts.","E3","Rule table maps vendor + description to GL code; exceptions are rare and flaggable.",SRC.onet),
+    t("Calculate, prepare and issue statements and other financial documents on a schedule.","E2","Templated output, but period-end cut-offs need a human sign-off once a quarter.",SRC.aei)
+   ]},
+  {name:"Cash Apps Bot",scope:"Matches incoming payments to open items and flags short pays.",gate:"Write-offs over $100 need your yes.",
+   tasks:[
+    t("Receive, record and bank cash, cheques and vouchers; post to the correct customer ledger.","E3","Remittance matching is a solved string/amount problem at >98% hit rate.",SRC.aei),
+    t("Reconcile or note and report discrepancies found in records.","E2","Bot detects and classifies the break; disputed breaks route to you.",SRC.onet),
+    t("Match order forms with invoices and record the necessary information.","E3","Three-way match is pure rule execution.",SRC.onet),
+    t("Compile statistical, financial, accounting or auditing reports on accounts payable and receivable.","E2","Assembly is automatic; narrative commentary still needs review.",SRC.aei)
+   ]},
+  {name:"Chaser Bot",scope:"Runs dunning emails on a cadence until the money lands.",gate:'Anything sent to a customer flagged "at risk" needs your yes.',
+   tasks:[
+    t("Monitor status of loans and accounts to ensure that payments are up to date.","E3","Ageing buckets recompute nightly; no interpretation required.",SRC.onet),
+    t("Contact individuals with delinquent accounts to arrange routine payment of balances.","E2","Templated first and second notices; tone escalation stays with you.",SRC.aei),
+    t("Maintain a record of all collection contacts and promised-to-pay dates.","E3","Logging side-effect of the send; zero marginal human effort.",SRC.onet)
+   ]}
+ ],
+ only:[
+  t("Explain a variance to the CFO.","E0","Requires reading the room, owning the number, and defending a judgement call live."),
+  t("Decide whether to escalate a 90-day account to legal.","E0","Relationship value and commercial context sit outside any task record."),
+  t("Judge when a customer story beats the policy.","E0","The whole value of the decision is that it overrides the rule the bot follows.")
+ ]},
+
+"Registered Nurse":{
+ slug:"registered-nurse",
+ bots:[
+  {name:"Charting Bot",scope:"Drafts structured notes from vitals and device feeds.",gate:"Nothing enters the legal record without your signature.",
+   tasks:[
+    t("Record patients' medical information and vital signs into the chart.","E2","Device-to-chart transcription is automatable; the attestation is not.",SRC.aei),
+    t("Prepare rooms, instruments and materials lists according to the procedure schedule.","E3","Pick list derives from the scheduled procedure code.",SRC.onet)
+   ]},
+  {name:"Supply Bot",scope:"Watches par levels and reorders unit stock.",gate:"Controlled substances never auto-order.",
+   tasks:[
+    t("Maintain inventory of medical supplies and equipment on the unit.","E3","Counts, thresholds and reorder points — classic rules work.",SRC.onet),
+    t("Order, interpret and evaluate diagnostic test requisitions for routine panels.","E1","Ordering can be protocolised; evaluation stays clinical.",SRC.aei)
+   ]},
+  {name:"Handoff Bot",scope:"Builds the SBAR shift-change summary from the last 12 hours.",gate:"You edit and confirm before handoff.",
+   tasks:[
+    t("Prepare shift-change summaries of patient status, treatments and outstanding orders.","E2","Summarisation over structured chart data; you own the final read.",SRC.aei),
+    t("Document patient education materials issued and consent forms collected.","E3","Form tracking, not clinical reasoning.",SRC.onet)
+   ]}
+ ],
+ only:[
+  t("Assess patient condition at the bedside and set care priorities.","E0","Physical assessment plus synthesis under uncertainty — no task-level substitute."),
+  t("Administer medications and monitor for adverse reactions.","E0","Irreversible physical act with licensure and liability attached."),
+  t("Recognise deterioration early and escalate to the physician.","E0","Pattern recognition from cues that never reach a data field."),
+  t("Explain a frightening diagnosis to a patient and family.","E0","Trust, timing and emotional calibration are the task."),
+  t("Direct and supervise less-skilled nursing and healthcare personnel.","E0","Accountability cannot be delegated to a system."),
+  t("Decide when to break protocol for this specific patient.","E0","The exception is exactly where the rule-follower fails.")
+ ]},
+
+"CNC Machinist":{
+ slug:"cnc-machinist",
+ bots:[
+  {name:"Setup Sheet Bot",scope:"Generates setup sheets, tool lists and offsets from the program.",gate:"You confirm workholding before the spindle turns.",
+   tasks:[
+    t("Write or translate programs that run machine tools from part geometry.","E2","CAM post-processing is largely automated; fixture strategy is not.",SRC.aei),
+    t("Determine the sequence of machine operations and select the proper cutting tools.","E2","Tool libraries and feeds/speeds tables cover the common cases.",SRC.onet),
+    t("Maintain machine tool and job documentation in the shop system.","E3","Pure record-keeping.",SRC.onet)
+   ]},
+  {name:"Inspection Log Bot",scope:"Pulls CMM output into the inspection record and SPC chart.",gate:"Out-of-tolerance results stop the line and page you.",
+   tasks:[
+    t("Measure, examine and test completed units to detect defects using precision instruments.","E1","Data capture automates; interpreting a marginal result does not.",SRC.aei),
+    t("Record and log measurements, machine hours and production counts.","E3","Direct instrument capture.",SRC.onet),
+    t("Confirm that part dimensions fall within the tolerances on the drawing.","E2","Numeric comparison against a spec table.",SRC.onet)
+   ]}
+ ],
+ only:[
+  t("Make the first-article judgement before a production run.","E0","Signing off that a part is good enough to make a thousand of is an accountable call."),
+  t("Fix a bad surface finish by ear and by feel.","E0","Chatter diagnosis uses sound, vibration and touch — none of it is in the data."),
+  t("Decide to scrap versus rework an expensive billet.","E0","Trade-off of cost, schedule and customer tolerance, in the moment.")
+ ]}
+};
+
+var DEMO_TEMPLATE={
+ bots:[
+  {name:"Intake Bot",scope:"Collects, classifies and routes incoming work.",gate:"Anything outside the standard path needs your yes.",
+   tasks:[
+    t("Receive and classify incoming requests against a standard taxonomy.","E3","Structured classification over a fixed label set.",SRC.aei),
+    t("Enter and maintain records in the system of record.","E3","Deterministic data entry.",SRC.onet),
+    t("Route items to the right queue based on documented rules.","E3","Rule execution.",SRC.onet)
+   ]},
+  {name:"Reporting Bot",scope:"Assembles the recurring reports and status updates.",gate:"External distribution needs your yes.",
+   tasks:[
+    t("Compile recurring status and performance reports from system data.","E2","Assembly automates; the commentary is yours.",SRC.aei),
+    t("Track deadlines and send reminders to stakeholders.","E3","Calendar logic.",SRC.onet),
+    t("Maintain documentation and version history.","E3","Housekeeping.",SRC.onet)
+   ]},
+  {name:"Follow-up Bot",scope:"Chases the open items until they close.",gate:"Escalations to a named person need your yes.",
+   tasks:[
+    t("Monitor open items and flag ageing exceptions.","E3","Threshold monitoring.",SRC.aei),
+    t("Send templated follow-up communications on a cadence.","E2","Templated, with tone escalation held back.",SRC.aei)
+   ]}
+ ],
+ only:[
+  t("Make the call when the rules and the right answer disagree.","E0","Judgement that overrides the system is the job."),
+  t("Own the outcome in front of people who care about it.","E0","Accountability does not transfer."),
+  t("Read the room and change the plan.","E0","Context that never reaches a data field.")
+ ]
+};
+
+var WEEK=[
+ {n:"Bookkeeping/Accounting Clerk",l:"4,812",up:true},
+ {n:"Recruiter",l:"3,944",up:false},
+ {n:"Paralegal",l:"3,201",up:true},
+ {n:"Insurance Claims Adjuster",l:"2,877",up:false},
+ {n:"Marketing Manager",l:"2,410",up:false},
+ {n:"Registered Nurse",l:"2,106",up:false},
+ {n:"Software Developer",l:"1,933",up:false},
+ {n:"CNC Machinist",l:"1,145",up:false}
+];
+
+/* ---------- state ---------- */
+var current=null, currentName="", isDemo=false, timers=[];
+function clearTimers(){timers.forEach(clearTimeout);timers=[];}
+
+function slugify(s){return s.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");}
+function getData(name){
+  if(DATA[name])return {d:DATA[name],demo:false};
+  return {d:{slug:slugify(name),bots:DEMO_TEMPLATE.bots,only:DEMO_TEMPLATE.only},demo:true};
+}
+
+/* ---------- autocomplete ---------- */
+var input=$("jobInput"),ac=$("acList"),hiIdx=-1,acItems=[];
+function renderAc(q){
+  var list=JOBS.filter(function(j){return j.toLowerCase().indexOf(q.toLowerCase())>-1;});
+  acItems=list;hiIdx=-1;
+  if(!q){ac.classList.add("hid");ac.innerHTML="";return;}
+  ac.classList.remove("hid");
+  if(!list.length){ac.innerHTML='<div class="nores">No match in the index yet — we\'ll still build a demo card.</div>';return;}
+  ac.innerHTML="";
+  list.forEach(function(j,i){
+    var b=document.createElement("button");b.type="button";b.textContent=j;
+    b.addEventListener("click",function(){input.value=j;ac.classList.add("hid");build(j);});
+    ac.appendChild(b);
+  });
+}
+input.addEventListener("input",function(){$("err").textContent="";renderAc(input.value.trim());});
+input.addEventListener("keydown",function(e){
+  var btns=ac.querySelectorAll("button");
+  if(e.key==="ArrowDown"||e.key==="ArrowUp"){
+    if(!btns.length)return;e.preventDefault();
+    hiIdx=e.key==="ArrowDown"?Math.min(hiIdx+1,btns.length-1):Math.max(hiIdx-1,0);
+    for(var i=0;i<btns.length;i++)btns[i].classList.toggle("hi",i===hiIdx);
+    btns[hiIdx].scrollIntoView({block:"nearest"});
+  } else if(e.key==="Enter"){
+    e.preventDefault();
+    if(hiIdx>-1&&btns[hiIdx]){btns[hiIdx].click();} else {go();}
+  } else if(e.key==="Escape"){ac.classList.add("hid");}
+});
+document.addEventListener("click",function(e){
+  if(!ac.contains(e.target)&&e.target!==input)ac.classList.add("hid");
+});
+
+var suggRow=$("suggRow");
+["Bookkeeping/Accounting Clerk","Registered Nurse","CNC Machinist"].forEach(function(j){
+  var b=document.createElement("button");b.className="sugg";b.type="button";b.textContent=j;
+  b.addEventListener("click",function(){input.value=j;build(j);});
+  suggRow.appendChild(b);
+});
+
+$("pasteToggle").addEventListener("click",function(){
+  var w=$("pasteWrap"),hidden=w.classList.toggle("hid");
+  this.textContent=hidden?"or paste your job description":"or pick from the list";
+  if(!hidden)$("jd").focus();
+});
+
+function go(){
+  var jd=$("jd"),pasteOpen=!$("pasteWrap").classList.contains("hid");
+  if(pasteOpen&&jd.value.trim().length>0){build("Bookkeeping/Accounting Clerk");return;}
+  var v=input.value.trim();
+  if(!v){$("err").textContent="Type a job title, or paste a description below.";input.focus();return;}
+  if(v.length>80){$("err").textContent="That looks like a description — use the paste box below.";return;}
+  var exact=JOBS.filter(function(j){return j.toLowerCase()===v.toLowerCase();})[0];
+  var starts=JOBS.filter(function(j){return j.toLowerCase().indexOf(v.toLowerCase())===0;})[0];
+  build(exact||starts||v);
+}
+$("buildBtn").addEventListener("click",go);
+
+/* ---------- build / reveal ---------- */
+function show(id){["screen1","loading","screen2","screen3"].forEach(function(s){$(s).classList.toggle("hid",s!==id);});}
+
+function build(name){
+  clearTimers();
+  ac.classList.add("hid");$("err").textContent="";
+  var r=getData(name);current=r.d;isDemo=r.demo;currentName=name;
+  show("loading");
+  window.scrollTo(0,0);
+  var all=[];
+  current.bots.forEach(function(b){b.tasks.forEach(function(tk){all.push(tk.txt);});});
+  current.only.forEach(function(tk){all.push(tk.txt);});
+  var pre=$("preList");pre.innerHTML="";
+  var sample=all.slice(0,6);
+  sample.forEach(function(x,i){
+    timers.push(setTimeout(function(){
+      var d=document.createElement("div");d.className="pretask";d.textContent=x;pre.appendChild(d);
+    },90*i));
+  });
+  timers.push(setTimeout(function(){$("loadTxt").textContent="Scoring automation readiness…";},420));
+  timers.push(setTimeout(function(){$("loadTxt").textContent="Assigning bots…";},680));
+  timers.push(setTimeout(function(){renderCard();$("loadTxt").textContent="Pulling task statements…";},900));
+}
+
+function renderCard(){
+  show("screen2");
+  $("jobTitle").textContent=currentName;
+  $("demoChip").classList.toggle("hid",!isDemo);
+  var botCount=0;current.bots.forEach(function(b){botCount+=b.tasks.length;});
+  var you=current.only.length,total=botCount+you;
+  $("statLine").innerHTML="<b>"+total+" tasks</b> · <b>"+botCount+"</b> a bot could own today · <b>"+you+"</b> stay yours";
+  $("shortUrl").textContent="roster.app/r/"+current.slug;
+
+  var cols=$("cols");cols.innerHTML="";
+  var delay=0;
+  current.bots.forEach(function(b,ci){
+    var col=document.createElement("div");col.className="col";
+    col.style.animationDelay=(ci*90)+"ms";
+    var head=document.createElement("div");head.className="colhead";
+    head.innerHTML='<div class="botdot"><svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="18" height="13" rx="4" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="9" cy="12.5" r="1.6" fill="currentColor"/><circle cx="15" cy="12.5" r="1.6" fill="currentColor"/></svg></div>';
+    var h=document.createElement("h3");h.textContent=b.name;head.appendChild(h);
+    col.appendChild(head);
+    var sc=document.createElement("p");sc.className="scope";sc.textContent=b.scope;col.appendChild(sc);
+    var g=document.createElement("div");g.className="gate";g.textContent="Approval gate — "+b.gate;col.appendChild(g);
+    b.tasks.forEach(function(tk){
+      col.appendChild(taskBtn(tk,ci*90+(delay+=70)));
+    });
+    var c=document.createElement("div");c.className="count";c.textContent=b.tasks.length+" task"+(b.tasks.length===1?"":"s");col.appendChild(c);
+    cols.appendChild(col);
+  });
+
+  var yc=document.createElement("div");yc.className="col you";
+  yc.style.animationDelay=(current.bots.length*90)+"ms";
+  var yh=document.createElement("div");yh.className="colhead";
+  yh.innerHTML='<div class="botdot"><svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M5 20c0-3.6 3.1-5.6 7-5.6s7 2 7 5.6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></div>';
+  var yt=document.createElement("h3");yt.textContent="Only you";yh.appendChild(yt);yc.appendChild(yh);
+  var ys=document.createElement("p");ys.className="scope";ys.textContent="Judgement, accountability and physical presence. Tap “Why not this one?” on any task.";yc.appendChild(ys);
+  current.only.forEach(function(tk,i){yc.appendChild(taskBtn(tk,current.bots.length*90+i*70,true));});
+  var yn=document.createElement("div");yn.className="count";yn.textContent=current.only.length+" stay yours";yc.appendChild(yn);
+  cols.appendChild(yc);
+
+  if($("gateBtn").getAttribute("aria-pressed")==="true"){applyGates(true);}
+}
+
+function taskBtn(tk,delay,isYou){
+  var b=document.createElement("button");b.type="button";b.className="task";
+  b.style.animationDelay=Math.min(delay,1200)+"ms";
+  var badge=document.createElement("span");badge.className="tbadge";badge.textContent=tk.tier==="AI: high automation share"?"AI: HIGH":tk.tier;
+  b.appendChild(badge);
+  b.appendChild(document.createTextNode(tk.txt+(isYou?" ":"")));
+  if(isYou){
+    var w=document.createElement("span");w.style.cssText="display:block;margin-top:6px;font-size:12px;color:var(--accent2);text-decoration:underline";
+    w.textContent="Why not this one?";b.appendChild(w);
+  }
+  b.addEventListener("click",function(){openSheet(tk,isYou);});
+  return b;
+}
+
+/* ---------- sheet ---------- */
+function openSheet(tk,isYou){
+  $("shTitle").textContent=tk.txt;
+  $("shMeta").textContent=(isYou?"Stays with you · ":"Bot-eligible · ")+"Tier "+tk.tier;
+  $("shWhy").textContent=tk.why;
+  var s=tk.src||SRC.gate;
+  $("shSrc").textContent=s.t+" — "+s.u;
+  $("sheet").classList.add("open");
+}
+$("sheetClose").addEventListener("click",function(){$("sheet").classList.remove("open");});
+
+/* ---------- gates ---------- */
+function applyGates(on){
+  var cs=document.querySelectorAll("#cols .col");
+  for(var i=0;i<cs.length;i++){
+    if(!cs[i].classList.contains("you"))cs[i].classList.toggle("gated",on);
+  }
+  $("cols").classList.toggle("showgates",on);
+}
+$("gateBtn").addEventListener("click",function(){
+  var on=this.getAttribute("aria-pressed")!=="true";
+  this.setAttribute("aria-pressed",on?"true":"false");
+  this.textContent=on?"Hide approval gates":"Show approval gates";
+  applyGates(on);
+});
+$("againBtn").addEventListener("click",function(){show("screen1");input.focus();});
+
+/* ---------- toast ---------- */
+var tTimer=null;
+function toast(msg){
+  var el=$("toast");el.textContent=msg;el.classList.add("show");
+  clearTimeout(tTimer);tTimer=setTimeout(function(){el.classList.remove("show");},1700);
+}
+
+/* ---------- share card ---------- */
+function drawCard(){
+  var c=$("cv"),x=c.getContext("2d");
+  if(!x)return;
+  x.fillStyle="#0b0d12";x.fillRect(0,0,1200,630);
+  x.fillStyle="#13161e";x.fillRect(0,0,1200,10);
+  var g=x.createLinearGradient(0,0,1200,0);g.addColorStop(0,"#7cf0c0");g.addColorStop(1,"#8fb4ff");
+  x.fillStyle=g;x.fillRect(0,0,1200,8);
+
+  x.fillStyle="#e9edf5";x.font="600 30px -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif";
+  x.fillText("Your bot team", 64, 104);
+  x.font="700 56px -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif";
+  var title=currentName.length>34?currentName.slice(0,33)+"…":currentName;
+  x.fillText(title, 64, 172);
+
+  var botCount=0;current.bots.forEach(function(b){botCount+=b.tasks.length;});
+  var you=current.only.length;
+  x.fillStyle="#9aa3b5";x.font="400 28px -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif";
+  x.fillText((botCount+you)+" tasks  ·  "+botCount+" a bot could own today  ·  "+you+" stay yours", 64, 222);
+
+  var names=current.bots.slice(0,3),bw=300,gap=24,sx=64;
+  for(var i=0;i<names.length;i++){
+    var px=sx+i*(bw+gap);
+    x.fillStyle="#181c26";roundRect(x,px,270,bw,180,18);x.fill();
+    x.strokeStyle="#272c38";x.lineWidth=2;roundRect(x,px,270,bw,180,18);x.stroke();
+    x.fillStyle="#7cf0c0";x.font="700 28px -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif";
+    x.fillText(names[i].name.slice(0,18), px+22, 318);
+    x.fillStyle="#9aa3b5";x.font="400 21px -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif";
+    wrap(x,names[i].scope,px+22,352,bw-44,26,3);
+  }
+
+  x.fillStyle="rgba(255,210,125,.10)";roundRect(x,64,484,1072,86,18);x.fill();
+  x.strokeStyle="#ffd27d";x.lineWidth=2;roundRect(x,64,484,1072,86,18);x.stroke();
+  x.fillStyle="#ffd27d";x.font="700 30px -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif";
+  x.fillText("Only you: "+you+" task"+(you===1?"":"s")+" that stay human", 92, 538);
+
+  x.fillStyle="#9aa3b5";x.font="400 22px -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif";
+  x.fillText("roster.app/r/"+current.slug, 64, 604);
+  x.fillStyle="#e9edf5";x.font="700 26px -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif";
+  x.textAlign="right";x.fillText("Roster", 1136, 604);x.textAlign="left";
+}
+function roundRect(x,px,py,w,h,r){
+  x.beginPath();x.moveTo(px+r,py);x.arcTo(px+w,py,px+w,py+h,r);x.arcTo(px+w,py+h,px,py+h,r);
+  x.arcTo(px,py+h,px,py,r);x.arcTo(px,py,px+w,py,r);x.closePath();
+}
+function wrap(x,text,px,py,maxw,lh,maxLines){
+  var words=text.split(" "),line="",lines=0;
+  for(var i=0;i<words.length;i++){
+    var test=line?line+" "+words[i]:words[i];
+    if(x.measureText(test).width>maxw&&line){
+      x.fillText(line,px,py);py+=lh;lines++;line=words[i];
+      if(lines>=maxLines-1){break;}
+    } else line=test;
+  }
+  x.fillText(line,px,py);
+}
+$("copyCardBtn").addEventListener("click",function(){
+  try{drawCard();}catch(e){}
+  $("modal").classList.add("open");
+});
+$("copyImg").addEventListener("click",function(){toast("Image copied (demo)");});
+$("copyLink").addEventListener("click",function(){toast("Link copied (demo)");});
+$("mClose").addEventListener("click",function(){$("modal").classList.remove("open");});
+$("modal").addEventListener("click",function(e){if(e.target===this)this.classList.remove("open");});
+
+/* ---------- week table ---------- */
+(function(){
+  var tb=$("weekBody");
+  WEEK.forEach(function(r,i){
+    var tr=document.createElement("tr");
+    var td0=document.createElement("td");td0.className="n";td0.textContent=(i+1);
+    var td1=document.createElement("td");
+    var b=document.createElement("button");b.type="button";b.className="rowbtn";b.textContent=r.n;
+    b.addEventListener("click",function(){input.value=r.n;setTab("build");build(r.n);});
+    td1.appendChild(b);
+    if(r.up){var s=document.createElement("span");s.className="up";s.textContent="↑ moved to E2";s.style.marginLeft="8px";td1.appendChild(s);}
+    var td2=document.createElement("td");td2.className="lk";td2.textContent=r.l;
+    tr.appendChild(td0);tr.appendChild(td1);tr.appendChild(td2);tb.appendChild(tr);
+  });
+})();
+
+/* ---------- tabs ---------- */
+var lastBuildScreen="screen1";
+function setTab(which){
+  var isWeek=which==="week";
+  $("tabBuild").setAttribute("aria-selected",isWeek?"false":"true");
+  $("tabWeek").setAttribute("aria-selected",isWeek?"true":"false");
+  if(isWeek){
+    lastBuildScreen=$("screen2").classList.contains("hid")?"screen1":"screen2";
+    show("screen3");
+  } else {
+    show(lastBuildScreen);
+  }
+  window.scrollTo(0,0);
+}
+$("tabBuild").addEventListener("click",function(){setTab("build");});
+$("tabWeek").addEventListener("click",function(){setTab("week");});
+
+document.addEventListener("keydown",function(e){
+  if(e.key==="Escape"){$("sheet").classList.remove("open");$("modal").classList.remove("open");}
+});
+})();
+</script>
+</body>
+</html>

@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-18T20:52:07.552Z",
+  "updated": "2026-11-19T20:52:58.497Z",
   "ideas": [
     {
       "id": "2026-10-22-agentgauntlet",
@@ -1207,6 +1207,66 @@
       "sources_count": 25,
       "superseded_by": null,
       "sibling": "2026-11-18-payslip"
+    },
+    {
+      "id": "2026-11-19-roster",
+      "number": 43,
+      "date": "2026-11-19",
+      "track": "build",
+      "short_name": "Roster",
+      "verdict": "dig_deeper",
+      "score": 8.2,
+      "scores": {
+        "wow": 8,
+        "shareability": 9,
+        "buildability": 8,
+        "freshness": 9,
+        "usefulness": 7
+      },
+      "effort": "a weekend",
+      "category": "Public data tools",
+      "tags": [
+        "jobs",
+        "agents",
+        "dataset",
+        "viral"
+      ],
+      "pain_type": "latent",
+      "one_liner": "Type your job title (or paste your job description) and Roster splits your actual O*NET tasks into a named team of bots that could own them today — each with scope, approval gate and cited robot/AI evidence — plus the \"only you\" column that stays human, as a shareable org-chart card that updates when the data does.",
+      "prototype_url": "https://yashsharma1911.github.io/granted/ideas/2026-11-19-roster/",
+      "sources_count": 11,
+      "superseded_by": null,
+      "sibling": "2026-11-19-asbuilt"
+    },
+    {
+      "id": "2026-11-19-asbuilt",
+      "number": 44,
+      "date": "2026-11-19",
+      "track": "venture",
+      "short_name": "Asbuilt",
+      "verdict": "watch",
+      "score": 7.2,
+      "scores": {
+        "pain": 7.5,
+        "market_pull": 7,
+        "timing": 7,
+        "gap": 7.5,
+        "wedge": 7
+      },
+      "effort": "3+ months",
+      "category": "Back-office automation",
+      "tags": [
+        "erp",
+        "agents",
+        "documentation",
+        "implementation"
+      ],
+      "pain_type": "expressed",
+      "one_liner": "For the delivery lead at a 10-60 person Microsoft Dynamics 365 Business Central or Acumatica implementation partner, Asbuilt connects read-only to each client sandbox and production tenant, extracts the real configuration (setup records, configuration packages, extensions/customizations, roles, integrations), and turns it plus the project's own workshop notes into a client-ready as-built handover pack and a monthly change diff — the deliverable partners promise in the SOW and today write by hand in Word.",
+      "prototype_url": "https://yashsharma1911.github.io/granted/ideas/2026-11-19-asbuilt/",
+      "sources_count": 26,
+      "superseded_by": null,
+      "sibling": "2026-11-19-roster"
     }
   ]
 }
