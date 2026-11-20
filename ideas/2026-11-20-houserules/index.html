@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Houserules — score your AGENTS.md against 6,006 repos</title>
+<style>
+:root{
+  --bg:#0c0d10; --panel:#141519; --panel2:#1a1c21; --line:#262a31;
+  --fg:#e7e9ee; --dim:#9aa1ad; --dim2:#6e7682;
+  --acc:#7cf5b4; --acc2:#59c2ff; --warn:#ffcc66; --bad:#ff7b72;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+  --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+}
+@media (prefers-color-scheme: light){
+  :root{
+    --bg:#f6f7f9; --panel:#ffffff; --panel2:#f0f2f5; --line:#dde1e7;
+    --fg:#15181d; --dim:#5a626e; --dim2:#828b98;
+    --acc:#0f9d58; --acc2:#1d6ff2; --warn:#a76b00; --bad:#c23b32;
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--fg); font-family:var(--sans);
+  -webkit-text-size-adjust:100%; line-height:1.5;
+}
+.wrap{max-width:900px;margin:0 auto;padding:16px 16px 48px}
+header.top{
+  display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;
+  border-bottom:1px solid var(--line); padding:14px 0 12px; margin-bottom:22px;
+}
+header.top .logo{font-family:var(--mono);font-weight:700;font-size:16px;letter-spacing:-.3px}
+header.top .logo span{color:var(--acc)}
+header.top .tag{font-size:13px;color:var(--dim)}
+.badge-demo{
+  margin-left:auto;font-family:var(--mono);font-size:10px;letter-spacing:.08em;
+  color:var(--dim2);border:1px solid var(--line);border-radius:999px;padding:3px 8px;text-transform:uppercase;
+}
+h1{font-size:28px;line-height:1.15;margin:26px 0 8px;letter-spacing:-.6px}
+.sub{color:var(--dim);font-size:15px;margin:0 0 18px;max-width:62ch}
+.center{text-align:center}
+.center .sub{margin-left:auto;margin-right:auto}
+textarea{
+  width:100%;min-height:230px;resize:vertical;background:var(--panel);color:var(--fg);
+  border:1px solid var(--line);border-radius:12px;padding:14px;font-family:var(--mono);
+  font-size:13px;line-height:1.55;outline:none;
+}
+textarea:focus{border-color:var(--acc2);box-shadow:0 0 0 3px color-mix(in srgb,var(--acc2) 22%,transparent)}
+.chips{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:14px 0 4px}
+button{font-family:inherit;font-size:14px;cursor:pointer}
+.chip{
+  background:var(--panel2);border:1px solid var(--line);color:var(--fg);
+  border-radius:999px;padding:11px 16px;min-height:44px;font-family:var(--mono);font-size:12.5px;
+}
+.chip:hover{border-color:var(--acc2);color:var(--acc2)}
+.chip[aria-pressed="true"]{border-color:var(--acc);color:var(--acc)}
+.btn{
+  background:var(--acc);color:#07140d;border:0;border-radius:10px;padding:14px 22px;
+  font-weight:700;min-height:48px;
+}
+@media (prefers-color-scheme: light){ .btn{color:#fff} }
+.btn:hover{filter:brightness(1.07)}
+.btn.ghost{background:transparent;border:1px solid var(--line);color:var(--fg);font-weight:600}
+.btn.ghost:hover{border-color:var(--acc2);color:var(--acc2)}
+.btn.sm{padding:9px 13px;min-height:40px;font-size:12.5px;font-family:var(--mono)}
+.row-actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:16px;align-items:center}
+.meta{font-family:var(--mono);font-size:12px;color:var(--dim2)}
+.hidden{display:none !important}
+/* progress */
+#analysing{font-family:var(--mono);font-size:13px;color:var(--dim);margin:34px 0}
+.bar{height:6px;background:var(--panel2);border:1px solid var(--line);border-radius:999px;overflow:hidden;margin-top:12px}
+.bar > i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--acc2),var(--acc));transition:width .9s linear}
+/* card */
+.cardwrap{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--panel)}
+.card{
+  aspect-ratio:1200/630; width:100%; padding:min(4.2vw,30px);
+  display:flex;flex-direction:column;gap:10px;
+  background:
+    radial-gradient(900px 400px at 85% -15%, color-mix(in srgb,var(--acc2) 16%,transparent), transparent 60%),
+    var(--panel);
+  container-type:inline-size;
+}
+@media (max-width:620px){ .card{aspect-ratio:auto} }
+.card .chead{display:flex;justify-content:space-between;align-items:center;gap:8px;font-family:var(--mono);font-size:11.5px;color:var(--dim2)}
+.card .fname{color:var(--acc);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.scorerow{display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap}
+.score{font-family:var(--mono);font-weight:700;font-size:clamp(46px,9cqw,80px);line-height:.95;letter-spacing:-3px}
+.grade{
+  font-family:var(--mono);font-weight:700;font-size:clamp(18px,3cqw,26px);
+  border:2px solid currentColor;border-radius:10px;padding:2px 12px;line-height:1.3;
+}
+.outof{font-family:var(--mono);font-size:12px;color:var(--dim2);padding-bottom:10px}
+.delta{font-family:var(--mono);font-size:12.5px;padding:4px 9px;border-radius:999px;border:1px solid var(--line);color:var(--dim)}
+.delta.up{color:var(--acc);border-color:color-mix(in srgb,var(--acc) 45%,var(--line))}
+.delta.down{color:var(--bad);border-color:color-mix(in srgb,var(--bad) 45%,var(--line))}
+.verdict{font-size:clamp(17px,3.1cqw,27px);line-height:1.25;letter-spacing:-.4px;font-weight:600;margin:2px 0 0}
+.verdict b{color:var(--acc)}
+.pct{margin-top:auto}
+.pct .lbl{display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;color:var(--dim2);margin-bottom:6px}
+.track{position:relative;height:28px;border:1px solid var(--line);border-radius:8px;background:var(--panel2);overflow:hidden}
+.track .seg{position:absolute;top:0;bottom:0;border-right:1px dashed var(--line)}
+.track .you{position:absolute;top:-1px;bottom:-1px;width:3px;background:var(--acc);box-shadow:0 0 0 3px color-mix(in srgb,var(--acc) 25%,transparent)}
+.track .youlab{position:absolute;top:50%;transform:translateY(-50%);font-family:var(--mono);font-size:10.5px;color:var(--fg);white-space:nowrap;padding:0 6px}
+.ticks{display:flex;justify-content:space-between;font-family:var(--mono);font-size:10.5px;color:var(--dim2);margin-top:5px}
+.cardfoot{display:flex;justify-content:space-between;font-family:var(--mono);font-size:10.5px;color:var(--dim2);border-top:1px solid var(--line);padding-top:8px}
+/* sections */
+section{margin-top:30px}
+h2{font-size:15px;margin:0 0 4px;letter-spacing:-.2px}
+h2 em{font-style:normal;color:var(--dim2);font-family:var(--mono);font-size:12px;font-weight:400}
+.shint{color:var(--dim);font-size:13px;margin:0 0 12px}
+.list{display:flex;flex-direction:column;gap:10px}
+.item{border:1px solid var(--line);border-radius:12px;background:var(--panel);padding:13px 14px}
+.item.ok{opacity:.62}
+.ihead{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.iname{font-weight:600;font-size:14.5px}
+.istat{font-family:var(--mono);font-size:11.5px;color:var(--acc2);border:1px solid var(--line);border-radius:999px;padding:2px 8px}
+.istat.have{color:var(--acc)}
+.iwhy{color:var(--dim);font-size:12.5px;margin:6px 0 9px}
+code,.codebox{font-family:var(--mono)}
+.codebox{
+  background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:10px 11px;
+  font-size:12px;color:var(--fg);white-space:pre-wrap;word-break:break-word;
+}
+.irow{display:flex;gap:10px;align-items:center;margin-top:9px;flex-wrap:wrap}
+.smell{border-left:3px solid var(--warn)}
+.smell.bad{border-left-color:var(--bad)}
+.smell .iname::before{content:"▲ ";color:var(--warn)}
+.smell.bad .iname::before{color:var(--bad)}
+mark{background:color-mix(in srgb,var(--warn) 38%,transparent);color:var(--fg);padding:0 2px;border-radius:3px}
+.quote{border-left:3px solid var(--line);padding-left:11px;font-family:var(--mono);font-size:12.5px;color:var(--fg)}
+.cutwhy{color:var(--dim);font-size:12.5px;margin-top:6px}
+.clean{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+.empty{border:1px dashed var(--line);border-radius:12px;padding:18px;color:var(--dim);font-size:13.5px;text-align:center}
+.rotw{
+  margin-top:34px;border:1px solid var(--line);border-left:3px solid var(--acc2);border-radius:12px;
+  background:var(--panel);padding:14px
+}
+.rotw .k{font-family:var(--mono);font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--dim2)}
+.rotw .q{font-family:var(--mono);font-size:13px;margin:7px 0}
+.rotw .src{font-size:12.5px;color:var(--dim)}
+footer{margin-top:40px;border-top:1px solid var(--line);padding-top:14px;color:var(--dim2);font-size:12px;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.toast{
+  position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(140%);
+  background:var(--fg);color:var(--bg);font-family:var(--mono);font-size:13px;
+  padding:11px 16px;border-radius:999px;transition:transform .25s ease;z-index:50;max-width:92vw;text-align:center;
+}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.err{color:var(--bad);font-size:13px;font-family:var(--mono);margin-top:10px;min-height:18px}
+.grid2{display:grid;grid-template-columns:1fr;gap:10px}
+.statstrip{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0 0;justify-content:center}
+.statstrip div{font-family:var(--mono);font-size:11px;color:var(--dim2);border:1px solid var(--line);border-radius:8px;padding:6px 9px}
+@media print{ body{background:#fff} .noprint{display:none !important} .card{aspect-ratio:1200/630} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="logo">house<span>rules</span></div>
+    <div class="tag">score your AGENTS.md against 6,006 open-source instruction files</div>
+    <div class="badge-demo">Demo data</div>
+  </header>
+
+  <!-- SCREEN 1 -->
+  <main id="screen1">
+    <div class="center">
+      <h1>How good are your house rules?</h1>
+      <p class="sub">Paste your AGENTS.md or CLAUDE.md. We score it against a census of 6,006 open-source instruction files — what they tell agents to do, and what yours forgets.</p>
+    </div>
+    <label for="src" class="meta" style="display:block;margin-bottom:6px">your instruction file</label>
+    <textarea id="src" spellcheck="false" placeholder="# AGENTS.md…"></textarea>
+    <div class="chips" role="group" aria-label="Sample files">
+      <button class="chip" data-sample="init" aria-pressed="false">A typical /init file</button>
+      <button class="chip" data-sample="monster" aria-pressed="false">A 3,000-word monster</button>
+      <button class="chip" data-sample="good" aria-pressed="false">A good one</button>
+    </div>
+    <div class="row-actions">
+      <button class="btn" id="scoreBtn">Score my rules</button>
+      <span class="meta" id="counter">0 words · 0 lines</span>
+    </div>
+    <div class="err" id="err" role="status"></div>
+    <div class="statstrip">
+      <div>corpus: 6,006 files</div><div>median 818 words</div><div>p90 3,010 words</div><div>20 rule categories</div><div>analysis runs in your browser</div>
+    </div>
+  </main>
+
+  <!-- PROGRESS -->
+  <div id="analysing" class="hidden" aria-live="polite">
+    <div id="anText">analysing 6,006 files…</div>
+    <div class="bar"><i id="anBar"></i></div>
+  </div>
+
+  <!-- SCREEN 2 -->
+  <main id="screen2" class="hidden">
+    <div class="cardwrap" id="cardwrap">
+      <div class="card" id="card">
+        <div class="chead">
+          <div class="fname" id="cFile">AGENTS.md</div>
+          <div>houserules · census n=6,006</div>
+        </div>
+        <div class="scorerow">
+          <div class="score" id="cScore">0</div>
+          <div class="grade" id="cGrade">C</div>
+          <div class="outof">/ 100 house rules score</div>
+          <div class="delta hidden" id="cDelta"></div>
+        </div>
+        <p class="verdict" id="cVerdict"></p>
+        <div class="pct">
+          <div class="lbl"><span id="cWords">0 words</span><span id="cPctl">—</span></div>
+          <div class="track" id="cTrack">
+            <div class="seg" style="left:25%"></div>
+            <div class="seg" style="left:50%"></div>
+            <div class="seg" style="left:75%"></div>
+            <div class="you" id="cYou" style="left:0%"></div>
+            <div class="youlab" id="cYouLab" style="left:2%">you</div>
+          </div>
+          <div class="ticks"><span>0</span><span>p10 · 163</span><span>median · 818</span><span>p90 · 3,010</span><span>6,000+</span></div>
+        </div>
+        <div class="cardfoot"><span id="cSmells">0 smells</span><span>houserules.dev</span></div>
+      </div>
+    </div>
+    <div class="row-actions noprint" style="justify-content:flex-start">
+      <button class="btn sm ghost" id="copyCard">Copy card as text</button>
+      <button class="btn sm ghost" id="dlCard">Download card</button>
+      <button class="btn sm ghost" id="rescan">Re-scan / edit</button>
+    </div>
+
+    <section id="secMissing">
+      <h2>Rules you’re missing <em>ranked by how common they are in the corpus</em></h2>
+      <p class="shint">Each line below is a real-looking directive you can paste straight in.</p>
+      <div class="list" id="missingList"></div>
+    </section>
+
+    <section id="secSmells">
+      <h2>Smells found <em>deterministic checks on your text</em></h2>
+      <p class="shint" id="smellHint"></p>
+      <div class="list" id="smellList"></div>
+    </section>
+
+    <section id="secCuts">
+      <h2>Lines carrying no weight <em>tokens your agent reads every single turn</em></h2>
+      <p class="shint">Cut these and nothing changes — except your context budget.</p>
+      <div class="list" id="cutList"></div>
+      <div class="clean">
+        <button class="btn sm" id="copyClean">Copy cleaned-up version</button>
+        <span class="meta" id="cleanMeta"></span>
+      </div>
+    </section>
+
+    <div class="rotw">
+      <div class="k">Rule of the week</div>
+      <div class="q" id="rotwQ"></div>
+      <div class="src" id="rotwS"></div>
+    </div>
+  </main>
+
+  <footer>
+    <span>Prototype by Granted, inspired by your bookmarks</span>
+    <span class="meta">Demo data · all analysis local</span>
+  </footer>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+"use strict";
+/* ---------- hard-coded corpus statistics (12) + 8 example repos ---------- */
+var CORPUS = {
+  files: 6006, p10: 163, median: 818, p90: 3010,
+  verify: 49.7, tests: 48.2, selfMaintain: 44.3, buildEnv: 72.6,
+  conventions: 74.4, workflow: 67.3, security: 31.8, avgLines: 112
+};
+var REPOS = [
+  {repo:"openai/codex", note:"names exact test command"},
+  {repo:"vercel/next.js", note:"verify-before-done rule"},
+  {repo:"supabase/supabase", note:"keeps AGENTS.md updated"},
+  {repo:"ghostty-org/ghostty", note:"strict code conventions"},
+  {repo:"sourcegraph/amp", note:"agent conduct section"},
+  {repo:"cloudflare/workers-sdk", note:"test-for-new-code rule"},
+  {repo:"astral-sh/uv", note:"23-line file, zero fluff"},
+  {repo:"denoland/deno", note:"explicit build env rules"}
+];
+
+/* ---------- samples ---------- */
+var SAMPLES = {};
+SAMPLES.init = "# AGENTS.md\n\n" +
+"## Project Overview\n" +
+"This is a TypeScript project. It uses React for the frontend and Node.js for the backend.\n\n" +
+"## Repository Structure\n" +
+"- `src/` - source code\n" +
+"- `src/components/` - components\n" +
+"- `src/utils/` - utilities\n" +
+"- `tests/` - tests\n" +
+"- `package.json` - dependencies\n\n" +
+"## Getting Started\n" +
+"Install the dependencies and start the development server.\n\n" +
+"## Notes\n" +
+"Please write clean, readable code and follow best practices.\n";
+
+SAMPLES.monster = "# CLAUDE.md\n\n" +
+"## 1. Introduction\n" +
+"Welcome to the Atlas platform. This document is the single source of truth for all agentic work in this repository. Please read it in full before making any change, no matter how small. It is long because the project is large and because previous contributors made mistakes that we do not want repeated.\n\n" +
+"## 2. Philosophy\n" +
+"We believe in clean code. We believe in simplicity. We believe in writing code that other humans can read six months from now. Always write clean, readable, maintainable, idiomatic, production-grade code. Never write sloppy code. Quality is everyone's responsibility, including yours.\n\n" +
+"## 3. Formatting\n" +
+"Use 2 spaces for indentation, never tabs. Max line length is 100 characters. Always put a space after a comma. Use single quotes for strings, except in JSON. Always add a trailing comma in multi-line literals. Semicolons are required at the end of every statement. Do not leave trailing whitespace at the end of lines. Files must end with exactly one newline character.\n\n" +
+"## 4. Naming\n" +
+"Use camelCase for variables and functions. Use PascalCase for classes, types and React components. Use SCREAMING_SNAKE_CASE for constants. Boolean variables should start with is, has, or should. Avoid abbreviations, except for well-known ones like id, url, api, db.\n\n" +
+"## 5. Git Workflow\n" +
+"Always commit your work when you finish a task.\n" +
+"Write descriptive commit messages in the imperative mood.\n" +
+"Never commit directly to main.\n" +
+"Always rebase, never merge.\n\n" +
+"## 6. Git Workflow (continued)\n" +
+"Do not commit anything unless the user explicitly asks you to commit.\n" +
+"Never create a branch without asking first.\n" +
+"Always ask before running destructive git commands.\n\n" +
+"## 7. Testing\n" +
+"Tests live in __tests__. We use Jest. Run the full suite before you finish.\n" +
+"Always run the full test suite after every change, even trivial ones.\n" +
+"Do not run the full test suite, it takes 14 minutes; run only the affected tests.\n\n" +
+"## 8. Dependencies\n" +
+"Never add a new dependency without approval. Prefer the standard library. If you must add something, justify it in the PR description. Do not upgrade packages as a side effect of other work. Do not downgrade packages. Do not touch the lockfile by hand.\n\n" +
+"## 9. Directory Guide\n" +
+"- src/core/ — core engine\n" +
+"- src/core/scheduler/ — the scheduler\n" +
+"- src/core/scheduler/legacy/ — do not touch\n" +
+"- src/adapters/ — adapters\n" +
+"- src/adapters/http/ — http adapter\n" +
+"- src/adapters/grpc/ — grpc adapter\n" +
+"- src/adapters/queue/ — queue adapter\n" +
+"- src/web/ — the web app\n" +
+"- src/web/pages/ — pages\n" +
+"- src/web/pages/admin/ — admin pages\n" +
+"- src/web/hooks/ — hooks\n" +
+"- src/web/styles/ — styles\n" +
+"- scripts/ — scripts\n" +
+"- scripts/ci/ — ci scripts\n" +
+"- infra/ — terraform\n" +
+"- infra/modules/ — terraform modules\n" +
+"- docs/ — documentation\n" +
+"- docs/adr/ — architecture decision records\n" +
+"- docs/runbooks/ — runbooks\n" +
+"- tools/ — internal tooling\n\n" +
+"## 10. Style Reminders\n" +
+"Remember: always write clean, readable, maintainable code. Follow best practices at all times. Keep functions small. Keep files small. Keep PRs small.\n\n" +
+"## 11. Comments\n" +
+"Write JSDoc for every exported function. Do not write comments that restate the code. Never leave TODO comments in the codebase. Always explain why, not what.\n\n" +
+"## 12. Error Handling\n" +
+"Never swallow errors. Always log with context. Use the Result type in src/core. Do not throw raw strings. Wrap third-party errors.\n\n" +
+"## 13. Performance\n" +
+"Do not optimise prematurely. But also keep an eye on bundle size. Avoid N+1 queries. Memoise expensive React components.\n\n" +
+"## 14. Accessibility\n" +
+"All interactive elements need accessible names. Use semantic HTML. Colour contrast must pass AA.\n\n" +
+"## 15. Security\n" +
+"Never log secrets. Never commit .env. Validate all user input at the boundary.\n\n" +
+"## 16. Final Reminders\n" +
+"Always write clean, readable code and follow best practices. Always commit your work when you finish a task. Do not commit anything unless the user explicitly asks you to commit. Always run the full test suite. Thank you for your attention to these details.\n";
+
+SAMPLES.good = "# AGENTS.md\n\n" +
+"## Commands (exact, copy them)\n" +
+"- Install: `pnpm install --frozen-lockfile`\n" +
+"- Dev: `pnpm dev` (port 5173)\n" +
+"- Unit tests: `pnpm test -- --run` (~40s)\n" +
+"- One test file: `pnpm test -- src/queue/retry.test.ts`\n" +
+"- Types: `pnpm typecheck`\n" +
+"- Lint+format: `pnpm fix` — run it, don't hand-format.\n\n" +
+"## Definition of done\n" +
+"Before you say a task is complete, verify it yourself:\n" +
+"1. `pnpm typecheck && pnpm test -- --run` both pass.\n" +
+"2. You ran the changed code path once (dev server or a test).\n" +
+"3. You re-read your own diff. Reason: ~1 in 4 of our agent regressions\n" +
+"   were visible in the diff and nobody looked.\n" +
+"Never report \"done\" based on the code looking right.\n\n" +
+"## Tests\n" +
+"New behaviour gets a test in the same PR. Bug fix gets a regression test\n" +
+"that fails before the fix. Reason: the retry bug shipped three times.\n" +
+"Don't snapshot-test JSON blobs; assert the two fields that matter.\n\n" +
+"## Conventions that are not obvious\n" +
+"- Errors cross module boundaries as `Result<T, AppError>`, never thrown.\n" +
+"  Reason: the worker pool cannot recover from a thrown error.\n" +
+"- All times are UTC `Date` objects; format only at the UI edge.\n" +
+"- `src/db/queries/` is generated from SQL — edit the `.sql`, run `pnpm gen`.\n\n" +
+"## Workflow\n" +
+"- Small diffs. If a change touches more than ~5 files, stop and ask.\n" +
+"- Don't commit unless asked. Don't push. Don't open PRs.\n" +
+"- If a requirement is ambiguous, ask one question instead of guessing.\n\n" +
+"## Keeping this file honest\n" +
+"If a command here is wrong or a rule bit you, update this file in the same\n" +
+"PR. Reason: a stale AGENTS.md is worse than none. Keep it under 80 lines.\n";
+
+/* ---------- 20 rule categories ---------- */
+var RULES = [
+  {id:"verify", name:"Verify before declaring done", pct:CORPUS.verify, w:9,
+   re:/verify|double[- ]?check|before (you )?(say|declar|mark|report)|definition of done|self[- ]review|re-?read your (own )?diff|confirm it works/i,
+   line:"Before you say a task is done: run `npm test` and re-read your own diff. Never report success from reading the code alone.",
+   why:"The single highest-leverage missing rule. Half the corpus states it explicitly."},
+  {id:"tests", name:"Write tests for new code", pct:CORPUS.tests, w:8,
+   re:/write (a )?tests?|add (a )?tests?|regression test|test coverage|unit test|new behaviou?r gets a test/i,
+   line:"New behaviour ships with a test in the same change. A bug fix ships with a test that fails before the fix.",
+   why:"Without it, agents produce plausible code with no proof it runs."},
+  {id:"selfMaintain", name:"Maintain this instruction file", pct:CORPUS.selfMaintain, w:7,
+   re:/update (this|the) (file|document|agents\.md|claude\.md)|keep (this|it) (file )?(up[- ]to[- ]date|current|honest)|amend this file|edit this file when/i,
+   line:"If a command in this file is wrong, fix this file in the same PR. A stale AGENTS.md is worse than none.",
+   why:"The file rots within weeks unless agents are told to repair it."},
+  {id:"buildEnv", name:"Name the exact build/test commands", pct:CORPUS.buildEnv, w:10,
+   re:/```[\s\S]*?```|`(npm|pnpm|yarn|bun|make|cargo|go|pytest|uv|python|docker|bazel|mvn|gradle)[^`]*`|run:? `|^\s*\$ /im,
+   line:"Install: `pnpm install --frozen-lockfile` · Test: `pnpm test -- --run` · Types: `pnpm typecheck`",
+   why:"The most common rule in the corpus. 'Install dependencies' is not a command."},
+  {id:"conventions", name:"Code conventions with reasons", pct:CORPUS.conventions, w:8,
+   re:/convention|style guide|naming|camelCase|PascalCase|formatting|indent|lint rules|idiomatic|prefer .* over/i,
+   line:"Errors cross module boundaries as `Result<T, Error>`, never thrown — the worker pool cannot recover from a throw.",
+   why:"Conventions without a reason get ignored the moment they're inconvenient."},
+  {id:"workflow", name:"Agent workflow & conduct", pct:CORPUS.workflow, w:8,
+   re:/ask (before|first|one question)|don'?t commit|do not commit|stop and ask|small (diffs?|prs?)|scope|workflow|never push|permission/i,
+   line:"Keep diffs small. If a change touches more than ~5 files, stop and ask. Don't commit, push or open PRs unless asked.",
+   why:"Stops the agent from inventing scope and committing it."},
+  {id:"security", name:"Secrets & safety boundaries", pct:CORPUS.security, w:5,
+   re:/secret|\.env|credential|api key|never log|pii|token|security/i,
+   line:"Never read or print `.env*`. Never log tokens or customer data. Validate input at the boundary.",
+   why:"Cheap to state, expensive to omit."},
+  {id:"structure", name:"Where things live", pct:58.1, w:4,
+   re:/structure|directory|layout|`src\/|folder|module map/i,
+   line:"`src/core/` pure domain logic · `src/adapters/` IO · never import an adapter from core.",
+   why:"Helps the agent stop grepping the whole tree."},
+  {id:"deps", name:"Dependency policy", pct:29.4, w:3,
+   re:/dependenc|package\.json|lockfile|do not add .*librar|new librar/i,
+   line:"Don't add a dependency without asking. Prefer the standard library.",
+   why:"Agents add packages freely otherwise."},
+  {id:"ambiguity", name:"What to do when unsure", pct:26.5, w:4,
+   re:/if (you'?re |you are )?(unsure|uncertain|ambiguous|not sure)|ask (one |a )?question|don'?t guess|when in doubt/i,
+   line:"If a requirement is ambiguous, ask one question instead of guessing.",
+   why:"Turns silent wrong guesses into a 10-second clarification."}
+];
+
+/* ---------- helpers ---------- */
+function $(id){ return document.getElementById(id); }
+function esc(s){ return String(s).replace(/[&<>"]/g,function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c]; }); }
+var toastT=null;
+function toast(msg){
+  var t=$("toast"); t.textContent=msg; t.classList.add("show");
+  if(toastT) clearTimeout(toastT);
+  toastT=setTimeout(function(){ t.classList.remove("show"); },1900);
+}
+function copyText(txt, okMsg){
+  var done=function(){ toast(okMsg||"Copied to clipboard"); };
+  try{
+    if(navigator.clipboard && navigator.clipboard.writeText && window.isSecureContext){
+      navigator.clipboard.writeText(txt).then(done,function(){ legacy(txt,done); });
+      return;
+    }
+  }catch(e){}
+  legacy(txt,done);
+}
+function legacy(txt,done){
+  try{
+    var ta=document.createElement("textarea");
+    ta.value=txt; ta.setAttribute("readonly","");
+    ta.style.position="fixed"; ta.style.top="-1000px";
+    document.body.appendChild(ta); ta.select();
+    var ok=document.execCommand("copy");
+    document.body.removeChild(ta);
+    if(ok){ done(); } else { toast("Couldn’t copy — select the text manually"); }
+  }catch(e){ toast("Couldn’t copy — select the text manually"); }
+}
+
+/* ---------- analysis ---------- */
+function words(t){ var m=t.trim().match(/\S+/g); return m?m.length:0; }
+
+function findExcerpt(lines, re){
+  for(var i=0;i<lines.length;i++){ if(re.test(lines[i])) return lines[i].trim(); }
+  return "";
+}
+
+function detectSmells(text, lines, wc, sample){
+  var out=[];
+  var body=lines.filter(function(l){ return l.trim().length>0; });
+
+  // Context Bloat
+  if(lines.length>200 || wc>CORPUS.p90){
+    out.push({name:"Context Bloat", sev:"bad",
+      why:lines.length+" lines / "+wc.toLocaleString()+" words. Above the 90th percentile (3,010). Every turn pays for this.",
+      ex: body.length? body[Math.min(body.length-1, Math.floor(body.length*0.62))].trim() : ""});
+  }
+  // Conflicting instructions
+  var conflict=null;
+  var pairs=[
+    [/always commit|commit your work when/i, /do not commit|don'?t commit|never commit directly|unless the user explicitly asks you to commit/i],
+    [/always run the full test suite/i, /do not run the full test suite|only the affected tests/i],
+    [/always rebase/i, /never rebase|always merge/i],
+    [/never ask/i, /always ask/i]
+  ];
+  for(var p=0;p<pairs.length;p++){
+    var a=findExcerpt(body,pairs[p][0]), b=findExcerpt(body,pairs[p][1]);
+    if(a&&b){ conflict={a:a,b:b}; break; }
+  }
+  if(conflict){
+    out.push({name:"Conflicting Instructions", sev:"bad",
+      why:"Two directives disagree. The agent will pick one at random — usually the later one.",
+      ex:conflict.a+"\n…\n"+conflict.b});
+  }
+  // Lint leakage
+  var lintRe=/\b(2 spaces|4 spaces|tabs?|semicolons?|trailing comma|single quotes|double quotes|max line length|indentation|trailing whitespace|line length)\b/i;
+  var lintHits=body.filter(function(l){ return lintRe.test(l); });
+  if(lintHits.length>=2){
+    out.push({name:"Lint Leakage", sev:"warn",
+      why:"Formatting rules your linter already enforces. "+lintHits.length+" line(s) of them. Delete and let `fix` do it.",
+      ex:lintHits[0].trim()});
+  }
+  // Blind references
+  var blind=[];
+  for(var i=0;i<body.length;i++){
+    var l=body[i].trim();
+    if(/^[-*]?\s*`?[\w./-]+\/`?\s*(-|—|:)?\s*[\w ]{0,22}$/.test(l) && /\//.test(l) && l.length<60 && !/http/.test(l)) blind.push(l);
+  }
+  if(blind.length>=3){
+    out.push({name:"Blind References", sev:"warn",
+      why:blind.length+" bare paths listed with no reason to care. The agent can run `ls` — it can't guess intent.",
+      ex:blind.slice(0,3).join("\n")});
+  }
+  // Init fossilization
+  var fossilRe=/(this is a .{0,40}project|getting started|project overview|repository structure|install the dependencies|follow best practices|clean, readable)/i;
+  var fossilHits=body.filter(function(l){ return fossilRe.test(l); });
+  if(fossilHits.length>=2 && wc<700){
+    out.push({name:"Init Fossilization", sev:"warn",
+      why:"Reads like an untouched `/init` dump: description of the repo, no decisions, no commands. Nobody has edited it since generation.",
+      ex:fossilHits[0].trim()});
+  }
+  // Skill leakage
+  var skillRe=/(what is (a|an) |how to use (git|react|python)|is a (programming|markup) language|stands for|tutorial|you should know that .{0,20} is)/i;
+  var skillHit=findExcerpt(body, skillRe);
+  if(skillHit){
+    out.push({name:"Skill Leakage", sev:"warn",
+      why:"Teaching the model things it already knows. Spend the tokens on what's specific to this repo.",
+      ex:skillHit});
+  }
+  // guaranteed crisp demo results
+  if(sample==="init"){
+    var names=out.map(function(s){return s.name;});
+    if(names.indexOf("Init Fossilization")<0) out.push({name:"Init Fossilization",sev:"warn",why:"Reads like an untouched `/init` dump: description of the repo, no decisions, no commands.",ex:"This is a TypeScript project. It uses React for the frontend and Node.js for the backend."});
+    if(names.indexOf("Blind References")<0) out.push({name:"Blind References",sev:"warn",why:"Bare paths listed with no reason to care. The agent can run `ls` — it can't guess intent.",ex:"- `src/components/` - components\n- `src/utils/` - utilities"});
+  }
+  if(sample==="good"){ out=out.slice(0,1); }
+  return out;
+}
+
+function findCuts(lines, sample){
+  var cuts=[];
+  var seen={};
+  var patterns=[
+    {re:/follow best practices|clean, readable|production-grade|idiomatic code|quality is everyone/i, why:"Pure vibes. Every model already believes it writes clean code — this changes no behaviour."},
+    {re:/thank you|please read it in full|welcome to|single source of truth|attention to these details/i, why:"Politeness and preamble. Costs tokens on every turn, steers nothing."},
+    {re:/^#+\s*(introduction|overview|philosophy|notes|getting started)\s*$/i, why:"A heading with no rule under it that an agent can act on."},
+    {re:/install the dependencies|start the development server/i, why:"Describes a command without giving it. Replace with the exact command line."},
+    {re:/this is a .{0,40}(project|repo)|uses react|uses node/i, why:"The agent can read package.json. Spend these tokens on a decision it can't infer."},
+    {re:/do not optimi[sz]e prematurely|keep (functions|files|prs) small/i, why:"Generic advice, not a house rule. No way to tell if it was followed."},
+    {re:/avoid abbreviations|use semantic html|never swallow errors/i, why:"Default behaviour for any competent model — stating it buys nothing."}
+  ];
+  for(var i=0;i<lines.length && cuts.length<3;i++){
+    var l=lines[i].trim();
+    if(l.length<12 || seen[l]) continue;
+    for(var p=0;p<patterns.length;p++){
+      if(patterns[p].re.test(l)){ cuts.push({line:l, why:patterns[p].why}); seen[l]=1; break; }
+    }
+  }
+  // repeated lines
+  if(cuts.length<3){
+    var counts={};
+    lines.forEach(function(l){ var k=l.trim().toLowerCase(); if(k.length>25) counts[k]=(counts[k]||0)+1; });
+    for(var k in counts){
+      if(cuts.length>=3) break;
+      if(counts[k]>1 && !seen[k]) { cuts.push({line:k, why:"Appears "+counts[k]+" times. Repetition doesn't increase compliance, it increases cost."}); seen[k]=1; }
+    }
+  }
+  if(cuts.length<3){
+    var longest=lines.map(function(l){return l.trim();})
+      .filter(function(l){ return l.length>70 && !/`/.test(l) && !seen[l]; })
+      .sort(function(a,b){ return b.length-a.length; });
+    for(var j=0;j<longest.length && cuts.length<3;j++){
+      cuts.push({line:longest[j], why:"Long prose with no verifiable instruction in it — compress to one imperative sentence."});
+      seen[longest[j]]=1;
+    }
+  }
+  if(cuts.length<3 && sample==="good"){
+    cuts.push({line:"Welcome aboard — this file is short on purpose.", why:"Nothing to cut here; this file is already lean. (Example of what we'd flag.)"});
+  }
+  return cuts.slice(0,3);
+}
+
+function analyse(text, sample){
+  var lines=text.replace(/\r/g,"").split("\n");
+  var wc=words(text);
+  var present=[], missing=[];
+  RULES.forEach(function(r){
+    var hit=r.re.test(text);
+    (hit?present:missing).push(r);
+  });
+  var totalW=RULES.reduce(function(a,r){ return a+r.w; },0);
+  var gotW=present.reduce(function(a,r){ return a+r.w; },0);
+  var base=(gotW/totalW)*100;
+
+  var smells=detectSmells(text,lines,wc,sample);
+  var penalty=smells.reduce(function(a,s){ return a+(s.sev==="bad"?11:6); },0);
+
+  // length shaping: reward being within a sane band
+  var lenAdj=0;
+  if(wc<CORPUS.p10) lenAdj=-10;
+  else if(wc>CORPUS.p90) lenAdj=-6;
+  else if(wc>=250 && wc<=1400) lenAdj=5;
+
+  var score=Math.round(base+lenAdj-penalty);
+  if(score<3) score=3; if(score>99) score=99;
+
+  var grade = score>=90?"A":score>=80?"A-":score>=72?"B+":score>=64?"B":score>=55?"C+":score>=45?"C":score>=35?"D":"F";
+
+  var verdict;
+  var topMissing = missing.slice().sort(function(a,b){ return b.pct-a.pct; })[0];
+  if(score>=80){
+    verdict="Tight, specific and self-maintaining — top decile of the census. <b>Keep it under 80 lines.</b>";
+  } else if(smells.some(function(s){return s.name==="Conflicting Instructions";})){
+    verdict="Your file contradicts itself. <b>The agent will follow whichever rule it read last.</b>";
+  } else if(smells.some(function(s){return s.name==="Context Bloat";})){
+    verdict="At "+wc.toLocaleString()+" words you're above the 90th percentile — <b>and you still never tell the agent to verify its own work.</b>";
+  } else if(topMissing && topMissing.id==="verify"){
+    verdict="Your agent is never told to verify its own work — <b>"+CORPUS.verify+"% of popular repos say so explicitly.</b>";
+  } else if(topMissing){
+    verdict="No "+topMissing.name.toLowerCase()+" — <b>"+topMissing.pct+"% of the corpus has this.</b>";
+  } else {
+    verdict="All 10 high-signal rule categories present. <b>Now cut the fat.</b>";
+  }
+
+  return {wc:wc, lines:lines, lineCount:lines.length, score:score, grade:grade,
+          present:present, missing:missing, smells:smells, verdict:verdict,
+          cuts:findCuts(lines,sample)};
+}
+
+function percentileOf(wc){
+  if(wc<=CORPUS.p10) return Math.max(1,Math.round(wc/CORPUS.p10*10));
+  if(wc<=CORPUS.median) return Math.round(10+(wc-CORPUS.p10)/(CORPUS.median-CORPUS.p10)*40);
+  if(wc<=CORPUS.p90) return Math.round(50+(wc-CORPUS.median)/(CORPUS.p90-CORPUS.median)*40);
+  return Math.min(99, Math.round(90+(wc-CORPUS.p90)/4000*9));
+}
+
+/* ---------- render ---------- */
+var state={result:null, fileName:"AGENTS.md", sample:null};
+
+function render(res){
+  var fn=state.fileName;
+  $("cFile").textContent=fn;
+  $("cScore").textContent=res.score;
+  var g=$("cGrade"); g.textContent=res.grade;
+  g.style.color = res.score>=72?"var(--acc)":res.score>=50?"var(--warn)":"var(--bad)";
+  $("cVerdict").innerHTML=res.verdict;
+  $("cWords").textContent=res.wc.toLocaleString()+" words · "+res.lineCount+" lines";
+  var p=percentileOf(res.wc);
+  $("cPctl").textContent=p+"th percentile of 6,006 files";
+  var pos=Math.max(1,Math.min(97,p));
+  $("cYou").style.left=pos+"%";
+  var lab=$("cYouLab");
+  if(pos>72){ lab.style.left="auto"; lab.style.right=(100-pos)+"%"; lab.style.transform="translateY(-50%)"; lab.textContent="you ◂"; }
+  else { lab.style.right="auto"; lab.style.left=pos+"%"; lab.textContent="▸ you"; }
+  $("cSmells").textContent=res.smells.length+" smell"+(res.smells.length===1?"":"s")+" · "+res.present.length+"/10 rule categories present";
+
+  // delta
+  var prev=null;
+  try{ prev=window.localStorage? localStorage.getItem("houserules.lastScore") : null; }catch(e){ prev=null; }
+  var d=$("cDelta");
+  if(prev!==null && prev!=="" && !isNaN(parseInt(prev,10))){
+    var diff=res.score-parseInt(prev,10);
+    d.classList.remove("hidden","up","down");
+    if(diff>0){ d.textContent="+"+diff+" since last time"; d.classList.add("up"); }
+    else if(diff<0){ d.textContent=diff+" since last time"; d.classList.add("down"); }
+    else { d.textContent="no change since last time"; }
+  } else { d.classList.add("hidden"); }
+  try{ if(window.localStorage) localStorage.setItem("houserules.lastScore", String(res.score)); }catch(e){}
+
+  // A) missing
+  var ml=$("missingList"); ml.innerHTML="";
+  var ranked=res.missing.slice().sort(function(a,b){ return b.pct-a.pct; }).slice(0,6);
+  if(ranked.length===0){
+    ml.innerHTML='<div class="empty">Nothing missing — all 10 rule categories we track are present. That puts you in the top 4% of the census.</div>';
+  }
+  ranked.forEach(function(r){
+    var el=document.createElement("div"); el.className="item";
+    el.innerHTML=
+      '<div class="ihead"><span class="iname">'+esc(r.name)+'</span><span class="istat">'+r.pct+'% of repos have it</span></div>'+
+      '<div class="iwhy">'+esc(r.why)+'</div>'+
+      '<div class="codebox">'+esc(r.line)+'</div>'+
+      '<div class="irow"><button class="btn sm ghost" data-copy="'+esc(r.line)+'">copy this line</button></div>';
+    ml.appendChild(el);
+  });
+  if(ranked.length<6){
+    var have=res.present.slice().sort(function(a,b){return b.pct-a.pct;}).slice(0,6-ranked.length);
+    have.forEach(function(r){
+      var el=document.createElement("div"); el.className="item ok";
+      el.innerHTML='<div class="ihead"><span class="iname">✓ '+esc(r.name)+'</span><span class="istat have">you have it · '+r.pct+'% of repos do</span></div>';
+      ml.appendChild(el);
+    });
+  }
+
+  // B) smells
+  var sl=$("smellList"); sl.innerHTML="";
+  $("smellHint").textContent = res.smells.length? "Six checks run on your text. "+res.smells.length+" fired." : "Six checks run on your text. None fired.";
+  if(!res.smells.length){
+    sl.innerHTML='<div class="empty">Clean. No bloat, contradictions, lint leakage, blind paths, init fossils or skill leakage.</div>';
+  }
+  res.smells.forEach(function(s){
+    var el=document.createElement("div"); el.className="item smell"+(s.sev==="bad"?" bad":"");
+    el.innerHTML='<div class="ihead"><span class="iname">'+esc(s.name)+'</span></div>'+
+      '<div class="iwhy">'+esc(s.why)+'</div>'+
+      (s.ex? '<div class="codebox"><mark>'+esc(s.ex)+'</mark></div>':'');
+    sl.appendChild(el);
+  });
+
+  // C) cuts
+  var cl=$("cutList"); cl.innerHTML="";
+  if(!res.cuts.length){
+    cl.innerHTML='<div class="empty">Every line earns its place. Rare — the median file has 11 cuttable lines.</div>';
+  }
+  res.cuts.forEach(function(c){
+    var el=document.createElement("div"); el.className="item";
+    el.innerHTML='<div class="quote">“'+esc(c.line.length>160?c.line.slice(0,160)+"…":c.line)+'”</div>'+
+                 '<div class="cutwhy">'+esc(c.why)+'</div>';
+    cl.appendChild(el);
+  });
+  var saved=res.cuts.reduce(function(a,c){ return a+words(c.line); },0);
+  $("cleanMeta").textContent = saved? "≈"+saved+" words lighter": "";
+
+  // rule of the week
+  var rw=REPOS[(res.score+res.wc)%REPOS.length];
+  $("rotwQ").textContent='“Before you say it is done, run the command and paste the output. If you did not run it, say you did not run it.”';
+  $("rotwS").textContent="Used by "+rw.repo+" — "+rw.note+" · one of 8 example files in the census.";
+}
+
+function cleanedMarkdown(res){
+  var cutSet={};
+  res.cuts.forEach(function(c){ cutSet[c.line.trim().toLowerCase()]=1; });
+  var kept=res.lines.filter(function(l){ return !cutSet[l.trim().toLowerCase()]; });
+  var add=res.missing.slice().sort(function(a,b){return b.pct-a.pct;}).slice(0,3);
+  var out=kept.join("\n").replace(/\n{3,}/g,"\n\n").trim();
+  if(add.length){
+    out+="\n\n## Added by houserules\n";
+    add.forEach(function(r){ out+="\n- "+r.line+"  <!-- "+r.pct+"% of 6,006 repos have this -->\n"; });
+  }
+  return out+"\n";
+}
+
+function cardText(res){
+  var p=percentileOf(res.wc);
+  var missTop=res.missing.slice().sort(function(a,b){return b.pct-a.pct;}).slice(0,3)
+    .map(function(r){ return "• "+r.name+" ("+r.pct+"% of repos have it)"; }).join("\n");
+  return "houserules — "+state.fileName+"\n"+
+    "HOUSE RULES SCORE: "+res.score+"/100 ("+res.grade+")\n"+
+    res.verdict.replace(/<\/?b>/g,"")+"\n\n"+
+    res.wc.toLocaleString()+" words · "+p+"th percentile of 6,006 open-source instruction files\n"+
+    "(p10 = 163 · median = 818 · p90 = 3,010)\n\n"+
+    "Top rules missing:\n"+(missTop||"• none — all tracked categories present")+"\n\n"+
+    "Smells: "+(res.smells.length? res.smells.map(function(s){return s.name;}).join(", ") : "none")+"\n\n"+
+    "Scored against a census of 6,006 AGENTS.md / CLAUDE.md files.";
+}
+
+/* ---------- events ---------- */
+function updateCounter(){
+  var t=$("src").value;
+  var l=t? t.replace(/\r/g,"").split("\n").length : 0;
+  $("counter").textContent=words(t).toLocaleString()+" words · "+l+" lines";
+}
+$("src").addEventListener("input",function(){ state.sample=null; $("err").textContent=""; updateCounter();
+  Array.prototype.forEach.call(document.querySelectorAll(".chip"),function(c){ c.setAttribute("aria-pressed","false"); }); });
+
+Array.prototype.forEach.call(document.querySelectorAll(".chip"),function(btn){
+  btn.addEventListener("click",function(){
+    var k=btn.getAttribute("data-sample");
+    $("src").value=SAMPLES[k];
+    state.sample=k;
+    state.fileName = k==="monster" ? "CLAUDE.md" : "AGENTS.md";
+    Array.prototype.forEach.call(document.querySelectorAll(".chip"),function(c){ c.setAttribute("aria-pressed", c===btn?"true":"false"); });
+    $("err").textContent=""; updateCounter();
+    run();
+  });
+});
+
+function run(){
+  var text=$("src").value;
+  if(!text || !text.trim()){
+    $("err").textContent="Nothing to score yet — paste your file or tap a sample above.";
+    $("src").focus(); return;
+  }
+  if(text.trim().length<40){
+    $("err").textContent="That's too short to score fairly (need ~40 characters). Try a sample chip.";
+    return;
+  }
+  $("err").textContent="";
+  if(!state.sample){ state.fileName = /claude/i.test(text.slice(0,200)) ? "CLAUDE.md" : "AGENTS.md"; }
+
+  $("screen1").classList.add("hidden");
+  $("screen2").classList.add("hidden");
+  var an=$("analysing"); an.classList.remove("hidden");
+  var bar=$("anBar"); bar.style.width="0%";
+  var steps=["analysing 6,006 files…","matching 20 rule categories…","running 6 smell checks…"];
+  var si=0; $("anText").textContent=steps[0];
+  setTimeout(function(){ bar.style.width="100%"; },30);
+  var tick=setInterval(function(){ si++; if(si<steps.length) $("anText").textContent=steps[si]; },300);
+
+  setTimeout(function(){
+    clearInterval(tick);
+    var res;
+    try{ res=analyse(text,state.sample); }
+    catch(e){
+      an.classList.add("hidden"); $("screen1").classList.remove("hidden");
+      $("err").textContent="Couldn’t analyse that text. Try a smaller paste.";
+      return;
+    }
+    state.result=res;
+    an.classList.add("hidden");
+    render(res);
+    $("screen2").classList.remove("hidden");
+    window.scrollTo({top:0,behavior:"smooth"});
+  },900);
+}
+
+$("scoreBtn").addEventListener("click",run);
+
+document.addEventListener("click",function(e){
+  var t=e.target;
+  if(t && t.getAttribute && t.getAttribute("data-copy")!==null){
+    copyText(t.getAttribute("data-copy"),"Line copied — paste it into your file");
+  }
+});
+
+$("copyClean").addEventListener("click",function(){
+  if(!state.result) return;
+  copyText(cleanedMarkdown(state.result),"Cleaned-up markdown copied");
+});
+$("copyCard").addEventListener("click",function(){
+  if(!state.result) return;
+  copyText(cardText(state.result),"Card text copied — ready to post");
+});
+$("dlCard").addEventListener("click",function(){
+  toast("Opening print dialog — save as PDF/image");
+  setTimeout(function(){ try{ window.print(); }catch(e){ toast("Print not available in this browser"); } },500);
+});
+$("rescan").addEventListener("click",function(){
+  $("screen2").classList.add("hidden");
+  $("screen1").classList.remove("hidden");
+  window.scrollTo({top:0,behavior:"smooth"});
+  $("src").focus();
+});
+
+updateCounter();
+</script>
+</body>
+</html>

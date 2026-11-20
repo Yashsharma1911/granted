@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Conversion — agent-run data conversions</title>
+<style>
+:root{
+  --bg:#f6f7f9; --panel:#ffffff; --ink:#15181d; --muted:#646c7a; --line:#e2e5ea;
+  --accent:#2f5bea; --accent-ink:#ffffff; --green:#0f8a52; --greenbg:#e6f6ee;
+  --amber:#9a6400; --amberbg:#fdf3dd; --red:#b3261e; --redbg:#fdeceb;
+  --chip:#eef1f6;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#0e1116; --panel:#161b22; --ink:#e8ecf2; --muted:#9aa4b2; --line:#272e38;
+    --accent:#6b8dff; --accent-ink:#0b0e13; --green:#4ad48c; --greenbg:#10291d;
+    --amber:#e9b949; --amberbg:#2c2410; --red:#ff8a80; --redbg:#2e1514;
+    --chip:#222a35;
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--ink);
+  font:16px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  -webkit-text-size-adjust:100%;
+}
+.wrap{max-width:1040px;margin:0 auto;padding:16px 14px 90px}
+header.top{display:flex;gap:10px;align-items:flex-start;padding:4px 0 14px}
+.logo{width:30px;height:30px;border-radius:8px;background:var(--accent);display:grid;place-items:center;flex:none}
+h1{font-size:17px;margin:0;letter-spacing:-.01em}
+.tag{color:var(--muted);font-size:13px;margin:2px 0 0}
+.demo{display:inline-block;font-size:11px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:2px 8px;margin-left:6px;vertical-align:1px}
+
+/* stepper */
+.stepper{display:flex;gap:6px;margin:0 0 16px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:2px}
+.step{flex:1 1 0;min-width:150px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:9px 11px;font-size:13px;color:var(--muted);display:flex;gap:8px;align-items:center}
+.step .n{width:20px;height:20px;border-radius:50%;background:var(--chip);display:grid;place-items:center;font-size:11px;font-weight:700;color:var(--muted);flex:none}
+.step.active{border-color:var(--accent);color:var(--ink);box-shadow:0 0 0 1px var(--accent) inset}
+.step.active .n{background:var(--accent);color:var(--accent-ink)}
+.step.done .n{background:var(--greenbg);color:var(--green)}
+.step.done{color:var(--ink)}
+
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px}
+h2{font-size:15px;margin:0 0 4px;letter-spacing:-.01em}
+.sub{color:var(--muted);font-size:13px;margin:0 0 12px}
+.cols{display:grid;grid-template-columns:1.6fr 1fr;gap:14px}
+@media (max-width:760px){.cols{grid-template-columns:1fr}}
+
+.file{display:flex;gap:10px;align-items:flex-start;padding:10px;border:1px solid var(--line);border-radius:10px;margin-bottom:8px;background:var(--bg)}
+.file svg{flex:none;margin-top:1px}
+.file .fn{font-size:14px;font-weight:600;word-break:break-word}
+.file .fd{font-size:12.5px;color:var(--muted)}
+.callout{border-radius:10px;padding:11px 12px;font-size:13.5px;margin-top:10px}
+.callout.red{background:var(--redbg);color:var(--red);border:1px solid color-mix(in srgb,var(--red) 30%,transparent)}
+.callout.amber{background:var(--amberbg);color:var(--amber);border:1px solid color-mix(in srgb,var(--amber) 35%,transparent)}
+.today{background:var(--bg);border:1px dashed var(--line);border-radius:12px;padding:13px}
+.today .lab{font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+.today .big{font-size:26px;font-weight:700;margin:4px 0 2px;letter-spacing:-.02em}
+
+button{font:inherit;cursor:pointer;border-radius:10px;border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:12px 16px;min-height:46px}
+button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.btn-primary{background:var(--accent);color:var(--accent-ink);border-color:transparent;font-weight:650;width:100%}
+.btn-primary:disabled,button:disabled{opacity:.45;cursor:not-allowed}
+.btn-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+.btn-row button{flex:1 1 200px}
+
+/* progress */
+.prog{list-style:none;margin:0;padding:0}
+.prog li{display:flex;gap:10px;align-items:center;padding:9px 0;color:var(--muted);font-size:14px;border-bottom:1px solid var(--line)}
+.prog li:last-child{border-bottom:0}
+.prog li.run{color:var(--ink)}
+.prog li.ok{color:var(--ink)}
+.dot{width:18px;height:18px;border-radius:50%;border:2px solid var(--line);flex:none;display:grid;place-items:center}
+.prog li.run .dot{border-color:var(--accent);border-right-color:transparent;animation:spin .7s linear infinite}
+.prog li.ok .dot{border-color:var(--green);background:var(--green)}
+.prog li.ok .dot:after{content:"";width:5px;height:9px;border:2px solid var(--panel);border-top:0;border-left:0;transform:rotate(42deg) translate(-1px,-1px)}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* mapping */
+.mapbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
+.counter{font-size:13px;font-weight:650;background:var(--chip);border-radius:999px;padding:6px 11px}
+.counter.all{background:var(--greenbg);color:var(--green)}
+.rows{border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.row{display:grid;grid-template-columns:1fr 18px 1fr auto;gap:10px;align-items:center;width:100%;text-align:left;background:var(--panel);border:0;border-bottom:1px solid var(--line);border-radius:0;padding:12px 13px;min-height:58px}
+.row:last-child{border-bottom:0}
+.row:hover{background:var(--chip)}
+.src{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.6px;word-break:break-word}
+.dst{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.6px;color:var(--muted);word-break:break-word}
+.row.ok .dst{color:var(--ink)}
+.arrow{color:var(--muted);font-size:13px;text-align:center}
+.chip{font-size:11.5px;font-weight:700;border-radius:999px;padding:4px 9px;white-space:nowrap;background:var(--greenbg);color:var(--green)}
+.chip.warn{background:var(--amberbg);color:var(--amber)}
+.chip.bad{background:var(--redbg);color:var(--red)}
+.row.flag{background:color-mix(in srgb,var(--amberbg) 55%,transparent)}
+.row.fixed{background:color-mix(in srgb,var(--greenbg) 45%,transparent)}
+@media (max-width:620px){
+  .row{grid-template-columns:1fr auto;grid-template-areas:"s c" "d d";row-gap:4px}
+  .src{grid-area:s}.dst{grid-area:d}.chip{grid-area:c}.arrow{display:none}
+}
+
+/* drawer */
+.scrim{position:fixed;inset:0;background:rgba(5,8,14,.5);opacity:0;pointer-events:none;transition:opacity .18s;z-index:40}
+.scrim.on{opacity:1;pointer-events:auto}
+.drawer{position:fixed;top:0;right:0;height:100%;width:min(430px,100%);background:var(--panel);border-left:1px solid var(--line);transform:translateX(100%);transition:transform .22s ease;z-index:50;overflow-y:auto;padding:16px 16px 40px}
+.drawer.on{transform:none}
+.drawer h3{margin:0 0 2px;font-size:15px}
+.closeb{position:absolute;top:10px;right:10px;width:42px;height:42px;padding:0;display:grid;place-items:center;border-radius:50%}
+.raw{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.3px;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:11px;white-space:pre-wrap;word-break:break-word;line-height:1.6}
+label.lbl{display:block;font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:16px 0 6px}
+select{width:100%;font:inherit;padding:12px;min-height:46px;border-radius:10px;border:1px solid var(--line);background:var(--panel);color:var(--ink)}
+.note{font-size:12.5px;color:var(--muted);margin-top:8px}
+
+/* pack */
+.pack{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--panel)}
+.packhead{padding:15px 16px;background:var(--chip);border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center}
+.pack.signed .packhead{background:var(--greenbg);color:var(--green)}
+.packhead .t{font-weight:700;font-size:15px}
+.packhead .d{font-size:12.5px;color:var(--muted)}
+.pack.signed .packhead .d{color:var(--green)}
+.packbody{padding:16px}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th,td{text-align:right;padding:9px 6px;border-bottom:1px solid var(--line)}
+th:first-child,td:first-child{text-align:left}
+th{font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);font-weight:600}
+td.zero{color:var(--green);font-weight:650}
+td.neg{color:var(--amber);font-weight:650}
+.spot{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+@media (max-width:700px){.spot{grid-template-columns:1fr}}
+.sp{border:1px solid var(--line);border-radius:10px;padding:11px;background:var(--bg);font-size:12.4px}
+.sp .nm{font-weight:700;font-size:13px;margin-bottom:6px}
+.sp .pair{display:flex;justify-content:space-between;gap:8px;padding:3px 0;border-bottom:1px dotted var(--line)}
+.sp .pair:last-child{border-bottom:0}
+.sp .k{color:var(--muted)}
+.sp code{font-family:ui-monospace,Menlo,monospace;font-size:11.6px}
+.match{color:var(--green);font-weight:700}
+.sect{font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin:20px 0 8px}
+.packfoot{border-top:1px solid var(--line);padding:14px 16px;font-size:12.5px;color:var(--muted);display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.sigline{border-bottom:1px solid var(--muted);min-width:170px;height:22px;position:relative}
+.stamp{display:none;border:2px solid var(--green);color:var(--green);border-radius:8px;padding:6px 12px;font-weight:800;letter-spacing:.06em;transform:rotate(-5deg);font-size:12.5px}
+.pack.signed .stamp{display:inline-block}
+.pack.signed .sigline:after{content:"Dr. Mai Nguyen";position:absolute;left:4px;bottom:1px;font-family:"Snell Roundhand","Brush Script MT",cursive;font-size:19px;color:var(--ink)}
+footer{text-align:center;color:var(--muted);font-size:12px;padding:22px 0 6px}
+.hidden{display:none}
+.fade{animation:fade .35s ease}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.srcbtn{background:none;border:0;padding:0;min-height:0;color:var(--accent);font-size:12px;text-decoration:underline}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="logo" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5h8M7 2l3 3-3 3M14 11H6M9 8l-3 3 3 3"/></svg></div>
+    <div>
+      <h1>Conversion — agent-run customer data conversions<span class="demo">Demo data</span></h1>
+      <p class="tag">Legacy printouts in, import-ready data and a signed reconciliation pack out.</p>
+    </div>
+  </header>
+
+  <div class="stepper" role="list">
+    <div class="step active" id="st1" role="listitem"><span class="n">1</span> What the old system gave us</div>
+    <div class="step" id="st2" role="listitem"><span class="n">2</span> Conversion</div>
+    <div class="step" id="st3" role="listitem"><span class="n">3</span> Sign-off pack</div>
+  </div>
+
+  <!-- SECTION 1 -->
+  <section class="card" id="sec1">
+    <div class="cols">
+      <div>
+        <h2>Received from BrightSmile Dental 4.2 (legacy)</h2>
+        <p class="sub">5 artefacts · no schema, no export API</p>
+        <div id="files"></div>
+        <div class="callout red">No database export. Vendor quoted <strong>$4,000</strong> for a data extract.</div>
+      </div>
+      <div>
+        <div class="today">
+          <div class="lab">Today</div>
+          <div class="big">3 days</div>
+          <div class="sub" style="margin:0">Implementation consultant re-keys 312 patients into a spreadsheet, by hand, from PDFs.</div>
+        </div>
+        <button class="btn-primary" id="runBtn" style="margin-top:12px">Run conversion</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 2 -->
+  <section class="card hidden" id="sec2">
+    <h2>Conversion</h2>
+    <p class="sub" id="sec2sub">Agent reading the artefacts…</p>
+    <ul class="prog" id="prog"></ul>
+
+    <div class="hidden" id="mapWrap">
+      <div class="mapbar">
+        <span class="counter" id="resolved">Resolved 0 of 4</span>
+        <span class="counter" id="avgconf">12 fields mapped</span>
+        <span style="font-size:12.5px;color:var(--muted)">Tap any row to see the raw source line.</span>
+      </div>
+      <div class="rows" id="rows"></div>
+      <div class="btn-row">
+        <button id="loadBtn" disabled>Load to sandbox (dry run)</button>
+      </div>
+      <p class="note" id="loadNote">Resolve the 4 flagged fields to enable the dry run.</p>
+    </div>
+  </section>
+
+  <!-- SECTION 3 -->
+  <section class="hidden" id="sec3">
+    <div class="pack" id="pack">
+      <div class="packhead">
+        <div>
+          <div class="t">BrightSmile Dental → go-live sign-off</div>
+          <div class="d" id="packdate">Reconciliation pack · conversion run #1147 · 20 Nov 2026</div>
+        </div>
+        <div class="stamp">SIGNED OFF ✓</div>
+      </div>
+      <div class="packbody">
+        <div class="sect">Control totals</div>
+        <table>
+          <thead><tr><th>Measure</th><th>Source</th><th>Loaded</th><th>Delta</th></tr></thead>
+          <tbody id="totals"></tbody>
+        </table>
+
+        <div class="callout amber" style="margin-top:14px">
+          <strong id="excTitle">2 exceptions</strong> — 2 appointments fall on a closed date (practice holiday calendar); staged for review, not dropped.
+          <ul style="margin:8px 0 0;padding-left:18px">
+            <li>Harold Veeck — 24 Dec 2026, 09:30 — clinic closed (holiday)</li>
+            <li>Priya Raman — 01 Jan 2027, 14:00 — clinic closed (holiday)</li>
+          </ul>
+        </div>
+
+        <div class="sect">Spot check — legacy vs loaded</div>
+        <div class="spot" id="spot"></div>
+      </div>
+      <div class="packfoot">
+        <div>Prepared for Dr. Mai Nguyen<div class="sigline"></div></div>
+        <div style="text-align:right"><strong style="color:var(--ink)">41 minutes elapsed</strong><br>est. 3 days manual</div>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn-primary" id="signBtn">Sign off</button>
+      <button id="restartBtn">Start over</button>
+    </div>
+    <p class="note hidden" id="signedNote">Signed by Dr. Mai Nguyen · 20 Nov 2026, 09:14. Pack locked and attached to the go-live checklist.</p>
+  </section>
+
+  <footer>Prototype by Granted, inspired by your bookmarks</footer>
+</div>
+
+<div class="scrim" id="scrim"></div>
+<aside class="drawer" id="drawer" aria-hidden="true" aria-label="Mapping detail">
+  <button class="closeb" id="closeBtn" aria-label="Close">✕</button>
+  <h3 id="dTitle">—</h3>
+  <p class="sub" id="dDest">—</p>
+  <div class="sect" style="margin-top:14px">Raw source line</div>
+  <div class="raw" id="dRaw">—</div>
+  <p class="note" id="dFile">—</p>
+  <div id="dFix" class="hidden">
+    <label class="lbl" for="dSel">Candidate meaning</label>
+    <select id="dSel"></select>
+    <button class="btn-primary" id="applyBtn" style="margin-top:12px">Apply to all matching records</button>
+    <p class="note" id="dHint"></p>
+  </div>
+  <div id="dOk" class="hidden"><div class="callout" style="background:var(--greenbg);color:var(--green);border:1px solid color-mix(in srgb,var(--green) 30%,transparent)">Mapped with high confidence. No action needed.</div></div>
+</aside>
+
+<script>
+(function(){
+"use strict";
+var FILES=[
+ {n:"Patient_Roster_Nov2026.pdf",d:"printed report, 312 rows"},
+ {n:"AR_Aging_Detail.pdf",d:"printed report, 148 rows"},
+ {n:"appt_export.csv",d:"malformed, 1,040 rows"},
+ {n:"insurance_codes.txt",d:"undocumented"},
+ {n:"Recall_Schedule.pdf",d:"printed report, 295 rows"}
+];
+var STEPS=["Reading reports","Inferring codes","Mapping to schema","Dry-run load"];
+
+var ROWS=[
+ {s:"PT NAME (LAST, FIRST)",d:"patient.last_name + patient.first_name",c:99,
+  raw:"SMITH, JANE A   03/14/51   DL-PPO   P1   412.50",f:"Patient_Roster_Nov2026.pdf · p.3 line 18"},
+ {s:"DOB (2-digit year)",d:"patient.dob  (century inferred from first-visit date)",c:94,
+  raw:"SMITH, JANE A   03/14/51   DL-PPO   P1   412.50\nFIRST VISIT: 09/02/1998  → DOB resolved 1951-03-14",f:"Patient_Roster_Nov2026.pdf · p.3 line 18"},
+ {s:"CHART #",d:"patient.external_id",c:99,
+  raw:"CHART #  00841-B    STATUS: ACTIVE    PROV: DR NGUYEN",f:"Patient_Roster_Nov2026.pdf · p.3 line 19"},
+ {s:"PHONE (H) / (C)",d:"patient.phone_home / patient.phone_mobile",c:96,
+  raw:"PH(H) 503-555-0148   PH(C) 503-555-0921   NO TXT",f:"Patient_Roster_Nov2026.pdf · p.3 line 20"},
+ {s:"BAL 30/60/90",d:"ar_bucket_30 / ar_bucket_60 / ar_bucket_90",c:97,
+  raw:"SMITH, JANE A     184.00    128.50    100.00    412.50",f:"AR_Aging_Detail.pdf · p.7 line 44"},
+ {s:"BAL 120+ / CREDIT",d:"ar_bucket_120 / patient.credit_balance",c:72,flag:true,
+  raw:"VEECK, HAROLD     0.00      0.00      0.00      (85.00)\n** parentheses used for both 120+ aging and credit balances **",
+  f:"AR_Aging_Detail.pdf · p.9 line 12",
+  opts:[{v:"Parentheses = credit balance → patient.credit_balance",d:"patient.credit_balance (negative handled)"},
+        {v:"Parentheses = 120+ aging bucket → ar_bucket_120",d:"ar_bucket_120"},
+        {v:"Leave unmapped for manual review",d:"(unmapped — manual review)"}],
+  count:"31 matching records"},
+ {s:"INS CD 'DL-PPO'",d:"payer_plan: Delta Dental PPO",c:88,
+  raw:"INS CD TABLE (insurance_codes.txt)\nDL-PPO | DL-PREM | MET-EPO | AETNA-DMO | SELFPAY",f:"insurance_codes.txt · line 4"},
+ {s:"INS CD 'GRP-7744'",d:"payer_plan: ???  (no entry in code table)",c:53,flag:true,
+  raw:"RAMAN, PRIYA    11/02/79   GRP-7744   P2   0.00\n** GRP-7744 appears 64 times; absent from insurance_codes.txt **",
+  f:"Patient_Roster_Nov2026.pdf · p.11 line 7",
+  opts:[{v:"Cigna Dental PPO — group 7744 (matches payer address block)",d:"payer_plan: Cigna Dental PPO (grp 7744)"},
+        {v:"Guardian DentalGuard Preferred",d:"payer_plan: Guardian DentalGuard Preferred"},
+        {v:"Self-pay / no insurance",d:"payer_plan: Self-pay"}],
+  count:"64 matching records"},
+ {s:"RECALL TYPE 'P1'",d:"recall_type: ???  (3 distinct values, no legend found)",c:41,flag:true,
+  raw:"SMITH, JANE A   03/14/51   DL-PPO   P1   412.50\nDistinct values seen: P1 (87), P2 (154), X (54)\nRecall_Schedule.pdf intervals: P1→6mo, P2→4mo, X→12mo",
+  f:"Recall_Schedule.pdf · p.1 header + roster column 5",
+  opts:[{v:"P1 = Prophy 6-month recall",d:"recall_type: prophy_6mo"},
+        {v:"P1 = Perio maintenance 3-month",d:"recall_type: perio_3mo"},
+        {v:"P1 = Paediatric recall",d:"recall_type: paediatric"}],
+  count:"87 matching records"},
+ {s:"APPT STATUS 'C' / 'CX' / 'NS'",d:"appointment.status",c:91,
+  raw:"2026-12-03,09:00,00841-B,C,45,HYG2\n2026-12-03,10:00,01190-A,NS,30,DR1",f:"appt_export.csv · rows 212-213"},
+ {s:"APPT DATE (no delimiter)",d:"appointment.start_at  (parsed MMDDYY + HHMM)",c:68,flag:true,
+  raw:"1204260930,00412-C,C,60,DR1\n** 1,040 rows: date+time glued, no separator; 2 rows land on closed dates **",
+  f:"appt_export.csv · row 884",
+  opts:[{v:"MMDDYY + HHMM (US order) — matches clinic calendar",d:"appointment.start_at (MMDDYY+HHMM)"},
+        {v:"DDMMYY + HHMM (EU order)",d:"appointment.start_at (DDMMYY+HHMM)"},
+        {v:"YYMMDD + HHMM",d:"appointment.start_at (YYMMDD+HHMM)"}],
+  count:"1,040 matching records"},
+ {s:"PROV INITIALS 'DR1' / 'HYG2'",d:"provider.code → provider_id",c:93,
+  raw:"PROVIDER LEGEND: DR1=Nguyen, M.  DR2=Okafor, T.  HYG1=Bell, R.  HYG2=Castillo, A.",f:"Recall_Schedule.pdf · p.4 footer"}
+];
+
+var TOTALS=[
+ ["Patients","312","312","0","zero"],
+ ["Active patients","268","268","0","zero"],
+ ["Open AR","$184,203.17","$184,203.17","$0.00","zero"],
+ ["Appointments (future)","1,040","1,038","-2","neg"],
+ ["Recall entries","295","295","0","zero"]
+];
+
+var SPOT=[
+ {nm:"Jane A. Smith",rows:[["Chart #","00841-B"],["DOB","1951-03-14"],["Plan","Delta Dental PPO"],["Recall","prophy_6mo"],["Balance","$412.50"]]},
+ {nm:"Priya Raman",rows:[["Chart #","01190-A"],["DOB","1979-11-02"],["Plan","Cigna Dental PPO"],["Recall","perio_3mo"],["Balance","$0.00"]]},
+ {nm:"Harold Veeck",rows:[["Chart #","00412-C"],["DOB","1943-06-28"],["Plan","Self-pay"],["Recall","recall_12mo"],["Balance","-$85.00 credit"]]}
+];
+
+function $(id){return document.getElementById(id);}
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];});}
+
+/* files */
+var fsvg='<svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"><path d="M3 1.5h6l4 4v9H3z"/><path d="M9 1.5v4h4"/></svg>';
+$("files").innerHTML=FILES.map(function(f){
+  return '<div class="file">'+fsvg+'<div><div class="fn">'+esc(f.n)+'</div><div class="fd">'+esc(f.d)+'</div></div></div>';
+}).join("");
+
+/* totals + spot */
+$("totals").innerHTML=TOTALS.map(function(t){
+  return '<tr><td>'+esc(t[0])+'</td><td>'+esc(t[1])+'</td><td>'+esc(t[2])+'</td><td class="'+t[4]+'">'+esc(t[3])+'</td></tr>';
+}).join("");
+$("spot").innerHTML=SPOT.map(function(p){
+  return '<div class="sp"><div class="nm">'+esc(p.nm)+'</div>'+p.rows.map(function(r){
+    return '<div class="pair"><span class="k">'+esc(r[0])+'</span><code>'+esc(r[1])+'</code></div>';
+  }).join("")+'<div class="pair"><span class="k">legacy vs loaded</span><span class="match">match ✓</span></div></div>';
+}).join("");
+
+/* state */
+var resolved=0, openIdx=-1, timers=[];
+function chipClass(c,fixed){ if(fixed) return "chip"; if(c>=85) return "chip"; if(c>=60) return "chip warn"; return "chip bad"; }
+
+function renderRows(){
+  $("rows").innerHTML=ROWS.map(function(r,i){
+    var fixed=!!r.fixed;
+    var cls="row"+(r.flag&&!fixed?" flag":"")+(fixed?" fixed ok":"");
+    var conf=fixed?100:r.c;
+    var label=fixed?(conf+"% ✓"):(r.c+"%"+(r.flag?" · NEEDS YOU":""));
+    return '<button class="'+cls+'" data-i="'+i+'" type="button">'+
+      '<span class="src">'+esc(r.s)+'</span>'+
+      '<span class="arrow">→</span>'+
+      '<span class="dst">'+esc(fixed?r.fixedD:r.d)+'</span>'+
+      '<span class="'+chipClass(r.c,fixed)+'">'+esc(label)+'</span>'+
+    '</button>';
+  }).join("");
+  Array.prototype.forEach.call($("rows").querySelectorAll(".row"),function(b){
+    b.addEventListener("click",function(){ openDrawer(parseInt(b.getAttribute("data-i"),10)); });
+  });
+  $("resolved").textContent="Resolved "+resolved+" of 4";
+  $("resolved").className="counter"+(resolved===4?" all":"");
+  var ok=ROWS.filter(function(r){return !r.flag||r.fixed;}).length;
+  $("avgconf").textContent=ok+" of 12 fields confirmed";
+  $("loadBtn").disabled=resolved<4;
+  $("loadNote").textContent=resolved<4?("Resolve the "+(4-resolved)+" flagged field"+(4-resolved===1?"":"s")+" to enable the dry run."):"All flags resolved. Ready for a sandbox dry run.";
+}
+
+/* drawer */
+function openDrawer(i){
+  var r=ROWS[i]; if(!r) return;
+  openIdx=i;
+  $("dTitle").textContent=r.s;
+  $("dDest").textContent="→ "+(r.fixed?r.fixedD:r.d);
+  $("dRaw").textContent=r.raw;
+  $("dFile").textContent="Source: "+r.f;
+  var needs=r.flag&&!r.fixed;
+  $("dFix").className=needs?"":"hidden";
+  $("dOk").className=needs?"hidden":"";
+  if(needs){
+    $("dSel").innerHTML=r.opts.map(function(o,k){return '<option value="'+k+'">'+esc(o.v)+'</option>';}).join("");
+    $("applyBtn").textContent="Apply to all "+r.count.split(" ")[0]+" matching records";
+    $("dHint").textContent="Applies to "+r.count+" in this conversion.";
+  }
+  $("drawer").classList.add("on"); $("drawer").setAttribute("aria-hidden","false");
+  $("scrim").classList.add("on");
+  $("closeBtn").focus();
+}
+function closeDrawer(){
+  $("drawer").classList.remove("on"); $("drawer").setAttribute("aria-hidden","true");
+  $("scrim").classList.remove("on"); openIdx=-1;
+}
+$("closeBtn").addEventListener("click",closeDrawer);
+$("scrim").addEventListener("click",closeDrawer);
+document.addEventListener("keydown",function(e){ if(e.key==="Escape") closeDrawer(); });
+
+$("applyBtn").addEventListener("click",function(){
+  var r=ROWS[openIdx];
+  if(!r||!r.flag||r.fixed){ closeDrawer(); return; }
+  var k=parseInt($("dSel").value,10);
+  if(isNaN(k)||!r.opts[k]){ $("dHint").textContent="Pick a candidate meaning first."; return; }
+  r.fixed=true; r.fixedD=r.opts[k].d; resolved++;
+  renderRows();
+  updateExceptions();
+  closeDrawer();
+  var el=$("rows").querySelector('[data-i="'+openIdxSafe(r)+'"]');
+  if(el) el.classList.add("fade");
+});
+function openIdxSafe(r){ return ROWS.indexOf(r); }
+
+function updateExceptions(){
+  var remaining=4-resolved;
+  $("excTitle").textContent="2 exceptions";
+  var sub=$("sec2sub");
+  sub.textContent=remaining>0
+    ? ("12 fields mapped · "+remaining+" need a human decision")
+    : "12 fields mapped · 0 open questions";
+}
+
+/* run conversion */
+$("runBtn").addEventListener("click",function(){
+  $("runBtn").disabled=true;
+  $("sec2").classList.remove("hidden");
+  $("sec2").classList.add("fade");
+  $("st1").className="step done"; $("st2").className="step active";
+  $("prog").innerHTML=STEPS.map(function(s){return '<li><span class="dot"></span>'+esc(s)+'</li>';}).join("");
+  $("sec2").scrollIntoView({behavior:"smooth",block:"start"});
+  var items=$("prog").querySelectorAll("li");
+  var i=0;
+  function tick(){
+    if(i>0) items[i-1].className="ok";
+    if(i<items.length){
+      items[i].className="run";
+      i++;
+      timers.push(setTimeout(tick,625));
+    }else{
+      $("mapWrap").classList.remove("hidden");
+      $("mapWrap").classList.add("fade");
+      renderRows(); updateExceptions();
+    }
+  }
+  tick();
+});
+
+$("loadBtn").addEventListener("click",function(){
+  if(resolved<4) return;
+  $("loadBtn").disabled=true;
+  $("loadBtn").textContent="Loading to sandbox…";
+  timers.push(setTimeout(function(){
+    $("loadBtn").textContent="Dry run complete ✓";
+    $("sec3").classList.remove("hidden");
+    $("sec3").classList.add("fade");
+    $("st2").className="step done"; $("st3").className="step active";
+    $("sec3").scrollIntoView({behavior:"smooth",block:"start"});
+  },900));
+});
+
+$("signBtn").addEventListener("click",function(){
+  $("pack").classList.add("signed");
+  $("signBtn").disabled=true;
+  $("signBtn").textContent="Signed off ✓";
+  $("signedNote").classList.remove("hidden");
+  $("st3").className="step done";
+});
+
+$("restartBtn").addEventListener("click",function(){
+  timers.forEach(clearTimeout); timers=[];
+  ROWS.forEach(function(r){ r.fixed=false; r.fixedD=null; });
+  resolved=0;
+  $("sec2").classList.add("hidden"); $("sec3").classList.add("hidden");
+  $("mapWrap").classList.add("hidden");
+  $("pack").classList.remove("signed");
+  $("signBtn").disabled=false; $("signBtn").textContent="Sign off";
+  $("signedNote").classList.add("hidden");
+  $("loadBtn").textContent="Load to sandbox (dry run)"; $("loadBtn").disabled=true;
+  $("runBtn").disabled=false;
+  $("st1").className="step active"; $("st2").className="step"; $("st3").className="step";
+  $("sec2sub").textContent="Agent reading the artefacts…";
+  window.scrollTo({top:0,behavior:"smooth"});
+});
+})();
+</script>
+</body>
+</html>

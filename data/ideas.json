@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-19T20:52:58.497Z",
+  "updated": "2026-11-20T20:52:20.663Z",
   "ideas": [
     {
       "id": "2026-10-22-agentgauntlet",
@@ -1267,6 +1267,66 @@
       "sources_count": 26,
       "superseded_by": null,
       "sibling": "2026-11-19-roster"
+    },
+    {
+      "id": "2026-11-20-houserules",
+      "number": 45,
+      "date": "2026-11-20",
+      "track": "build",
+      "short_name": "Houserules",
+      "verdict": "dig_deeper",
+      "score": 7.8,
+      "scores": {
+        "wow": 8,
+        "shareability": 8,
+        "buildability": 8,
+        "freshness": 8,
+        "usefulness": 7
+      },
+      "effort": "a weekend",
+      "category": "Developer tools",
+      "tags": [
+        "agents",
+        "github",
+        "public data",
+        "developer tools"
+      ],
+      "pain_type": "expressed",
+      "one_liner": "Paste your repo URL (or drop your AGENTS.md / CLAUDE.md) and Houserules scores it against a census of ~6,000 open-source instruction files — which of the 20 rules the best repos give their agents you are missing, which lines are dead weight, and a shareable \"house rules\" card — plus a weekly \"rule of the week\" lifted from a famous repo.",
+      "prototype_url": "https://yashsharma1911.github.io/granted/ideas/2026-11-20-houserules/",
+      "sources_count": 15,
+      "superseded_by": null,
+      "sibling": "2026-11-20-conversion"
+    },
+    {
+      "id": "2026-11-20-conversion",
+      "number": 46,
+      "date": "2026-11-20",
+      "track": "venture",
+      "short_name": "Conversion",
+      "verdict": "watch",
+      "score": 7.2,
+      "scores": {
+        "pain": 8,
+        "market_pull": 7,
+        "timing": 8,
+        "gap": 7,
+        "wedge": 6
+      },
+      "effort": "3+ months",
+      "category": "Back-office automation",
+      "tags": [
+        "agents",
+        "data-migration",
+        "vertical-saas",
+        "onboarding"
+      ],
+      "pain_type": "expressed",
+      "one_liner": "For the implementation / onboarding lead at a 20-300 person vertical SaaS vendor (dental, veterinary, legal, field service, pediatric EHR), Conversion is a per-customer data conversion agent: it takes whatever the prospect's old system coughs up — a DB dump, a pile of CSVs, or PDF/printed reports — infers the undocumented codes, maps them into the vendor's own schema, loads through the vendor's API, and produces a reconciliation pack (record counts, financial control totals, exception list) the customer signs off on before go-live.",
+      "prototype_url": "https://yashsharma1911.github.io/granted/ideas/2026-11-20-conversion/",
+      "sources_count": 26,
+      "superseded_by": null,
+      "sibling": "2026-11-20-houserules"
     }
   ]
 }
