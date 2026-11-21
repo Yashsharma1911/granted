@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-20T20:52:20.663Z",
+  "updated": "2026-11-21T20:52:33.748Z",
   "ideas": [
     {
       "id": "2026-10-22-agentgauntlet",
@@ -1327,6 +1327,66 @@
       "sources_count": 26,
       "superseded_by": null,
       "sibling": "2026-11-20-houserules"
+    },
+    {
+      "id": "2026-11-21-bottleneck",
+      "number": 47,
+      "date": "2026-11-21",
+      "track": "build",
+      "short_name": "Bottleneck",
+      "verdict": "dig_deeper",
+      "score": 8.2,
+      "scores": {
+        "wow": 8,
+        "shareability": 8.5,
+        "buildability": 8,
+        "freshness": 9,
+        "usefulness": 7.5
+      },
+      "effort": "a weekend",
+      "category": "Public data tools",
+      "tags": [
+        "agents",
+        "labor-data",
+        "onet",
+        "dataviz"
+      ],
+      "pain_type": "latent",
+      "one_liner": "Paste the 5-10 things you actually did at work this week (or drop your calendar .ics) and Bottleneck scores each one against 17,951 O*NET tasks already graded for reinforcement-learning feasibility — showing, per line, the exact reason an agent can't learn it yet (no verifiable output, no simulator, nobody can grade it) and a shareable \"my week, trainable vs not\" card you refill every Friday.",
+      "prototype_url": "https://yashsharma1911.github.io/granted/ideas/2026-11-21-bottleneck/",
+      "sources_count": 9,
+      "superseded_by": null,
+      "sibling": "2026-11-21-escalator"
+    },
+    {
+      "id": "2026-11-21-escalator",
+      "number": 48,
+      "date": "2026-11-21",
+      "track": "venture",
+      "short_name": "Escalator",
+      "verdict": "dig_deeper",
+      "score": 8.1,
+      "scores": {
+        "pain": 8,
+        "market_pull": 7.5,
+        "timing": 8.5,
+        "gap": 8,
+        "wedge": 8.5
+      },
+      "effort": "3+ months",
+      "category": "Back-office automation",
+      "tags": [
+        "contracts",
+        "pricing",
+        "field-services",
+        "agents"
+      ],
+      "pain_type": "expressed",
+      "one_liner": "For the controller or owner at a $3M-$50M commercial janitorial, landscaping, security-guard or fire-protection contractor, Escalator reads the signed customer agreements, finds every annual escalator, CPI clause, wage pass-through and notice deadline, checks them against what was actually invoiced in QuickBooks/Aspire/ServiceTitan, and produces a dated calendar of increases due plus the ready-to-send notice letter for each one.",
+      "prototype_url": "https://yashsharma1911.github.io/granted/ideas/2026-11-21-escalator/",
+      "sources_count": 23,
+      "superseded_by": null,
+      "sibling": "2026-11-21-bottleneck"
     }
   ]
 }

@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Escalator — contract price-increase agent</title>
+<style>
+:root{
+  --bg:#f6f7f9; --panel:#ffffff; --ink:#111519; --muted:#5d6872; --line:#e2e6ea;
+  --red:#b4232a; --redbg:#fdeeee; --amber:#9a6100; --amberbg:#fdf3e2; --green:#136b43; --greenbg:#e9f6ef;
+  --blue:#13406b; --bluebg:#eaf1f8; --accent:#13406b;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --bg:#0e1216; --panel:#161c22; --ink:#e8edf2; --muted:#98a4b0; --line:#262f38;
+    --red:#ff8a86; --redbg:#36191b; --amber:#f0b64b; --amberbg:#352714; --green:#6edba4; --greenbg:#10291e;
+    --blue:#9ac6f3; --bluebg:#15222f; --accent:#9ac6f3;
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  font-size:15px; line-height:1.45; -webkit-text-size-adjust:100%;
+}
+.num{font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1}
+.wrap{max-width:1120px;margin:0 auto;padding:0 14px 60px}
+header.top{
+  background:var(--panel);border-bottom:1px solid var(--line);
+  padding:12px 14px;position:sticky;top:0;z-index:40;
+}
+header.top .in{max-width:1120px;margin:0 auto;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.logo{display:flex;align-items:center;gap:8px;font-weight:700;letter-spacing:-.01em}
+.logo svg{display:block}
+.tag{color:var(--muted);font-size:13px}
+.demo{margin-left:auto;font-size:11px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:3px 9px;white-space:nowrap}
+section{margin-top:22px}
+.sechead{display:flex;align-items:baseline;gap:10px;margin:0 0 10px}
+.kicker{font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:700}
+h2{font-size:17px;margin:0;font-weight:650;letter-spacing:-.01em}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px}
+.pad{padding:14px}
+.bar{
+  background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px;
+  display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:13px
+}
+.bar strong{font-weight:650}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:820px){.grid2{grid-template-columns:1fr}}
+.drawerhead,.xlhead{font-size:12px;color:var(--muted);padding:10px 12px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:8px}
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:10px;max-height:330px;overflow:auto}
+@media(max-width:520px){.tiles{grid-template-columns:1fr}}
+.tile{border:1px solid var(--line);border-radius:9px;padding:8px;display:flex;gap:8px;align-items:flex-start;background:var(--bg)}
+.tile .fn{font-size:11.5px;line-height:1.3;word-break:break-word}
+.pdf{flex:0 0 auto;margin-top:1px}
+.badge{display:inline-block;margin-top:4px;font-size:9.5px;letter-spacing:.04em;text-transform:uppercase;border-radius:4px;padding:1px 5px;border:1px solid var(--line);color:var(--muted)}
+.badge.ds{color:var(--blue);background:var(--bluebg);border-color:transparent}
+table{width:100%;border-collapse:collapse}
+.xl{font-size:12px}
+.xl th,.xl td{border:1px solid var(--line);padding:5px 7px;text-align:left;white-space:nowrap}
+.xl th{background:var(--bg);color:var(--muted);font-weight:600;font-size:11px}
+.xl td.empty{background:repeating-linear-gradient(135deg,transparent,transparent 6px,rgba(127,127,127,.07) 6px,rgba(127,127,127,.07) 12px)}
+.xl td.q{color:var(--red);font-weight:700;background:var(--redbg)}
+.xlscroll{overflow:auto;padding:10px}
+.cta{display:flex;justify-content:center;margin:18px 0 4px}
+button{font:inherit;cursor:pointer}
+.btn{
+  background:var(--accent);color:#fff;border:0;border-radius:10px;padding:15px 26px;font-size:16px;font-weight:650;
+  min-height:52px;letter-spacing:-.01em
+}
+@media (prefers-color-scheme:dark){.btn{color:#0b1016}}
+.btn:disabled{opacity:.6}
+.btn.ghost{background:transparent;color:var(--accent);border:1px solid var(--line)}
+.prog{list-style:none;margin:14px auto 0;padding:0;max-width:420px;font-size:13.5px}
+.prog li{display:flex;gap:9px;align-items:center;padding:5px 0;color:var(--muted);opacity:.45;transition:opacity .2s}
+.prog li.on{opacity:1;color:var(--ink)}
+.spin{width:14px;height:14px;border-radius:50%;border:2px solid var(--line);border-top-color:var(--accent);animation:sp .7s linear infinite;flex:0 0 auto}
+@keyframes sp{to{transform:rotate(360deg)}}
+.tick{width:14px;height:14px;flex:0 0 auto;color:var(--green)}
+.hidden{display:none !important}
+.summary{position:sticky;top:57px;z-index:30;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:10px}
+.sumrow{display:flex;gap:18px;flex-wrap:wrap}
+.sumitem .lab{font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.sumitem .val{font-size:25px;font-weight:700;letter-spacing:-.02em;line-height:1.15}
+@media(max-width:520px){.sumitem .val{font-size:21px}}
+.val.red{color:var(--red)} .val.amber{color:var(--amber)}
+.controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
+.chip{border:1px solid var(--line);background:transparent;color:var(--muted);border-radius:999px;padding:8px 13px;font-size:13px;min-height:38px}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--panel);border-color:var(--ink)}
+.toggle{margin-left:auto;display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);cursor:pointer;min-height:38px}
+.sw{width:42px;height:24px;border-radius:999px;background:var(--line);position:relative;transition:background .15s;flex:0 0 auto}
+.sw::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:var(--panel);transition:transform .15s;box-shadow:0 1px 2px rgba(0,0,0,.3)}
+.toggle.on .sw{background:var(--red)}
+.toggle.on .sw::after{transform:translateX(18px)}
+.toggle.on span.lbl{color:var(--ink);font-weight:600}
+.tbl{font-size:13px}
+.tbl thead th{
+  text-align:left;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);
+  padding:9px 10px;border-bottom:1px solid var(--line);white-space:nowrap;position:sticky;top:0;background:var(--panel)
+}
+.tbl td{padding:11px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+.tbl tbody tr{cursor:pointer}
+.tbl tbody tr:hover{background:var(--bg)}
+.tbl tbody tr:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.cname{font-weight:650;letter-spacing:-.01em}
+.csub{color:var(--muted);font-size:11.5px;margin-top:2px}
+.st{display:inline-block;border-radius:5px;padding:3px 7px;font-size:11px;font-weight:700;letter-spacing:.02em;white-space:nowrap}
+.st.red{background:var(--redbg);color:var(--red)}
+.st.amber{background:var(--amberbg);color:var(--amber)}
+.st.green{background:var(--greenbg);color:var(--green)}
+.st.blue{background:var(--bluebg);color:var(--blue)}
+.owed{text-align:right;font-weight:700;white-space:nowrap}
+.owed.red{color:var(--red)} .owed.amber{color:var(--amber)} .owed.dim{color:var(--muted);font-weight:500}
+.hideS{display:none}
+@media(min-width:760px){.hideS{display:table-cell}}
+.tblscroll{overflow:auto;max-height:none}
+.empty{padding:34px 14px;text-align:center;color:var(--muted);font-size:13.5px}
+/* calendar */
+.cal{display:grid;grid-template-columns:repeat(12,minmax(72px,1fr));gap:6px;padding:12px;overflow-x:auto}
+.mo{border:1px solid var(--line);border-radius:9px;padding:7px 6px;min-height:118px;background:var(--bg)}
+.mo .mn{font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:5px}
+.pin{display:flex;gap:5px;align-items:flex-start;font-size:10.5px;line-height:1.25;margin-bottom:5px}
+.dot{width:8px;height:8px;border-radius:50%;flex:0 0 auto;margin-top:3px}
+.dot.red{background:var(--red)} .dot.amber{background:var(--amber)} .dot.green{background:var(--green)} .dot.blue{background:var(--blue)}
+.pin.notice{opacity:.55;font-style:italic}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:11.5px;color:var(--muted);padding:0 12px 12px}
+.legend i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px}
+.mail{border:1px solid var(--line);border-radius:12px;background:var(--panel);padding:14px;margin-top:12px}
+.mailtop{display:flex;gap:9px;align-items:center;font-size:12px;color:var(--muted);border-bottom:1px solid var(--line);padding-bottom:9px;margin-bottom:10px}
+.avatar{width:26px;height:26px;border-radius:7px;background:var(--accent);color:#fff;display:grid;place-items:center;font-weight:700;font-size:13px;flex:0 0 auto}
+@media (prefers-color-scheme:dark){.avatar{color:#0b1016}}
+.mailsub{font-weight:650;font-size:14.5px;letter-spacing:-.01em}
+/* modal */
+.overlay{position:fixed;inset:0;background:rgba(10,14,18,.55);z-index:60;display:flex;align-items:flex-end;justify-content:center;padding:0}
+@media(min-width:760px){.overlay{align-items:center;padding:24px}}
+.modal{background:var(--panel);width:100%;max-width:940px;max-height:92vh;border-radius:14px 14px 0 0;display:flex;flex-direction:column;overflow:hidden;border:1px solid var(--line)}
+@media(min-width:760px){.modal{border-radius:14px;max-height:88vh}}
+.mhead{padding:13px 14px;border-bottom:1px solid var(--line);display:flex;gap:10px;align-items:flex-start}
+.x{margin-left:auto;background:transparent;border:1px solid var(--line);border-radius:9px;width:40px;height:40px;color:var(--muted);font-size:18px;line-height:1;flex:0 0 auto}
+.tabs{display:flex;gap:6px;padding:9px 14px;border-bottom:1px solid var(--line);overflow-x:auto}
+.tab{background:transparent;border:1px solid transparent;border-radius:8px;padding:9px 13px;font-size:13px;color:var(--muted);min-height:40px;white-space:nowrap}
+.tab[aria-selected="true"]{background:var(--bg);color:var(--ink);font-weight:650;border-color:var(--line)}
+.mbody{overflow:auto;padding:14px}
+.panes{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:760px){.panes{grid-template-columns:1fr}}
+.pane{border:1px solid var(--line);border-radius:11px;padding:12px;background:var(--bg)}
+.ph{font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:9px}
+dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:5px 12px;font-size:12.5px}
+dt{color:var(--muted)} dd{margin:0;font-weight:600;text-align:right}
+.quote{margin-top:11px;border-left:3px solid var(--accent);padding:8px 10px;background:var(--panel);border-radius:0 8px 8px 0;font-size:12.5px;font-style:italic;line-height:1.5}
+.cite{font-size:11px;color:var(--muted);margin-top:6px}
+.math{font-size:12.5px;line-height:1.75}
+.math .r{display:flex;justify-content:space-between;gap:10px;border-bottom:1px dotted var(--line);padding:3px 0}
+.math .r.total{border-bottom:0;border-top:1px solid var(--line);margin-top:5px;padding-top:7px;font-weight:700;font-size:14px}
+.math .r.total .v{color:var(--red)}
+.letter{background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:18px;font-size:13px;line-height:1.6;max-width:680px;margin:0 auto}
+.lh{border-bottom:2px solid var(--ink);padding-bottom:9px;margin-bottom:14px;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.lh .co{font-weight:700;letter-spacing:-.01em}
+.lh .ad{font-size:11px;color:var(--muted);text-align:right}
+.letter p{margin:0 0 10px}
+.mfoot{padding:11px 14px;border-top:1px solid var(--line);display:flex;gap:9px;align-items:center;flex-wrap:wrap}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:26px;background:var(--ink);color:var(--bg);padding:11px 18px;border-radius:10px;font-size:13.5px;font-weight:600;z-index:90;box-shadow:0 6px 20px rgba(0,0,0,.25)}
+footer{margin-top:28px;text-align:center;color:var(--muted);font-size:11.5px;padding-bottom:10px}
+.srOnly{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="in">
+    <div class="logo">
+      <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path d="M2 15 L7 9 L10 12 L16 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 4h4v4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Escalator
+    </div>
+    <div class="tag">reads your signed contracts and bills the price increases you forgot</div>
+    <div class="demo">Demo data</div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- SECTION 1 -->
+  <section id="before">
+    <div class="bar">
+      <strong>Summit Facility Services</strong>
+      <span style="color:var(--muted)">12 commercial agreements · QuickBooks Online connected</span>
+    </div>
+
+    <div class="grid2" style="margin-top:12px">
+      <div class="card">
+        <div class="drawerhead"><span>Shared drive › /Contracts/Signed</span><span>12 files</span></div>
+        <div class="tiles" id="tiles"></div>
+      </div>
+      <div class="card">
+        <div class="xlhead"><span>escalations.xlsx</span><span>last updated 14 months ago</span></div>
+        <div class="xlscroll">
+          <table class="xl num" id="xl"></table>
+        </div>
+      </div>
+    </div>
+
+    <div class="cta"><button class="btn" id="runBtn">Read my contracts</button></div>
+    <ul class="prog hidden" id="prog">
+      <li data-i="0"><span class="ic"></span><span>Reading 12 agreements…</span></li>
+      <li data-i="1"><span class="ic"></span><span>Extracting price-adjustment clauses…</span></li>
+      <li data-i="2"><span class="ic"></span><span>Pulling CPI-U and wage determinations…</span></li>
+      <li data-i="3"><span class="ic"></span><span>Matching to QuickBooks invoices…</span></li>
+    </ul>
+  </section>
+
+  <!-- SECTION 2 -->
+  <section id="results" class="hidden">
+    <div class="sechead"><span class="kicker">After</span><h2>Escalation ledger · as of 21 Nov 2026</h2></div>
+
+    <div class="summary">
+      <div class="sumrow">
+        <div class="sumitem"><div class="lab">Unbilled increases found</div><div class="val red num" id="sumOwed">$0</div></div>
+        <div class="sumitem"><div class="lab">Due in next 90 days</div><div class="val amber num">$34,360</div></div>
+        <div class="sumitem"><div class="lab">Deadlines at risk</div><div class="val num">3</div></div>
+      </div>
+      <div class="controls">
+        <button class="chip" data-f="all" aria-pressed="true">All</button>
+        <button class="chip" data-f="missed" aria-pressed="false">Missed</button>
+        <button class="chip" data-f="due" aria-pressed="false">Due soon</button>
+        <button class="chip" data-f="noclause" aria-pressed="false">No clause</button>
+        <div class="toggle" id="compToggle" role="switch" aria-checked="false" tabindex="0"><div class="sw"></div><span class="lbl">Show compounding over 3 years</span></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="tblscroll">
+        <table class="tbl num">
+          <thead><tr>
+            <th>Contract</th>
+            <th class="hideS">Annual value</th>
+            <th class="hideS">Escalation clause</th>
+            <th class="hideS">Anniversary</th>
+            <th>Status</th>
+            <th style="text-align:right" id="owedHead">Owed / est.</th>
+          </tr></thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+      <div class="empty hidden" id="emptyState">No contracts in this filter. Try “All”.</div>
+    </div>
+    <div style="font-size:11.5px;color:var(--muted);margin-top:7px">Tap any row for the extracted clause, the maths and a drafted notice letter. Demo data.</div>
+  </section>
+
+  <!-- SECTION 3 -->
+  <section id="after" class="hidden">
+    <div class="sechead"><span class="kicker">Never again</span><h2>2027 escalation calendar</h2></div>
+    <div class="card">
+      <div class="cal" id="cal"></div>
+      <div class="legend">
+        <span><i style="background:var(--red)"></i>Missed / at risk</span>
+        <span><i style="background:var(--amber)"></i>Due</span>
+        <span><i style="background:var(--green)"></i>Approved &amp; scheduled</span>
+        <span><i style="background:var(--blue)"></i>On track</span>
+        <span style="opacity:.6">faded = notice deadline</span>
+      </div>
+    </div>
+
+    <div class="mail">
+      <div class="mailtop">
+        <div class="avatar">E</div>
+        <div>
+          <div style="color:var(--ink);font-weight:600">Escalator</div>
+          <div>to ops@summitfacility.com · 06:02</div>
+        </div>
+      </div>
+      <div class="mailsub" id="mailSub">15 days to notice deadline — Fairview USD, 90-day notice, +$12,600/yr</div>
+      <p style="margin:8px 0 12px;font-size:13.5px;color:var(--muted)" id="mailBody">
+        Board-approved annual escalation. Notice must be served by <strong>2 Apr 2027</strong> for the 1 Jul 2027 anniversary. Letter drafted and attached, quoting §9.2. Approve to send to Maria Olvera, Director of Facilities.
+      </p>
+      <button class="btn" id="approveBtn" style="padding:13px 22px;font-size:15px">Approve &amp; send</button>
+    </div>
+  </section>
+
+  <footer>Prototype by Granted, inspired by your bookmarks</footer>
+</div>
+
+<div id="modalHost"></div>
+<div id="toastHost"></div>
+
+<script>
+(function(){
+"use strict";
+
+var FILES = [
+ ["Northgate_Medical_Plaza_MSA_signed_2023.pdf","scanned"],
+ ["Riverbend Logistics – Janitorial Agreement (executed).pdf","docusign"],
+ ["City of Fairview – Grounds Maintenance Contract 2024.pdf","scanned"],
+ ["Parkway_REIT_MSA_3sites_FINAL_v4(signed).pdf","docusign"],
+ ["Lakeside Business Park - service agmt (scan).pdf","scanned"],
+ ["HarborviewHotelGroup_Housekeeping_2022_countersigned.pdf","scanned"],
+ ["Meridian DC – Critical Env Cleaning MSA.pdf","docusign"],
+ ["FairviewUSD_Custodial_BoardApproved_RFP-2214.pdf","scanned"],
+ ["Crosswind Industrial sweep contract EXECUTED.pdf","docusign"],
+ ["St Anselm Clinic Network_MSA_amend2.pdf","docusign"],
+ ["Tollgate Retail – Portfolio Services (auto-renew).pdf","scanned"],
+ ["Vista Logistics FEDERAL SCA W912-2024 wage det.pdf","scanned"]
+];
+
+var XL = [
+ ["Northgate Medical","3/1","CPI","$5,914",""],
+ ["Riverbend","7/1","3%","$2,880",""],
+ ["Fairview grounds","1/1","wage","???",""],
+ ["Parkway REIT","4/1","CPI","$9,672",""],
+ ["Lakeside","","","",""],["Harborview","","","",""],["Meridian DC","","","",""],
+ ["Fairview USD","","","",""],["Crosswind","","","",""],["St Anselm","","","",""],
+ ["Tollgate","","","",""],["Vista Logistics","","","",""]
+];
+
+var C = [
+ {id:1,name:"Northgate Medical Plaza",sub:"Medical office · janitorial + grounds",val:184800,clause:"CPI-U, cap 4%, base month March",anniv:"1 Mar",notice:60,status:"MISSED ×2",flag:"red",cat:"missed",owed:14220,owed3:24940,
+  rec:{type:"CPI index",index:"CPI-U, US City Average, all items",base:"March",cap:"4.0%",floor:"—",anniv:"1 March",noticeDays:"60 days"},
+  quote:"Commencing on the first anniversary of the Effective Date and on each anniversary thereafter, the annual Service Fee shall be increased by the percentage increase in the Consumer Price Index for All Urban Consumers (CPI-U) for the twelve (12) months ending with the month of March immediately preceding such anniversary, provided that no single annual increase shall exceed four percent (4.0%).",
+  cite:"p. 7, §12.3 Price Adjustment",
+  math:[["2024 base (as billed)","$184,800"],["CPI-U Mar 2025 +3.2%, under 4% cap","×1.032"],["Should have billed from 1 Mar 2025","$190,714"],["Actually billed","$184,800"],["2025 shortfall","$5,914"],["CPI-U Mar 2026 +3.1%, compounded","$196,626"],["2026 shortfall vs billed","$8,306"]],
+  total:"$14,220",
+  letterTo:"Facilities Director, Northgate Medical Plaza",newRate:"$196,626 per annum ($16,385.50 per month)",eff:"1 January 2027",pct:"3.1%",sec:"§12.3"},
+ {id:2,name:"Riverbend Logistics Center",sub:"Distribution hub · janitorial",val:96000,clause:"Fixed 3% annual",anniv:"1 Jul",notice:30,status:"MISSED ×1",flag:"red",cat:"missed",owed:2880,owed3:8903,
+  rec:{type:"Fixed percentage",index:"3.0% per annum",base:"—",cap:"—",floor:"—",anniv:"1 July",noticeDays:"30 days"},
+  quote:"The Contract Price shall automatically increase by three percent (3%) per annum on each anniversary of the Commencement Date, without further action by either party.",
+  cite:"p. 4, §6.2 Annual Adjustment",
+  math:[["2024 increase applied correctly","$96,000"],["1 Jul 2025 should be +3%","$98,880"],["Actually billed FY26","$96,000"],["Missed anniversary ×1","$2,880"]],
+  total:"$2,880",
+  letterTo:"Accounts Payable, Riverbend Logistics Center",newRate:"$98,880 per annum ($8,240.00 per month)",eff:"1 January 2027",pct:"3.0%",sec:"§6.2"},
+ {id:3,name:"City of Fairview (grounds)",sub:"Municipal · grounds maintenance",val:240000,clause:"Change-in-law wage pass-through",anniv:"1 Jan",notice:45,status:"DUE IN 23 DAYS",flag:"amber",cat:"due",owed:9600,owed3:29760,est:true,
+  rec:{type:"Change-in-law pass-through",index:"State minimum wage",base:"—",cap:"None",floor:"—",anniv:"1 January",noticeDays:"45 days"},
+  quote:"In the event of any change in federal, state or local law, ordinance or regulation that increases Contractor's direct labor cost of performance, the Contract Price shall be equitably adjusted to reflect such increase, upon Contractor's submission of supporting documentation not less than forty-five (45) days prior to the adjustment date.",
+  cite:"p. 11, §18.4 Change in Law",
+  math:[["Direct labor hours per year","12,600 hrs"],["MI minimum wage increase 1 Jan 2027","+$1.27/hr"],["Burdened at 1.19 (FICA, WC, UI)","+$1.51/hr"],["Hours at or near minimum (64%)","8,064 hrs"],["Estimated annual pass-through","+$9,600"]],
+  total:"+$9,600",
+  letterTo:"Procurement Office, City of Fairview",newRate:"$249,600 per annum ($20,800.00 per month)",eff:"1 January 2027",pct:"4.0%",sec:"§18.4"},
+ {id:4,name:"Parkway Office REIT (3 sites)",sub:"Class A office portfolio",val:312000,clause:"CPI-U, floor 2% cap 5%",anniv:"1 Apr",notice:60,status:"ON TRACK",flag:"green",cat:"ok",owed:0,owed3:0,note:"Applied 3.1% in 2026",
+  rec:{type:"CPI index, collared",index:"CPI-U, US City Average",base:"January",cap:"5.0%",floor:"2.0%",anniv:"1 April",noticeDays:"60 days"},
+  quote:"The Fee shall be adjusted annually by the change in CPI-U, provided such adjustment shall be not less than two percent (2%) nor more than five percent (5%) in any Contract Year.",
+  cite:"p. 6, §8.1 Fee Escalation",
+  math:[["2025 base","$302,620"],["CPI-U +3.1%, within collar","×1.031"],["Billed from 1 Apr 2026","$312,000"],["Variance","$0"]],
+  total:"$0",
+  letterTo:"Asset Management, Parkway Office REIT",newRate:"$321,672 per annum ($26,806.00 per month)",eff:"1 April 2027",pct:"3.1%",sec:"§8.1"},
+ {id:5,name:"Lakeside Business Park",sub:"Flex industrial · janitorial",val:78500,clause:"NO ADJUSTMENT CLAUSE",anniv:"renewal 12 Feb",notice:0,status:"RENEGOTIATE AT RENEWAL (12 Feb)",flag:"amber",cat:"noclause",owed:0,owed3:0,
+  rec:{type:"None found",index:"—",base:"—",cap:"—",floor:"—",anniv:"Renewal 12 Feb 2027",noticeDays:"—"},
+  quote:"The Contract Price set forth in Exhibit A shall remain in effect for the Term. [No price adjustment, index or escalation provision located in the executed agreement or its two amendments.]",
+  cite:"Full-document scan · no §Price Adjustment present",
+  math:[["Price unchanged since","Mar 2022"],["CPI-U cumulative since signing","+11.4%"],["Wage cost drift (MI, janitorial)","+13.9%"],["Implied margin erosion","−$10,900/yr"],["Renewal window opens","12 Feb 2027"]],
+  total:"Add clause at renewal",
+  letterTo:"Property Manager, Lakeside Business Park",newRate:"$86,350 per annum ($7,195.83 per month)",eff:"12 February 2027",pct:"10.0%",sec:"Exhibit A (proposed §6.4)"},
+ {id:6,name:"Harborview Hotel Group",sub:"4 properties · housekeeping support",val:145000,clause:"Fixed 3.5%",anniv:"1 Sep",notice:30,status:"MISSED ×3",flag:"red",cat:"missed",owed:15730,owed3:32100,
+  rec:{type:"Fixed percentage",index:"3.5% per annum",base:"—",cap:"—",floor:"—",anniv:"1 September",noticeDays:"30 days"},
+  quote:"On each anniversary of the Commencement Date the rates set forth herein shall increase by three and one-half percent (3.5%).",
+  cite:"p. 5, §7.1 Rate Escalation",
+  math:[["2023 base (never escalated)","$145,000"],["1 Sep 2024 should be","$150,075 (+$5,075)"],["1 Sep 2025 should be","$155,328 (+$5,253)"],["1 Sep 2026 should be","$160,765 (+$5,402)"],["Three anniversaries missed","$15,730"]],
+  total:"$15,730",
+  letterTo:"Regional Director of Operations, Harborview Hotel Group",newRate:"$160,765 per annum ($13,397.08 per month)",eff:"1 January 2027",pct:"3.5%",sec:"§7.1"},
+ {id:7,name:"Meridian Data Center",sub:"Critical environment cleaning",val:201600,clause:"CPI-U cap 4%",anniv:"1 Jun",notice:60,status:"ON TRACK",flag:"green",cat:"ok",owed:0,owed3:0,
+  rec:{type:"CPI index",index:"CPI-U, US City Average",base:"April",cap:"4.0%",floor:"—",anniv:"1 June",noticeDays:"60 days"},
+  quote:"Annual fees shall be adjusted by the trailing twelve-month change in CPI-U, capped at four percent (4%) per Contract Year.",
+  cite:"p. 9, §14.2 Adjustment of Fees",
+  math:[["2025 base","$195,540"],["CPI-U +3.1%","×1.031"],["Billed from 1 Jun 2026","$201,600"],["Variance","$0"]],
+  total:"$0",
+  letterTo:"Facility Manager, Meridian Data Center",newRate:"$207,849 per annum ($17,320.75 per month)",eff:"1 June 2027",pct:"3.1%",sec:"§14.2"},
+ {id:8,name:"Fairview Unified School District",sub:"18 campuses · custodial",val:420000,clause:"Board-approved annual escalation, 90-day notice",anniv:"1 Jul",notice:90,status:"NOTICE WINDOW OPENS IN 41 DAYS",flag:"amber",cat:"due",owed:12600,owed3:38900,est:true,
+  rec:{type:"Negotiated, board-approved",index:"Request-based, 3% typical",base:"—",cap:"Board discretion",floor:"—",anniv:"1 July",noticeDays:"90 days"},
+  quote:"Contractor may request an adjustment to the annual contract amount for the succeeding fiscal year by written notice delivered to the District not less than ninety (90) days prior to July 1; any such adjustment is subject to approval by the Board of Education.",
+  cite:"p. 14, §9.2 Annual Price Request",
+  math:[["Current annual amount","$420,000"],["Requested escalation","+3.0%"],["Proposed FY28 amount","$432,600"],["Annual uplift","+$12,600"],["Notice must be served by","2 Apr 2027"]],
+  total:"+$12,600",
+  letterTo:"Maria Olvera, Director of Facilities, Fairview USD",newRate:"$432,600 per annum ($36,050.00 per month)",eff:"1 July 2027",pct:"3.0%",sec:"§9.2"},
+ {id:9,name:"Crosswind Industrial",sub:"Plant sweep & porter service",val:64200,clause:"Fixed 2%",anniv:"15 Oct",notice:30,status:"MISSED ×1",flag:"red",cat:"missed",owed:1284,owed3:3930,
+  rec:{type:"Fixed percentage",index:"2.0% per annum",base:"—",cap:"—",floor:"—",anniv:"15 October",noticeDays:"30 days"},
+  quote:"Pricing shall escalate two percent (2%) annually on each anniversary of the Service Start Date.",
+  cite:"p. 3, §5.3 Escalation",
+  math:[["Base at 15 Oct 2025","$64,200"],["Should be +2% from 15 Oct 2026","$65,484"],["Actually billed","$64,200"],["Shortfall (1 anniversary)","$1,284"]],
+  total:"$1,284",
+  letterTo:"Plant Manager, Crosswind Industrial",newRate:"$65,484 per annum ($5,457.00 per month)",eff:"1 January 2027",pct:"2.0%",sec:"§5.3"},
+ {id:10,name:"St. Anselm Clinic Network",sub:"9 clinics · medical-grade cleaning",val:112000,clause:"CPI-U, no cap, base month Jan",anniv:"1 Feb",notice:45,status:"DUE IN 54 DAYS",flag:"amber",cat:"due",owed:3360,owed3:10420,est:true,
+  rec:{type:"CPI index, uncapped",index:"CPI-U, US City Average",base:"January",cap:"None",floor:"—",anniv:"1 February",noticeDays:"45 days"},
+  quote:"The annual fee shall be adjusted each February first by the full percentage change in the CPI-U for the twelve months ending January 31, without cap or collar.",
+  cite:"p. 8, §11.1 Index Adjustment",
+  math:[["Current annual fee","$112,000"],["CPI-U 12m to Jan 2027 (est.)","+3.0%"],["No cap applies","—"],["New annual fee 1 Feb 2027","$115,360"],["Annual uplift","+$3,360"]],
+  total:"+$3,360",
+  letterTo:"Network Operations, St. Anselm Clinic Network",newRate:"$115,360 per annum ($9,613.33 per month)",eff:"1 February 2027",pct:"3.0%",sec:"§11.1"},
+ {id:11,name:"Tollgate Retail Centers",sub:"6 centers · sweeping & day porter",val:88000,clause:"Auto-renew, price fixed for term, opt-out 90 days",anniv:"renews 1 Feb",notice:90,status:"OPT-OUT DEADLINE PASSED 11 DAYS AGO",flag:"red",cat:"noclause",owed:0,owed3:0,
+  rec:{type:"Evergreen, price locked",index:"None",base:"—",cap:"—",floor:"—",anniv:"Auto-renews 1 Feb 2027",noticeDays:"90 days to opt out"},
+  quote:"This Agreement shall automatically renew for successive twelve (12) month terms at the then-current price unless either party delivers written notice of non-renewal not less than ninety (90) (90) days prior to the end of the then-current Term.",
+  cite:"p. 2, §3.2 Term and Renewal",
+  math:[["Opt-out deadline","3 Nov 2026"],["Today","21 Nov 2026"],["Days past deadline","11"],["Price locked for another term to","31 Jan 2028"],["Cost of locked pricing vs CPI","−$2,640/yr"]],
+  total:"Locked until 2028",
+  letterTo:"Portfolio Manager, Tollgate Retail Centers",newRate:"$90,640 per annum ($7,553.33 per month)",eff:"1 February 2028",pct:"3.0%",sec:"§3.2"},
+ {id:12,name:"Vista Logistics (federal, SCA)",sub:"Service Contract Act · 2 facilities",val:268000,clause:"FAR 52.222-43 price adjustment",anniv:"option yr 1 Dec",notice:30,status:"FILE CLAIM WITHIN 12 DAYS",flag:"red",cat:"due",owed:21400,owed3:64900,est:true,
+  rec:{type:"Statutory (FAR 52.222-43)",index:"DOL wage determination",base:"WD 2015-4571 rev. 24",cap:"Actual cost",floor:"—",anniv:"Option year 1 Dec",noticeDays:"30 days from WD receipt"},
+  quote:"The Contractor warrants that the prices in this contract do not include any allowance for any contingency to cover increased costs for which adjustment is provided under this clause… The Contracting Officer shall adjust the contract price to reflect the Contractor's actual increase in applicable wages and fringe benefits, provided the Contractor submits its request within thirty (30) days of receipt of the applicable wage determination.",
+  cite:"p. 21, FAR 52.222-43(d) — Fair Labor Standards Act and Service Contract Labor Standards",
+  math:[["New wage determination received","3 Nov 2026 (18 days ago)"],["Affected FTEs","14"],["Average wage increase","+$1.08/hr"],["Health & welfare increase","+$0.37/hr"],["Burdened annual increase","+$21,400"],["Claim deadline (30 days)","3 Dec 2026 — 12 days left"]],
+  total:"+$21,400",
+  letterTo:"Contracting Officer, Vista Logistics / DLA",newRate:"$289,400 per annum ($24,116.67 per month)",eff:"1 December 2026",pct:"8.0%",sec:"FAR 52.222-43"}
+];
+
+var MONTHS=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+var CAL=[
+ {m:0,t:"City of Fairview — anniversary",c:"amber"},
+ {m:0,t:"St Anselm — notice deadline (45d)",c:"amber",n:true},
+ {m:1,t:"St Anselm Clinic — anniversary",c:"amber"},
+ {m:1,t:"Tollgate auto-renews",c:"red"},
+ {m:1,t:"Lakeside renewal — add clause",c:"amber"},
+ {m:0,t:"Northgate — notice deadline (60d)",c:"red",n:true},
+ {m:2,t:"Northgate Medical — anniversary",c:"red"},
+ {m:3,t:"Fairview USD — notice deadline (90d)",c:"amber",n:true,id:"usdNotice"},
+ {m:3,t:"Parkway REIT — anniversary",c:"blue"},
+ {m:1,t:"Parkway — notice deadline (60d)",c:"blue",n:true},
+ {m:3,t:"Meridian — notice deadline (60d)",c:"blue",n:true},
+ {m:5,t:"Meridian DC — anniversary",c:"blue"},
+ {m:5,t:"Riverbend — notice deadline (30d)",c:"red",n:true},
+ {m:6,t:"Riverbend — anniversary",c:"red"},
+ {m:6,t:"Fairview USD — anniversary",c:"amber",id:"usdAnniv"},
+ {m:7,t:"Harborview — notice deadline (30d)",c:"red",n:true},
+ {m:8,t:"Harborview — anniversary",c:"red"},
+ {m:8,t:"Crosswind — notice deadline (30d)",c:"red",n:true},
+ {m:9,t:"Crosswind — anniversary (15th)",c:"red"},
+ {m:10,t:"Vista SCA — option year prep",c:"red",n:true},
+ {m:11,t:"Vista Logistics — option year",c:"red"},
+ {m:11,t:"Fairview — notice deadline (45d)",c:"amber",n:true}
+];
+
+function $(s){return document.querySelector(s)}
+function el(t,c,txt){var e=document.createElement(t);if(c)e.className=c;if(txt!=null)e.textContent=txt;return e}
+function money(n){return "$"+n.toLocaleString("en-US")}
+
+/* ---- Section 1 render ---- */
+(function(){
+  var host=$("#tiles");
+  FILES.forEach(function(f){
+    var t=el("div","tile");
+    t.innerHTML='<svg class="pdf" width="16" height="20" viewBox="0 0 16 20" aria-hidden="true">'+
+      '<path d="M1 1h9l5 5v13H1z" fill="none" stroke="currentColor" stroke-width="1.3" opacity=".5"/>'+
+      '<path d="M10 1v5h5" fill="none" stroke="currentColor" stroke-width="1.3" opacity=".5"/></svg>';
+    var w=el("div");
+    w.appendChild(el("div","fn",f[0]));
+    w.appendChild(el("span","badge"+(f[1]==="docusign"?" ds":""),f[1]==="docusign"?"DocuSign":"Scanned"));
+    t.appendChild(w);
+    host.appendChild(t);
+  });
+
+  var tb=$("#xl"), head=el("thead");
+  var hr=el("tr");
+  ["Client","Anniv","Type","Last incr.","Notes"].forEach(function(h){hr.appendChild(el("th",null,h))});
+  head.appendChild(hr); tb.appendChild(head);
+  var body=el("tbody");
+  XL.forEach(function(r){
+    var tr=el("tr");
+    r.forEach(function(c,i){
+      var td=el("td",null,c);
+      if(c==="") td.className="empty";
+      if(c==="???") td.className="q";
+      if(i===0&&c!=="") td.className="";
+      tr.appendChild(td);
+    });
+    body.appendChild(tr);
+  });
+  tb.appendChild(body);
+})();
+
+/* ---- Run ---- */
+var TICK='<svg class="tick" viewBox="0 0 14 14" aria-hidden="true"><path d="M2 7.5 L5.5 11 L12 3.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+var timers=[];
+$("#runBtn").addEventListener("click",function(){
+  var btn=this; btn.disabled=true; btn.textContent="Reading…";
+  var prog=$("#prog"); prog.classList.remove("hidden");
+  var items=prog.querySelectorAll("li");
+  function step(i){
+    if(i>0){var p=items[i-1];p.querySelector(".ic").innerHTML=TICK;}
+    if(i<items.length){
+      items[i].classList.add("on");
+      items[i].querySelector(".ic").innerHTML='<span class="spin"></span>';
+      timers.push(setTimeout(function(){step(i+1)},500));
+    } else {
+      finish();
+    }
+  }
+  step(0);
+});
+
+function finish(){
+  $("#prog").classList.add("hidden");
+  $("#runBtn").parentNode.classList.add("hidden");
+  $("#results").classList.remove("hidden");
+  $("#after").classList.remove("hidden");
+  renderRows();
+  countUp($("#sumOwed"),34114);
+  try{$("#results").scrollIntoView({behavior:"smooth",block:"start"});}catch(e){$("#results").scrollIntoView();}
+}
+
+function countUp(node,target){
+  var start=null,dur=700;
+  function fr(ts){
+    if(!start)start=ts;
+    var p=Math.min(1,(ts-start)/dur);
+    node.textContent=money(Math.round(target*(1-Math.pow(1-p,3))));
+    if(p<1)requestAnimationFrame(fr);
+  }
+  requestAnimationFrame(fr);
+}
+
+/* ---- Table ---- */
+var filter="all", comp=false;
+
+function owedCell(c){
+  var v=comp?c.owed3:c.owed;
+  if(c.cat==="noclause"||(v===0&&c.cat==="ok")){
+    return {txt:c.cat==="ok"?"—":(c.id===11?"locked":"no clause"),cls:"dim"};
+  }
+  if(v===0)return {txt:"—",cls:"dim"};
+  return {txt:(c.est?"+":"")+money(v),cls:c.flag==="red"?"red":"amber"};
+}
+
+function renderRows(){
+  var tb=$("#rows"); tb.innerHTML="";
+  var list=C.filter(function(c){return filter==="all"||c.cat===filter});
+  $("#emptyState").classList.toggle("hidden",list.length>0);
+  list.forEach(function(c){
+    var tr=el("tr"); tr.tabIndex=0; tr.setAttribute("role","button");
+    var td1=el("td");
+    td1.appendChild(el("div","cname",c.name));
+    td1.appendChild(el("div","csub",c.sub));
+    tr.appendChild(td1);
+    var td2=el("td","hideS num",money(c.val)+"/yr"); tr.appendChild(td2);
+    var td3=el("td","hideS"); td3.style.maxWidth="210px"; td3.style.whiteSpace="normal";
+    td3.appendChild(el("div",null,c.clause));
+    td3.appendChild(el("div","csub",c.notice?c.notice+"-day notice":"—"));
+    tr.appendChild(td3);
+    tr.appendChild(el("td","hideS num",c.anniv));
+    var td5=el("td");
+    var s=el("span","st "+c.flag,c.status); td5.appendChild(s);
+    if(c.note)td5.appendChild(el("div","csub",c.note));
+    tr.appendChild(td5);
+    var o=owedCell(c);
+    tr.appendChild(el("td","owed num "+o.cls,o.txt));
+    tr.addEventListener("click",function(){openModal(c)});
+    tr.addEventListener("keydown",function(e){if(e.key==="Enter"||e.key===" "){e.preventDefault();openModal(c)}});
+    tb.appendChild(tr);
+  });
+}
+
+Array.prototype.forEach.call(document.querySelectorAll(".chip"),function(b){
+  b.addEventListener("click",function(){
+    Array.prototype.forEach.call(document.querySelectorAll(".chip"),function(x){x.setAttribute("aria-pressed","false")});
+    b.setAttribute("aria-pressed","true");
+    filter=b.getAttribute("data-f");
+    renderRows();
+  });
+});
+
+function toggleComp(){
+  comp=!comp;
+  var t=$("#compToggle");
+  t.classList.toggle("on",comp);
+  t.setAttribute("aria-checked",comp?"true":"false");
+  $("#owedHead").textContent=comp?"Owed over 3 yrs":"Owed / est.";
+  renderRows();
+  countUp($("#sumOwed"),comp?69873:34114);
+}
+$("#compToggle").addEventListener("click",toggleComp);
+$("#compToggle").addEventListener("keydown",function(e){if(e.key==="Enter"||e.key===" "){e.preventDefault();toggleComp()}});
+
+/* ---- Modal ---- */
+var lastFocus=null;
+function openModal(c){
+  lastFocus=document.activeElement;
+  var ov=el("div","overlay");
+  var m=el("div","modal");
+
+  var h=el("div","mhead");
+  var ht=el("div");
+  ht.appendChild(el("div","cname",c.name));
+  ht.appendChild(el("div","csub",money(c.val)+" / yr · "+c.sub));
+  h.appendChild(ht);
+  var x=el("button","x","×"); x.setAttribute("aria-label","Close"); h.appendChild(x);
+  m.appendChild(h);
+
+  var tabs=el("div","tabs");
+  var t1=el("button","tab","Clause & maths"); t1.setAttribute("aria-selected","true");
+  var t2=el("button","tab","Draft notice letter"); t2.setAttribute("aria-selected","false");
+  tabs.appendChild(t1); tabs.appendChild(t2); m.appendChild(tabs);
+
+  var body=el("div","mbody"); m.appendChild(body);
+
+  function viewClause(){
+    body.innerHTML="";
+    var panes=el("div","panes");
+    var p1=el("div","pane");
+    p1.appendChild(el("div","ph","Extracted clause record"));
+    var dl=el("dl");
+    [["Type",c.rec.type],["Index",c.rec.index],["Base month",c.rec.base],["Cap",c.rec.cap],["Floor",c.rec.floor],["Anniversary",c.rec.anniv],["Notice",c.rec.noticeDays]].forEach(function(p){
+      dl.appendChild(el("dt",null,p[0])); dl.appendChild(el("dd","num",p[1]));
+    });
+    p1.appendChild(dl);
+    p1.appendChild(el("div","quote","“"+c.quote+"”"));
+    p1.appendChild(el("div","cite",c.cite));
+    panes.appendChild(p1);
+
+    var p2=el("div","pane");
+    p2.appendChild(el("div","ph",c.est?"Estimate":"Shortfall calculation"));
+    var mm=el("div","math num");
+    c.math.forEach(function(r){
+      var row=el("div","r");
+      row.appendChild(el("span","k",r[0]));
+      row.appendChild(el("span","v",r[1]));
+      mm.appendChild(row);
+    });
+    var tot=el("div","r total");
+    tot.appendChild(el("span","k",c.est?"Estimated recovery":"Total recoverable"));
+    tot.appendChild(el("span","v",c.total));
+    mm.appendChild(tot);
+    p2.appendChild(mm);
+    if(comp&&c.owed3>0){
+      p2.appendChild(el("div","cite","Compounded over the next 3 years if unaddressed: "+money(c.owed3)+"."));
+    }
+    panes.appendChild(p2);
+    body.appendChild(panes);
+    foot.innerHTML="";
+    var b=el("button","btn ghost","View draft letter"); b.style.padding="11px 16px"; b.style.fontSize="14px";
+    b.addEventListener("click",function(){t2.click()});
+    foot.appendChild(b);
+    foot.appendChild(el("span","cite","Clause extracted from the signed PDF · Demo data"));
+  }
+
+  function viewLetter(){
+    body.innerHTML="";
+    var L=el("div","letter");
+    var lh=el("div","lh");
+    var co=el("div");
+    co.appendChild(el("div","co","SUMMIT FACILITY SERVICES"));
+    co.appendChild(el("div","cite","Commercial janitorial · grounds · critical environments"));
+    lh.appendChild(co);
+    var ad=el("div","ad"); ad.innerHTML="1420 Halsted Ave, Suite 300<br>Fairview, MI 49021<br>(616) 555-0148";
+    lh.appendChild(ad);
+    L.appendChild(lh);
+    var pp=[
+      "21 November 2026",
+      c.letterTo,
+      "Re: Contractual price adjustment — "+c.name,
+      "Dear Sir or Madam,",
+      "Pursuant to "+c.sec+" of our executed agreement, which provides that: “"+c.quote.slice(0,180)+(c.quote.length>180?"…":"")+"”, we are writing to provide formal notice of the price adjustment contemplated by that provision.",
+      "Effective "+c.eff+", the annual contract amount will be adjusted by "+c.pct+" to "+c.newRate+". All other terms and conditions of the agreement remain unchanged, and our service scope, staffing levels and response commitments will continue without interruption.",
+      "A revised rate schedule is attached for your records. We appreciate your partnership and are happy to walk through the calculation at your convenience.",
+      "Sincerely,",
+      "Dana Whitfield\\nVice President, Client Services\\nSummit Facility Services"
+    ];
+    pp.forEach(function(t,i){
+      var p=el("p");
+      if(i===2){p.style.fontWeight="650"}
+      if(i===8){p.style.whiteSpace="pre-line"; p.textContent=t.replace(/\\\\n/g,"\n")}
+      else p.textContent=t;
+      L.appendChild(p);
+    });
+    body.appendChild(L);
+    foot.innerHTML="";
+    var cp=el("button","btn","Copy letter"); cp.style.padding="12px 18px"; cp.style.fontSize="14px";
+    cp.addEventListener("click",function(){toast("Copied to clipboard")});
+    foot.appendChild(cp);
+    var mk=el("button","btn ghost","Mark as sent"); mk.style.padding="12px 18px"; mk.style.fontSize="14px";
+    mk.addEventListener("click",function(){toast("Logged — follow-up set for 14 days")});
+    foot.appendChild(mk);
+  }
+
+  var foot=el("div","mfoot"); m.appendChild(foot);
+
+  t1.addEventListener("click",function(){t1.setAttribute("aria-selected","true");t2.setAttribute("aria-selected","false");viewClause()});
+  t2.addEventListener("click",function(){t2.setAttribute("aria-selected","true");t1.setAttribute("aria-selected","false");viewLetter()});
+
+  viewClause();
+  ov.appendChild(m);
+  $("#modalHost").appendChild(ov);
+  document.body.style.overflow="hidden";
+
+  function close(){
+    if(ov.parentNode)ov.parentNode.removeChild(ov);
+    document.body.style.overflow="";
+    document.removeEventListener("keydown",esc);
+    if(lastFocus&&lastFocus.focus)lastFocus.focus();
+  }
+  function esc(e){if(e.key==="Escape")close()}
+  x.addEventListener("click",close);
+  ov.addEventListener("click",function(e){if(e.target===ov)close()});
+  document.addEventListener("keydown",esc);
+  x.focus();
+}
+
+/* ---- Toast ---- */
+var toastTimer=null;
+function toast(msg){
+  var host=$("#toastHost"); host.innerHTML="";
+  var t=el("div","toast",msg); host.appendChild(t);
+  if(toastTimer)clearTimeout(toastTimer);
+  toastTimer=setTimeout(function(){if(t.parentNode)t.parentNode.removeChild(t)},1800);
+}
+
+/* ---- Calendar ---- */
+(function(){
+  var cal=$("#cal");
+  for(var i=0;i<12;i++){
+    var mo=el("div","mo");
+    mo.appendChild(el("div","mn",MONTHS[i]));
+    CAL.filter(function(p){return p.m===i}).forEach(function(p){
+      var pin=el("div","pin"+(p.n?" notice":""));
+      var d=el("span","dot "+p.c); if(p.id)d.id=p.id;
+      pin.appendChild(d);
+      pin.appendChild(el("span",null,p.t));
+      mo.appendChild(pin);
+    });
+    cal.appendChild(mo);
+  }
+})();
+
+$("#approveBtn").addEventListener("click",function(){
+  var a=document.getElementById("usdNotice"), b=document.getElementById("usdAnniv");
+  if(a){a.className="dot green"}
+  if(b){b.className="dot green"}
+  this.disabled=true; this.textContent="Approved — notice scheduled 2 Apr 2027";
+  $("#mailSub").textContent="Approved — letter queued for Fairview USD (+$12,600/yr)";
+  $("#mailBody").innerHTML="Notice will be served <strong>2 Apr 2027</strong>, 90 days before the 1 Jul anniversary. Escalator will confirm delivery and chase board approval.";
+  toast("Notice approved — pin turned green");
+});
+
+})();
+</script>
+</body>
+</html>
