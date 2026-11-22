@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-21T20:52:33.748Z",
+  "updated": "2026-11-22T20:52:36.282Z",
   "ideas": [
     {
       "id": "2026-10-22-agentgauntlet",
@@ -1387,6 +1387,66 @@
       "sources_count": 23,
       "superseded_by": null,
       "sibling": "2026-11-21-bottleneck"
+    },
+    {
+      "id": "2026-11-22-defect",
+      "number": 49,
+      "date": "2026-11-22",
+      "track": "build",
+      "short_name": "Defect",
+      "verdict": "dig_deeper",
+      "score": 7.8,
+      "scores": {
+        "wow": 8,
+        "shareability": 7.5,
+        "buildability": 9,
+        "freshness": 9,
+        "usefulness": 5.5
+      },
+      "effort": "a weekend",
+      "category": "Developer tools",
+      "tags": [
+        "containers",
+        "macos",
+        "devtools",
+        "migration"
+      ],
+      "pain_type": "expressed",
+      "one_liner": "Paste your docker-compose.yml and Defect tells you, service by service, whether it will run on Apple's native `container` runtime today — what works, what gets silently ignored, what breaks — plus the patched compose file to try and a shareable \"Docker Defection Score\" card.",
+      "prototype_url": "https://yashsharma1911.github.io/granted/ideas/2026-11-22-defect/",
+      "sources_count": 13,
+      "superseded_by": null,
+      "sibling": "2026-11-22-signoff"
+    },
+    {
+      "id": "2026-11-22-signoff",
+      "number": 50,
+      "date": "2026-11-22",
+      "track": "venture",
+      "short_name": "Signoff",
+      "verdict": "dig_deeper",
+      "score": 7.6,
+      "scores": {
+        "pain": 8,
+        "market_pull": 7,
+        "timing": 8,
+        "gap": 7,
+        "wedge": 8
+      },
+      "effort": "3+ months",
+      "category": "Back-office automation",
+      "tags": [
+        "agents",
+        "erp",
+        "implementation",
+        "testing"
+      ],
+      "pain_type": "expressed",
+      "one_liner": "For the delivery lead at a 10-60 person Salesforce / NetSuite / Business Central / vertical-SaaS implementation partner, Signoff turns the agreed requirements into per-tester UAT scripts, chases each named client tester by email on a schedule, captures their screen-recorded run as evidence, and produces the dated, per-process sign-off pack that unlocks go-live and kills \"we never agreed that\" change-order fights.",
+      "prototype_url": "https://yashsharma1911.github.io/granted/ideas/2026-11-22-signoff/",
+      "sources_count": 25,
+      "superseded_by": null,
+      "sibling": "2026-11-22-defect"
     }
   ]
 }

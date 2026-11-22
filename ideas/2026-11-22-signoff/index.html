@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Signoff — UAT agent for implementation partners</title>
+<style>
+:root{
+  --bg:#ffffff; --panel:#ffffff; --ink:#15181d; --muted:#616b7a; --line:#e2e6ec;
+  --soft:#f6f8fa; --accent:#1f5eff; --accent-soft:#eaf0ff;
+  --green:#0f7b4f; --green-soft:#e6f5ee; --red:#b4231f; --red-soft:#fdeceb;
+  --amber:#8a5a00; --amber-soft:#fff3d6;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#0e1116; --panel:#141921; --ink:#e8ecf2; --muted:#98a3b3; --line:#262e3a;
+    --soft:#1a2029; --accent:#5c8bff; --accent-soft:#1a2440;
+    --green:#4ad295; --green-soft:#10281f; --red:#ff7a72; --red-soft:#2c1514;
+    --amber:#e0b14f; --amber-soft:#2a2111;
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--ink);
+  font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  -webkit-text-size-adjust:100%;
+}
+.wrap{max-width:1080px;margin:0 auto;padding:0 14px 60px}
+header.top{border-bottom:1px solid var(--line);background:var(--panel);position:sticky;top:0;z-index:20}
+.topin{max-width:1080px;margin:0 auto;padding:10px 14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.logo{display:flex;align-items:center;gap:8px;font-weight:700;letter-spacing:-.2px}
+.dot{width:22px;height:22px;border-radius:6px;background:var(--accent);display:grid;place-items:center}
+.dot svg{display:block}
+.tagline{color:var(--muted);font-size:13px}
+.demo{margin-left:auto;font-size:11px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:3px 9px;white-space:nowrap}
+.tabs{display:flex;gap:6px;max-width:1080px;margin:0 auto;padding:0 10px 8px;overflow-x:auto}
+.tab{appearance:none;border:1px solid var(--line);background:var(--soft);color:var(--muted);
+  padding:10px 14px;border-radius:9px;font:inherit;font-size:13.5px;font-weight:600;cursor:pointer;white-space:nowrap;min-height:44px}
+.tab[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+.panel{display:none;padding-top:16px}
+.panel.on{display:block}
+h2{font-size:17px;margin:0 0 4px}
+.sub{color:var(--muted);font-size:13px;margin:0 0 14px}
+
+/* ---------- BEFORE ---------- */
+.banner{background:var(--red-soft);border:1px solid var(--red);color:var(--red);
+  border-radius:9px;padding:10px 12px;font-size:13.5px;font-weight:600;display:flex;gap:8px;align-items:flex-start}
+.xlbox{margin-top:12px;border:1px solid #9aa3ae;border-radius:3px;overflow:hidden;background:#fff;color:#1b1b1b}
+.xlbar{background:#1d6f42;color:#fff;font-size:12px;padding:6px 8px;font-family:"Segoe UI",Tahoma,sans-serif;display:flex;gap:8px;align-items:center}
+.xlbar b{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.xlsub{background:#f3f3f3;border-bottom:1px solid #c9c9c9;font-size:11px;color:#444;padding:4px 8px;font-family:"Segoe UI",Tahoma,sans-serif}
+.xlscroll{overflow-x:auto}
+table.xl{border-collapse:collapse;width:100%;min-width:720px;font-family:Calibri,"Segoe UI",Tahoma,sans-serif;font-size:12.5px;color:#1b1b1b;background:#fff}
+table.xl th,table.xl td{border:1px solid #c6c9cc;padding:4px 6px;vertical-align:top}
+table.xl thead th{background:#dfe6ef;font-weight:700;text-align:left}
+table.xl .merged{background:#fdf3c4;text-align:center;font-weight:700;color:#7a5c00;letter-spacing:.3px}
+table.xl .rn{background:#eceff2;color:#666;text-align:center;width:28px;font-size:11px}
+table.xl tr:nth-child(even) td{background:#fafbfc}
+.cell-blank{background:#fff8d6!important}
+.red-txt{color:#c00;font-weight:700}
+.scrawl{color:#8a5a00;font-style:italic}
+.emailstub{margin-top:14px;border:1px solid var(--line);border-radius:9px;background:var(--panel);overflow:hidden}
+.emailhd{padding:9px 12px;border-bottom:1px solid var(--line);font-size:12.5px;color:var(--muted);background:var(--soft)}
+.emailbody{padding:12px;font-size:13.5px}
+.emailbody .mail{padding:9px 0;border-bottom:1px dashed var(--line)}
+.emailbody .mail:last-child{border-bottom:0}
+.emailbody .from{font-weight:600;font-size:13px}
+.emailbody .meta{color:var(--muted);font-size:12px;margin-bottom:4px}
+.noreply{color:var(--red);font-weight:600;font-size:12.5px}
+.cta{margin-top:16px}
+.btn{appearance:none;border:1px solid var(--accent);background:var(--accent);color:#fff;font:inherit;font-weight:650;
+  padding:12px 16px;border-radius:9px;cursor:pointer;min-height:46px}
+.btn:active{transform:translateY(1px)}
+.btn.ghost{background:var(--panel);color:var(--accent)}
+.btn.sm{padding:9px 12px;font-size:13px;min-height:40px}
+.btn.quiet{background:var(--soft);border-color:var(--line);color:var(--ink)}
+.btn[disabled]{opacity:.55;cursor:default}
+
+/* ---------- SIGNOFF ---------- */
+.statusbar{position:sticky;top:52px;z-index:15;background:var(--panel);border:1px solid var(--line);
+  border-radius:10px;padding:10px 12px;margin-bottom:14px}
+.sbrow{display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:13px}
+.sbrow .pct{font-weight:700}
+.count{margin-left:auto;background:var(--amber-soft);color:var(--amber);font-weight:700;
+  border-radius:999px;padding:4px 10px;font-size:12.5px}
+.bar{height:9px;border-radius:999px;background:var(--soft);border:1px solid var(--line);margin-top:9px;overflow:hidden}
+.bar > i{display:block;height:100%;width:33%;background:var(--accent);transition:width .9s cubic-bezier(.4,0,.2,1)}
+.cols{display:grid;grid-template-columns:1fr;gap:14px}
+@media(min-width:900px){.cols{grid-template-columns:1.25fr .85fr;align-items:start}
+  .chasewrap{position:sticky;top:132px}}
+.card{border:1px solid var(--line);border-radius:10px;background:var(--panel);margin-bottom:9px;overflow:hidden;transition:box-shadow .2s,border-color .2s}
+.card.flash{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.chead{display:flex;gap:10px;padding:11px 12px;align-items:center;cursor:pointer;min-height:56px}
+.av{width:32px;height:32px;border-radius:50%;background:var(--accent-soft);color:var(--accent);
+  display:grid;place-items:center;font-size:12px;font-weight:700;flex:none}
+.cmain{min-width:0;flex:1}
+.cname{font-weight:650;font-size:14px;line-height:1.25}
+.cmeta{color:var(--muted);font-size:11.5px;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pill{font-size:11px;font-weight:700;border-radius:999px;padding:4px 9px;white-space:nowrap;border:1px solid transparent}
+.p-ns{background:var(--soft);color:var(--muted);border-color:var(--line)}
+.p-ip{background:var(--amber-soft);color:var(--amber)}
+.p-pa{background:var(--green-soft);color:var(--green)}
+.p-fa{background:var(--red-soft);color:var(--red)}
+.chev{color:var(--muted);flex:none}
+.cbody{display:none;border-top:1px solid var(--line);padding:12px;background:var(--soft)}
+.card.open .cbody{display:block}
+.card.open .chev{transform:rotate(180deg)}
+.scripthd{font-size:11px;letter-spacing:.6px;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:7px}
+ol.steps{margin:0 0 10px;padding-left:20px;font-size:13.5px}
+ol.steps li{margin-bottom:5px}
+.expected{background:var(--accent-soft);border-left:3px solid var(--accent);padding:8px 10px;border-radius:0 7px 7px 0;font-size:13px;margin-bottom:10px}
+.acts{display:flex;gap:8px;flex-wrap:wrap}
+.evid{margin-top:11px;border:1px solid var(--line);border-radius:9px;background:var(--panel);padding:10px;display:flex;gap:10px;align-items:center}
+.thumb{width:78px;height:50px;border-radius:6px;flex:none;background:
+  repeating-linear-gradient(45deg,var(--soft),var(--soft) 6px,var(--line) 6px,var(--line) 7px);
+  border:1px solid var(--line);display:grid;place-items:center}
+.evid .t{font-size:12.5px}
+.evid .t b{font-size:13px}
+.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px}
+.defect{margin-top:11px;border:1px solid var(--red);border-radius:9px;background:var(--red-soft);padding:11px}
+.defect h4{margin:0 0 7px;font-size:13px;color:var(--red);letter-spacing:.3px;text-transform:uppercase}
+.kv{display:grid;grid-template-columns:96px 1fr;gap:4px 8px;font-size:13px;margin-bottom:9px}
+.kv dt{color:var(--muted)}
+.kv dd{margin:0}
+.ctrls{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+select,.seg{font:inherit;font-size:13px;padding:9px 10px;border-radius:8px;border:1px solid var(--line);
+  background:var(--panel);color:var(--ink);min-height:42px}
+.seg{display:inline-flex;padding:3px;gap:3px;background:var(--soft)}
+.seg button{appearance:none;border:0;background:transparent;color:var(--muted);font:inherit;font-size:12.5px;
+  font-weight:650;padding:7px 11px;border-radius:6px;cursor:pointer;min-height:36px}
+.seg button.on{background:var(--accent);color:#fff}
+.stamp{margin-top:9px;border:1.5px dashed var(--accent);color:var(--accent);border-radius:7px;
+  padding:7px 10px;font-size:12.5px;font-weight:700;display:none}
+.stamp.on{display:block}
+.chase{border:1px solid var(--line);border-radius:10px;background:var(--panel);overflow:hidden}
+.chase .hd{padding:10px 12px;border-bottom:1px solid var(--line);background:var(--soft);font-size:12.5px;font-weight:700}
+.chase .hd span{float:right;color:var(--muted);font-weight:500}
+.mailmeta{padding:10px 12px;border-bottom:1px solid var(--line);font-size:12.5px;color:var(--muted)}
+.mailmeta b{color:var(--ink)}
+.mailtxt{padding:12px;font-size:13.5px;white-space:pre-wrap}
+.chasefoot{padding:10px 12px;border-top:1px solid var(--line);display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.toast{font-size:12.5px;color:var(--green);font-weight:650}
+
+/* ---------- AFTER ---------- */
+.doc{border:1px solid var(--line);border-radius:10px;background:var(--panel);padding:16px}
+.doc .dhd{border-bottom:2px solid var(--ink);padding-bottom:10px;margin-bottom:12px}
+.doc .dhd h3{margin:0 0 3px;font-size:16.5px}
+.doc .dhd p{margin:0;color:var(--muted);font-size:12.5px}
+.tblscroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table.pack{border-collapse:collapse;width:100%;min-width:680px;font-size:12.5px}
+table.pack th,table.pack td{border-bottom:1px solid var(--line);padding:8px 7px;text-align:left;vertical-align:top}
+table.pack thead th{background:var(--soft);font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)}
+.res{font-weight:700;font-size:11.5px}
+.res.pass{color:var(--green)} .res.fail{color:var(--red)} .res.cr{color:var(--accent)}
+.sig{font-family:"Segoe Script","Snell Roundhand",cursive;font-size:14px}
+.sigline{color:var(--muted);border-bottom:1px solid var(--line);display:inline-block;min-width:110px}
+.link{color:var(--accent);text-decoration:underline;text-underline-offset:2px}
+.sect{margin-top:18px}
+.sect h4{margin:0 0 8px;font-size:13px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted)}
+.item{border:1px solid var(--line);border-left:3px solid var(--line);border-radius:0 8px 8px 0;padding:10px 12px;margin-bottom:8px;font-size:13px}
+.item.hi{border-left-color:var(--red)}
+.item.cr{border-left-color:var(--accent)}
+.item.risk{border-left-color:var(--amber)}
+.item b{display:block;margin-bottom:2px}
+.item .m{color:var(--muted);font-size:12px}
+.docfoot{margin-top:18px;border-top:1px solid var(--line);padding-top:10px;color:var(--muted);font-size:12px;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+footer.site{max-width:1080px;margin:26px auto 0;padding:14px;border-top:1px solid var(--line);color:var(--muted);font-size:12px;text-align:center}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="topin">
+    <div class="logo">
+      <span class="dot"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+      Signoff
+    </div>
+    <div class="tagline">The UAT agent that chases testers and produces a signed, evidenced go-live pack.</div>
+    <div class="demo">Demo data</div>
+  </div>
+  <div class="tabs" role="tablist">
+    <button class="tab" id="t0" role="tab" aria-selected="false" aria-controls="p0">Before</button>
+    <button class="tab" id="t1" role="tab" aria-selected="true" aria-controls="p1">Signoff</button>
+    <button class="tab" id="t2" role="tab" aria-selected="false" aria-controls="p2">After</button>
+  </div>
+</header>
+
+<main class="wrap">
+
+<!-- ========== BEFORE ========== -->
+<section class="panel" id="p0" role="tabpanel" aria-labelledby="t0">
+  <h2>Before — what you have today</h2>
+  <p class="sub">Harbor Distribution · NetSuite wholesale go-live · shared drive, v7, emailed Thursday.</p>
+
+  <div class="banner">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" style="flex:none;margin-top:1px"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>
+    <span>Go-live Fri 12 Dec · 4 of 12 scripts touched · 9 days left</span>
+  </div>
+
+  <div class="xlbox">
+    <div class="xlbar">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="#fff"><path d="M4 3h10l6 6v12H4z" opacity=".35"/><path d="M7 8h4v2H7zm0 4h4v2H7zm6-4h4v2h-4zm0 4h4v2h-4z"/></svg>
+      <b>UAT_Scripts_v7_FINAL_revised_USE-THIS-ONE.xlsx</b>
+    </div>
+    <div class="xlsub">Sheet1 · last modified by m.lee 14:52 · 3 other people may have a copy · AutoSave: Off</div>
+    <div class="xlscroll">
+      <table class="xl">
+        <thead>
+          <tr><th class="rn"></th><th class="merged" colspan="5">UAT TRACKER — PHASE 2 (pls fill in!!)</th></tr>
+          <tr><th class="rn">#</th><th style="min-width:210px">Process</th><th style="min-width:60px">Steps</th><th style="min-width:150px">Tester</th><th style="min-width:95px">Status</th><th style="min-width:230px">Comments</th></tr>
+        </thead>
+        <tbody id="xlbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="emailstub">
+    <div class="emailhd">Inbox · Harbor Distribution UAT · 3 messages sent, 0 replies</div>
+    <div class="emailbody">
+      <div class="mail">
+        <div class="from">You → dana.whitfield@harbordist.com, +4</div>
+        <div class="meta">Mon 24 Nov, 08:41 · Subject: UAT scripts — please complete by Friday</div>
+        <div>Hi all, attached is the UAT tracker. Please work through your scripts and mark pass/fail. Shout with questions.</div>
+      </div>
+      <div class="mail">
+        <div class="from">You → dana.whitfield@harbordist.com, +4</div>
+        <div class="meta">Thu 27 Nov, 17:03 · Subject: Re: UAT scripts — friendly reminder</div>
+        <div>Just bumping this — we're tracking 4 of 12 touched. Can we get these in before the weekend?</div>
+      </div>
+      <div class="mail">
+        <div class="from">You → dana.whitfield@harbordist.com, +4</div>
+        <div class="meta">Tue 2 Dec, 07:58 · Subject: Re: Re: UAT scripts — friendly reminder #3</div>
+        <div>Sorry to chase again! Cutover is Fri 12 Dec and we can't sign off without evidence. Happy to jump on a call.</div>
+        <div class="noreply" style="margin-top:6px">↳ No replies. Nothing attached. Nobody knows what "didnt work" means.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="cta"><button class="btn" id="goRun">Run Signoff on this project →</button></div>
+</section>
+
+<!-- ========== SIGNOFF ========== -->
+<section class="panel on" id="p1" role="tabpanel" aria-labelledby="t1">
+  <div class="statusbar">
+    <div class="sbrow">
+      <strong>Harbor Distribution · NetSuite go-live</strong>
+      <span class="pct" id="pctTxt">33% complete</span>
+      <span style="color:var(--muted)" id="doneTxt">4 of 12 scripts touched</span>
+      <span class="count">9 days to cutover · Fri 12 Dec</span>
+    </div>
+    <div class="bar"><i id="barFill"></i></div>
+  </div>
+
+  <div class="cols">
+    <div>
+      <h2>Scripts &amp; testers</h2>
+      <p class="sub">Tap a process to see the generated script. <span class="mono">Demo data</span></p>
+      <div id="cards"></div>
+    </div>
+
+    <div class="chasewrap">
+      <h2>Chase</h2>
+      <p class="sub">Auto-generated nudge, sent 08:00 local.</p>
+      <div class="chase">
+        <div class="hd">Outgoing nudge <span>Today 08:00</span></div>
+        <div class="mailmeta">
+          <div>To: <b>Dana Whitfield</b> &lt;dana.whitfield@harbordist.com&gt; · Ops</div>
+          <div>Subject: <b>3 scripts left, ~18 minutes — Harbor go-live</b></div>
+        </div>
+        <div class="mailtxt" id="mailtxt"></div>
+        <div class="chasefoot">
+          <button class="btn sm" id="nudgeAll">Nudge all stalled testers</button>
+          <span class="toast" id="nudgeToast" hidden>✓ 3 nudges sent</span>
+        </div>
+      </div>
+      <div class="chase" style="margin-top:12px">
+        <div class="hd">Queue</div>
+        <div class="mailtxt" style="font-size:13px" id="queue"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== AFTER ========== -->
+<section class="panel" id="p2" role="tabpanel" aria-labelledby="t2">
+  <div class="doc">
+    <div class="dhd">
+      <h3>UAT Sign-off — Harbor Distribution · NetSuite Go-Live · 12 Dec 2026</h3>
+      <p>Phase 2 — wholesale distribution · 12 processes in scope · prepared by Signoff for Meridian Consulting Partners · issued 03 Dec 2026</p>
+    </div>
+    <div class="tblscroll">
+      <table class="pack">
+        <thead><tr><th>#</th><th>Process</th><th>Tester</th><th>Tested</th><th>Result</th><th>Evidence</th><th>Process owner signature</th></tr></thead>
+        <tbody id="packBody"></tbody>
+      </table>
+    </div>
+
+    <div class="sect">
+      <h4>Open defects at sign-off: 2</h4>
+      <div class="item hi"><b>DEF-014 · Vendor bill 3-way match tolerance ignored on partial receipts</b>
+        <span class="m">Severity: High · Owner: Priya Raman (Controller) · Raised 02 Dec · Target fix 09 Dec, pre-cutover</span></div>
+      <div class="item hi"><b>DEF-019 · Pick/pack/ship — UPS label reprint fails after void</b>
+        <span class="m">Severity: Medium · Owner: Sam Okafor (Warehouse) · Raised 03 Dec · Workaround: reprint from shipment record</span></div>
+    </div>
+
+    <div class="sect">
+      <h4>Accepted risks: 1</h4>
+      <div class="item risk"><b>RISK-03 · Month-end revenue recognition tested on 1 period only</b>
+        <span class="m">Accepted by Priya Raman (Controller), 03 Dec 2026 — second period to be validated in the 31 Dec close with consultant support.</span></div>
+    </div>
+
+    <div class="sect">
+      <h4>Items reclassified as change requests: 1</h4>
+      <div class="item cr"><b>REQ-FIN-07 · Multi-level credit approval</b>
+        <span class="m">AR Clerk role cannot release credit holds above $25k — out of agreed Phase 2 scope. Agreed with client sponsor 03 Dec, quoted separately.</span></div>
+    </div>
+
+    <div class="sect">
+      <h4>Sponsor acceptance</h4>
+      <div class="item"><b>Elaine Brooks — Finance Director, Harbor Distribution (client sponsor)</b>
+        <span class="m">Signed <span class="sig">Elaine Brooks</span> · 03 Dec 2026 16:42 GMT · accepts 10 of 12 processes passed, 2 open defects tracked to fix before cutover.</span></div>
+    </div>
+
+    <div class="docfoot">
+      <span>Generated by Signoff · evidence retained for 7 years.</span>
+      <span class="mono">Pack ID SGN-HRB-2026-0412 · hash 9f3a…c71d</span>
+    </div>
+  </div>
+</section>
+
+<footer class="site">Prototype by Granted, inspired by your bookmarks</footer>
+</main>
+
+<script>
+(function(){
+"use strict";
+
+var TESTERS = {
+  dana:   {name:"Dana Whitfield", role:"Ops",        init:"DW"},
+  marcus: {name:"Marcus Lee",     role:"Finance",    init:"ML"},
+  sam:    {name:"Sam Okafor",     role:"Warehouse",  init:"SO"},
+  rosa:   {name:"Rosa Giordano",  role:"AR",         init:"RG"},
+  priya:  {name:"Priya Raman",    role:"Controller", init:"PR"}
+};
+
+var PROCS = [
+  {id:1, name:"Sales order entry — partial ship", t:"dana", xlStatus:"", xlNote:"", status:"ns", nudged:"2 Dec 08:00",
+   steps:["Open Sales Orders → New.","Customer: Harbor Foods Ltd (CUST-10442).","Add item WIDGET-2, qty 40, when only 25 are on hand.","Set shipping method: UPS Ground.","Save the order."],
+   exp:"Order saves and the line splits into a backorder of 15. Order total shows $4,800.", rec:"SO-88413", dur:"2m14s"},
+  {id:2, name:"Customer credit hold release", t:"marcus", xlStatus:"didnt work", xlNote:"didnt work", status:"fa", nudged:"2 Dec 08:00", fail:true,
+   steps:["Open Customers → Harbor Foods Ltd (CUST-10442).","Confirm the account shows Credit Hold = Yes, balance $31,200.","Create a sales order for $6,400.","Ask the AR Clerk role to release the hold from the order.","Save and check the order status."],
+   exp:"Hold releases and the order routes to fulfilment.", rec:"CUST-10442", dur:"3m02s"},
+  {id:3, name:"Vendor bill 3-way match", t:"priya", xlStatus:"", xlNote:"", status:"ns", nudged:"2 Dec 08:00",
+   steps:["Open Purchasing → Enter Bills.","Pick PO-4471 from Northstar Packaging ($9,150).","Receive 180 of 200 units against the PO.","Enter the vendor bill for the full 200 units.","Attempt to approve the bill."],
+   exp:"Bill is blocked with a quantity variance of 20 units and routes to Controller approval.", rec:"BILL-20318", dur:"4m31s"},
+  {id:4, name:"Pick/pack/ship to UPS", t:"sam", xlStatus:"", xlNote:"tried it, got an error?? screenshot attached (not attached)", status:"ns", nudged:"2 Dec 08:00",
+   steps:["Open Fulfilments → pending orders for Zone A.","Select order SO-88406 (Harbor Foods Ltd).","Pick 3 lines using scanner profile WH-01.","Pack into one carton, weight 12.4 kg.","Generate the UPS Ground label and mark shipped."],
+   exp:"Shipment confirms, UPS tracking number appears on the order and the customer email fires.", rec:"ITEM-FUL-5521", dur:"5m08s"},
+  {id:5, name:"Month-end revenue recognition", t:"priya", xlStatus:"", xlNote:"", status:"ns", nudged:"2 Dec 08:00",
+   steps:["Open Financial → Revenue Arrangements for period Nov 2026.","Locate arrangement REV-2211 (Harbor Foods, 12-month service plan, $18,000).","Run the revenue recognition schedule.","Post the journal for November.","Open the Income Statement for Nov 2026."],
+   exp:"$1,500 recognised for November, $16,500 remains deferred.", rec:"JE-77120", dur:"3m44s"},
+  {id:6, name:"Intercompany transfer order", t:"dana", xlStatus:"", xlNote:"is this supposed to do that", status:"ns", nudged:"2 Dec 08:00",
+   steps:["Open Transactions → Transfer Orders → New.","From: Harbor East (WH-EAST). To: Harbor West (WH-WEST).","Add item WIDGET-2, qty 60.","Approve and ship the transfer.","Receive it at WH-WEST."],
+   exp:"Stock moves 60 units east→west and an intercompany journal posts at standard cost $12.40/unit.", rec:"TO-30194", dur:"2m56s"},
+  {id:7, name:"Customer return / RMA credit", t:"rosa", xlStatus:"", xlNote:"", status:"ns", nudged:"2 Dec 08:00",
+   steps:["Open Returns → New Return Authorisation.","Customer: Bayline Grocers (CUST-10517), reference SO-88290.","Return 8 units of WIDGET-2, reason: damaged in transit.","Receive the return into the Quarantine bin.","Issue the credit memo."],
+   exp:"Credit memo CM-4411 for $992 posts and the customer balance drops accordingly.", rec:"RMA-1188", dur:"3m17s"},
+  {id:8, name:"Price level &amp; volume discount", t:"dana", xlStatus:"", xlNote:"", status:"ns", nudged:"2 Dec 08:00",
+   steps:["Open Sales Orders → New.","Customer: Bayline Grocers (CUST-10517), price level: Wholesale Tier 2.","Add item WIDGET-7, qty 500.","Check the unit price applied on the line.","Save the order."],
+   exp:"Unit price drops from $9.80 to $8.60 at the 250-unit break; line total $4,300.", rec:"SO-88421", dur:"1m52s"},
+  {id:9, name:"Cycle count &amp; inventory adjustment", t:"sam", xlStatus:"", xlNote:"", status:"ns", nudged:"2 Dec 08:00",
+   steps:["Open Inventory → Cycle Counts for bin A-12-3.","Start the count for WIDGET-2 (system qty 25).","Enter the counted qty 23.","Submit for approval and approve as Warehouse Manager.","Check the item record on-hand figure."],
+   exp:"On-hand drops to 23 and an adjustment journal posts $24.80 to shrinkage.", rec:"INVADJ-9044", dur:"2m05s"},
+  {id:10, name:"Cash application — part payment", t:"rosa", xlStatus:"", xlNote:"", status:"ns", nudged:"2 Dec 08:00",
+   steps:["Open Receivables → Accept Customer Payment.","Customer: Harbor Foods Ltd (CUST-10442).","Apply $4,000 against invoice INV-66201 ($6,400).","Leave the remainder open and save.","Open the customer balance view."],
+   exp:"Invoice shows $2,400 outstanding and moves to the 1–30 day ageing bucket.", rec:"PMT-55128", dur:"2m22s"},
+  {id:11, name:"Drop-ship purchase order", t:"marcus", xlStatus:"", xlNote:"", status:"ns", nudged:"2 Dec 08:00",
+   steps:["Open Sales Orders → New for Coastal Catering (CUST-10603).","Add item WIDGET-9 (drop-ship), qty 120.","Save — confirm a linked PO is created to Northstar Packaging.","Mark the PO as shipped by the vendor.","Bill the customer."],
+   exp:"Linked PO-4488 is created automatically; no stock movement hits Harbor East.", rec:"SO-88430", dur:"3m29s"},
+  {id:12, name:"Sales tax on multi-state shipment", t:"priya", xlStatus:"", xlNote:"", status:"ns", nudged:"2 Dec 08:00",
+   steps:["Open Sales Orders → New for Bayline Grocers (CUST-10517).","Ship-to: Portland, OR. Add WIDGET-2, qty 10.","Save and note the tax applied.","Duplicate the order with ship-to Seattle, WA.","Compare the tax lines on both orders."],
+   exp:"Oregon order shows $0.00 tax; Washington order shows 10.25% ($127.10).", rec:"SO-88436", dur:"2m41s"}
+];
+
+// Result data used in the After pack (consistent with Before/Signoff)
+var PACK = [
+  {id:1,  res:"Pass", date:"03 Dec 09:12", sig:"Dana Whitfield",  sigAt:"03 Dec 09:40"},
+  {id:2,  res:"Change request", date:"02 Dec 15:26", sig:null},
+  {id:3,  res:"Fail", date:"02 Dec 11:04", sig:null},
+  {id:4,  res:"Fail", date:"03 Dec 08:55", sig:null},
+  {id:5,  res:"Pass", date:"03 Dec 10:31", sig:null},
+  {id:6,  res:"Pass", date:"02 Dec 16:48", sig:null},
+  {id:7,  res:"Pass", date:"02 Dec 14:02", sig:null},
+  {id:8,  res:"Pass", date:"03 Dec 09:58", sig:"Dana Whitfield",  sigAt:"03 Dec 10:05"},
+  {id:9,  res:"Pass", date:"03 Dec 07:44", sig:null},
+  {id:10, res:"Pass", date:"02 Dec 13:19", sig:null},
+  {id:11, res:"Pass", date:"03 Dec 11:26", sig:null},
+  {id:12, res:"Pass", date:"03 Dec 12:08", sig:"Priya Raman", sigAt:"03 Dec 12:30"}
+];
+
+function esc(s){return String(s).replace(/&(?!amp;|lt;|gt;)/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+function $(id){return document.getElementById(id);}
+
+/* ---------- Tabs ---------- */
+var tabs=[$("t0"),$("t1"),$("t2")], panels=[$("p0"),$("p1"),$("p2")];
+function show(i){
+  for(var k=0;k<3;k++){
+    tabs[k].setAttribute("aria-selected", k===i?"true":"false");
+    panels[k].classList.toggle("on", k===i);
+  }
+  window.scrollTo(0,0);
+}
+tabs.forEach(function(t,i){ t.addEventListener("click", function(){ show(i); }); });
+$("goRun").addEventListener("click", function(){ show(1); });
+show(0);
+
+/* ---------- Before grid ---------- */
+(function(){
+  var html="";
+  for(var i=0;i<PROCS.length;i++){
+    var p=PROCS[i], t=TESTERS[p.t];
+    var st = p.xlStatus ? '<span class="red-txt">'+p.xlStatus+'</span>' : '';
+    var note = p.xlNote ? '<span class="scrawl">'+p.xlNote+'</span>' : '';
+    html += '<tr><td class="rn">'+(i+2)+'</td>'
+      + '<td>'+p.name+'</td>'
+      + '<td class="cell-blank" style="text-align:center">?</td>'
+      + '<td>'+t.name+' ('+t.role+')</td>'
+      + '<td'+(p.xlStatus?'':' class="cell-blank"')+'>'+st+'</td>'
+      + '<td'+(p.xlNote?'':' class="cell-blank"')+'>'+note+'</td></tr>';
+  }
+  html += '<tr><td class="rn">14</td><td colspan="5" class="scrawl">^^ pls do not edit this tab, use the copy Marcus sent</td></tr>';
+  $("xlbody").innerHTML = html;
+})();
+
+/* ---------- Signoff console ---------- */
+var STATUS_LABEL={ns:"Not started",ip:"In progress",pa:"Passed",fa:"Failed"};
+var STATUS_CLASS={ns:"p-ns",ip:"p-ip",pa:"p-pa",fa:"p-fa"};
+
+var cardsEl=$("cards");
+
+function buildCard(p){
+  var t=TESTERS[p.t];
+  var el=document.createElement("article");
+  el.className="card";
+  el.setAttribute("data-id", String(p.id));
+
+  var stepsHtml="";
+  for(var i=0;i<p.steps.length;i++){ stepsHtml += "<li>"+p.steps[i]+"</li>"; }
+
+  var failBtn = p.fail ? '<button class="btn sm quiet act-fail" type="button">Simulate failure</button>' : '';
+
+  el.innerHTML =
+    '<div class="chead" role="button" tabindex="0" aria-expanded="false">'
+    +  '<span class="av">'+t.init+'</span>'
+    +  '<span class="cmain"><span class="cname">'+p.name+'</span>'
+    +    '<span class="cmeta">'+t.name+' · '+t.role+' · last nudged '+p.nudged+'</span></span>'
+    +  '<span class="pill '+STATUS_CLASS[p.status]+'">'+STATUS_LABEL[p.status]+'</span>'
+    +  '<svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="m6 9 6 6 6-6"/></svg>'
+    + '</div>'
+    + '<div class="cbody">'
+    +  '<div class="scripthd">Generated script · '+p.steps.length+' steps · est. '+p.dur.replace("m"," min ").replace("s"," sec")+'</div>'
+    +  '<ol class="steps">'+stepsHtml+'</ol>'
+    +  '<div class="expected"><b>Expected:</b> '+p.exp+'</div>'
+    +  '<div class="acts"><button class="btn sm act-run" type="button">Simulate tester run</button>'+failBtn+'</div>'
+    +  '<div class="slot"></div>'
+    + '</div>';
+  return el;
+}
+
+PROCS.forEach(function(p){ cardsEl.appendChild(buildCard(p)); });
+
+function setStatus(card, code){
+  var pill=card.querySelector(".pill");
+  pill.className="pill "+STATUS_CLASS[code];
+  pill.textContent=STATUS_LABEL[code];
+  var id=parseInt(card.getAttribute("data-id"),10);
+  for(var i=0;i<PROCS.length;i++){ if(PROCS[i].id===id){ PROCS[i].status=code; } }
+  card.classList.add("flash");
+  setTimeout(function(){ card.classList.remove("flash"); },900);
+  updateProgress();
+}
+
+var progress=33, done=4;
+function updateProgress(){
+  var touched=0;
+  for(var i=0;i<PROCS.length;i++){ if(PROCS[i].status!=="ns") touched++; }
+  done = Math.max(4, touched);
+  progress = Math.round(done/12*100);
+  $("barFill").style.width = progress+"%";
+  $("pctTxt").textContent = progress+"% complete";
+  $("doneTxt").textContent = done+" of 12 scripts touched";
+}
+
+function evidenceRow(p){
+  var d=document.createElement("div");
+  d.className="evid";
+  d.innerHTML='<div class="thumb"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--muted)"><path d="m10 8 6 4-6 4z"/><rect x="2" y="4" width="20" height="16" rx="2"/></svg></div>'
+   +'<div class="t"><b>Screen recording captured</b><br><span style="color:var(--muted)">Duration '+p.dur+' · 03 Dec 2026 09:12 GMT · record <span class="mono">'+p.rec+'</span></span><br><span style="color:var(--green);font-weight:650">✓ Evidence attached to sign-off pack</span></div>';
+  return d;
+}
+
+function defectCard(p){
+  var d=document.createElement("div");
+  d.className="defect";
+  d.innerHTML='<h4>Defect raised · DEF-021</h4>'
+   +'<dl class="kv">'
+   +'<dt>Failed at</dt><dd>Step 4 — Ask the AR Clerk role to release the hold from the order.</dd>'
+   +'<dt>Expected</dt><dd>Hold releases and order routes to fulfilment.</dd>'
+   +'<dt>Actual</dt><dd>Approval button greyed out for role AR Clerk.</dd>'
+   +'<dt>Record</dt><dd class="mono">CUST-10442</dd>'
+   +'<dt>Requirement</dt><dd class="mono">REQ-FIN-07</dd>'
+   +'<dt>Reported</dt><dd>Marcus Lee (Finance) · 02 Dec 2026 15:26 GMT</dd>'
+   +'</dl>'
+   +'<div class="ctrls">'
+   +'<label class="sr" for="sev'+p.id+'">Severity</label>'
+   +'<select id="sev'+p.id+'"><option>Severity: Low</option><option selected>Severity: Medium</option><option>Severity: High</option><option>Severity: Blocker</option></select>'
+   +'<span class="seg"><button type="button" class="on" data-k="defect">Defect</button><button type="button" data-k="cr">Change request</button></span>'
+   +'</div>'
+   +'<div class="stamp"></div>';
+
+  var stamp=d.querySelector(".stamp");
+  var sel=d.querySelector("select");
+  var segBtns=d.querySelectorAll(".seg button");
+
+  function render(kind){
+    var sev=sel.value.replace("Severity: ","");
+    if(kind==="cr"){
+      stamp.textContent="◆ RECLASSIFIED AS CHANGE REQUEST — REQ-FIN-07 multi-level credit approval · agreed with client sponsor 03 Dec 2026 · quoted separately · out of Phase 2 scope";
+    }else{
+      stamp.textContent="◆ LOGGED AS DEFECT — DEF-021 · severity "+sev+" · owner Rosa Giordano (AR) · 03 Dec 2026 · must fix before cutover";
+    }
+    stamp.classList.add("on");
+  }
+  var current="defect";
+  sel.addEventListener("change", function(){ render(current); });
+  for(var i=0;i<segBtns.length;i++){
+    (function(b){
+      b.addEventListener("click", function(){
+        for(var j=0;j<segBtns.length;j++){ segBtns[j].classList.remove("on"); }
+        b.classList.add("on");
+        current=b.getAttribute("data-k");
+        render(current);
+      });
+    })(segBtns[i]);
+  }
+  render("defect");
+  return d;
+}
+
+cardsEl.addEventListener("click", function(e){
+  var head=e.target.closest(".chead");
+  if(head){
+    var c=head.parentNode;
+    var open=c.classList.toggle("open");
+    head.setAttribute("aria-expanded", open?"true":"false");
+    return;
+  }
+  var card=e.target.closest(".card");
+  if(!card) return;
+  var id=parseInt(card.getAttribute("data-id"),10);
+  var p=null;
+  for(var i=0;i<PROCS.length;i++){ if(PROCS[i].id===id) p=PROCS[i]; }
+  if(!p) return;
+  var slot=card.querySelector(".slot");
+
+  if(e.target.classList.contains("act-run")){
+    var btn=e.target;
+    btn.disabled=true; btn.textContent="Running…";
+    setStatus(card,"ip");
+    setTimeout(function(){
+      setStatus(card,"pa");
+      btn.textContent="Run complete";
+      slot.innerHTML="";
+      slot.appendChild(evidenceRow(p));
+    },1100);
+    return;
+  }
+  if(e.target.classList.contains("act-fail")){
+    e.target.disabled=true;
+    setStatus(card,"fa");
+    slot.innerHTML="";
+    slot.appendChild(defectCard(p));
+  }
+});
+
+cardsEl.addEventListener("keydown", function(e){
+  if((e.key==="Enter"||e.key===" ") && e.target.classList && e.target.classList.contains("chead")){
+    e.preventDefault(); e.target.click();
+  }
+});
+
+/* Chase email */
+$("mailtxt").textContent =
+"Hi Dana,\n\n"+
+"You have 3 scripts left and 9 days to cutover (Fri 12 Dec). Based on the steps involved, it's about 18 minutes of work:\n\n"+
+"  • Sales order entry — partial ship (~6 min)\n"+
+"  • Intercompany transfer order (~7 min)\n"+
+"  • Price level & volume discount (~5 min)\n\n"+
+"Each script is written out step by step with the test data filled in — Harbor Foods Ltd (CUST-10442), WIDGET-2. Just follow it and tell me pass or fail; Signoff records the screen and files the evidence for you.\n\n"+
+"Start script 1 →\n\n"+
+"— Signoff, on behalf of Meridian Consulting Partners";
+
+$("queue").innerHTML =
+'<div style="margin-bottom:6px">Tomorrow 08:00 · <b>Sam Okafor</b> (Warehouse) — 2 scripts, ~9 min</div>'+
+'<div style="margin-bottom:6px">Tomorrow 08:00 · <b>Priya Raman</b> (Controller) — 3 scripts, ~11 min</div>'+
+'<div style="margin-bottom:6px">Thu 08:00 · <b>Rosa Giordano</b> (AR) — 2 scripts, ~6 min</div>'+
+'<div style="color:var(--muted)">Escalation to Elaine Brooks (sponsor) if untouched by Mon 8 Dec.</div>';
+
+/* Nudge all stalled */
+$("nudgeAll").addEventListener("click", function(){
+  var btn=this;
+  btn.disabled=true; btn.textContent="Sending…";
+  var stalled=[];
+  var nodes=cardsEl.querySelectorAll(".card");
+  for(var i=0;i<nodes.length && stalled.length<3;i++){
+    var pill=nodes[i].querySelector(".pill");
+    if(pill.textContent==="Not started") stalled.push(nodes[i]);
+  }
+  if(!stalled.length){
+    btn.textContent="Nothing stalled 🎉";
+    return;
+  }
+  stalled.forEach(function(c,i){
+    setTimeout(function(){
+      setStatus(c,"ip");
+      var meta=c.querySelector(".cmeta");
+      meta.textContent = meta.textContent.replace(/last nudged.*$/,"last nudged just now");
+    }, 350+i*450);
+  });
+  setTimeout(function(){
+    btn.textContent="Nudge all stalled testers";
+    btn.disabled=false;
+    var toast=$("nudgeToast");
+    toast.hidden=false;
+    toast.textContent="✓ "+stalled.length+" nudge"+(stalled.length>1?"s":"")+" sent";
+  }, 350+stalled.length*450+200);
+});
+
+updateProgress();
+
+/* ---------- After pack ---------- */
+(function(){
+  var rows="";
+  for(var i=0;i<PACK.length;i++){
+    var r=PACK[i], p=null;
+    for(var j=0;j<PROCS.length;j++){ if(PROCS[j].id===r.id) p=PROCS[j]; }
+    if(!p) continue;
+    var t=TESTERS[p.t];
+    var cls = r.res==="Pass" ? "pass" : (r.res==="Fail" ? "fail" : "cr");
+    var mark = r.res==="Pass" ? "✓ Pass" : (r.res==="Fail" ? "✕ Fail" : "◆ Change request");
+    var sig = r.sig
+      ? '<span class="sig">'+r.sig+'</span><br><span style="color:var(--muted);font-size:11px">'+r.sigAt+' GMT</span>'
+      : '<span class="sigline">&nbsp;</span><br><span style="color:var(--muted);font-size:11px">awaiting</span>';
+    rows += '<tr><td>'+r.id+'</td><td>'+p.name+'</td><td>'+t.name+'<br><span style="color:var(--muted);font-size:11px">'+t.role+'</span></td>'
+      + '<td>'+r.date+'</td><td class="res '+cls+'">'+mark+'</td>'
+      + '<td><span class="link">'+(r.res==="Change request" ? "notes.txt" : "recording_"+p.rec+".mp4")+'</span><br><span class="mono" style="color:var(--muted)">'+p.rec+' · '+p.dur+'</span></td>'
+      + '<td>'+sig+'</td></tr>';
+  }
+  $("packBody").innerHTML=rows;
+})();
+
+})();
+</script>
+</body>
+</html>
