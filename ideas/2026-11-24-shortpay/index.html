@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Shortpay — 90-Day Short-Pay Audit</title>
+<style>
+:root{
+  --bg:#ffffff; --panel:#ffffff; --ink:#111827; --muted:#6b7280; --line:#e5e7eb;
+  --accent:#1d4ed8; --accent-soft:#eff6ff; --red:#b91c1c; --red-soft:#fef2f2;
+  --green:#15803d; --green-soft:#f0fdf4; --ugly:#f7f7f4; --shadow:0 1px 2px rgba(16,24,40,.06),0 1px 3px rgba(16,24,40,.08);
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#0b0f17; --panel:#121825; --ink:#e8ecf4; --muted:#95a0b4; --line:#242d3d;
+    --accent:#7aa2ff; --accent-soft:#16233d; --red:#ff7b72; --red-soft:#2a1416;
+    --green:#5fd48b; --green-soft:#10231a; --ugly:#161b26; --shadow:none;
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  font-size:15px; line-height:1.45; -webkit-text-size-adjust:100%;
+  font-variant-numeric:tabular-nums; font-feature-settings:"tnum" 1;
+}
+.wrap{max-width:1100px;margin:0 auto;padding:0 14px 60px}
+.num{font-variant-numeric:tabular-nums}
+.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace}
+
+/* sticky bar */
+.topbar{position:sticky;top:0;z-index:40;background:var(--panel);border-bottom:1px solid var(--line);
+  padding:9px 14px;display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.brandline{display:flex;align-items:center;gap:9px;min-width:0}
+.logo{width:22px;height:22px;flex:none}
+.brand{font-weight:700;letter-spacing:-.01em}
+.crumb{color:var(--muted);font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.counter{font-weight:700;font-size:14px;padding:4px 10px;border-radius:999px;background:var(--accent-soft);color:var(--accent);white-space:nowrap}
+.counter.filed{background:var(--green-soft);color:var(--green)}
+
+header.hero{padding:18px 0 6px}
+h1{font-size:19px;margin:0 0 4px;letter-spacing:-.015em}
+.sub{color:var(--muted);font-size:13.5px;margin:0}
+.badge{display:inline-block;font-size:11px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:1px 8px;margin-left:6px;vertical-align:middle}
+
+section{margin-top:26px}
+.sechead{display:flex;align-items:baseline;gap:9px;margin-bottom:10px;flex-wrap:wrap}
+.step{font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--accent)}
+h2{font-size:16px;margin:0;letter-spacing:-.01em}
+.sechead .note{color:var(--muted);font-size:12.5px}
+
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:820px){.grid2{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow)}
+.card .chead{padding:8px 12px;border-bottom:1px solid var(--line);font-size:12px;color:var(--muted);display:flex;justify-content:space-between;gap:8px}
+.ugly{background:var(--ugly)}
+.scroller{max-height:290px;overflow:auto;-webkit-overflow-scrolling:touch}
+.doc{padding:10px 12px;font-size:11.5px}
+.doc h4{margin:0 0 2px;font-size:12.5px}
+.doc .meta{color:var(--muted);font-size:10.5px;margin-bottom:8px}
+table.rate{width:100%;border-collapse:collapse;font-size:11px}
+table.rate th,table.rate td{border:1px solid var(--line);padding:3px 5px;text-align:right;white-space:nowrap}
+table.rate th{background:var(--accent-soft);font-weight:600;color:var(--ink)}
+table.rate td:first-child,table.rate th:first-child{text-align:left}
+.clause{margin-top:8px;font-size:11px;line-height:1.5;color:var(--ink)}
+.clause b{font-weight:600}
+mark{background:#fde68a;color:#111827;padding:0 2px;border-radius:2px}
+@media (prefers-color-scheme: dark){mark{background:#6b5300;color:#ffe9a8}}
+.remit{padding:8px 10px;font-size:10.5px;line-height:1.55;white-space:pre}
+.caption{color:var(--muted);font-size:12px;margin:8px 2px 0}
+
+/* buttons */
+button{font:inherit;cursor:pointer}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:48px;padding:12px 18px;
+  border-radius:10px;border:1px solid var(--accent);background:var(--accent);color:#fff;font-weight:650;font-size:15px}
+@media (prefers-color-scheme: dark){.btn{color:#0b0f17}}
+.btn:disabled{opacity:.55;cursor:default}
+.btn.ghost{background:transparent;color:var(--accent);border-color:var(--line)}
+.btn.block{width:100%}
+.chips{display:flex;gap:7px;overflow-x:auto;padding:2px 0 4px;-webkit-overflow-scrolling:touch}
+.chip{white-space:nowrap;min-height:40px;padding:8px 14px;border-radius:999px;border:1px solid var(--line);
+  background:transparent;color:var(--ink);font-size:13px}
+.chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+@media (prefers-color-scheme: dark){.chip[aria-pressed="true"]{color:#0b0f17}}
+
+/* progress */
+.runner{border:1px solid var(--line);border-radius:10px;padding:14px;background:var(--panel)}
+.bar{height:6px;border-radius:999px;background:var(--line);overflow:hidden;margin-top:10px}
+.bar>i{display:block;height:100%;width:0;background:var(--accent);transition:width .45s ease}
+.steps{margin:0;padding:0;list-style:none;font-size:13px}
+.steps li{display:flex;gap:9px;align-items:center;padding:4px 0;color:var(--muted)}
+.steps li.on{color:var(--ink)}
+.steps li.done{color:var(--ink)}
+.tick{width:16px;height:16px;flex:none}
+.spin{width:14px;height:14px;border:2px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:sp .7s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+/* results */
+.totals{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;
+  border:1px solid var(--line);border-radius:10px;padding:11px 13px;background:var(--accent-soft);margin-bottom:10px}
+.totals .big{font-size:21px;font-weight:750;letter-spacing:-.02em}
+.totals .t{font-size:12.5px;color:var(--muted)}
+.totals .t b{color:var(--ink);font-weight:650}
+.danger{color:var(--red)}
+.ok{color:var(--green)}
+
+.tbl{border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.row{display:grid;grid-template-columns:1.45fr 1.3fr 96px 104px;gap:8px;align-items:center;
+  padding:11px 12px;border-top:1px solid var(--line);background:transparent;width:100%;text-align:left;color:inherit;border-left:0;border-right:0;border-bottom:0}
+.row:first-child{border-top:0}
+.rowhead{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;background:var(--ugly)}
+.row .who{min-width:0}
+.row .who .c{font-weight:650;font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row .who .w{color:var(--muted);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row .reason{font-size:12.5px;color:var(--muted)}
+.row .var{text-align:right;font-weight:700;font-size:13.5px}
+.row .dl{text-align:right;font-size:12px}
+.pill{display:inline-block;padding:2px 7px;border-radius:999px;font-size:11px;font-weight:650;white-space:nowrap}
+.pill.red{background:var(--red-soft);color:var(--red)}
+.pill.amber{background:#fff7ed;color:#b45309}
+@media (prefers-color-scheme: dark){.pill.amber{background:#2a2110;color:#f0b429}}
+.pill.green{background:var(--green-soft);color:var(--green)}
+.pill.grey{background:var(--ugly);color:var(--muted)}
+.row:hover{background:var(--accent-soft)}
+.row[aria-expanded="true"]{background:var(--accent-soft)}
+.detail{border-top:1px dashed var(--line);padding:12px;background:var(--ugly);font-size:13px}
+.cmp{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media (max-width:620px){.cmp{grid-template-columns:1fr}
+ .row{grid-template-columns:1fr 92px;row-gap:3px}
+ .row .reason{grid-column:1 / -1;order:3}
+ .row .dl{text-align:right;grid-column:2;order:2}
+ .row .var{order:1}
+ .rowhead{display:none}
+}
+.box{border:1px solid var(--line);border-radius:8px;padding:9px 10px;background:var(--panel)}
+.box h5{margin:0 0 5px;font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.box p{margin:0 0 4px;font-size:12.5px;line-height:1.5}
+.math{font-size:12.5px;margin-top:9px;padding:9px 10px;border-radius:8px;background:var(--panel);border:1px solid var(--line)}
+.math div{display:flex;justify-content:space-between;gap:10px;padding:1px 0}
+.math .tot{border-top:1px solid var(--line);margin-top:5px;padding-top:5px;font-weight:700}
+.deadline{margin-top:9px;font-size:12.5px;padding:8px 10px;border-radius:8px;background:var(--red-soft);color:var(--red)}
+.deadline.okbox{background:var(--green-soft);color:var(--green)}
+
+/* email */
+.email{border:1px solid var(--line);border-radius:10px;background:var(--panel);overflow:hidden}
+.email .eh{padding:10px 12px;border-bottom:1px solid var(--line);font-size:12.5px;color:var(--muted)}
+.email .eh b{color:var(--ink)}
+.ebody{padding:12px;font-size:13px;line-height:1.55}
+.ebody table{width:100%;border-collapse:collapse;font-size:12px;margin:9px 0}
+.ebody th,.ebody td{border-bottom:1px solid var(--line);padding:4px 6px;text-align:right;white-space:nowrap}
+.ebody th:first-child,.ebody td:first-child{text-align:left}
+.ebody th{color:var(--muted);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.05em}
+.actions{display:flex;gap:9px;flex-wrap:wrap;padding:10px 12px;border-top:1px solid var(--line)}
+.empty{padding:26px 14px;text-align:center;color:var(--muted);font-size:13.5px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:18px;background:var(--ink);color:var(--bg);
+  padding:10px 16px;border-radius:999px;font-size:13px;z-index:90;opacity:0;pointer-events:none;transition:opacity .25s}
+.toast.show{opacity:1}
+footer{margin-top:34px;padding-top:12px;border-top:1px solid var(--line);color:var(--muted);font-size:12px;text-align:center}
+.hidden{display:none !important}
+.srhint{color:var(--muted);font-size:12px;margin-top:6px}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="brandline">
+    <svg class="logo" viewBox="0 0 24 24" aria-hidden="true"><rect x="1" y="1" width="22" height="22" rx="6" fill="currentColor" opacity=".12"/><path d="M7 15.5c1.3 1.1 2.7 1.6 4.2 1.6 2 0 3.2-.9 3.2-2.2 0-1.4-1.2-1.9-3.4-2.4-2.5-.6-4.1-1.5-4.1-3.6C6.9 7 8.6 5.8 11 5.8c1.5 0 2.8.4 3.9 1.2" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round"/><path d="M12 4v16" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" opacity=".5"/></svg>
+    <span class="brand">Shortpay</span>
+    <span class="crumb">Midline Technical Staffing · Q3 audit</span>
+  </div>
+  <div class="counter" id="counter">$0 recovered</div>
+</div>
+
+<div class="wrap">
+  <header class="hero">
+    <h1>Shortpay finds the money your VMS client quietly underpaid — and the clause that proves it.<span class="badge">Demo data</span></h1>
+    <p class="sub">Every remittance line tested against the signed rate card, ranked by dollars at risk and days left to dispute.</p>
+  </header>
+
+  <!-- SECTION 1 -->
+  <section>
+    <div class="sechead"><span class="step">Before</span><h2>What the controller has today</h2><span class="note">two documents, no link between them</span></div>
+    <div class="grid2">
+      <div class="card ugly">
+        <div class="chead"><span>rate_card_novatech_amend2_FINAL(2).pdf</span><span>3 pages</span></div>
+        <div class="scroller"><div class="doc">
+          <h4>RATE CARD — NOVATECH INDUSTRIES</h4>
+          <div class="meta">Master Services Agreement · Amendment 2 · effective 2026-04-01 · Supplier: Midline Technical Staffing</div>
+          <table class="rate">
+            <tr><th>Role / Title</th><th>ST Bill</th><th>OT mult.</th><th>2nd shift $/hr</th></tr>
+            <tr><td>Sr. Java Developer</td><td>96.50</td><td>1.50×</td><td>4.00</td></tr>
+            <tr><td>Java Developer II</td><td>82.00</td><td>1.50×</td><td>4.00</td></tr>
+            <tr><td>QA Automation Eng.</td><td>74.25</td><td>1.50×</td><td>4.00</td></tr>
+            <tr><td>DevOps Engineer</td><td>101.00</td><td>1.50×</td><td>4.00</td></tr>
+            <tr><td>Business Analyst</td><td>68.00</td><td>1.50×</td><td>3.00</td></tr>
+            <tr><td>Project Coordinator</td><td>55.50</td><td>1.50×</td><td>3.00</td></tr>
+          </table>
+          <div class="clause">
+            <p><b>§4.2 Annual Escalation.</b> Effective each 1 April, <mark>bill rates increase by CPI-U + 1.5% each April 1</mark>, applied to the then-current rate card without further notice.</p>
+            <p><b>§5.1 Premium Time.</b> Hours in excess of forty (40) per week shall be billed at <mark>1.5× the straight-time bill rate</mark>. Shifts commencing between 15:00 and 23:00 attract a <mark>second-shift differential of $4.00 per hour</mark>.</p>
+            <p><b>§6.4 Program Fee.</b> MSP administrative fee of <mark>three percent (3.0%)</mark> shall be deducted from gross invoiced amounts. No other deduction is permitted.</p>
+            <p><b>§7.3 Notice of Dispute.</b> Supplier shall provide <mark>written notice within thirty (30) days of invoice date</mark>; claims not noticed within that period are waived.</p>
+            <p><b>§8.1 Reclassification.</b> Where a worker's duties change, the applicable rate-card title shall apply from the effective date of reclassification.</p>
+          </div>
+        </div></div>
+      </div>
+
+      <div class="card ugly">
+        <div class="chead"><span>Remittance Advice — Fieldglass 2026-09-26</span><span id="remitcount">44 lines</span></div>
+        <div class="scroller"><pre class="remit mono" id="remit"></pre></div>
+      </div>
+    </div>
+    <p class="caption">Today: a billing clerk compares these by eye, if at all.</p>
+  </section>
+
+  <!-- SECTION 2 -->
+  <section>
+    <div class="sechead"><span class="step">The product</span><h2>Run the audit</h2><span class="note">6 rate cards · 4 amendments · 1,284 remittance lines</span></div>
+
+    <div id="runzone">
+      <button class="btn block" id="runBtn">Run audit on 90 days of remittances</button>
+      <p class="srhint">Nothing leaves this page — everything below is simulated from hard-coded demo data.</p>
+    </div>
+
+    <div class="runner hidden" id="runner" aria-live="polite">
+      <ul class="steps" id="stepList"></ul>
+      <div class="bar"><i id="barFill"></i></div>
+    </div>
+
+    <div id="results" class="hidden">
+      <div class="totals">
+        <div>
+          <div class="big danger" id="sumAmount">-$11,842.90</div>
+          <div class="t">recoverable across 7 client programs</div>
+        </div>
+        <div class="t"><b id="sumInside">9 of 12</b> exceptions still inside the dispute window</div>
+        <div class="t"><b class="danger">$1,648.00</b> time-barred · file within <b class="danger">4 days</b> to avoid more</div>
+      </div>
+
+      <div class="chips" id="chips" role="group" aria-label="Filter exceptions"></div>
+      <div style="display:flex;gap:8px;align-items:center;margin:6px 0 10px;flex-wrap:wrap">
+        <button class="chip" id="sortBtn" aria-pressed="false">Sort: dollar amount ▾</button>
+        <span class="t" id="shownCount" style="color:var(--muted);font-size:12.5px"></span>
+      </div>
+
+      <div class="tbl" id="tbl"></div>
+    </div>
+  </section>
+
+  <!-- SECTION 3 -->
+  <section id="sec3" class="hidden">
+    <div class="sechead"><span class="step">After</span><h2>Novatech Industries · escalation claim</h2><span class="note">12 weeks · R. Alvarez</span></div>
+    <button class="btn" id="packBtn">Generate dispute pack</button>
+    <div id="packZone" style="margin-top:12px"></div>
+  </section>
+
+  <footer>Prototype by Granted, inspired by your bookmarks</footer>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function(){
+"use strict";
+var $=function(s){return document.querySelector(s)};
+function money(n){var neg=n<0,v=Math.abs(n).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,",");return (neg?"-$":"$")+v}
+function toast(msg){var t=$("#toast");t.textContent=msg;t.classList.add("show");clearTimeout(t._h);t._h=setTimeout(function(){t.classList.remove("show")},2200)}
+
+/* ---------- Section 1: remittance mock ---------- */
+var workers=[["R. Alvarez","Sr Java Dev"],["R. Alvarez","Sr Java Dev"],["M. Castillo","Java Dev II"],["P. Shah","QA Autom Eng"],["D. Okafor","Med/Surg RN"],["L. Brennan","Med/Surg RN"],["T. Nguyen","Whse Assoc"],["K. Duval","DevOps Eng"],["J. Mbeki","Bus Analyst"],["S. Larkin","Proj Coord"],["A. Petrov","Whse Assoc"],["C. Iwu","Med/Surg RN"]];
+var weeks=["2026-07-11","2026-07-18","2026-07-25","2026-08-01","2026-08-08","2026-08-15","2026-08-22","2026-08-29","2026-09-05","2026-09-12","2026-09-19"];
+var rates=[92.00,92.00,82.00,74.25,78.00,78.00,24.00,101.00,68.00,55.50,24.00,78.00];
+function pad(s,n,right){s=String(s);if(s.length>n)s=s.slice(0,n);return right?(new Array(n-s.length+1).join(" ")+s):(s+new Array(n-s.length+1).join(" "))}
+var lines=["WORKER        ROLE          W/E         HRS   RATE      AMOUNT","------------------------------------------------------------------"];
+var seed=7,total=0,count=0;
+function rnd(){seed=(seed*1103515245+12345)%2147483648;return seed/2147483648}
+for(var w=0;w<weeks.length&&count<44;w++){
+  for(var i=0;i<workers.length&&count<44;i++){
+    if(rnd()<0.18)continue;
+    var hrs=(rnd()<0.2)?(40+Math.round(rnd()*12)):40;
+    var r=rates[i], amt=hrs<=40?hrs*r:(40*r+(hrs-40)*r);
+    total+=amt;count++;
+    lines.push(pad(workers[i][0],13)+pad(workers[i][1],14)+pad(weeks[w],12)+pad(hrs.toFixed(1),6,true)+"  "+pad(r.toFixed(2),8,true)+pad(amt.toFixed(2),10,true));
+  }
+}
+lines.push("------------------------------------------------------------------");
+lines.push(pad("TOTAL GROSS",45)+pad(total.toFixed(2),21,true));
+lines.push(pad("LESS MSP PROGRAM FEE @ 4.50%",45)+pad((-total*0.045).toFixed(2),21,true));
+lines.push(pad("NET REMITTED",45)+pad((total*0.955).toFixed(2),21,true));
+$("#remit").textContent=lines.join("\n");
+$("#remitcount").textContent=count+" lines";
+
+/* ---------- Data ---------- */
+var D=[
+ {id:1,cat:"escalation",client:"Novatech Industries",who:"R. Alvarez · Sr. Java Developer",week:"w/e 2026-08-15",reason:"Missed annual escalation (CPI-U+1.5%, eff. 2026-04-01)",variance:-180.00,days:4,deadline:"2026-10-15",
+  contract:"§4.2 — bill rates increase by CPI-U + 1.5% each April 1. Prior rate $92.00 × (1 + 3.4% CPI-U + 1.5%) = $96.50 effective 2026-04-01.",
+  paid:"Billed and remitted at the pre-amendment rate of $92.00/hr for 40 straight-time hours. No escalation applied on any 2026 invoice.",
+  math:[["Expected 40 hrs × $96.50","$3,860.00"],["Paid 40 hrs × $92.00","$3,680.00"]],mathTot:["Variance","-$180.00"],highlight:"§4.2"},
+ {id:2,cat:"escalation",client:"Novatech Industries",who:"R. Alvarez · × 11 more weeks",week:"w/e 2026-06-27 → 2026-09-19",reason:"Same escalation miss, 11 further weeks (collapsed)",variance:-1980.00,days:11,deadline:"2026-10-22",
+  contract:"§4.2 escalation applies to every invoice issued on or after 2026-04-01. 11 further weekly invoices carry the identical $4.50/hr shortfall.",
+  paid:"11 weekly remittances at $92.00/hr × 40 hrs. Three of these weeks fall outside the §7.3 window already.",
+  math:[["11 weeks × 40 hrs × $4.50","$1,980.00"],["Of which time-barred (3 wks)","$540.00"]],mathTot:["Variance","-$1,980.00"],highlight:"§4.2"},
+ {id:3,cat:"premiums",client:"Harbor Health System",who:"D. Okafor · Med/Surg RN",week:"w/e 2026-09-05",reason:"OT multiplier not applied",variance:-468.00,days:19,deadline:"2026-10-30",
+  contract:"§5.1 — hours in excess of forty (40) per week shall be billed at 1.5× the straight-time bill rate. ST rate $78.00 → OT $117.00.",
+  paid:"12 overtime hours remitted at straight time, 1.0× $78.00. VMS timecard flagged the hours as OT but the rate rule did not fire.",
+  math:[["Expected 12 OT hrs × $117.00","$1,404.00"],["Paid 12 hrs × $78.00","$936.00"]],mathTot:["Variance","-$468.00"],highlight:"§5.1"},
+ {id:4,cat:"premiums",client:"Harbor Health System",who:"3 workers · night shift",week:"w/e 2026-08-08 → 2026-09-19",reason:"2nd-shift differential $4.00/hr omitted",variance:-1134.00,days:19,deadline:"2026-10-30",
+  contract:"§5.1 — shifts commencing between 15:00 and 23:00 attract a second-shift differential of $4.00 per hour, billable in addition to the straight-time rate.",
+  paid:"283.5 differential-eligible hours across L. Brennan, C. Iwu and D. Okafor remitted at base rate with no differential line.",
+  math:[["Eligible hours","283.5"],["Differential per hour","$4.00"]],mathTot:["Variance","-$1,134.00"],highlight:"§5.1"},
+ {id:5,cat:"fees",client:"Castlebridge Logistics",who:"Program-wide deduction",week:"Q3 2026 invoices",reason:"Program fee over-deduction (4.5% vs 3.0%)",variance:-2318.40,days:12,deadline:"2026-10-23",
+  contract:"§6.4 — MSP administrative fee of three percent (3.0%) shall be deducted from gross invoiced amounts. No other deduction is permitted.",
+  paid:"Remittance advices show 'LESS MSP PROGRAM FEE @ 4.50%' on all 13 Q3 invoices. Over-deduction of 1.50% of gross.",
+  math:[["Q3 gross invoiced","$154,560.00"],["Contracted fee 3.0%","$4,636.80"],["Deducted at 4.5%","$6,955.20"]],mathTot:["Variance","-$2,318.40"],highlight:"§6.4"},
+ {id:6,cat:"rate",client:"Castlebridge Logistics",who:"T. Nguyen · Warehouse Lead",week:"w/e 2026-07-18 → 2026-09-19",reason:"Billed at Warehouse Associate rate after reclassification",variance:-742.50,days:12,deadline:"2026-10-23",
+  contract:"§8.1 — where a worker's duties change, the applicable rate-card title shall apply from the effective date of reclassification. Warehouse Lead $25.65 / Associate $24.00.",
+  paid:"Reclassification approved in VMS 2026-07-14; all subsequent weeks still remitted at the Warehouse Associate rate of $24.00/hr.",
+  math:[["450 hrs × $25.65","$11,542.50"],["450 hrs × $24.00","$10,800.00"]],mathTot:["Variance","-$742.50"],highlight:"§8.1"},
+ {id:7,cat:"clawback",client:"Vertex Aerospace",who:"4 already-paid weeks",week:"w/e 2026-06-06 → 2026-06-27",reason:"Clawback — no amendment on file",variance:-1536.00,days:0,deadline:"2026-09-28",timebarred:true,
+  contract:"No executed amendment reducing bill rates exists on file. §4.1 fixes rates for the term absent a signed amendment by both parties.",
+  paid:"VMS applied a retroactive bill-rate reduction of $9.60/hr to four previously settled weeks and recovered the delta on the 2026-08-28 remittance.",
+  math:[["160 hrs × $9.60 recovered","$1,536.00"],["Supporting amendment","none"]],mathTot:["Variance","-$1,536.00"],highlight:"§4.1"},
+ {id:8,cat:"rate",client:"Novatech Industries",who:"P. Shah · QA Automation Eng.",week:"w/e 2026-09-12",reason:"Rate card title mapped to expired Amendment 1 rate",variance:-412.50,days:26,deadline:"2026-11-06",
+  contract:"Amendment 2 rate card lists QA Automation Engineer at $74.25/hr effective 2026-04-01, superseding the Amendment 1 rate of $63.25.",
+  paid:"Remitted at $63.25/hr for 37.5 hours — the superseded Amendment 1 rate still mapped in the VMS catalogue.",
+  math:[["Expected 37.5 × $74.25","$2,784.38"],["Paid 37.5 × $63.25","$2,371.88"]],mathTot:["Variance","-$412.50"],highlight:"Amd. 2"},
+ {id:9,cat:"premiums",client:"Harbor Health System",who:"L. Brennan · Med/Surg RN",week:"w/e 2026-09-19",reason:"Holiday premium (2.0×) billed at 1.5×",variance:-390.00,days:19,deadline:"2026-10-30",
+  contract:"§5.2 — hours worked on a Client-recognised holiday shall be billed at 2.0× straight time. ST $78.00 → holiday $156.00.",
+  paid:"10 Labor Day hours remitted at the overtime rate of $117.00/hr instead of the holiday rate.",
+  math:[["Expected 10 × $156.00","$1,560.00"],["Paid 10 × $117.00","$1,170.00"]],mathTot:["Variance","-$390.00"],highlight:"§5.2"},
+ {id:10,cat:"fees",client:"Vertex Aerospace",who:"Invoice 2026-08-21",reason:"Early-payment discount taken outside terms",variance:-287.50,days:8,deadline:"2026-10-19",week:"w/e 2026-08-21",
+  contract:"§6.6 — a 1.0% early-payment discount may be taken only where payment is received within ten (10) days of invoice date.",
+  paid:"Discount of $287.50 deducted on a payment received 31 days after invoice date.",
+  math:[["Discount taken","$287.50"],["Days to payment","31"],["Days permitted","10"]],mathTot:["Variance","-$287.50"],highlight:"§6.6"},
+ {id:11,cat:"rate",client:"Castlebridge Logistics",who:"A. Petrov · Warehouse Associate",week:"w/e 2026-08-29",reason:"Rounded hours down to nearest quarter-hour",variance:-66.00,days:12,deadline:"2026-10-23",
+  contract:"§3.4 — time shall be billed to the nearest one-hundredth of an hour as recorded in the VMS timekeeping system.",
+  paid:"Weekly hours rounded down from 42.75 to 42.00 across 11 weeks of a single assignment.",
+  math:[["Hours lost to rounding","2.75"],["Rate","$24.00"]],mathTot:["Variance","-$66.00"],highlight:"§3.4"},
+ {id:12,cat:"clawback",client:"Vertex Aerospace",who:"K. Duval · DevOps Engineer",week:"w/e 2026-07-04",reason:"Credit memo issued without supporting dispute notice",variance:-112.00,days:0,deadline:"2026-10-04",timebarred:true,
+  contract:"§7.4 — Client credit memos must reference a dispute notice issued within the §7.3 window. No notice is recorded against this invoice.",
+  paid:"Credit memo CM-4471 for $112.00 netted off the 2026-09-11 remittance with no referenced notice.",
+  math:[["Credit memo CM-4471","$112.00"],["Referenced notice","none"]],mathTot:["Variance","-$112.00"],highlight:"§7.4"},
+ {id:13,cat:"rate",client:"Novatech Industries",who:"M. Castillo · Java Developer II",week:"w/e 2026-09-19",reason:"Paid correct — timing only (invoice settles 2026-10-02)",variance:0,days:null,clean:true,
+  contract:"§4.2 escalated rate $82.00/hr correctly applied; §6.4 fee deducted at 3.0%.",
+  paid:"Full amount approved in VMS, scheduled on the 2026-10-02 payment run. Net-45 terms, not yet due.",
+  math:[["Expected","$3,280.00"],["Approved","$3,280.00"]],mathTot:["Variance","$0.00"],highlight:"§4.2"},
+ {id:14,cat:"premiums",client:"Harbor Health System",who:"C. Iwu · Med/Surg RN",week:"w/e 2026-09-19",reason:"Paid correct — timing only (differential accrued, pays 2026-10-09)",variance:0,days:null,clean:true,
+  contract:"§5.1 second-shift differential of $4.00/hr correctly accrued on 36 eligible hours.",
+  paid:"Differential of $144.00 shows as accrued-not-yet-remitted on the 2026-09-26 advice; due on next cycle.",
+  math:[["Differential accrued","$144.00"],["Remitted to date","$0.00 (not yet due)"]],mathTot:["Variance","$0.00"],highlight:"§5.1"}
+];
+
+var CATS=[["all","All"],["rate","Rate"],["premiums","Premiums"],["escalation","Escalation"],["fees","Fees"],["clawback","Clawback"]];
+var state={filter:"all",sort:"amount",open:null,filed:false};
+
+/* ---------- Progress ---------- */
+var STEPS=["Extracting 6 rate cards and 4 amendments…","Normalising 1,284 remittance lines…","Testing each line against contract terms…"];
+var running=false;
+$("#runBtn").addEventListener("click",function(){
+  if(running)return;running=true;
+  this.disabled=true;this.textContent="Running audit…";
+  var runner=$("#runner");runner.classList.remove("hidden");
+  var list=$("#stepList");list.innerHTML="";
+  STEPS.forEach(function(s,i){
+    var li=document.createElement("li");li.innerHTML='<span class="tick" data-k="'+i+'"></span><span>'+s+'</span>';
+    list.appendChild(li);
+  });
+  var i=0;
+  function mark(idx,done){
+    var li=list.children[idx];if(!li)return;
+    li.className=done?"done":"on";
+    li.firstChild.outerHTML=done
+      ? '<svg class="tick" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3.2 3.2L13 5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+      : '<span class="tick spin"></span>';
+  }
+  mark(0,false);$("#barFill").style.width="12%";
+  var timer=setInterval(function(){
+    mark(i,true);i++;
+    if(i<STEPS.length){mark(i,false);$("#barFill").style.width=(12+i*33)+"%";}
+    else{
+      clearInterval(timer);$("#barFill").style.width="100%";
+      setTimeout(finish,420);
+    }
+  },1000);
+});
+
+function finish(){
+  $("#runzone").classList.add("hidden");
+  $("#runner").classList.add("hidden");
+  $("#results").classList.remove("hidden");
+  $("#sec3").classList.remove("hidden");
+  render();
+  animateCounter(11842.90,"recovered");
+  $("#results").scrollIntoView({behavior:"smooth",block:"start"});
+}
+
+function animateCounter(target,label){
+  var el=$("#counter"),start=0,t0=null,dur=900;
+  function frame(ts){
+    if(!t0)t0=ts;var p=Math.min(1,(ts-t0)/dur);
+    var v=start+(target-start)*(1-Math.pow(1-p,3));
+    el.textContent=money(v)+" "+label;
+    if(p<1)requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+}
+
+/* ---------- Chips ---------- */
+var chips=$("#chips");
+CATS.forEach(function(c){
+  var b=document.createElement("button");
+  b.className="chip";b.type="button";b.textContent=c[1];b.setAttribute("aria-pressed",c[0]===state.filter);
+  b.addEventListener("click",function(){state.filter=c[0];state.open=null;render();});
+  chips.appendChild(b);
+});
+$("#sortBtn").addEventListener("click",function(){
+  state.sort=state.sort==="amount"?"days":"amount";state.open=null;render();
+});
+
+function dlPill(r){
+  if(r.clean)return '<span class="pill green">paid correct</span>';
+  if(r.timebarred)return '<span class="pill grey">time-barred</span>';
+  var cls=r.days<=7?"red":(r.days<=14?"amber":"green");
+  return '<span class="pill '+cls+'">'+r.days+'d left</span>';
+}
+
+function render(){
+  Array.prototype.forEach.call(chips.children,function(b,idx){b.setAttribute("aria-pressed",CATS[idx][0]===state.filter)});
+  $("#sortBtn").textContent=state.sort==="amount"?"Sort: dollar amount ▾":"Sort: days left ▴";
+  $("#sortBtn").setAttribute("aria-pressed",state.sort==="days");
+
+  var rows=D.filter(function(r){return state.filter==="all"||r.cat===state.filter});
+  rows.sort(function(a,b){
+    if(state.sort==="amount")return a.variance-b.variance;
+    var ad=a.days===null?999:a.days, bd=b.days===null?999:b.days;
+    return ad-bd||a.variance-b.variance;
+  });
+
+  var sum=rows.reduce(function(s,r){return s+r.variance},0);
+  $("#shownCount").textContent=rows.length+" of "+D.length+" exceptions shown · "+money(sum)+" in view";
+
+  var t=$("#tbl");t.innerHTML="";
+  if(!rows.length){
+    t.innerHTML='<div class="empty">No exceptions in this category. Nothing to chase — that is a good result.</div>';
+    return;
+  }
+  var head=document.createElement("div");
+  head.className="row rowhead";
+  head.innerHTML="<div>Client / worker</div><div>Finding</div><div style='text-align:right'>Variance</div><div style='text-align:right'>Deadline</div>";
+  t.appendChild(head);
+
+  rows.forEach(function(r){
+    var btn=document.createElement("button");
+    btn.type="button";btn.className="row";btn.setAttribute("aria-expanded",state.open===r.id);
+    btn.innerHTML='<div class="who"><div class="c">'+r.client+'</div><div class="w">'+r.who+' · '+(r.week||"")+'</div></div>'+
+      '<div class="reason">'+r.reason+'</div>'+
+      '<div class="var '+(r.clean?"ok":"danger")+'">'+(r.clean?"$0.00":money(r.variance))+'</div>'+
+      '<div class="dl">'+dlPill(r)+'</div>';
+    btn.addEventListener("click",function(){state.open=state.open===r.id?null:r.id;render();});
+    t.appendChild(btn);
+
+    if(state.open===r.id){
+      var d=document.createElement("div");d.className="detail";
+      var mathRows=r.math.map(function(m){return '<div><span>'+m[0]+'</span><span>'+m[1]+'</span></div>'}).join("");
+      var dl=r.clean
+        ? '<div class="deadline okbox">No action needed. Approved and scheduled — Shortpay does not raise a dispute on timing differences.</div>'
+        : (r.timebarred
+          ? '<div class="deadline">Time-barred. §7.3 required written notice within 30 days of invoice date; that window closed on '+r.deadline+'.</div>'
+          : '<div class="deadline">Deadline '+r.deadline+' — '+r.days+' days left. Computed as invoice date + 30 days per §7.3 "written notice within 30 days of invoice date".</div>');
+      d.innerHTML='<div class="cmp">'+
+        '<div class="box"><h5>Contract says <span class="pill grey">'+r.highlight+'</span></h5><p>'+r.contract+'</p></div>'+
+        '<div class="box"><h5>VMS paid</h5><p>'+r.paid+'</p></div></div>'+
+        '<div class="math">'+mathRows+'<div class="tot"><span>'+r.mathTot[0]+'</span><span class="'+(r.clean?"ok":"danger")+'">'+r.mathTot[1]+'</span></div></div>'+dl;
+      t.appendChild(d);
+    }
+  });
+}
+
+/* ---------- Section 3 ---------- */
+var PACK_WEEKS=["2026-06-27","2026-07-04","2026-07-11","2026-07-18","2026-07-25","2026-08-01","2026-08-08","2026-08-15","2026-08-22","2026-08-29","2026-09-12","2026-09-19"];
+var packFiled=false;
+
+$("#packBtn").addEventListener("click",function(){
+  this.disabled=true;this.textContent="Dispute pack generated";
+  var rows=PACK_WEEKS.map(function(w){
+    return "<tr><td>"+w+"</td><td>40.00</td><td>$96.50</td><td>$92.00</td><td class='danger'>-$180.00</td></tr>";
+  }).join("");
+  var z=$("#packZone");
+  z.innerHTML='<div class="email">'+
+    '<div class="eh"><div><b>To:</b> ap-vendor@novatech-ind.example · <b>Cc:</b> msp-support@fieldglass.example</div>'+
+    '<div><b>Subject:</b> Billing discrepancy — Novatech MSA Amendment 2, escalation not applied (12 weeks)</div></div>'+
+    '<div class="ebody" id="packBody">'+
+      '<p>Hello,</p>'+
+      '<p>Midline Technical Staffing is providing written notice of a billing discrepancy on the Novatech Industries program. Amendment 2 to the MSA, §4.2, provides that <mark>"bill rates increase by CPI-U + 1.5% each April 1"</mark>. CPI-U for the measurement period was 3.4%, giving an escalated Sr. Java Developer bill rate of <b>$96.50/hr</b> effective 1 April 2026.</p>'+
+      '<p>Remittances for R. Alvarez continue to settle at the pre-amendment rate of $92.00/hr. Affected weeks:</p>'+
+      '<table><thead><tr><th>Week ending</th><th>Hours</th><th>Contract rate</th><th>Rate paid</th><th>Variance</th></tr></thead>'+
+      '<tbody>'+rows+'</tbody>'+
+      '<tfoot><tr><td><b>Total</b></td><td>480.00</td><td></td><td></td><td class="danger"><b>-$2,160.00</b></td></tr></tfoot></table>'+
+      '<p>Of this total, <b>$3,960.00</b> is claimed across all open Novatech escalation items in the current audit, of which $540.00 is already time-barred and excluded from this notice.</p>'+
+      '<p>Per §7.3 written notice is required within 30 days of invoice date; the earliest affected invoice reaches that limit on <b class="danger">15 Oct 2026</b>. Please confirm a corrected remittance on the next payment cycle.</p>'+
+      '<p>Regards,<br>Controller, Midline Technical Staffing</p>'+
+    '</div>'+
+    '<div class="actions"><button class="btn ghost" id="copyBtn" type="button">Copy</button><button class="btn" id="fileBtn" type="button">Mark as filed</button></div></div>';
+
+  $("#copyBtn").addEventListener("click",function(){
+    var text=$("#packBody").innerText||$("#packBody").textContent;
+    var done=function(){toast("Dispute pack copied to clipboard")};
+    try{
+      if(navigator.clipboard&&navigator.clipboard.writeText){
+        navigator.clipboard.writeText(text).then(done,fallback);
+      }else{fallback();}
+    }catch(e){fallback();}
+    function fallback(){
+      try{
+        var ta=document.createElement("textarea");ta.value=text;ta.setAttribute("readonly","");
+        ta.style.position="fixed";ta.style.top="-1000px";document.body.appendChild(ta);
+        ta.select();document.execCommand("copy");document.body.removeChild(ta);done();
+      }catch(err){toast("Copy unavailable here — select the text to copy manually")}
+    }
+  });
+
+  $("#fileBtn").addEventListener("click",function(){
+    if(packFiled){toast("Already marked as filed");return;}
+    packFiled=true;
+    this.textContent="Filed 24 Nov 2026";this.disabled=true;
+    var c=$("#counter");c.classList.add("filed");c.textContent="$3,960.00 in dispute";
+    toast("Novatech escalation claim marked as filed");
+  });
+
+  z.scrollIntoView({behavior:"smooth",block:"nearest"});
+});
+})();
+</script>
+</body>
+</html>

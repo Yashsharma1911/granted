@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-22T20:52:36.282Z",
+  "updated": "2026-11-24T20:52:38.360Z",
   "ideas": [
     {
       "id": "2026-10-22-agentgauntlet",
@@ -1447,6 +1447,66 @@
       "sources_count": 25,
       "superseded_by": null,
       "sibling": "2026-11-22-defect"
+    },
+    {
+      "id": "2026-11-24-shiftboard",
+      "number": 51,
+      "date": "2026-11-24",
+      "track": "build",
+      "short_name": "Shiftboard",
+      "verdict": "dig_deeper",
+      "score": 8.4,
+      "scores": {
+        "wow": 8,
+        "shareability": 9,
+        "buildability": 9,
+        "freshness": 9,
+        "usefulness": 7
+      },
+      "effort": "a weekend",
+      "category": "Public data tools",
+      "tags": [
+        "agents",
+        "public-data",
+        "grok-bot",
+        "shareable"
+      ],
+      "pain_type": "latent",
+      "one_liner": "Type the job you actually do (or paste five things you did this week) and Shiftboard staffs you a night shift out of the 1,100+ real public Grok Bots people have shared — who covers which task, what each one would need to log into, the two tasks nobody has built a bot for yet — as a shareable shift-roster card that refreshes as new bots get published every week.",
+      "prototype_url": "https://yashsharma1911.github.io/granted/ideas/2026-11-24-shiftboard/",
+      "sources_count": 16,
+      "superseded_by": null,
+      "sibling": "2026-11-24-shortpay"
+    },
+    {
+      "id": "2026-11-24-shortpay",
+      "number": 52,
+      "date": "2026-11-24",
+      "track": "venture",
+      "short_name": "Shortpay",
+      "verdict": "dig_deeper",
+      "score": 7.8,
+      "scores": {
+        "pain": 8,
+        "market_pull": 8,
+        "timing": 8,
+        "gap": 7,
+        "wedge": 8
+      },
+      "effort": "3+ months",
+      "category": "Back-office automation",
+      "tags": [
+        "staffing",
+        "billing",
+        "agents",
+        "revenue-recovery"
+      ],
+      "pain_type": "expressed",
+      "one_liner": "For the controller or VP Finance at a $10M–$100M contract staffing firm that bills through Fieldglass, Beeline or VNDLY, Shortpay is an agent that reads every executed client rate card and every VMS remittance line, flags the lines paid below contract (wrong bill rate, missing OT/shift premium, skipped annual escalation, over-deducted program fee), and files the dispute before the contractual notice window closes.",
+      "prototype_url": "https://yashsharma1911.github.io/granted/ideas/2026-11-24-shortpay/",
+      "sources_count": 21,
+      "superseded_by": null,
+      "sibling": "2026-11-24-shiftboard"
     }
   ]
 }
